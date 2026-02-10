@@ -1,0 +1,142 @@
+# Gherkin Feature Template
+
+Use this template to create BDD feature files from acceptance criteria.
+
+Reference `tech.md` for:
+- BDD framework (e.g., jest-cucumber, pytest-bdd, SpecFlow, flutter_gherkin)
+- Feature file location (e.g., `tests/features/*.feature`)
+- Step definition patterns and conventions
+
+---
+
+```gherkin
+# File: {test-layer}/features/[feature-name].feature
+#
+# Generated from: .claude/specs/[feature-name]/requirements.md
+# Issue: #[number]
+
+Feature: [Feature Name]
+  As a [user type from user story]
+  I want [action from user story]
+  So that [benefit from user story]
+
+  # --- Happy Path ---
+
+  Scenario: [AC1 scenario name]
+    Given [AC1 precondition]
+    When [AC1 action]
+    Then [AC1 expected outcome]
+    And [AC1 additional outcome]
+
+  # --- Alternative Paths ---
+
+  Scenario: [AC2 scenario name]
+    Given [AC2 precondition]
+    When [AC2 action]
+    Then [AC2 expected outcome]
+
+  # --- Error Handling ---
+
+  Scenario: [AC3 scenario name - error case]
+    Given [AC3 error precondition]
+    When [AC3 action that triggers error]
+    Then [AC3 error handling behavior]
+
+  # --- Edge Cases ---
+
+  Scenario: [AC4 scenario name - edge case]
+    Given [AC4 edge case precondition]
+    When [AC4 action]
+    Then [AC4 expected behavior]
+
+  # --- Data-Driven (if applicable) ---
+
+  Scenario Outline: [Parameterized scenario name]
+    Given [precondition with <parameter>]
+    When [action with <parameter>]
+    Then [outcome with <expected>]
+
+    Examples:
+      | parameter | expected |
+      | value1    | result1  |
+      | value2    | result2  |
+      | value3    | result3  |
+```
+
+---
+
+## Step Definition Patterns
+
+Reference `tech.md` for the project's BDD framework. Below are common patterns:
+
+### Pattern: Given/When/Then Functions
+
+```
+// Pseudocode — adapt to project's language and BDD framework
+
+given("precondition text", () => {
+  // Setup test state
+});
+
+when("action text", () => {
+  // Perform the action
+});
+
+then("expected outcome text", () => {
+  // Assert the result
+});
+```
+
+### Pattern: Parameterized Steps
+
+```
+// Pseudocode — adapt to project's BDD framework
+
+given("a user with role {string}", (role) => {
+  // Setup user with role
+});
+
+when("the user requests {string}", (endpoint) => {
+  // Make the request
+});
+
+then("the response status is {int}", (status) => {
+  // Assert status code
+});
+```
+
+---
+
+## Guidelines
+
+1. **One scenario per acceptance criterion** — direct 1:1 mapping from requirements.md
+2. **Concrete examples** — use realistic data, not "foo" and "bar"
+3. **Independent scenarios** — each scenario should be self-contained
+4. **Declarative style** — describe *what*, not *how* (avoid UI implementation details)
+5. **Background for shared setup** — use `Background:` for preconditions common to all scenarios
+
+```gherkin
+# Use Background for shared preconditions
+Background:
+  Given a registered user is logged in
+  And the user has a saved route
+
+Scenario: First scenario
+  When ...
+  Then ...
+
+Scenario: Second scenario
+  When ...
+  Then ...
+```
+
+---
+
+## Validation Checklist
+
+- [ ] Every acceptance criterion has a corresponding scenario
+- [ ] Feature file is valid Gherkin syntax
+- [ ] Scenarios are independent (no shared mutable state)
+- [ ] Step definitions use project's BDD framework patterns
+- [ ] Error scenarios are included
+- [ ] Edge cases are covered

@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A file was modified. If a spec exists at .claude/specs/ for the current feature, briefly note whether the change aligns with the spec. Only flag clear deviations."
+          }
+        ]
+      }
+    ]
+  }
+}

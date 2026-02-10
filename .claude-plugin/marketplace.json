@@ -1,0 +1,20 @@
+{
+  "name": "nmg-plugins",
+  "owner": {
+    "name": "Nunley Media Group"
+  },
+  "metadata": {
+    "description": "Claude Code plugins by Nunley Media Group",
+    "version": "1.0.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "nmg-sdlc",
+      "source": "./nmg-sdlc",
+      "description": "BDD spec-driven development: issue creation, specifications, verification, and PR workflows.",
+      "version": "1.0.0",
+      "keywords": ["sdlc", "bdd", "gherkin", "specifications", "github-issues"]
+    }
+  ]
+}

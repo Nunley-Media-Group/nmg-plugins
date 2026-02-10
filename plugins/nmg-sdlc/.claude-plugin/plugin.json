@@ -1,0 +1,9 @@
+{
+  "name": "nmg-sdlc",
+  "version": "1.0.0",
+  "description": "Stack-agnostic BDD spec-driven development toolkit",
+  "author": {
+    "name": "Nunley Media Group"
+  },
+  "repository": "https://github.com/nunley-media-group/nmg-plugins"
+}
