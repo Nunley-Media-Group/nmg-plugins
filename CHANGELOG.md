@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated README skills reference to match actual SKILL.md definitions and argument hints
+
 ## [1.2.0] - 2026-02-10
 
 ### Added
