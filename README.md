@@ -69,7 +69,7 @@ Review and customize these documents — they provide project-specific context f
 /beginning-dev
 ```
 
-The fastest way to start working. Presents open issues from your current milestone, lets you pick one, then automatically runs `/writing-specs` and `/implementing-specs` for it. You can also pass an issue number directly:
+The fastest way to start working. Presents open issues from your current milestone, lets you pick one, creates a linked feature branch, sets the issue to "In Progress" in any associated GitHub Project, then automatically chains through `/writing-specs` and `/implementing-specs`. You can also pass an issue number directly:
 
 ```bash
 /beginning-dev #42
@@ -147,13 +147,13 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 
 | Skill | Description |
 |-------|-------------|
-| `/beginning-dev` | Pick an issue, then chain through writing-specs and implementing-specs |
-| `/creating-issues` | Interview user, create GitHub issue with BDD acceptance criteria |
-| `/writing-specs #N` | Create requirements, design, and task specs from issue |
-| `/implementing-specs #N` | Read specs, plan, and execute implementation |
-| `/verifying-specs #N` | Verify implementation, review architecture, update issue |
-| `/creating-prs #N` | Create PR with spec-driven summary |
-| `/setting-up-steering` | One-time: generate steering docs from codebase |
+| `/beginning-dev [#N]` | Pick a GitHub issue, create feature branch, then chain through writing-specs and implementing-specs |
+| `/creating-issues [description]` | Interview user about a feature need, create groomed GitHub issue with BDD acceptance criteria |
+| `/writing-specs #N` | Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown |
+| `/implementing-specs #N` | Read specs, enter plan mode, then execute implementation tasks sequentially |
+| `/verifying-specs #N` | Verify implementation against spec, review architecture and test coverage, update GitHub issue |
+| `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
+| `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure) — run once per project |
 
 ## Updating
 
