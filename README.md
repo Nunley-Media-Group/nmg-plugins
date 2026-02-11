@@ -6,9 +6,14 @@ Claude Code plugins by Nunley Media Group.
 
 ### nmg-sdlc
 
-Stack-agnostic BDD spec-driven development toolkit. Provides a 5-step GitHub issue-driven workflow:
+Stack-agnostic BDD spec-driven development toolkit. Provides a GitHub issue-driven workflow:
 
 ```
+Quick Start:
+/beginning-dev  →  (picks issue)  →  /writing-specs #N  →  /implementing-specs #N
+                                      ▲ runs automatically   ▲ runs automatically
+
+Full Workflow:
 Step 1               Step 2                  Step 3                     Step 4                    Step 5
 /creating-issues  →  /writing-specs #42  →  /implementing-specs #42  →  /verifying-specs #42  →  /creating-prs #42
 Interview user,      Read issue, create      Read specs, enter plan     Verify implementation,    Create PR with
@@ -57,6 +62,18 @@ This analyzes your codebase and creates three documents in `.claude/steering/`:
 Review and customize these documents — they provide project-specific context for all other skills.
 
 ## Workflow
+
+### Quick Start: Beginning Dev
+
+```bash
+/beginning-dev
+```
+
+The fastest way to start working. Presents open issues from your current milestone, lets you pick one, then automatically runs `/writing-specs` and `/implementing-specs` for it. You can also pass an issue number directly:
+
+```bash
+/beginning-dev #42
+```
 
 ### Step 1: Create an Issue
 
@@ -130,6 +147,7 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 
 | Skill | Description |
 |-------|-------------|
+| `/beginning-dev` | Pick an issue, then chain through writing-specs and implementing-specs |
 | `/creating-issues` | Interview user, create GitHub issue with BDD acceptance criteria |
 | `/writing-specs #N` | Create requirements, design, and task specs from issue |
 | `/implementing-specs #N` | Read specs, plan, and execute implementation |
