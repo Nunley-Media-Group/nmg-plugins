@@ -4,9 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-02-10
+
 ### Changed
 
 - Updated README skills reference to match actual SKILL.md definitions and argument hints
+
+### Fixed
+
+- Spec alignment hook now returns expected `{ok, reason}` JSON format and references `$ARGUMENTS` for edit context
 
 ## [1.2.0] - 2026-02-10
 

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "A file was modified. If a spec exists at .claude/specs/ for the current feature, briefly note whether the change aligns with the spec. Only flag clear deviations."
+            "prompt": "A file was modified. Check $ARGUMENTS for details. If a spec exists at .claude/specs/ for the current feature, check whether the change aligns with the spec. Respond with JSON: {\"ok\": true, \"reason\": \"...\"} where ok is false only if the change clearly deviates from the spec. If no spec exists, respond with {\"ok\": true, \"reason\": \"no spec found\"}."
           }
         ]
       }
