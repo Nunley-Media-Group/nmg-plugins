@@ -8,7 +8,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- **`/verifying-specs`** — Now fixes findings during verification before generating report
+- **`/verifying-specs`** — No longer read-only; now fixes findings during verification before generating report
+- **`/verifying-specs`** — Added `Write`, `Edit`, and `Bash(git:*)` to allowed tools
+- **`/verifying-specs`** — Report restructured: "Issues Found" replaced with "Fixes Applied" and "Remaining Issues" sections
+- **`/verifying-specs`** — New Step 6 (Fix Findings) with prioritization, test-after-fix, re-verification, and deferral workflow
 
 ## [1.2.1] - 2026-02-10
 
