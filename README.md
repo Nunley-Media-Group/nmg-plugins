@@ -115,6 +115,7 @@ Verifies the implementation against the spec:
 - Checks each acceptance criterion against actual code
 - Runs architecture review (SOLID, security, performance, testability, error handling)
 - Checks BDD test coverage
+- Fixes any issues found during verification
 - Posts verification report as a comment on the GitHub issue
 
 ### Step 5: Create PR
@@ -151,7 +152,7 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | `/creating-issues [description]` | Interview user about a feature need, create groomed GitHub issue with BDD acceptance criteria |
 | `/writing-specs #N` | Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown |
 | `/implementing-specs #N` | Read specs, enter plan mode, then execute implementation tasks sequentially |
-| `/verifying-specs #N` | Verify implementation against spec, review architecture and test coverage, update GitHub issue |
+| `/verifying-specs #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
 | `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
 | `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure) — run once per project |
 

@@ -115,23 +115,31 @@ Use this template to generate the final verification report.
 
 ---
 
-## Issues Found
+## Fixes Applied
+
+| Severity | Category | Location | Original Issue | Fix Applied |
+|----------|----------|----------|----------------|-------------|
+| [sev] | [cat] | `path/to/file:line` | [what was wrong] | [what was done] |
+
+## Remaining Issues
+
+Issues that could not be auto-fixed during verification.
 
 ### Critical Issues
-[Must fix before merging]
+[Must fix before merging — include reason not fixed]
 
 ### High Priority
-[Should fix before merging]
+[Should fix before merging — include reason not fixed]
 
 ### Medium Priority
-[Plan to address]
+[Plan to address — include reason not fixed]
 
 ### Low Priority
-[Nice to have]
+[Nice to have — include reason not fixed]
 
 ### Issue Format
 
-For each issue:
+For each remaining issue:
 
 | Field | Value |
 |-------|-------|
@@ -140,7 +148,7 @@ For each issue:
 | **Location** | `path/to/file:line` |
 | **Issue** | [description] |
 | **Impact** | [what this causes] |
-| **Recommendation** | [specific fix] |
+| **Reason Not Fixed** | [why deferred: needs spec clarification / scope change / risk] |
 
 ---
 
@@ -153,7 +161,7 @@ For each issue:
 ## Recommendations Summary
 
 ### Before PR (Must)
-- [ ] [critical/high items]
+- [ ] [remaining unfixed critical/high items]
 
 ### Short Term (Should)
 - [ ] [medium items]

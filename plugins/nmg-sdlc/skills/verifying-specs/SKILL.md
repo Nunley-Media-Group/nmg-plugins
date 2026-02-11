@@ -1,17 +1,15 @@
 ---
 name: verifying-specs
-description: "Verify implementation against spec, review architecture and test coverage, update GitHub issue."
+description: "Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue."
 argument-hint: "[#issue-number]"
-allowed-tools: Read, Glob, Grep, Task, WebFetch, WebSearch, Bash(gh:*)
+allowed-tools: Read, Glob, Grep, Task, WebFetch, WebSearch, Write, Edit, Bash(gh:*), Bash(git:*)
 ---
 
 # Verifying Specs
 
-Verify the implementation against specifications, review architecture and test coverage, then update the GitHub issue with evidence.
+Verify the implementation against specifications, fix any findings, review architecture and test coverage, then update the GitHub issue with evidence.
 
 **REQUIRED: Use ultrathink (extended thinking mode) throughout the verification process.**
-
-**Note**: This is a read-only verification skill. It does not modify project files — only reads code and writes to GitHub via `gh`.
 
 ## When to Use
 
@@ -93,19 +91,59 @@ Check that BDD tests exist and cover the acceptance criteria:
 
 Report coverage gaps.
 
-### Step 6: Generate Verification Report
+### Step 6: Fix Findings
+
+Work through all findings discovered in Steps 3–5 and fix them before generating the report.
+
+#### 6a. Prioritize and Fix
+
+Process findings in severity order: **Critical → High → Medium → Low**.
+
+For each finding:
+1. Locate the relevant code via `Glob` / `Grep`
+2. Apply the fix using `Write` or `Edit`
+3. Verify the fix addresses the finding
+4. Record: original issue, location, and fix applied
+
+#### 6b. Run Tests After Fixes
+
+Reference `.claude/steering/tech.md` for the project's test command. Run the full test suite and fix any regressions introduced by the fixes.
+
+#### 6c. Re-verify Changed Areas
+
+Re-check modified files against acceptance criteria and architecture checklists. Update scores if fixes improved them.
+
+#### 6d. Handle Unfixable Findings
+
+If a finding cannot be safely fixed (e.g., requires spec clarification, would change scope, or risks breaking unrelated functionality):
+1. Document **why** it cannot be fixed now
+2. Categorize as **"Deferred"** in the report
+
+#### Fix Rules
+
+| Rule | Detail |
+|------|--------|
+| Follow the spec | Fixes must not contradict requirements.md or design.md |
+| Follow steering docs | Reference tech.md and structure.md for conventions |
+| Match code style | Mirror the patterns already used in the codebase |
+| One finding at a time | Fix, verify, then move to the next |
+| Test after each batch | Run the test suite after each group of related fixes |
+| No scope changes | Do not add features or refactor beyond the finding |
+
+### Step 7: Generate Verification Report
 
 Use [checklists/report-template.md](checklists/report-template.md) to create the verification report.
 
 The report includes:
-- Executive summary with scores
+- Executive summary with post-fix scores
 - Acceptance criteria checklist (pass/fail)
 - Architecture review scores (SOLID, security, performance, testability, error handling)
 - Test coverage analysis
-- Issues found (categorized by severity)
+- Fixes applied (what was found and how it was fixed)
+- Remaining issues (items that could not be auto-fixed, with reasons)
 - Recommendations
 
-### Step 7: Update GitHub Issue
+### Step 8: Update GitHub Issue
 
 Post the verification results as an issue comment:
 
@@ -142,16 +180,24 @@ The comment should include:
 - Step definitions: [Implemented / Missing]
 - Test execution: [Pass / Fail / Not run]
 
-### Issues Found
+### Fixes Applied
 
-[List any issues by severity: Critical > High > Medium > Low]
+| Severity | Category | Location | Issue | Fix |
+|----------|----------|----------|-------|-----|
+| [sev] | [cat] | `path/to/file` | [what was wrong] | [what was done] |
+
+### Remaining Issues
+
+| Severity | Category | Location | Issue | Reason Not Fixed |
+|----------|----------|----------|-------|------------------|
+| [sev] | [cat] | `path/to/file` | [what is wrong] | [why deferred] |
 
 ### Recommendation
 
-[Ready for PR / Needs fixes before PR / Major rework needed]
+[Ready for PR / Needs fixes for remaining items / Major rework needed]
 ```
 
-### Step 8: Output
+### Step 9: Output
 
 ```
 Verification complete for issue #N.
@@ -160,11 +206,14 @@ Status: [Pass / Partial / Fail]
 Acceptance criteria: [X/Y] passing
 Architecture score: [average]
 Test coverage: [X/Y] criteria covered
+Fixes applied: [count]
+Remaining issues: [count]
 
 GitHub issue #N updated with verification report.
 
 [If passing]: Next step: Run `/creating-prs #N` to create a pull request.
-[If failing]: Issues found — address the items above before creating a PR.
+[If remaining issues]: Deferred items documented — review before creating a PR.
+[If failing]: Critical issues remain — address the items above before creating a PR.
 ```
 
 ---

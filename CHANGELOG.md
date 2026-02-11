@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-02-10
+
+### Changed
+
+- **`/verifying-specs`** — Now fixes findings during verification before generating report
+
 ## [1.2.1] - 2026-02-10
 
 ### Changed
