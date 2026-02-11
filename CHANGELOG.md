@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-02-11
+
+### Changed
+
+- **`/beginning-dev`** — Added context compaction handoffs between phases (writing-specs, implementing-specs) to free context window for each phase
+
 ## [1.3.0] - 2026-02-10
 
 ### Changed

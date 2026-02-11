@@ -168,6 +168,19 @@ If the issue is not in any project, or no "In Progress" option exists, skip the 
 
 ## Step 5: Chain to Writing Specs
 
+**Before invoking writing-specs, clear context.** Output a handoff summary:
+
+```
+--- Phase 1 complete ---
+Issue: #N — [title]
+Branch: [branch-name]
+Milestone: [milestone or "none"]
+
+Proceeding to /writing-specs #N...
+```
+
+Then compact the conversation (`/compact`) to free context for the next phase.
+
 Invoke the writing-specs skill for the selected issue:
 
 ```
@@ -178,7 +191,20 @@ Use the `Skill` tool to invoke this. Wait for it to complete — this includes a
 
 ## Step 6: Chain to Implementing Specs
 
-After writing-specs completes, invoke the implementing-specs skill:
+**Before invoking implementing-specs, clear context.** Output a handoff summary:
+
+```
+--- Phase 2 complete ---
+Issue: #N — [title]
+Branch: [branch-name]
+Specs written to: .claude/specs/{feature-name}/
+
+Proceeding to /implementing-specs #N...
+```
+
+Then compact the conversation (`/compact`) to free context for the next phase.
+
+Invoke the implementing-specs skill:
 
 ```
 /implementing-specs #N
