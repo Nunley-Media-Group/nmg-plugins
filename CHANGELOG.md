@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 
 - **`/beginning-dev`** — Pick a GitHub issue to work on, then automatically chain through `/writing-specs` and `/implementing-specs`
 
+### Fixed
+
+- **`/beginning-dev`** — Now links the feature branch to the GitHub issue (via `gh issue develop`) and updates the issue status to "In Progress" in any associated GitHub Project
+
 ## [1.0.0] - 2026-02-10
 
 ### Added

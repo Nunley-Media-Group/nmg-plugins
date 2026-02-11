@@ -25,7 +25,7 @@ Pick a GitHub issue to work on, then automatically chain through `/writing-specs
     ├─ 1. Fetch milestones & issues
     ├─ 2. Present issue selection (AskUserQuestion)
     ├─ 3. Confirm selected issue
-    ├─ 4. Create feature branch
+    ├─ 4. Create linked feature branch & set issue to In Progress
     ├─ 5. /writing-specs #N  (automatically invoked)
     └─ 6. /implementing-specs #N  (automatically invoked)
 ```
@@ -87,7 +87,7 @@ Ask: "Ready to start spec-driven development on this issue?"
 
 If the user says no, return to Step 2.
 
-## Step 4: Create Feature Branch
+## Step 4: Create Feature Branch & Link to Issue
 
 Check if already on a feature branch for this issue:
 
@@ -95,15 +95,76 @@ Check if already on a feature branch for this issue:
 git branch --show-current
 ```
 
-If the current branch is `main` or `master`, create and checkout a feature branch:
+If already on a branch that references the issue number, stay on it and skip to Step 5.
+
+If the current branch is `main` or `master`, create a linked feature branch using `gh issue develop`, which both creates the branch AND associates it with the issue in GitHub's "Development" sidebar:
 
 ```bash
-git checkout -b N-feature-name
+gh issue develop N --checkout --name N-feature-name
 ```
 
 Where `N` is the issue number and `feature-name` is a kebab-case slug derived from the issue title.
 
-If already on a branch that references the issue number, stay on it.
+### Update Issue Status to In Progress
+
+After creating the branch, move the issue to "In Progress" in any associated GitHub Project. Use the GraphQL API to discover the project, field, and option IDs, then update:
+
+1. **Get the issue's project item info:**
+
+```bash
+gh api graphql -f query='
+  query($owner: String!, $repo: String!, $number: Int!) {
+    repository(owner: $owner, name: $repo) {
+      issue(number: $number) {
+        projectItems(first: 10) {
+          nodes {
+            id
+            project { id title }
+            fieldValueByName(name: "Status") {
+              ... on ProjectV2ItemFieldSingleSelectValue {
+                name
+                field {
+                  ... on ProjectV2SingleSelectField {
+                    id
+                    options { id name }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+' -f owner=OWNER -f repo=REPO -F number=N
+```
+
+Replace `OWNER`, `REPO`, and `N` with actual values derived from `gh repo view --json owner,name`.
+
+2. **From the response, extract:**
+   - `projectId` — the project's ID
+   - `itemId` — the issue's project item ID
+   - `fieldId` — the Status field's ID
+   - `optionId` — the ID of the "In Progress" option (match by name, case-insensitive)
+
+3. **Update the status:**
+
+```bash
+gh api graphql -f query='
+  mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+    updateProjectV2ItemFieldValue(input: {
+      projectId: $projectId
+      itemId: $itemId
+      fieldId: $fieldId
+      value: { singleSelectOptionId: $optionId }
+    }) {
+      projectV2Item { id }
+    }
+  }
+' -f projectId=PROJECT_ID -f itemId=ITEM_ID -f fieldId=FIELD_ID -f optionId=OPTION_ID
+```
+
+If the issue is not in any project, or no "In Progress" option exists, skip the status update silently and continue.
 
 ## Step 5: Chain to Writing Specs
 
