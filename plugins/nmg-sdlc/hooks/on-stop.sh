@@ -62,7 +62,9 @@ MSG="CC finished on ${HOST} | ${PROJECT}"
 [ -n "$LAST_PROMPT" ] && MSG="${MSG} | → ${LAST_PROMPT}"
 
 # Send via one-shot cron job with announce delivery to Discord
-openclaw cron add \
+# Backgrounded (&) because openclaw CLI takes ~5-10s to load plugins,
+# and Claude Code's hook runner may kill the process before it completes.
+nohup openclaw cron add \
   --at "1s" \
   --session isolated \
   --message "CC callback: $MSG — Acknowledge briefly." \
@@ -71,6 +73,6 @@ openclaw cron add \
   --to "channel:${DISCORD_CHANNEL}" \
   --delete-after-run \
   --name "cc-callback-$(date +%s)" \
-  >/dev/null 2>&1
+  >/dev/null 2>&1 &
 
 exit 0
