@@ -145,18 +145,18 @@ Creates a pull request with:
 
 ## Automation Mode
 
-The plugin includes hooks that let external agents (e.g., [OpenClaw](https://openclaw.ai/)) drive the entire SDLC without human input. When automation mode is active, every type of input wait is handled automatically:
+The plugin supports fully automated operation for external agents like [OpenClaw](https://openclaw.ai/). Since v1.6.0, skills detect `.claude/auto-mode` directly and skip interactive prompts — no hook-level interception needed. Two hooks remain:
 
-| Input wait type | Hook | Behavior |
-|-----------------|------|----------|
-| Permission prompts | `PermissionRequest` | Auto-allows all tool permissions |
-| `AskUserQuestion` | `PreToolUse` | Blocks questions, steers Claude to proceed with defaults |
-| `EnterPlanMode` | `PreToolUse` | Blocks plan mode, Claude plans internally and proceeds |
-| Free-form waits | `Stop` | Forces continuation (with loop prevention) |
+| Hook | Type | Behavior |
+|------|------|----------|
+| Spec drift detection | `PostToolUse` | Checks file modifications against active specs |
+| Stop notification | `Stop` | Notifies Discord via OpenClaw when a session ends |
+
+The stop notification reads the Discord channel from the `OPENCLAW_DISCORD_CHANNEL` environment variable (set by OpenClaw before launching sessions). It only fires when both auto-mode and the env var are present.
 
 ### Enable / Disable
 
-All hooks are gated by a single flag file. Create it to enable, remove it to disable:
+Create the flag file to enable, remove it to disable:
 
 ```bash
 # Enable automation mode
@@ -166,7 +166,7 @@ mkdir -p .claude && touch .claude/auto-mode
 rm .claude/auto-mode
 ```
 
-When `.claude/auto-mode` does not exist, all hooks pass through silently and skills work interactively as normal.
+When `.claude/auto-mode` does not exist, skills work interactively as normal and the stop hook is a no-op.
 
 ### Default behaviors in automation mode
 
@@ -175,7 +175,8 @@ When `.claude/auto-mode` does not exist, all hooks pass through silently and ski
 - **Review gates**: auto-approves all phases (requirements, design, tasks)
 - **Draft approvals**: approves as-is
 - **Plan mode**: skipped — Claude designs the approach internally from specs
-- **Free-form input**: Claude is told to continue executing the current workflow
+
+OpenClaw is responsible for session lifecycle management (permissions, continuation, restarts).
 
 ### Safety net
 

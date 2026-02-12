@@ -10,19 +10,22 @@ You are automating development on the **chrome-cli** project located at `/Volume
 
 ## Setup
 
-Before starting any development cycles, enable automation mode in the target project:
+Before starting any development cycles, enable automation mode in the target project and set the Discord notification channel:
 
 ```
 mkdir -p /Volumes/Fast\ Brick/source/repos/chrome-cli/.claude && touch /Volumes/Fast\ Brick/source/repos/chrome-cli/.claude/auto-mode
+export OPENCLAW_DISCORD_CHANNEL=<channel-id>
 ```
 
-This activates the nmg-sdlc automation hooks which handle all interactive prompts automatically:
-- **Permission prompts** — auto-allowed (no manual acceptance needed)
-- **AskUserQuestion** — blocked; Claude proceeds with defaults (first option, first issue, auto-approve)
-- **Plan mode** — skipped; Claude plans internally from specs and proceeds
-- **Free-form input waits** — Claude is told to continue executing the current workflow
+OpenClaw should set `OPENCLAW_DISCORD_CHANNEL` in the environment before launching Claude Code sessions. This tells the stop notification hook where to send Discord messages when sessions end.
 
-You do NOT need to manually accept permissions, approve suggestions, or interact with Claude Code prompts. The hooks handle all of this.
+Automation mode activates skill-level detection (since v1.6.0) — skills detect `.claude/auto-mode` and skip interactive prompts directly:
+- **AskUserQuestion** — skipped; skills proceed with defaults (first option, first issue, auto-approve)
+- **Plan mode** — skipped; skills plan internally from specs and proceed
+- **Spec drift detection** — PostToolUse hook checks file modifications against active specs
+- **Stop notification** — Stop hook notifies Discord via OpenClaw when a session ends
+
+You do NOT need to manually approve suggestions or interact with Claude Code prompts. The skills handle this directly in auto-mode. OpenClaw is responsible for session lifecycle management (permissions, continuation, restarts).
 
 ## Important Lessons
 

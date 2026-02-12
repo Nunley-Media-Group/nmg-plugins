@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Discord stop notification hook (`on-stop.sh`) — notifies via OpenClaw when sessions end in automation mode; channel ID read from `OPENCLAW_DISCORD_CHANNEL` env var
+
+### Removed
+
+- `auto-continue.sh` Stop hook — OpenClaw manages session lifecycle directly
+- `auto-permission.sh` PermissionRequest hook — skills handle auto-mode detection directly
+- `auto-respond.sh` PreToolUse hook — skills skip AskUserQuestion in auto-mode (v1.6.0)
+- `auto-plan.sh` PreToolUse hook — skills skip EnterPlanMode in auto-mode (v1.6.0)
+
 ## [1.6.0] - 2026-02-12
 
 ### Added
