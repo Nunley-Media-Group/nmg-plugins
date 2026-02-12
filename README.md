@@ -150,9 +150,10 @@ The plugin supports fully automated operation for external agents like [OpenClaw
 | Hook | Type | Behavior |
 |------|------|----------|
 | Spec drift detection | `PostToolUse` | Checks file modifications against active specs |
+| Waiting notification | `Notification` | Notifies Discord via OpenClaw when CC is waiting for input (60s debounce) |
 | Stop notification | `Stop` | Notifies Discord via OpenClaw when a session ends |
 
-The stop notification reads the Discord channel from the `OPENCLAW_DISCORD_CHANNEL` environment variable (set by OpenClaw before launching sessions). It only fires when both auto-mode and the env var are present.
+Both notification hooks read the Discord channel from the `OPENCLAW_DISCORD_CHANNEL` environment variable (set by OpenClaw before launching sessions). They only fire when both auto-mode and the env var are present.
 
 ### Enable / Disable
 

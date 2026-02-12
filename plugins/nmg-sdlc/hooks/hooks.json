@@ -11,6 +11,16 @@
         ]
       }
     ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/on-notification.sh"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

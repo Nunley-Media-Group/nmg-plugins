@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Notification hook (`on-notification.sh`) — notifies Discord via OpenClaw when Claude Code is waiting for input in automation mode; 60-second debounce prevents notification spam
+
+### Changed
+
+- Extracted shared hook logic into `_lib.sh` — `claw_guard`, `gather_context`, `build_message`, `send_claw_message` functions used by both `on-stop.sh` and `on-notification.sh`
+- Refactored `on-stop.sh` to source `_lib.sh` instead of inlining all logic
+
 ## [1.7.1] - 2026-02-12
 
 ### Fixed
