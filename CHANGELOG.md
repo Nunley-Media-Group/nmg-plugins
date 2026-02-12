@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-02-12
+
+### Fixed
+
+- `on-stop.sh` — Background the `openclaw cron add` call with `nohup` + `&` to prevent the hook runner from killing the process before it completes (~5-10s plugin load time)
+
+## [1.7.0] - 2026-02-12
+
 ### Added
 
 - Discord stop notification hook (`on-stop.sh`) — notifies via OpenClaw when sessions end in automation mode; channel ID read from `OPENCLAW_DISCORD_CHANNEL` env var
