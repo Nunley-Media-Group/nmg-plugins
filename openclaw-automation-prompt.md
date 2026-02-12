@@ -10,14 +10,28 @@ You are automating development on the **chrome-cli** project located at `/Volume
 
 ## Setup
 
-Before starting any development cycles, enable automation mode in the target project and set the Discord notification channel:
+Before starting any development cycles, enable automation mode in the target project:
 
 ```
 mkdir -p /Volumes/Fast\ Brick/source/repos/chrome-cli/.claude && touch /Volumes/Fast\ Brick/source/repos/chrome-cli/.claude/auto-mode
-export OPENCLAW_DISCORD_CHANNEL=<channel-id>
 ```
 
-OpenClaw should set `OPENCLAW_DISCORD_CHANNEL` in the environment before launching Claude Code sessions. This tells the stop notification hook where to send Discord messages when sessions end.
+### Discord notification channel (CRITICAL)
+
+The on-stop hook requires `OPENCLAW_DISCORD_CHANNEL` to be set in the environment of every Claude Code session. If this variable is missing, the hook silently exits and **no Discord notifications are sent** when sessions end.
+
+**You MUST prefix every `claude` command with the env var.** Do NOT rely on a one-time `export` — it will not propagate to sessions launched via `exec` or in separate shell contexts.
+
+```bash
+# ✅ CORRECT — pass env var inline with every claude invocation
+OPENCLAW_DISCORD_CHANNEL=<channel-id> claude /starting-issues
+
+# ❌ WRONG — export in one shell does not reach exec'd sessions
+export OPENCLAW_DISCORD_CHANNEL=<channel-id>
+claude /starting-issues
+```
+
+Replace `<channel-id>` with the target Discord channel ID (e.g., `1471325490529697792`).
 
 Automation mode activates skill-level detection (since v1.6.0) — skills detect `.claude/auto-mode` and skip interactive prompts directly:
 - **AskUserQuestion** — skipped; skills proceed with defaults (first option, first issue, auto-approve)
@@ -66,6 +80,7 @@ If a Claude Code session crashes, times out, or is killed:
 - Check the working directory for any unstaged or uncommitted changes.
 - If uncommitted work exists, commit and push it before starting a new session.
 - Post: "🔄 Recovered [N] uncommitted files. Resuming from [last known phase]..."
+- **Relaunch Claude Code with `OPENCLAW_DISCORD_CHANNEL` set inline** (see Setup section).
 - Resume the workflow from the appropriate step.
 
 ## Context Management
@@ -73,6 +88,11 @@ If a Claude Code session crashes, times out, or is killed:
 Between each SDLC skill step, run `/clear` in the Claude Code session to reset context. This prevents context window exhaustion and ensures each skill starts fresh. After clearing, briefly re-orient Claude Code by stating the project path, current branch, and the next skill to run.
 
 ## Development Cycle
+
+**When launching or relaunching a Claude Code session, always pass the env var inline:**
+```bash
+cd /Volumes/Fast\ Brick/source/repos/chrome-cli && OPENCLAW_DISCORD_CHANNEL=<channel-id> claude
+```
 
 Repeat the following development cycle continuously:
 
