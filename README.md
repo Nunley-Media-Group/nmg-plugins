@@ -143,6 +143,48 @@ Creates a pull request with:
 - Test plan
 - `Closes #42` to auto-close the issue on merge
 
+## Automation Mode
+
+The plugin includes hooks that let external agents (e.g., [OpenClaw](https://openclaw.ai/)) drive the entire SDLC without human input. When automation mode is active, every type of input wait is handled automatically:
+
+| Input wait type | Hook | Behavior |
+|-----------------|------|----------|
+| Permission prompts | `PermissionRequest` | Auto-allows all tool permissions |
+| `AskUserQuestion` | `PreToolUse` | Blocks questions, steers Claude to proceed with defaults |
+| `EnterPlanMode` | `PreToolUse` | Blocks plan mode, Claude plans internally and proceeds |
+| Free-form waits | `Stop` | Forces continuation (with loop prevention) |
+
+### Enable / Disable
+
+All hooks are gated by a single flag file. Create it to enable, remove it to disable:
+
+```bash
+# Enable automation mode
+mkdir -p .claude && touch .claude/auto-mode
+
+# Disable automation mode
+rm .claude/auto-mode
+```
+
+When `.claude/auto-mode` does not exist, all hooks pass through silently and skills work interactively as normal.
+
+### Default behaviors in automation mode
+
+- **Issue selection**: picks the first issue in the milestone
+- **Confirmations**: answers yes
+- **Review gates**: auto-approves all phases (requirements, design, tasks)
+- **Draft approvals**: approves as-is
+- **Plan mode**: skipped — Claude designs the approach internally from specs
+- **Free-form input**: Claude is told to continue executing the current workflow
+
+### Safety net
+
+`/verifying-specs` runs fully autonomously (even outside automation mode) and validates the implementation against specs. It serves as the quality gate — catching deviations, running architecture review, and auto-fixing findings.
+
+### Example: OpenClaw automation prompt
+
+See [`openclaw-automation-prompt.md`](openclaw-automation-prompt.md) for a complete prompt you can give to an [OpenClaw](https://openclaw.ai/) agent to continuously develop issues end-to-end. It uses automation mode to drive the full SDLC cycle — start issue, write specs, implement, verify, create PR, monitor CI, merge — with Discord status updates at every step.
+
 ## Customization
 
 The plugin provides the **process**. Your project provides **specifics** via steering docs:
