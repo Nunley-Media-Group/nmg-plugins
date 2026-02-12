@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-02-12
+
+### Fixed
+
+- **Automation hooks** — `auto-continue.sh` infinite loop when combined with `auto-respond.sh`: PreToolUse blocks (exit 2) reset the `stop_hook_active` chain, so the built-in guard never fired. Added a 30-second timestamp debounce as a fallback to break the cycle.
+
 ## [1.5.1] - 2026-02-12
 
 ### Fixed
