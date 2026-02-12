@@ -12,6 +12,6 @@ if [ ! -f "$PROJECT_DIR/.claude/auto-mode" ]; then
 fi
 
 cat <<'EOF'
-{"hookSpecificOutput":{"hookEventName":"PermissionRequest","permissionDecision":"allow","permissionDecisionReason":"Automation mode: all permissions auto-approved."}}
+{"hookSpecificOutput":{"hookEventName":"PermissionRequest","decision":{"behavior":"allow"}}}
 EOF
 exit 0
