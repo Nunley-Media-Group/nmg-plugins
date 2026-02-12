@@ -83,9 +83,16 @@ If a Claude Code session crashes, times out, or is killed:
 - **Relaunch Claude Code with `OPENCLAW_DISCORD_CHANNEL` set inline** (see Setup section).
 - Resume the workflow from the appropriate step.
 
-## Context Management
+## Context Management (CRITICAL)
 
-Between each SDLC skill step, run `/clear` in the Claude Code session to reset context. This prevents context window exhaustion and ensures each skill starts fresh. After clearing, briefly re-orient Claude Code by stating the project path, current branch, and the next skill to run.
+**You MUST run `/clear` in the Claude Code session before EVERY skill invocation.** No exceptions. This prevents context window exhaustion and ensures each skill starts fresh.
+
+After every `/clear`, re-orient Claude Code with:
+```
+We are working on {{PROJECT_NAME}} at {{PROJECT_PATH}}. Current branch: [branch name]. Next step: [skill to run].
+```
+
+**If you skip `/clear` before a skill, the session WILL exhaust its context window and fail.** Treat `/clear` as a mandatory prerequisite to every `/slash-command` invocation — the same way `OPENCLAW_DISCORD_CHANNEL` must be set for every `claude` invocation.
 
 ## Development Cycle
 
@@ -102,30 +109,28 @@ Run `git checkout main && git pull` to ensure you're on the latest code.
 Post: "✅ On main, up to date. Running /starting-issues to select an issue..."
 
 ### 2. Start an issue
+Run `/clear`, then re-orient Claude Code (see Context Management).
 Run `/starting-issues` to select and begin work on an issue.
 Post: "📋 Issue selected: [issue title/number]. Branch created: [branch name]."
 
 > Automation mode auto-selects the first issue in the milestone.
 
 ### 3. Write specs
-Post: "🧹 Clearing context before spec writing..."
-Run `/clear` in the Claude Code session to reset context.
+Run `/clear`, then re-orient Claude Code (see Context Management).
 Post: "📝 Running /writing-specs for issue [number]..."
 Run `/writing-specs [#issue-number]` to create specifications.
 
 > Automation mode auto-approves all review gates (requirements, design, tasks).
 
 ### 4. Implement
-Post: "🧹 Clearing context before implementation..."
-Run `/clear` in the Claude Code session to reset context.
+Run `/clear`, then re-orient Claude Code (see Context Management).
 Post: "🏗️ Running /implementing-specs for issue [number]..."
 Run `/implementing-specs [#issue-number]` to implement the specifications.
 
 > Automation mode skips plan mode — Claude plans internally from specs and proceeds directly.
 
 ### 5. Verify
-Post: "🧹 Clearing context before verification..."
-Run `/clear` in the Claude Code session to reset context.
+Run `/clear`, then re-orient Claude Code (see Context Management).
 Post: "🔍 Implementation complete. Running /verifying-specs..."
 Run `/verifying-specs [#issue-number]`. Post the full results to Discord:
 - Post: "📊 Verification Results:\n[paste complete output from /verifying-specs]"
@@ -138,6 +143,7 @@ If any findings are reported:
 - Repeat until all specs pass, then post: "✅ All specs verified clean."
 
 ### 6. Commit and push
+Run `/clear`, then re-orient Claude Code (see Context Management).
 Post: "💾 Committing and pushing all changes..."
 Run `git add -A && git status` to verify what will be committed.
 Commit with a meaningful message and push to the remote branch.
@@ -145,11 +151,13 @@ Verify the push succeeded.
 Post: "✅ All changes committed and pushed to [branch name]. [N] files changed."
 
 ### 7. Create PR
+Run `/clear`, then re-orient Claude Code (see Context Management).
 Post: "📦 Creating pull request. Running /creating-prs..."
 Run `/creating-prs`.
 Post: "🔗 PR created: [PR link/number]"
 
 ### 8. Monitor CI
+Run `/clear`, then re-orient Claude Code (see Context Management).
 Post: "⏳ Monitoring CI pipeline for PR [number]..."
 Actively poll CI status — do NOT wait for the user to report failures.
 If CI fails:
