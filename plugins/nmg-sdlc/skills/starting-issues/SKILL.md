@@ -17,6 +17,12 @@ Select a GitHub issue to work on, create a linked feature branch, and set the is
 - Picking up the next issue from your milestone
 - Setting up a feature branch linked to an issue before writing specs or implementing
 
+## Automation Mode
+
+If the file `.claude/auto-mode` exists in the project directory:
+- If an issue number was provided as an argument, skip Steps 2–3 (selection and confirmation) — go directly to Step 4.
+- If no issue number was provided, select the first available issue from the current milestone (or all open issues if no milestone exists) without calling `AskUserQuestion`. Skip Step 3 confirmation.
+
 ## Workflow Overview
 
 ```

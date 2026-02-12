@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-02-12
+
+### Added
+
+- **Automation Mode awareness in skills** — Skills now detect `.claude/auto-mode` and skip `AskUserQuestion` calls entirely, fixing the infinite retry loop caused by `exit 2` PreToolUse blocks. Previous hook-level fixes (1.5.1–1.5.3) couldn't solve this because Claude interprets a blocked tool as "I need this but couldn't get it" and retries — the block message is never treated as a tool response. Skills updated:
+  - **`/writing-specs`** — All 3 Human Review Gates skipped in automation mode
+  - **`/starting-issues`** — Issue selection and confirmation skipped when issue number provided
+  - **`/creating-issues`** — Interview and review steps skipped; uses argument as feature description
+  - **`/implementing-specs`** — Plan mode and approval gates skipped
+
 ## [1.5.3] - 2026-02-12
 
 ### Fixed

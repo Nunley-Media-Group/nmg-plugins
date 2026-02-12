@@ -26,6 +26,10 @@ Create BDD specifications from a GitHub issue through three phases: requirements
 - When starting implementation of an existing issue
 - When requirements need to be formalized before coding
 
+## Automation Mode
+
+If the file `.claude/auto-mode` exists in the project directory, all Human Review Gates in this workflow are **pre-approved**. Do NOT call `AskUserQuestion` at any gate — proceed directly from each phase to the next without stopping for user input.
+
 ## Workflow Overview
 
 ```

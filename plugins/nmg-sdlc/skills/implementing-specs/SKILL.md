@@ -17,6 +17,12 @@ Read the specifications for the current branch's issue, enter plan mode to desig
 - When ready to begin coding a specified feature
 - To resume implementation of a partially completed spec
 
+## Automation Mode
+
+If the file `.claude/auto-mode` exists in the project directory:
+- Skip `EnterPlanMode` (Step 4) — design the implementation approach internally based on the specs, then proceed directly to executing tasks.
+- All approval gates are pre-approved. Do NOT call `AskUserQuestion` — proceed without stopping for user input.
+
 ## Prerequisites
 
 1. Specs exist at `.claude/specs/{feature-name}/` (created by `/writing-specs`)

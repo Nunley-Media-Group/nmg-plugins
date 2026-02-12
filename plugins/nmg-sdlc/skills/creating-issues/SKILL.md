@@ -17,6 +17,12 @@ Interview the user to understand their need, then create a well-groomed GitHub i
 - The user has an idea but hasn't formalized it yet
 - You need a trackable GitHub issue before writing specs
 
+## Automation Mode
+
+If the file `.claude/auto-mode` exists in the project directory:
+- Skip the interview (Step 2) — use the provided argument as the feature description and infer requirements from context.
+- Skip the review (Step 4) — do not call `AskUserQuestion`. Proceed directly to creating the issue.
+
 ## Workflow
 
 ### Step 1: Gather Context
