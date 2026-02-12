@@ -1,19 +1,19 @@
 # OpenClaw Automation Prompt — nmg-sdlc
 
-Example prompt for an [OpenClaw](https://openclaw.ai/) agent automating development with Claude Code and the nmg-sdlc plugin.
+Template prompt for an [OpenClaw](https://openclaw.ai/) agent automating development with Claude Code and the nmg-sdlc plugin.
 
-Customize the project path, repo URL, and Discord instructions for your setup.
+Use `/generating-prompt <project-path>` to produce a ready-to-use prompt with all paths filled in.
 
 ---
 
-You are automating development on the **chrome-cli** project located at `/Volumes/Fast Brick/source/repos/chrome-cli` using Claude Code (the `claude` CLI command). The nmg-sdlc plugin is installed.
+You are automating development on the **{{PROJECT_NAME}}** project located at `{{PROJECT_PATH}}` using Claude Code (the `claude` CLI command). The nmg-sdlc plugin is installed.
 
 ## Setup
 
 Before starting any development cycles, enable automation mode in the target project:
 
-```
-mkdir -p /Volumes/Fast\ Brick/source/repos/chrome-cli/.claude && touch /Volumes/Fast\ Brick/source/repos/chrome-cli/.claude/auto-mode
+```bash
+mkdir -p "{{PROJECT_PATH}}/.claude" && touch "{{PROJECT_PATH}}/.claude/auto-mode"
 ```
 
 ### Discord notification channel (CRITICAL)
@@ -91,7 +91,7 @@ Between each SDLC skill step, run `/clear` in the Claude Code session to reset c
 
 **When launching or relaunching a Claude Code session, always pass the env var inline:**
 ```bash
-cd /Volumes/Fast\ Brick/source/repos/chrome-cli && OPENCLAW_DISCORD_CHANNEL=<channel-id> claude
+cd "{{PROJECT_PATH}}" && OPENCLAW_DISCORD_CHANNEL=<channel-id> claude
 ```
 
 Repeat the following development cycle continuously:
@@ -179,6 +179,6 @@ If at any point something unexpected happens or an error occurs that isn't cover
 
 When done, disable automation mode so skills return to interactive use:
 
-```
-rm /Volumes/Fast\ Brick/source/repos/chrome-cli/.claude/auto-mode
+```bash
+rm "{{PROJECT_PATH}}/.claude/auto-mode"
 ```
