@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-02-12
+
+### Fixed
+
+- **Automation hooks** — `auto-permission.sh` was using the PreToolUse output format (`permissionDecision`) instead of the PermissionRequest format (`decision.behavior`), so auto-mode never actually approved permissions
+
 ## [1.5.0] - 2026-02-11
 
 ### Added
