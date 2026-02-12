@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.3] - 2026-02-12
+
+### Fixed
+
+- **Automation hooks** — `auto-respond.sh` AskUserQuestion retry loop: skills instruct Claude "do not proceed until the user approves" while the hook says "don't ask questions," creating a conflict that causes infinite retries. Now parses the actual questions from tool input, echoes them back with explicit "APPROVED" answers, and states "this block IS the user's approval." Includes debounce counter that escalates the message on rapid consecutive blocks.
+
 ## [1.5.2] - 2026-02-12
 
 ### Fixed
