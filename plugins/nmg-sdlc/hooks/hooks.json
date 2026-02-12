@@ -1,5 +1,35 @@
 {
   "hooks": {
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/auto-permission.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/auto-respond.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "EnterPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/auto-plan.sh"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
@@ -7,6 +37,16 @@
           {
             "type": "prompt",
             "prompt": "A file was modified. Check $ARGUMENTS for details. If a spec exists at .claude/specs/ for the current feature, check whether the change aligns with the spec. Respond with JSON: {\"ok\": true, \"reason\": \"...\"} where ok is false only if the change clearly deviates from the spec. If no spec exists, respond with {\"ok\": true, \"reason\": \"no spec found\"}."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/auto-continue.sh"
           }
         ]
       }

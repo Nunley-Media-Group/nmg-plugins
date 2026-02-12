@@ -7,6 +7,11 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **`/starting-issues`** — New standalone skill: select a GitHub issue, create linked feature branch, set issue to In Progress
+- **Automation hooks** — Four new hooks that let external agents (e.g., OpenClaw) drive the SDLC without human input, gated by a `.claude/auto-mode` flag file:
+  - `PermissionRequest` → auto-allows all tool permissions
+  - `PreToolUse` on `AskUserQuestion` → blocks questions and steers Claude to proceed with defaults
+  - `PreToolUse` on `EnterPlanMode` → blocks plan mode and instructs Claude to plan internally
+  - `Stop` → forces continuation when Claude would wait for free-form input (with loop prevention)
 
 ### Changed
 
