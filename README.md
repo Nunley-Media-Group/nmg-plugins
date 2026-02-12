@@ -10,15 +10,20 @@ Stack-agnostic BDD spec-driven development toolkit. Provides a GitHub issue-driv
 
 ```
 Quick Start:
-/beginning-dev  →  (picks issue)  →  /writing-specs #N  →  /implementing-specs #N
-                                      ▲ runs automatically   ▲ runs automatically
+/beginning-dev  →  /starting-issues  →  /writing-specs #N  →  /implementing-specs #N
+                    ▲ runs automatically
+
+Standalone Issue Start:
+/starting-issues #42  →  /writing-specs #42  →  /implementing-specs #42
+(select issue,           (run manually)          (run manually)
+ create branch)
 
 Full Workflow:
-Step 1               Step 2                  Step 3                     Step 4                    Step 5
-/creating-issues  →  /writing-specs #42  →  /implementing-specs #42  →  /verifying-specs #42  →  /creating-prs #42
-Interview user,      Read issue, create      Read specs, enter plan     Verify implementation,    Create PR with
-create groomed       specs (requirements/    mode, create plan,         review architecture,      summary referencing
-GitHub issue         design/tasks)           then execute               update issue              specs and issue
+Step 1               Step 2                   Step 3                  Step 4                     Step 5                    Step 6
+/creating-issues  →  /starting-issues #42  →  /writing-specs #42  →  /implementing-specs #42  →  /verifying-specs #42  →  /creating-prs #42
+Interview user,      Select issue, create     Read issue, create      Read specs, enter plan     Verify implementation,    Create PR with
+create groomed       linked branch, set       specs (requirements/    mode, create plan,         review architecture,      summary referencing
+GitHub issue         status to In Progress    design/tasks)           then execute               update issue              specs and issue
 ```
 
 ## Installation
@@ -69,11 +74,19 @@ Review and customize these documents — they provide project-specific context f
 /beginning-dev
 ```
 
-The fastest way to start working. Presents open issues from your current milestone, lets you pick one, creates a linked feature branch, sets the issue to "In Progress" in any associated GitHub Project, then automatically chains through `/writing-specs` and `/implementing-specs`. You can also pass an issue number directly:
+The fastest way to start working. Delegates to `/starting-issues` to present open issues from your current milestone, lets you pick one, creates a linked feature branch, and sets the issue to "In Progress" — then automatically chains through `/writing-specs` and `/implementing-specs`. You can also pass an issue number directly:
 
 ```bash
 /beginning-dev #42
 ```
+
+### Standalone: Start an Issue
+
+```bash
+/starting-issues #42
+```
+
+If you already have an issue and just need to set up a branch, use this directly. It selects an issue (or presents a picker if no number is given), creates a linked feature branch via `gh issue develop`, and sets the issue to "In Progress" in any associated GitHub Project.
 
 ### Step 1: Create an Issue
 
@@ -149,6 +162,7 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | Skill | Description |
 |-------|-------------|
 | `/beginning-dev [#N]` | Pick a GitHub issue, create feature branch, then chain through writing-specs and implementing-specs |
+| `/starting-issues [#N]` | Select a GitHub issue, create linked feature branch, set issue to In Progress |
 | `/creating-issues [description]` | Interview user about a feature need, create groomed GitHub issue with BDD acceptance criteria |
 | `/writing-specs #N` | Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown |
 | `/implementing-specs #N` | Read specs, enter plan mode, then execute implementation tasks sequentially |

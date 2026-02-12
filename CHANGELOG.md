@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`/starting-issues`** — New standalone skill: select a GitHub issue, create linked feature branch, set issue to In Progress
+
+### Changed
+
+- **`/beginning-dev`** — Now delegates issue selection and branch setup to `/starting-issues` instead of handling inline
+
 ## [1.3.1] - 2026-02-11
 
 ### Changed
