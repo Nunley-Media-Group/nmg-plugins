@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-02-11
+
 ### Added
 
 - **`/starting-issues`** — New standalone skill: select a GitHub issue, create linked feature branch, set issue to In Progress
@@ -12,10 +14,12 @@ All notable changes to this project will be documented in this file.
   - `PreToolUse` on `AskUserQuestion` → blocks questions and steers Claude to proceed with defaults
   - `PreToolUse` on `EnterPlanMode` → blocks plan mode and instructs Claude to plan internally
   - `Stop` → forces continuation when Claude would wait for free-form input (with loop prevention)
+- **OpenClaw automation prompt** — Example prompt for driving the full SDLC cycle with an OpenClaw agent (`openclaw-automation-prompt.md`)
 
 ### Changed
 
 - **`/beginning-dev`** — Now delegates issue selection and branch setup to `/starting-issues` instead of handling inline
+- **README** — Added Automation Mode section documenting hooks, enable/disable, default behaviors, and OpenClaw example
 
 ## [1.3.1] - 2026-02-11
 
