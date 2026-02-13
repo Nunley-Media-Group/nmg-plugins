@@ -10,8 +10,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Rewrote OpenClaw automation prompt to use headless `claude -p` per-step sessions instead of interactive sessions with PTY input submission
+- Added `{{NMG_PLUGINS_PATH}}` template token to `/generating-prompt`
 - All skills with "Next step" output — suppressed in auto-mode to prevent unintended skill chaining
-- OpenClaw automation prompt — explicit warning against using `/beginning-dev` in automation
 
 ## [1.8.1] - 2026-02-12
 

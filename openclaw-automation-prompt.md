@@ -6,7 +6,7 @@ Use `/generating-prompt <project-path>` to produce a ready-to-use prompt with al
 
 ---
 
-You are automating development on the **{{PROJECT_NAME}}** project located at `{{PROJECT_PATH}}` using Claude Code (the `claude` CLI command). The nmg-sdlc plugin is installed.
+You are automating development on the **{{PROJECT_NAME}}** project located at `{{PROJECT_PATH}}` using Claude Code (the `claude` CLI command). The nmg-sdlc plugin is installed at `{{NMG_PLUGINS_PATH}}`.
 
 ## Setup
 
@@ -20,169 +20,267 @@ mkdir -p "{{PROJECT_PATH}}/.claude" && touch "{{PROJECT_PATH}}/.claude/auto-mode
 
 The on-stop hook requires `OPENCLAW_DISCORD_CHANNEL` to be set in the environment of every Claude Code session. If this variable is missing, the hook silently exits and **no Discord notifications are sent** when sessions end.
 
-**You MUST prefix every `claude` command with the env var.** Do NOT rely on a one-time `export` — it will not propagate to sessions launched via `exec` or in separate shell contexts.
-
-```bash
-# ✅ CORRECT — pass env var inline with every claude invocation
-OPENCLAW_DISCORD_CHANNEL=<channel-id> claude /starting-issues
-
-# ❌ WRONG — export in one shell does not reach exec'd sessions
-export OPENCLAW_DISCORD_CHANNEL=<channel-id>
-claude /starting-issues
-```
+**You MUST pass the env var inline with every `claude` invocation.** Do NOT rely on a one-time `export` — it will not propagate to sessions launched via `exec`.
 
 Replace `<channel-id>` with the target Discord channel ID (e.g., `1234567890123456789`).
 
-Automation mode activates skill-level detection (since v1.6.0) — skills detect `.claude/auto-mode` and skip interactive prompts directly:
-- **AskUserQuestion** — skipped; skills proceed with defaults (first option, first issue, auto-approve)
-- **Plan mode** — skipped; skills plan internally from specs and proceed
-- **Spec drift detection** — PostToolUse hook checks file modifications against active specs
-- **Stop notification** — Stop hook notifies Discord via OpenClaw when a session ends
+## Session Model
 
-You do NOT need to manually approve suggestions or interact with Claude Code prompts. The skills handle this directly in auto-mode. OpenClaw is responsible for session lifecycle management (permissions, continuation, restarts).
+Each SDLC step runs as a **separate headless `claude -p` subprocess** — not as commands typed into a long-lived interactive session. This eliminates input submission failures (PTY timing issues where `\r` doesn't register) and ensures each step starts with a clean context window.
+
+**How it works:**
+1. OpenClaw launches `claude -p '<task>'` as a background subprocess via `exec`
+2. The subprocess runs the task to completion and exits
+3. OpenClaw detects the exit via heartbeat polling and launches the next step
+4. Process exit = step complete. No input submission, no ambiguity.
+
+**Why not an interactive session with send-keys?** Both direct PTY input (`process action:submit`) and tmux (`send-keys`) require text and Enter to be sent separately with timing delays. If timing is off, the command is typed but never submitted — the session sits idle. `claude -p` eliminates input submission entirely: the task is a CLI argument.
+
+**Skill injection:** Skills are injected via `--append-system-prompt` with the SKILL.md content. The model follows skill instructions as if it were running the skill natively:
+
+```bash
+bash pty:true workdir:{{PROJECT_PATH}} background:true \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+    '<task description>' \
+    --append-system-prompt \"$(cat '{{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/<skill-name>/SKILL.md')\" \
+    --dangerously-skip-permissions \
+    --output-format json \
+    --max-turns <limit>"
+```
+
+- **`--dangerously-skip-permissions`**: No human is present in automation.
+- **`--append-system-prompt`**: Injects the SKILL.md into the model's system prompt.
+- **`--output-format json`**: Enables OpenClaw to parse step results programmatically.
+- **`--max-turns <limit>`**: Caps the number of agentic turns per step (see Development Cycle for per-step limits).
+- **`pty:true`**: Required because Claude Code expects a PTY even in print mode.
+
+**Skill-relative file references:** SKILL.md files reference checklists and templates via relative paths. The task prompt tells the model the skill root directory so it can resolve them:
+
+> Skill instructions are appended to your system prompt. Resolve relative file references from `{{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/<skill-name>/`.
+
+**`auto-mode` file still needed:** Skills check `.claude/auto-mode` to skip `AskUserQuestion` and `EnterPlanMode`. Even in `-p` mode, auto-mode tells skills to use defaults and suppress chaining prompts.
 
 ## Important Lessons
 
-- Always use the `claude` CLI command to interact with Claude Code. Do not try to run commands directly.
+- Always use the `claude` CLI command via OpenClaw's `exec` tool. Do not try to run project commands directly — Claude Code manages tool execution.
 - Claude Code sessions can crash or timeout (signal 9, LLM timeouts). If a session dies, check for uncommitted work in the working directory and recover it before starting a new session.
-- Always commit and push ALL changes before running `/creating-prs`. Never leave work as unstaged changes.
+- Always commit and push ALL changes before running the creating-prs step. Never leave work as unstaged changes.
 - Proactively monitor CI — do NOT wait for the user to tell you CI failed. Check CI status automatically and fix failures immediately.
-- **Never use `/beginning-dev` in automation.** It chains multiple skills within a single session. Always run each skill individually (`/starting-issues`, `/writing-specs`, `/implementing-specs`, etc.) with `/clear` between them.
-- DO NOT prematurely kill Claude Code sessions. Claude Code displays decorative verbs (e.g., "Enchanting...", "Noodling...", "Catapulting...") — these are normal and do NOT indicate hanging. To determine if a session is actually working, look for the time counter and token counter (e.g., "(30s · ↓ 1.4k tokens)") on the thinking/working line. If the time is counting up, the model is actively working. Reading 40+ files and taking 20-30+ minutes for spec writing is NORMAL for a codebase of this size. Only consider a session stuck if the time counter stops increasing for 5+ minutes.
+- **No slash commands in `-p` mode.** Slash commands are interactive-only. In headless mode, describe the task in the `-p` prompt and inject skill instructions via `--append-system-prompt`.
+- **No `/beginning-dev` in automation.** Each skill must run as a separate subprocess. The orchestrator (you) controls step sequencing.
+- **No `/clear` needed.** Each `claude -p` subprocess starts with a fresh context window. Context management is automatic.
 
 ## Status Updates
 
-Post a status update to this Discord channel at EVERY step transition. Never go silent — the user should always know what you're doing, what just happened, and what's coming next.
+Post a status update to Discord at EVERY step transition. Never go silent — the user should always know what you're doing, what just happened, and what's coming next.
 
 ## Monitoring
 
-Configure heartbeat polling (`agents.defaults.heartbeat` with `every: 30`) to check Claude Code session progress every 30 seconds. Verify the heartbeat is actually firing after configuration — do not assume it works. Maintain a state tracking file to detect phase changes and stalls. Post to Discord when phases change or meaningful progress occurs. When checking for active Claude Code sessions, use multiple detection methods — session names change, so don't hardcode them.
+### Primary: Heartbeat-driven polling
 
-If there has been no update or progress for 5 minutes, post: "🚨 STALL DETECTED — No progress in 5 minutes. Last known state: [describe what was happening]. Waiting for guidance." Then wait for the user's response before continuing.
+Configure heartbeat at 30-second intervals (`agents.defaults.heartbeat.every: 30`). The heartbeat drives the entire orchestration loop:
 
-### Heartbeat Priority Order (every 30 seconds)
+```
+1. Agent launches "claude -p ..." as background subprocess → gets sessionId → posts Discord status → turn ends
+2. Heartbeat fires (30s) → agent runs "process action:poll sessionId:XXX"
+   - Still running, output growing → HEARTBEAT_OK (suppress)
+   - Still running, output stale 5+ min → kill process, post stall alert, retry step
+   - Exited, exit code 0 → parse results, post Discord, launch next step
+   - Exited, exit code != 0 → post failure alert, check for uncommitted work, retry or escalate
+3. Repeat until all steps complete
+```
 
-1. Check session health — is the time counter still counting up?
-2. Check phase transitions — has the session moved to a new phase?
-3. Check for stalls — has progress stopped for 5+ minutes?
+The agent does NOT actively loop or sleep — it launches the subprocess, ends its turn, and the heartbeat system drives subsequent checks. Each heartbeat is a brief, cheap agent turn.
 
-### Stall Detection
+### Heartbeat behavior by subprocess state
 
-A session is only stalled if the Claude Code time counter stops counting up for 5+ minutes. Do NOT treat the following as stalls:
-- Decorative verb changes (Enchanting, Noodling, Catapulting, etc.)
-- Long file reading phases (40+ files is normal)
-- Extended spec writing or planning (20-30+ minutes is normal)
-- Active token counters increasing, even slowly
+| Subprocess state | Heartbeat action |
+|-----------------|-----------------|
+| Running, output growing | Post progress update if phase changed, else HEARTBEAT_OK |
+| Running, output stale 5+ min | Kill process, post stall alert, retry step |
+| Exited, exit code 0 | Parse results, post Discord, launch next step |
+| Exited, exit code != 0 | Post failure alert, check for uncommitted work, retry or escalate |
+| No subprocess running | Launch next step (or report "all done") |
+
+### Safety net: 5-minute cron watchdog
+
+A separate **isolated** cron job (`--session isolated`) runs every 5 minutes as a simple watchdog. It does not share context with the main agent.
+
+```bash
+openclaw cron add --every "5m" --session isolated --name "cc-watchdog" \
+  --message "Check for stalled Claude Code subprocesses. Use 'process action:list' to find running sessions. For each, check 'process action:log' output length. If output hasn't grown since last check, the process is stalled — kill it and post an alert."
+```
 
 ## Error Recovery
 
-If a Claude Code session crashes, times out, or is killed:
-- Post: "💀 Session [name] died. Reason: [signal/timeout/error]. Checking for uncommitted work..."
-- Check the working directory for any unstaged or uncommitted changes.
-- If uncommitted work exists, commit and push it before starting a new session.
-- Post: "🔄 Recovered [N] uncommitted files. Resuming from [last known phase]..."
-- **Relaunch Claude Code with `OPENCLAW_DISCORD_CHANNEL` set inline** (see Setup section).
-- Resume the workflow from the appropriate step.
+If a Claude Code subprocess crashes, times out, or exits non-zero:
 
-## Context Management (CRITICAL)
-
-**You MUST run `/clear` in the Claude Code session before EVERY skill invocation.** No exceptions. This prevents context window exhaustion and ensures each skill starts fresh.
-
-After every `/clear`, re-orient Claude Code with:
-```
-We are working on {{PROJECT_NAME}} at {{PROJECT_PATH}}. Current branch: [branch name]. Next step: [skill to run].
-```
-
-**If you skip `/clear` before a skill, the session WILL exhaust its context window and fail.** Treat `/clear` as a mandatory prerequisite to every `/slash-command` invocation — the same way `OPENCLAW_DISCORD_CHANNEL` must be set for every `claude` invocation.
+1. Post: "Session died. Reason: [signal/timeout/error]. Checking for uncommitted work..."
+2. Check the working directory for any unstaged or uncommitted changes.
+3. If uncommitted work exists, commit and push it before starting a new session.
+4. Post: "Recovered [N] uncommitted files. Retrying [step name]..."
+5. **Relaunch the step** with `OPENCLAW_DISCORD_CHANNEL` set inline (see Setup section).
+6. If the same step fails twice, escalate: post an alert and wait for guidance.
 
 ## Development Cycle
 
-**When launching or relaunching a Claude Code session, always pass the env var inline:**
-```bash
-cd "{{PROJECT_PATH}}" && OPENCLAW_DISCORD_CHANNEL=<channel-id> claude
-```
-
-Repeat the following development cycle continuously:
+Repeat the following development cycle continuously. Each skill-based step launches a new `claude -p` subprocess. Non-skill steps (commit/push, merge) use plain `claude -p` with a task description.
 
 ### 1. Start cycle
-Post: "🔄 Starting new development cycle. Checking out main and pulling latest..."
-Run `git checkout main && git pull` to ensure you're on the latest code.
-Post: "✅ On main, up to date. Running /starting-issues to select an issue..."
 
-### 2. Start an issue
-Run `/clear`, then re-orient Claude Code (see Context Management).
-Run `/starting-issues` to select and begin work on an issue.
-Post: "📋 Issue selected: [issue title/number]. Branch created: [branch name]."
+Post: "Starting new development cycle. Checking out main and pulling latest..."
 
-> Automation mode auto-selects the first issue in the milestone.
+```bash
+bash pty:true workdir:{{PROJECT_PATH}} background:true \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+    'Check out main and pull latest. Run: git checkout main && git pull. Report the current branch and latest commit.' \
+    --dangerously-skip-permissions \
+    --output-format json \
+    --max-turns 5"
+```
 
-### 3. Write specs
-Run `/clear`, then re-orient Claude Code (see Context Management).
-Post: "📝 Running /writing-specs for issue [number]..."
-Run `/writing-specs [#issue-number]` to create specifications.
+Post: "On main, up to date. Selecting an issue..."
 
-> Automation mode auto-approves all review gates (requirements, design, tasks).
+### 2. Start an issue (max-turns: 15)
 
-### 4. Implement
-Run `/clear`, then re-orient Claude Code (see Context Management).
-Post: "🏗️ Running /implementing-specs for issue [number]..."
-Run `/implementing-specs [#issue-number]` to implement the specifications.
+```bash
+bash pty:true workdir:{{PROJECT_PATH}} background:true \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+    'Select and start the next GitHub issue from the current milestone. Create a linked feature branch and set the issue to In Progress. \
+     Skill instructions are appended to your system prompt. \
+     Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/starting-issues/.' \
+    --append-system-prompt \"$(cat '{{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/starting-issues/SKILL.md')\" \
+    --dangerously-skip-permissions \
+    --output-format json \
+    --max-turns 15"
+```
 
-> Automation mode skips plan mode — Claude plans internally from specs and proceeds directly.
+Post: "Issue selected: [issue title/number]. Branch created: [branch name]."
 
-### 5. Verify
-Run `/clear`, then re-orient Claude Code (see Context Management).
-Post: "🔍 Implementation complete. Running /verifying-specs..."
-Run `/verifying-specs [#issue-number]`. Post the full results to Discord:
-- Post: "📊 Verification Results:\n[paste complete output from /verifying-specs]"
+### 3. Write specs (max-turns: 40)
 
-If any findings are reported:
-- Post: "🐛 Verification found [N] issue(s). Asking Claude Code to fix: [brief summary]"
-- Ask Claude Code to fix them.
-- Post: "🔍 Re-running /verifying-specs..."
-- Post the full results again: "📊 Re-verification Results:\n[paste complete output]"
-- Repeat until all specs pass, then post: "✅ All specs verified clean."
+```bash
+bash pty:true workdir:{{PROJECT_PATH}} background:true \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+    'Write BDD specifications for issue #<number> on branch <branch>. \
+     Skill instructions are appended to your system prompt. \
+     Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/writing-specs/.' \
+    --append-system-prompt \"$(cat '{{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/writing-specs/SKILL.md')\" \
+    --dangerously-skip-permissions \
+    --output-format json \
+    --max-turns 40"
+```
 
-### 6. Commit and push
-Run `/clear`, then re-orient Claude Code (see Context Management).
-Post: "💾 Committing and pushing all changes..."
-Run `git add -A && git status` to verify what will be committed.
-Commit with a meaningful message and push to the remote branch.
-Verify the push succeeded.
-Post: "✅ All changes committed and pushed to [branch name]. [N] files changed."
+Post: "Specs written for issue [number]."
 
-### 7. Create PR
-Run `/clear`, then re-orient Claude Code (see Context Management).
-Post: "📦 Creating pull request. Running /creating-prs..."
-Run `/creating-prs`.
-Post: "🔗 PR created: [PR link/number]"
+### 4. Implement (max-turns: 100)
 
-### 8. Monitor CI
-Run `/clear`, then re-orient Claude Code (see Context Management).
-Post: "⏳ Monitoring CI pipeline for PR [number]..."
-Actively poll CI status — do NOT wait for the user to report failures.
-If CI fails:
-- Post: "❌ CI failed. Failure reason: [summary]. Fixing locally..."
-- Fix the issue locally (e.g., run `cargo fmt`, fix clippy warnings, fix failing tests).
-- Verify the fix locally before committing.
-- Commit and push the fix.
-- Post: "🔄 Fix pushed (commit [hash]). Waiting for CI re-run..."
-- Repeat until CI passes.
+```bash
+bash pty:true workdir:{{PROJECT_PATH}} background:true \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+    'Implement the specifications for issue #<number> on branch <branch>. \
+     Skill instructions are appended to your system prompt. \
+     Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/implementing-specs/.' \
+    --append-system-prompt \"$(cat '{{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/implementing-specs/SKILL.md')\" \
+    --dangerously-skip-permissions \
+    --output-format json \
+    --max-turns 100"
+```
 
-Post: "✅ CI passed for PR [number]."
+Post: "Implementation complete for issue [number]."
 
-### 9. Merge
-Post: "🔀 Merging PR [number] to main and deleting remote branch..."
-Merge the PR to main and delete the remote branch.
-Post: "✅ PR [number] merged. Branch cleaned up. Issue [title/number] complete."
+### 5. Verify (max-turns: 60)
+
+```bash
+bash pty:true workdir:{{PROJECT_PATH}} background:true \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+    'Verify the implementation for issue #<number> on branch <branch>. Fix any findings. \
+     Skill instructions are appended to your system prompt. \
+     Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/verifying-specs/.' \
+    --append-system-prompt \"$(cat '{{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/verifying-specs/SKILL.md')\" \
+    --dangerously-skip-permissions \
+    --output-format json \
+    --max-turns 60"
+```
+
+Post verification results to Discord. If findings remain after the first pass, retry the verify step (up to 2 retries). Post: "All specs verified clean."
+
+### 6. Commit and push (max-turns: 10)
+
+```bash
+bash pty:true workdir:{{PROJECT_PATH}} background:true \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+    'Stage all changes, commit with a meaningful conventional-commit message summarizing the work for issue #<number>, and push to the remote branch <branch>. Verify the push succeeded.' \
+    --dangerously-skip-permissions \
+    --output-format json \
+    --max-turns 10"
+```
+
+Post: "All changes committed and pushed to [branch name]. [N] files changed."
+
+### 7. Create PR (max-turns: 15)
+
+```bash
+bash pty:true workdir:{{PROJECT_PATH}} background:true \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+    'Create a pull request for branch <branch> targeting main for issue #<number>. \
+     Skill instructions are appended to your system prompt. \
+     Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/creating-prs/.' \
+    --append-system-prompt \"$(cat '{{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/creating-prs/SKILL.md')\" \
+    --dangerously-skip-permissions \
+    --output-format json \
+    --max-turns 15"
+```
+
+Post: "PR created: [PR link/number]"
+
+### 8. Monitor CI (max-turns: 20)
+
+```bash
+bash pty:true workdir:{{PROJECT_PATH}} background:true \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+    'Monitor CI status for PR #<pr-number>. Poll until CI completes. If CI fails, diagnose the failure, fix it locally, verify the fix, commit and push. Repeat until CI passes. Report the final CI status.' \
+    --dangerously-skip-permissions \
+    --output-format json \
+    --max-turns 20"
+```
+
+Post: "CI passed for PR [number]." or "CI failed — [summary]. Fixing..."
+
+### 9. Merge (max-turns: 5)
+
+```bash
+bash pty:true workdir:{{PROJECT_PATH}} background:true \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+    'Merge PR #<pr-number> to main and delete the remote branch <branch>.' \
+    --dangerously-skip-permissions \
+    --output-format json \
+    --max-turns 5"
+```
+
+Post: "PR [number] merged. Branch cleaned up. Issue [title/number] complete."
 
 ### 10. Loop
-Post: "🔁 Cycle complete. Starting next issue..."
+
+Post: "Cycle complete. Starting next issue..."
 Return to step 1 and begin the next issue.
 
-Continue this loop until there are no more issues (post: "🏁 No more issues. All done!") or the user tells you to stop.
+Continue this loop until there are no more issues (post: "No more issues. All done!") or the user tells you to stop.
 
-If at any point something unexpected happens or an error occurs that isn't covered above, post: "🚨 UNEXPECTED: [description of what happened]" and wait for guidance.
+If at any point something unexpected happens or an error occurs that isn't covered above, post a description of what happened and wait for guidance.
+
+### Step reference
+
+| Step | Skill file | Max Turns | Notes |
+|------|-----------|-----------|-------|
+| Start issue | starting-issues/SKILL.md | 15 | Auto-selects first issue in milestone |
+| Write specs | writing-specs/SKILL.md | 40 | Reads many files, 3-phase spec creation |
+| Implement | implementing-specs/SKILL.md | 100 | Longest step |
+| Verify | verifying-specs/SKILL.md | 60 | Reads specs + checklists, fixes code |
+| Commit/push | *(none)* | 10 | Plain `claude -p` with git commands |
+| Create PR | creating-prs/SKILL.md | 15 | |
+| Monitor CI | *(none)* | 20 | Poll + fix loop |
+| Merge | *(none)* | 5 | Simple merge |
 
 ## Disabling Automation Mode
 

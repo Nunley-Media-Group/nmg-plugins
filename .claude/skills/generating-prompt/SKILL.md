@@ -29,6 +29,7 @@ If no argument is provided, ask the user for the project path before proceeding.
 3. **Substitute tokens** — replace all occurrences of:
    - `{{PROJECT_PATH}}` → the provided absolute path (e.g., `/Volumes/Fast Brick/source/repos/chrome-cli`)
    - `{{PROJECT_NAME}}` → the basename derived above (e.g., `chrome-cli`)
+   - `{{NMG_PLUGINS_PATH}}` → the absolute path to the nmg-plugins repository root (the directory containing `openclaw-automation-prompt.md`)
 
 4. **Output the result** — print the fully substituted prompt, starting from the `---` separator line (skip the header lines above it that describe the template). The output should be ready to paste directly into an OpenClaw agent configuration.
 
