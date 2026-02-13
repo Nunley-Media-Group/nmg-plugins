@@ -195,6 +195,14 @@ OpenClaw is responsible for session lifecycle management (permissions, continuat
 
 See [`openclaw-automation-prompt.md`](openclaw-automation-prompt.md) for a complete prompt you can give to an [OpenClaw](https://openclaw.ai/) agent to continuously develop issues end-to-end. It uses automation mode to drive the full SDLC cycle — start issue, write specs, implement, verify, create PR, monitor CI, merge — with Discord status updates at every step.
 
+To generate a ready-to-use prompt with your project path substituted in, use the `/generating-prompt` skill:
+
+```bash
+/generating-prompt /path/to/your/project
+```
+
+This reads the template, replaces `{{PROJECT_PATH}}` and `{{PROJECT_NAME}}` with your values, and copies the result to your clipboard.
+
 ## Customization
 
 The plugin provides the **process**. Your project provides **specifics** via steering docs:
