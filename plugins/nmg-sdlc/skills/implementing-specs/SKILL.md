@@ -128,7 +128,8 @@ Tasks completed: [X/Y]
 Files created: [list]
 Files modified: [list]
 
-Next step: Run `/verifying-specs #N` to verify implementation and update the issue.
+[If `.claude/auto-mode` does NOT exist]: Next step: Run `/verifying-specs #N` to verify implementation and update the issue.
+[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ---

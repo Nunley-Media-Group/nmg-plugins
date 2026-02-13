@@ -211,9 +211,10 @@ Remaining issues: [count]
 
 GitHub issue #N updated with verification report.
 
-[If passing]: Next step: Run `/creating-prs #N` to create a pull request.
-[If remaining issues]: Deferred items documented — review before creating a PR.
-[If failing]: Critical issues remain — address the items above before creating a PR.
+[If `.claude/auto-mode` does NOT exist AND passing]: Next step: Run `/creating-prs #N` to create a pull request.
+[If `.claude/auto-mode` does NOT exist AND remaining issues]: Deferred items documented — review before creating a PR.
+[If `.claude/auto-mode` does NOT exist AND failing]: Critical issues remain — address the items above before creating a PR.
+[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ---

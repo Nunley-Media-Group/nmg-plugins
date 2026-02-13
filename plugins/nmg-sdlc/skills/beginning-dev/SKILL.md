@@ -17,6 +17,13 @@ Pick a GitHub issue to work on, then automatically chain through `/writing-specs
 - Ready to begin spec-driven development on a feature
 - Want a single entry point that handles issue selection, spec writing, and implementation
 
+## Automation Mode
+
+If the file `.claude/auto-mode` exists in the project directory:
+- Run ONLY Step 1 (`/starting-issues`). Do NOT chain to `/writing-specs` or `/implementing-specs`.
+- After `/starting-issues` completes, output the issue/branch summary and STOP.
+- The external orchestrator handles skill sequencing with `/clear` between steps.
+
 ## Workflow Overview
 
 ```
@@ -99,7 +106,8 @@ Development cycle complete for issue #N.
 - Specs: .claude/specs/{feature-name}/
 - Implementation: complete
 
-Next step: Run `/verifying-specs #N` to verify implementation and update the issue.
+[If `.claude/auto-mode` does NOT exist]: Next step: Run `/verifying-specs #N` to verify implementation and update the issue.
+[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ---

@@ -141,7 +141,8 @@ After creation, output:
 Issue #N created: [title]
 URL: [issue URL]
 
-Next step: Run `/writing-specs #N` to create specifications for this issue.
+[If `.claude/auto-mode` does NOT exist]: Next step: Run `/writing-specs #N` to create specifications for this issue.
+[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ## Guidelines

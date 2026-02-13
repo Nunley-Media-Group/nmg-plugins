@@ -47,6 +47,7 @@ You do NOT need to manually approve suggestions or interact with Claude Code pro
 - Claude Code sessions can crash or timeout (signal 9, LLM timeouts). If a session dies, check for uncommitted work in the working directory and recover it before starting a new session.
 - Always commit and push ALL changes before running `/creating-prs`. Never leave work as unstaged changes.
 - Proactively monitor CI — do NOT wait for the user to tell you CI failed. Check CI status automatically and fix failures immediately.
+- **Never use `/beginning-dev` in automation.** It chains multiple skills within a single session. Always run each skill individually (`/starting-issues`, `/writing-specs`, `/implementing-specs`, etc.) with `/clear` between them.
 - DO NOT prematurely kill Claude Code sessions. Claude Code displays decorative verbs (e.g., "Enchanting...", "Noodling...", "Catapulting...") — these are normal and do NOT indicate hanging. To determine if a session is actually working, look for the time counter and token counter (e.g., "(30s · ↓ 1.4k tokens)") on the thinking/working line. If the time is counting up, the model is actively working. Reading 40+ files and taking 20-30+ minutes for spec writing is NORMAL for a codebase of this size. Only consider a session stuck if the time counter stops increasing for 5+ minutes.
 
 ## Status Updates

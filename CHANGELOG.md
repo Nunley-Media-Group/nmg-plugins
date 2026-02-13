@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- `/beginning-dev` — Automation Mode: in auto-mode, runs only `/starting-issues` then stops; orchestrator handles remaining skills with `/clear` between steps
+
+### Changed
+
+- All skills with "Next step" output — suppressed in auto-mode to prevent unintended skill chaining
+- OpenClaw automation prompt — explicit warning against using `/beginning-dev` in automation
+
 ## [1.8.1] - 2026-02-12
 
 ### Added

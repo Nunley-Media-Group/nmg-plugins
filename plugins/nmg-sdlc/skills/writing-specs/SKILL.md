@@ -186,7 +186,8 @@ Specs written to `.claude/specs/{feature-name}/`:
 - tasks.md — Phased implementation tasks
 - feature.gherkin — BDD test scenarios
 
-Next step: Run `/implementing-specs #N` to plan and execute implementation.
+[If `.claude/auto-mode` does NOT exist]: Next step: Run `/implementing-specs #N` to plan and execute implementation.
+[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ---
