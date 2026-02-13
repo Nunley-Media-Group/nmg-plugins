@@ -31,7 +31,7 @@ export OPENCLAW_DISCORD_CHANNEL=<channel-id>
 claude /starting-issues
 ```
 
-Replace `<channel-id>` with the target Discord channel ID (e.g., `1471325490529697792`).
+Replace `<channel-id>` with the target Discord channel ID (e.g., `1234567890123456789`).
 
 Automation mode activates skill-level detection (since v1.6.0) — skills detect `.claude/auto-mode` and skip interactive prompts directly:
 - **AskUserQuestion** — skipped; skills proceed with defaults (first option, first issue, auto-approve)
