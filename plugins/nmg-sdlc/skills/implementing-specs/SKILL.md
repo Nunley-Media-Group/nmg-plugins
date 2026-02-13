@@ -20,7 +20,7 @@ Read the specifications for the current branch's issue, enter plan mode to desig
 ## Automation Mode
 
 If the file `.claude/auto-mode` exists in the project directory:
-- Skip `EnterPlanMode` (Step 4) — design the implementation approach internally based on the specs, then proceed directly to executing tasks.
+- **Do NOT call `EnterPlanMode`.** Design the implementation approach internally in your thinking based on the specs, then proceed directly to Step 5 (Execute Tasks). Calling `EnterPlanMode` in a headless session will fail because there is no user to approve the plan.
 - All approval gates are pre-approved. Do NOT call `AskUserQuestion` — proceed without stopping for user input.
 
 ## Prerequisites
@@ -71,9 +71,13 @@ Load project conventions:
 
 These tell you *how* this project implements things (frameworks, patterns, file locations).
 
-### Step 4: Enter Plan Mode
+### Step 4: Design Implementation Approach
 
-Call `EnterPlanMode` to design the implementation approach. The plan should:
+**If `.claude/auto-mode` exists:** Skip `EnterPlanMode` entirely — it will fail in a headless session. Instead, design the approach internally in your thinking, covering the points below, then go straight to Step 5.
+
+**If `.claude/auto-mode` does NOT exist:** Call `EnterPlanMode` to design the approach with user approval.
+
+The implementation approach (whether internal or in plan mode) should:
 
 1. **Map tasks to files**: Take each task from `tasks.md` and map it to actual files in the codebase
    - Use `Glob` and `Grep` to find existing code to build on
@@ -83,7 +87,7 @@ Call `EnterPlanMode` to design the implementation approach. The plan should:
    - Shared utilities, base classes, common patterns
 3. **Propose implementation order**: Based on task dependencies
 4. **Flag any deviations**: If the codebase has evolved since specs were written
-5. **Present the plan** for user approval
+5. **Present the plan** for user approval (interactive only)
 
 ### Step 5: Execute Tasks
 

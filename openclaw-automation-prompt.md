@@ -186,6 +186,7 @@ Post: "Specs written for issue [number]."
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
   command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
     'Implement the specifications for issue #<number> on branch <branch>. \
+     Do NOT call EnterPlanMode — this is a headless session with no user to approve plans. Design your approach internally, then implement directly. \
      Skill instructions are appended to your system prompt. \
      Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/implementing-specs/.' \
     --append-system-prompt \"$(cat '{{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/implementing-specs/SKILL.md')\" \
