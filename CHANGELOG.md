@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Move heartbeat orchestration instructions to top of automation prompt so agent prioritizes them
+- Make heartbeat explicitly drive orchestration loop instead of passive HEARTBEAT_OK
+- Watchdog cron now remediates orphaned state instead of only reporting it
+
 ## [1.10.1] - 2026-02-13
 
 ### Fixed

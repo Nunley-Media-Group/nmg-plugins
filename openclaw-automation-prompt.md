@@ -30,8 +30,56 @@ You MUST set up the 5-minute watchdog cron before starting the development cycle
 
 ```bash
 openclaw cron add --every "5m" --session isolated --name "cc-watchdog" \
-  --message "Check for stalled Claude Code subprocesses. Use 'process action:list' to find running sessions. For each, check how long the process has been running and compare against its step's stall timeout (see the Step Reference table: 5 min for short steps, 15 min for spec-writing, 30 min for implementation, 20 min for verification, 10 min for CI monitoring). Only kill a process if it has exceeded its step-specific timeout with no output growth. Post an alert when killing."
+  --message "Watchdog health check. Run 'process action:list' to find running Claude Code subprocesses. Evaluate each scenario:
+
+STALLED PROCESS (running beyond its step stall timeout — see Step Reference table: 5 min for short steps, 15 min for specs, 30 min for implementation, 20 min for verification, 10 min for CI — note: claude -p --output-format json produces no stdout until exit, so lack of output does NOT mean stalled, only elapsed time matters): Kill the process. Check the project workdir for uncommitted work (run git status). Commit and push any recoverable changes. Relaunch the failed step. Post a Discord alert explaining what happened and what you did.
+
+ORPHANED STATE (no subprocess running but the development cycle appears incomplete — e.g., feature branch exists with uncommitted work, or a step completed but the next step was never launched): Check git status in the project workdir. Commit and push any uncommitted work. Determine the next step in the cycle and launch it. Post a Discord alert.
+
+ALL HEALTHY (subprocess running within its timeout, or no work in progress): Post a brief health summary."
 ```
+
+## Orchestration
+
+The heartbeat drives the entire automation loop. You do NOT actively loop or sleep — you launch a subprocess, end your turn, and the heartbeat system drives all subsequent checks and step transitions.
+
+Configure heartbeat at 30-second intervals (`agents.defaults.heartbeat.every: 30`).
+
+### Heartbeat-driven loop (CRITICAL — you MUST follow this)
+
+On every heartbeat tick, you MUST:
+
+1. Run `process action:list` to find running subprocesses.
+2. If a subprocess is running: run `process action:poll sessionId:XXX` to check whether it has exited.
+   - Still running and within the step's stall timeout → HEARTBEAT_OK
+   - Still running but exceeded the step's stall timeout → kill process, post stall alert, retry step
+3. If the subprocess exited with code 0: parse the results, post a Discord status update, and **launch the next step immediately**.
+4. If the subprocess exited with non-zero code: follow Error Recovery below.
+5. If no subprocess is running: check if there's a pending next step and launch it, or report "all done."
+
+**NEVER reply HEARTBEAT_OK without first polling the subprocess.** The heartbeat exists to drive orchestration — a heartbeat that doesn't poll is a wasted turn that delays the entire cycle.
+
+### Heartbeat behavior by subprocess state
+
+`claude -p --output-format json` produces **no stdout until the session exits**. You cannot monitor output growth — the only signals are whether the process is still running and how long it has been running. Use the **per-step stall timeout** from the Step Reference table (5 min for short steps, 15 min for specs, 30 min for implementation, 20 min for verification, 10 min for CI).
+
+| Subprocess state | Heartbeat action |
+|-----------------|-----------------|
+| Running, within stall timeout | HEARTBEAT_OK |
+| Running, exceeded stall timeout | Kill process, post stall alert, retry step |
+| Exited, exit code 0 | Parse results, post Discord, **launch next step immediately** |
+| Exited, exit code != 0 | Post failure alert, check for uncommitted work, retry or escalate |
+| No subprocess running | Launch next step (or report "all done") |
+
+### Safety net: Watchdog cron
+
+The watchdog cron (set up in the Setup section) runs every 5 minutes in an isolated session. Unlike the heartbeat — which you control — the watchdog is an independent safety net that **remediates** when the heartbeat misses a step transition:
+
+- **Stalled processes:** Kills the process, recovers uncommitted work from the project workdir, relaunches the step, and posts an alert.
+- **Orphaned state** (no subprocess running, but incomplete work detected): Commits/pushes uncommitted changes, determines and launches the next step, posts an alert.
+- **Healthy state:** Posts a brief health summary.
+
+The watchdog exists because heartbeats can fail silently (e.g., the agent replies HEARTBEAT_OK without actually polling). If the heartbeat loop is working correctly, the watchdog will never need to intervene.
 
 ## Session Model
 
@@ -82,41 +130,6 @@ bash pty:true workdir:{{PROJECT_PATH}} background:true \
 ## Status Updates
 
 Post a status update to Discord at EVERY step transition. Never go silent — the user should always know what you're doing, what just happened, and what's coming next.
-
-## Monitoring
-
-### Primary: Heartbeat-driven polling
-
-Configure heartbeat at 30-second intervals (`agents.defaults.heartbeat.every: 30`). The heartbeat drives the entire orchestration loop:
-
-```
-1. Agent launches "claude -p ..." as background subprocess → gets sessionId → posts Discord status → turn ends
-2. Heartbeat fires (30s) → agent runs "process action:poll sessionId:XXX"
-   - Still running, output growing → HEARTBEAT_OK (suppress)
-   - Still running, output stale beyond step's stall timeout → kill process, post stall alert, retry step
-     (Stall timeouts per step: 5m for short steps, 15m for specs, 30m for implement, 20m for verify, 10m for CI — see Step Reference)
-   - Exited, exit code 0 → parse results, post Discord, launch next step
-   - Exited, exit code != 0 → post failure alert, check for uncommitted work, retry or escalate
-3. Repeat until all steps complete
-```
-
-The agent does NOT actively loop or sleep — it launches the subprocess, ends its turn, and the heartbeat system drives subsequent checks. Each heartbeat is a brief, cheap agent turn.
-
-### Heartbeat behavior by subprocess state
-
-| Subprocess state | Heartbeat action |
-|-----------------|-----------------|
-| Running, output growing | Post progress update if phase changed, else HEARTBEAT_OK |
-| Running, output stale beyond step's stall timeout | Kill process, post stall alert, retry step |
-| Exited, exit code 0 | Parse results, post Discord, launch next step |
-| Exited, exit code != 0 | Post failure alert, check for uncommitted work, retry or escalate |
-| No subprocess running | Launch next step (or report "all done") |
-
-**IMPORTANT:** `claude -p --output-format json` produces **no stdout until the session exits**. A running process with "no output" is normal — it does NOT mean stalled. Use the **per-step stall timeout** from the Step Reference table, not a flat threshold. Short steps (start issue, commit, merge, create PR) use 5 minutes; longer steps need much more time (spec-writing: 15 min, implementation: 30 min, verification: 20 min).
-
-### Safety net: Cron watchdog
-
-The watchdog cron (set up in the Setup section above) runs every 5 minutes in an isolated session. It checks running subprocesses against their step-specific stall timeouts and only kills processes that have exceeded their timeout.
 
 ## Error Recovery
 
