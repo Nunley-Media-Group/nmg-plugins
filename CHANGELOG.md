@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-02-13
+
 ### Added
 
 - `/beginning-dev` — Automation Mode: in auto-mode, runs only `/starting-issues` then stops; orchestrator handles remaining skills with `/clear` between steps
