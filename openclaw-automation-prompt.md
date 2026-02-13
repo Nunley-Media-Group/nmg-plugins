@@ -55,7 +55,7 @@ On every heartbeat tick, you MUST:
    - Still running but exceeded the step's stall timeout → kill process, post stall alert, retry step
 3. If the subprocess exited with code 0: parse the results, post a Discord status update, and **launch the next step immediately**.
 4. If the subprocess exited with non-zero code: follow Error Recovery below.
-5. If no subprocess is running: check if there's a pending next step and launch it, or report "all done."
+5. If no subprocess is running: check if there's a pending next step and launch it. **After step 9 (Merge), the next step is always step 1 of a new cycle** — return to the top of the Development Cycle. Only report "all done" if the milestone has no more open issues.
 
 **NEVER reply HEARTBEAT_OK without first polling the subprocess.** The heartbeat exists to drive orchestration — a heartbeat that doesn't poll is a wasted turn that delays the entire cycle.
 
@@ -69,7 +69,7 @@ On every heartbeat tick, you MUST:
 | Running, exceeded stall timeout | Kill process, post stall alert, retry step |
 | Exited, exit code 0 | Parse results, post Discord, **launch next step immediately** |
 | Exited, exit code != 0 | Post failure alert, check for uncommitted work, retry or escalate |
-| No subprocess running | Launch next step (or report "all done") |
+| No subprocess running | Launch next step — after Merge, this means step 1 of a new cycle (only "all done" if no issues remain) |
 
 ### Safety net: Watchdog cron
 
@@ -144,7 +144,9 @@ If a Claude Code subprocess crashes, times out, or exits non-zero:
 
 ## Development Cycle
 
-Repeat the following development cycle continuously. Each skill-based step launches a new `claude -p` subprocess. Non-skill steps (commit/push, merge) use plain `claude -p` with a task description.
+**This is a continuous loop.** After completing step 9 (Merge), you MUST immediately return to step 1 and start the next issue — no pausing, no waiting for user input. The cycle only ends when the milestone has no more open issues.
+
+Each skill-based step launches a new `claude -p` subprocess. Non-skill steps (commit/push, merge) use plain `claude -p` with a task description.
 
 ### 1. Start cycle
 
@@ -281,12 +283,17 @@ bash pty:true workdir:{{PROJECT_PATH}} background:true \
 
 Post: "PR [number] merged. Branch cleaned up. Issue [title/number] complete."
 
-### 10. Loop
+### 10. Loop (CRITICAL — do NOT stop here)
 
-Post: "Cycle complete. Starting next issue..."
-Return to step 1 and begin the next issue.
+**Do NOT stop, wait, or ask for confirmation.** Immediately return to step 1 and start the next issue. This is not optional — the development cycle is a continuous loop.
 
-Continue this loop until there are no more issues (post: "No more issues. All done!") or the user tells you to stop.
+Post: "Cycle complete for issue [number]. Starting next issue immediately..."
+
+Then go to step 1 and launch the checkout/pull subprocess for the next cycle.
+
+The loop ends ONLY when:
+- There are no more open issues in the current milestone → post: "No more issues in milestone. All done!"
+- The user explicitly tells you to stop
 
 If at any point something unexpected happens or an error occurs that isn't covered above, post a description of what happened and wait for guidance.
 
