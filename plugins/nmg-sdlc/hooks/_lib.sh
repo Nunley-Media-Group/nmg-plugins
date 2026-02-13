@@ -3,12 +3,12 @@
 # Source this file; do not execute directly.
 
 # claw_guard — exit 0 if notifications should not fire.
-# Checks: .noclaw file, auto-mode flag, OPENCLAW_DISCORD_CHANNEL env var.
+# Checks: .nodiscord flag, auto-mode flag, OPENCLAW_DISCORD_CHANNEL env var.
 claw_guard() {
   PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
 
-  # Check for .noclaw file (global or project)
-  if [ -f "$HOME/.noclaw" ] || [ -f "$PROJECT_DIR/.noclaw" ]; then
+  # Check for .nodiscord file (project-level only)
+  if [ -f "$PROJECT_DIR/.claude/.nodiscord" ]; then
     exit 0
   fi
 

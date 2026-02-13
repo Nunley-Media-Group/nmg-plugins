@@ -1,6 +1,6 @@
 #!/bin/bash
 # Claude Code Stop Hook - Notify OpenClaw when a session ends.
-# Only fires in automation mode. Add .noclaw file to disable notifications.
+# Only fires in automation mode. Add .claude/.nodiscord to suppress notifications.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=_lib.sh

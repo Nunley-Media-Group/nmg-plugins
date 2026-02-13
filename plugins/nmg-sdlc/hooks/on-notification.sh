@@ -1,6 +1,6 @@
 #!/bin/bash
 # Claude Code Notification Hook - Notify OpenClaw when CC is waiting for input.
-# Only fires in automation mode. Add .noclaw file to disable notifications.
+# Only fires in automation mode. Add .claude/.nodiscord to suppress notifications.
 # Debounces: skips if last notification was less than 60 seconds ago.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
