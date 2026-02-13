@@ -24,6 +24,15 @@ The on-stop hook requires `OPENCLAW_DISCORD_CHANNEL` to be set in the environmen
 
 Replace `<channel-id>` with the target Discord channel ID (e.g., `1234567890123456789`).
 
+### Watchdog cron (CRITICAL)
+
+You MUST set up the 5-minute watchdog cron before starting the development cycle. This is a safety net that detects stalled Claude Code subprocesses in an isolated session:
+
+```bash
+openclaw cron add --every "5m" --session isolated --name "cc-watchdog" \
+  --message "Check for stalled Claude Code subprocesses. Use 'process action:list' to find running sessions. For each, check how long the process has been running and compare against its step's stall timeout (see the Step Reference table: 5 min for short steps, 15 min for spec-writing, 30 min for implementation, 20 min for verification, 10 min for CI monitoring). Only kill a process if it has exceeded its step-specific timeout with no output growth. Post an alert when killing."
+```
+
 ## Session Model
 
 Each SDLC step runs as a **separate headless `claude -p` subprocess** — not as commands typed into a long-lived interactive session. This eliminates input submission failures (PTY timing issues where `\r` doesn't register) and ensures each step starts with a clean context window.
@@ -84,7 +93,8 @@ Configure heartbeat at 30-second intervals (`agents.defaults.heartbeat.every: 30
 1. Agent launches "claude -p ..." as background subprocess → gets sessionId → posts Discord status → turn ends
 2. Heartbeat fires (30s) → agent runs "process action:poll sessionId:XXX"
    - Still running, output growing → HEARTBEAT_OK (suppress)
-   - Still running, output stale 5+ min → kill process, post stall alert, retry step
+   - Still running, output stale beyond step's stall timeout → kill process, post stall alert, retry step
+     (Stall timeouts per step: 5m for short steps, 15m for specs, 30m for implement, 20m for verify, 10m for CI — see Step Reference)
    - Exited, exit code 0 → parse results, post Discord, launch next step
    - Exited, exit code != 0 → post failure alert, check for uncommitted work, retry or escalate
 3. Repeat until all steps complete
@@ -97,19 +107,16 @@ The agent does NOT actively loop or sleep — it launches the subprocess, ends i
 | Subprocess state | Heartbeat action |
 |-----------------|-----------------|
 | Running, output growing | Post progress update if phase changed, else HEARTBEAT_OK |
-| Running, output stale 5+ min | Kill process, post stall alert, retry step |
+| Running, output stale beyond step's stall timeout | Kill process, post stall alert, retry step |
 | Exited, exit code 0 | Parse results, post Discord, launch next step |
 | Exited, exit code != 0 | Post failure alert, check for uncommitted work, retry or escalate |
 | No subprocess running | Launch next step (or report "all done") |
 
-### Safety net: 5-minute cron watchdog
+**IMPORTANT:** `claude -p --output-format json` produces **no stdout until the session exits**. A running process with "no output" is normal — it does NOT mean stalled. Use the **per-step stall timeout** from the Step Reference table, not a flat threshold. Short steps (start issue, commit, merge, create PR) use 5 minutes; longer steps need much more time (spec-writing: 15 min, implementation: 30 min, verification: 20 min).
 
-A separate **isolated** cron job (`--session isolated`) runs every 5 minutes as a simple watchdog. It does not share context with the main agent.
+### Safety net: Cron watchdog
 
-```bash
-openclaw cron add --every "5m" --session isolated --name "cc-watchdog" \
-  --message "Check for stalled Claude Code subprocesses. Use 'process action:list' to find running sessions. For each, check 'process action:log' output length. If output hasn't grown since last check, the process is stalled — kill it and post an alert."
-```
+The watchdog cron (set up in the Setup section above) runs every 5 minutes in an isolated session. It checks running subprocesses against their step-specific stall timeouts and only kills processes that have exceeded their timeout.
 
 ## Error Recovery
 
@@ -271,16 +278,16 @@ If at any point something unexpected happens or an error occurs that isn't cover
 
 ### Step reference
 
-| Step | Skill file | Max Turns | Notes |
-|------|-----------|-----------|-------|
-| Start issue | starting-issues/SKILL.md | 15 | Auto-selects first issue in milestone |
-| Write specs | writing-specs/SKILL.md | 40 | Reads many files, 3-phase spec creation |
-| Implement | implementing-specs/SKILL.md | 100 | Longest step |
-| Verify | verifying-specs/SKILL.md | 60 | Reads specs + checklists, fixes code |
-| Commit/push | *(none)* | 10 | Plain `claude -p` with git commands |
-| Create PR | creating-prs/SKILL.md | 15 | |
-| Monitor CI | *(none)* | 20 | Poll + fix loop |
-| Merge | *(none)* | 5 | Simple merge |
+| Step | Skill file | Max Turns | Stall Timeout | Notes |
+|------|-----------|-----------|---------------|-------|
+| Start issue | starting-issues/SKILL.md | 15 | 5 min | Auto-selects first issue in milestone |
+| Write specs | writing-specs/SKILL.md | 40 | 15 min | Reads many files, 3-phase spec creation |
+| Implement | implementing-specs/SKILL.md | 100 | 30 min | Longest step |
+| Verify | verifying-specs/SKILL.md | 60 | 20 min | Reads specs + checklists, fixes code |
+| Commit/push | *(none)* | 10 | 5 min | Plain `claude -p` with git commands |
+| Create PR | creating-prs/SKILL.md | 15 | 5 min | |
+| Monitor CI | *(none)* | 20 | 10 min | Poll + fix loop |
+| Merge | *(none)* | 5 | 5 min | Simple merge |
 
 ## Disabling Automation Mode
 
