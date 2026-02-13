@@ -145,7 +145,7 @@ Creates a pull request with:
 
 ## Automation Mode
 
-The plugin supports fully automated operation for external agents like [OpenClaw](https://openclaw.ai/). Since v1.6.0, skills detect `.claude/auto-mode` directly and skip interactive prompts — no hook-level interception needed. Two hooks remain:
+The plugin supports fully automated operation for external agents like [OpenClaw](https://openclaw.ai/). Since v1.6.0, skills detect `.claude/auto-mode` directly and skip interactive prompts — no hook-level interception needed. Three hooks remain:
 
 | Hook | Type | Behavior |
 |------|------|----------|
@@ -154,6 +154,14 @@ The plugin supports fully automated operation for external agents like [OpenClaw
 | Stop notification | `Stop` | Notifies Discord via OpenClaw when a session ends |
 
 Both notification hooks read the Discord channel from the `OPENCLAW_DISCORD_CHANNEL` environment variable (set by OpenClaw before launching sessions). They only fire when both auto-mode and the env var are present.
+
+To suppress Discord notifications for a specific project (e.g., during local debugging), create a `.claude/.nodiscord` file:
+
+```bash
+touch .claude/.nodiscord
+```
+
+This silences both the Notification and Stop hooks without disabling automation mode itself.
 
 ### Enable / Disable
 
@@ -201,7 +209,40 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | Target users | `product.md` | User personas and constraints |
 | API conventions | `tech.md` | REST, GraphQL, gRPC |
 
+## Bundled Assets
+
+### Architecture Reviewer Agent
+
+`/verifying-specs` auto-invokes a dedicated architecture-reviewer agent that evaluates code against five checklists, scoring each 1–5:
+
+| Checklist | Focus |
+|-----------|-------|
+| SOLID Principles | Single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion |
+| Security | OWASP-aligned input validation, authentication, authorization, data protection |
+| Performance | Query efficiency, caching, lazy loading, resource management |
+| Testability | Dependency injection, mock-friendly boundaries, deterministic behavior |
+| Error Handling | Error hierarchy, propagation, recovery, logging |
+
+### Spec Templates
+
+Used by `/writing-specs` to produce consistent specification documents:
+
+- `requirements.md` — User story, acceptance criteria (Given/When/Then), functional requirements
+- `design.md` — Architecture, data flow, API changes, alternatives considered
+- `tasks.md` — Phased implementation tasks with dependencies and acceptance criteria
+- `feature.gherkin` — BDD test scenarios derived from acceptance criteria
+
+### Steering Templates
+
+Used by `/setting-up-steering` to bootstrap project context:
+
+- `product.md` — Product vision, target users, feature prioritization (MoSCoW)
+- `tech.md` — Tech stack, testing standards, coding conventions, BDD framework config
+- `structure.md` — Directory layout, layer architecture, naming conventions
+
 ## Skills Reference
+
+### SDLC Skills
 
 | Skill | Description |
 |-------|-------------|
@@ -213,6 +254,15 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | `/verifying-specs #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
 | `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
 | `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure) — run once per project |
+
+### Utility Skills
+
+These are repo-level utilities (not part of the nmg-sdlc plugin itself):
+
+| Skill | Description |
+|-------|-------------|
+| `/generating-prompt /path/to/project` | Generate a ready-to-use OpenClaw automation prompt from the template, with project path substituted and copied to clipboard |
+| `/installing-locally` | Install or update all marketplace plugins to the local Claude Code plugin cache — useful for testing after pushing changes |
 
 ## Updating
 
