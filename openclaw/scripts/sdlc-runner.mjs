@@ -183,6 +183,46 @@ function gh(args, cwd = PROJECT_PATH) {
   return execSync(`gh ${args}`, { cwd, encoding: 'utf8', timeout: 60_000 }).trim();
 }
 
+// Runner-managed files that should not count as "dirty" working tree
+const RUNNER_ARTIFACTS = ['.claude/sdlc-state.json', '.claude/auto-mode'];
+
+/**
+ * Commit and push any dirty working-tree changes (excluding runner artifacts).
+ * Non-fatal — logs warnings on failure. Returns true if a commit was made.
+ */
+function autoCommitIfDirty(message) {
+  try {
+    const status = git('status --porcelain');
+    if (!status) return false;
+
+    // Filter out runner artifacts
+    const meaningful = status
+      .split('\n')
+      .filter(line => !RUNNER_ARTIFACTS.some(f => line.trimStart().endsWith(f)))
+      .join('\n')
+      .trim();
+
+    if (!meaningful) {
+      log('Auto-commit: only runner artifacts changed, skipping.');
+      return false;
+    }
+
+    if (DRY_RUN) {
+      log(`[DRY-RUN] Would auto-commit: ${message}`);
+      return true;
+    }
+
+    git('add -A');
+    git(`commit -m "${message.replace(/"/g, '\\"')}"`);
+    git('push');
+    log(`Auto-committed: ${message}`);
+    return true;
+  } catch (err) {
+    log(`Warning: autoCommitIfDirty failed: ${err.message}`);
+    return false;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Precondition validation
 // ---------------------------------------------------------------------------
@@ -194,10 +234,9 @@ function validatePreconditions(step, state) {
 
     case 2: { // Start issue — clean main branch
       try {
-        const RUNNER_FILES = ['.claude/sdlc-state.json', '.claude/auto-mode'];
         const status = git('status --porcelain')
           .split('\n')
-          .filter(line => !RUNNER_FILES.some(f => line.trimStart().endsWith(f)))
+          .filter(line => !RUNNER_ARTIFACTS.some(f => line.trimStart().endsWith(f)))
           .join('\n')
           .trim();
         const branch = git('rev-parse --abbrev-ref HEAD');
@@ -746,6 +785,15 @@ async function runStep(step, state) {
         }
         updateState({ retries: { ...retries, 3: count } });
         return 'retry';
+      }
+    }
+
+    // Auto-commit implementation so Step 5's "commits ahead of main" precondition passes
+    if (step.number === 4) {
+      const issue = state.currentIssue || 'unknown';
+      const committed = autoCommitIfDirty(`feat: implement issue #${issue}`);
+      if (committed) {
+        postDiscord('Auto-committed implementation changes after Step 4.');
       }
     }
 

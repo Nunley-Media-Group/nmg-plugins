@@ -4,8 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.3] - 2026-02-14
+
 ### Fixed
 
+- **`openclaw/scripts/sdlc-runner.mjs`** — Runner loop between Steps 4–5: implementation left uncommitted so verify precondition "commits ahead of main" always failed; added `autoCommitIfDirty()` that commits and pushes after Step 4 completes
 - **`openclaw/scripts/sdlc-runner.mjs`** — Discord status updates were silently failing because `openclaw system event` doesn't route to Discord channels; switched to `openclaw message send --channel discord --target <id>` with channel ID passed via `--discord-channel` CLI flag or `discordChannelId` config field
 - **`openclaw/skills/running-sdlc/SKILL.md`** — Skill now auto-detects the source Discord channel via `openclaw sessions` and passes it to the runner via `--discord-channel`
 
