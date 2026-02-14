@@ -108,7 +108,9 @@ Reads the GitHub issue and creates three specification documents through human-g
 2. **PLAN** — Technical design with architecture decisions
 3. **TASKS** — Phased implementation tasks with dependencies
 
-Output: `.claude/specs/{feature}/requirements.md`, `design.md`, `tasks.md`, `feature.gherkin`
+Output: `.claude/specs/{feature-name}/requirements.md`, `design.md`, `tasks.md`, `feature.gherkin`
+
+The `{feature-name}` is the issue number + kebab-case slug of the title (e.g., `42-add-precipitation-overlay`), matching the branch name format.
 
 ### Step 3: Implement
 
@@ -126,9 +128,9 @@ Reads the specs, enters plan mode to design the implementation approach, then ex
 
 Verifies the implementation against the spec:
 - Checks each acceptance criterion against actual code
-- Runs architecture review (SOLID, security, performance, testability, error handling)
+- Runs architecture review via the dedicated `nmg-sdlc:architecture-reviewer` agent (SOLID, security, performance, testability, error handling)
 - Checks BDD test coverage
-- Fixes any issues found during verification
+- Fixes findings under ~20 lines of change; defers architectural changes or out-of-scope modifications
 - Posts verification report as a comment on the GitHub issue
 
 ### Step 5: Create PR
@@ -149,9 +151,9 @@ The plugin supports fully automated operation for external agents like [OpenClaw
 
 | Hook | Type | Behavior |
 |------|------|----------|
-| Spec drift detection | `PostToolUse` | Checks file modifications against active specs |
+| Spec drift detection | `PostToolUse` (agent) | Reads spec files via Glob/Read and checks whether file modifications align with active specs |
 
-Discord notifications (session stop, waiting for input) were removed in v1.11.0 — the heartbeat-driven orchestration model makes them redundant since the orchestrator already detects subprocess state via polling.
+Discord notification hooks (session stop, waiting for input) were removed in v1.11.0 — the heartbeat-driven orchestration model makes them redundant since the orchestrator already detects subprocess state via polling.
 
 ### Enable / Disable
 
@@ -169,11 +171,13 @@ When `.claude/auto-mode` does not exist, skills work interactively as normal.
 
 ### Default behaviors in automation mode
 
-- **Issue selection**: picks the first issue in the milestone
+- **Issue selection**: picks the first open issue in the milestone, sorted by issue number ascending (oldest first)
 - **Confirmations**: answers yes
 - **Review gates**: auto-approves all phases (requirements, design, tasks)
 - **Draft approvals**: approves as-is
-- **Plan mode**: skipped — Claude designs the approach internally from specs
+- **Plan mode**: skipped — `EnterPlanMode` is never called (it would fail in a headless session); Claude designs the approach internally from specs
+- **`/beginning-dev`**: runs only `/starting-issues` then stops — the orchestrator handles remaining skills with `/clear` between steps
+- **Skill output**: all "Next step" suggestions suppressed; skills output `Done. Awaiting orchestrator.` instead
 
 OpenClaw is responsible for session lifecycle management (permissions, continuation, restarts).
 
@@ -183,7 +187,7 @@ OpenClaw is responsible for session lifecycle management (permissions, continuat
 
 ### Example: OpenClaw automation prompt
 
-See [`openclaw-automation-prompt.md`](openclaw-automation-prompt.md) for a complete prompt you can give to an [OpenClaw](https://openclaw.ai/) agent to continuously develop issues end-to-end. It uses automation mode to drive the full SDLC cycle — start issue, write specs, implement, verify, create PR, monitor CI, merge — with Discord status updates at every step.
+See [`openclaw-automation-prompt.md`](openclaw-automation-prompt.md) for a complete prompt you can give to an [OpenClaw](https://openclaw.ai/) agent to continuously develop issues end-to-end. It uses headless `claude -p` per-step sessions (one session per SDLC skill) to drive the full cycle — start issue, write specs, implement, verify, create PR, monitor CI, merge — with artifact validation gates between steps, retry caps (3 attempts per step), and a self-healing watchdog cron.
 
 To generate a ready-to-use prompt with your project path substituted in, use the `/generating-prompt` skill:
 
@@ -191,7 +195,7 @@ To generate a ready-to-use prompt with your project path substituted in, use the
 /generating-prompt /path/to/your/project
 ```
 
-This reads the template, replaces `{{PROJECT_PATH}}` and `{{PROJECT_NAME}}` with your values, and copies the result to your clipboard.
+This reads the template, replaces `{{PROJECT_PATH}}`, `{{PROJECT_NAME}}`, and `{{NMG_PLUGINS_PATH}}` with your values, and copies the result to your clipboard.
 
 ## Customization
 
@@ -211,7 +215,7 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 
 ### Architecture Reviewer Agent
 
-`/verifying-specs` auto-invokes a dedicated architecture-reviewer agent that evaluates code against five checklists, scoring each 1–5:
+`/verifying-specs` auto-invokes the `nmg-sdlc:architecture-reviewer` subagent (via the `Task` tool) that evaluates code against five checklists, scoring each 1–5:
 
 | Checklist | Focus |
 |-----------|-------|
