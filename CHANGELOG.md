@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.6] - 2026-02-14
+
+### Fixed
+
+- **`/generating-openclaw-config`** — Now also adds `.claude/sdlc-state.json` to `.gitignore` alongside `sdlc-config.json`
+
 ## [2.1.5] - 2026-02-14
 
 ### Fixed
