@@ -138,11 +138,11 @@ mkdir -p ~/.openclaw/skills/running-sdlc
 ### 5b. Copy skill files
 
 ```bash
-cp ~/.claude/plugins/marketplaces/nmg-plugins/plugins/nmg-sdlc/skills/running-sdlc/SKILL.md \
+cp ~/.claude/plugins/marketplaces/nmg-plugins/openclaw/skills/running-sdlc/SKILL.md \
    ~/.openclaw/skills/running-sdlc/SKILL.md
-cp ~/.claude/plugins/marketplaces/nmg-plugins/scripts/sdlc-runner.mjs \
+cp ~/.claude/plugins/marketplaces/nmg-plugins/openclaw/scripts/sdlc-runner.mjs \
    ~/.openclaw/skills/running-sdlc/sdlc-runner.mjs
-cp ~/.claude/plugins/marketplaces/nmg-plugins/scripts/sdlc-config.example.json \
+cp ~/.claude/plugins/marketplaces/nmg-plugins/openclaw/scripts/sdlc-config.example.json \
    ~/.openclaw/skills/running-sdlc/sdlc-config.example.json
 ```
 

@@ -17,14 +17,14 @@ If no argument is provided, ask the user for the project path before proceeding.
 
 ## Steps
 
-1. **Read the template** at `scripts/sdlc-config.example.json` in the repository root (the nmg-plugins repo where this skill lives).
+1. **Read the template** at `openclaw/scripts/sdlc-config.example.json` in the repository root (the nmg-plugins repo where this skill lives).
 
 2. **Derive the project name** from the path's basename:
    ```bash
    basename "/path/to/project"
    ```
 
-3. **Resolve the nmg-plugins path** — the absolute path to the nmg-plugins repository root (the directory containing `scripts/sdlc-config.example.json`):
+3. **Resolve the nmg-plugins path** — the absolute path to the nmg-plugins repository root (the directory containing `openclaw/scripts/sdlc-config.example.json`):
    ```bash
    realpath "$(dirname "$(dirname "$0")")"
    ```
@@ -57,7 +57,7 @@ If no argument is provided, ask the user for the project path before proceeding.
 7. **Suggest next step** — tell the user to save the config and launch the runner:
    ```
    Save this as sdlc-config.json, then run:
-     node scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json
+     node openclaw/scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json
    Or install the OpenClaw skill and launch via Discord.
    ```
 

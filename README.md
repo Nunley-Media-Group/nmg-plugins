@@ -174,9 +174,9 @@ When `.claude/auto-mode` does not exist, skills work interactively as normal.
 
 ### Deterministic SDLC Runner
 
-The SDLC orchestration is handled by a deterministic Node.js script (`scripts/sdlc-runner.mjs`). It drives the full development cycle as a continuous loop of `claude -p` subprocess invocations, with code-based step sequencing, precondition validation, timeout detection, retry logic, Discord reporting, and escalation.
+The SDLC orchestration is handled by a deterministic Node.js script (`openclaw/scripts/sdlc-runner.mjs`). It drives the full development cycle as a continuous loop of `claude -p` subprocess invocations, with code-based step sequencing, precondition validation, timeout detection, retry logic, Discord reporting, and escalation.
 
-See [`openclaw-automation-prompt.md`](openclaw-automation-prompt.md) for setup instructions.
+See [`openclaw/README.md`](openclaw/README.md) for setup instructions.
 
 To generate a config with your project path pre-filled:
 
@@ -187,7 +187,7 @@ To generate a config with your project path pre-filled:
 To run directly (without OpenClaw):
 
 ```bash
-node scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json
+node openclaw/scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json
 ```
 
 ## Customization
@@ -217,6 +217,13 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | `/verifying-specs #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
 | `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
 | `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure). Run once per project |
+
+### OpenClaw Skills
+
+These skills are part of the [OpenClaw](https://openclaw.ai/) integration (in `openclaw/`), not the nmg-sdlc plugin:
+
+| Skill | Description |
+|-------|-------------|
 | `/running-sdlc start\|status\|stop` | Launch, monitor, or stop the deterministic SDLC runner for a project |
 
 ### Utility Skills

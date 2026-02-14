@@ -3,14 +3,14 @@
 # Install the running-sdlc skill + sdlc-runner for OpenClaw.
 #
 # Usage:
-#   ./scripts/install-openclaw-skill.sh          # copy to ~/.openclaw/skills/
-#   ./scripts/install-openclaw-skill.sh --link    # add extraDirs entry instead (stays in sync with repo)
+#   ./openclaw/scripts/install-openclaw-skill.sh          # copy to ~/.openclaw/skills/
+#   ./openclaw/scripts/install-openclaw-skill.sh --link    # add extraDirs entry instead (stays in sync with repo)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(dirname "$SCRIPT_DIR")"
-SKILL_SRC="$REPO_DIR/plugins/nmg-sdlc/skills/running-sdlc/SKILL.md"
+REPO_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+SKILL_SRC="$REPO_DIR/openclaw/skills/running-sdlc/SKILL.md"
 RUNNER_SRC="$SCRIPT_DIR/sdlc-runner.mjs"
 CONFIG_SRC="$SCRIPT_DIR/sdlc-config.example.json"
 DEST_DIR="$HOME/.openclaw/skills/running-sdlc"
@@ -37,7 +37,7 @@ if $LINK_MODE; then
   # Add extraDirs entry to openclaw.json
   echo "Adding skills.load.extraDirs entry to $OPENCLAW_CONFIG..."
 
-  SKILLS_DIR="$REPO_DIR/plugins/nmg-sdlc/skills"
+  SKILLS_DIR="$REPO_DIR/openclaw/skills"
 
   if [[ ! -f "$OPENCLAW_CONFIG" ]]; then
     mkdir -p "$(dirname "$OPENCLAW_CONFIG")"

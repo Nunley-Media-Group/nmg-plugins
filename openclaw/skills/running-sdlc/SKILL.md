@@ -24,7 +24,7 @@ Launch, monitor, or stop the deterministic SDLC orchestrator (`sdlc-runner.mjs`)
 
 4. Locate the runner script. Check these paths in order:
    - Same directory as this SKILL.md: `<skill-dir>/sdlc-runner.mjs`
-   - The nmg-plugins scripts directory: `<pluginsPath>/scripts/sdlc-runner.mjs` (read `pluginsPath` from the config)
+   - The nmg-plugins openclaw directory: `<pluginsPath>/openclaw/scripts/sdlc-runner.mjs` (read `pluginsPath` from the config)
 
 5. Launch the runner as a background process:
    ```bash

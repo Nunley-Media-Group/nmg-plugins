@@ -6,16 +6,20 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **`scripts/sdlc-runner.mjs`** — Deterministic Node.js orchestrator that replaces the prompt-engineered heartbeat loop; drives the full SDLC cycle via `claude -p` subprocesses with code-based step sequencing, precondition validation, timeout detection, retry logic, Discord reporting, and escalation
-- **`scripts/sdlc-config.example.json`** — Project configuration template for the SDLC runner with per-step maxTurns, timeouts, and skill references
-- **`scripts/install-openclaw-skill.sh`** — Installer utility for the OpenClaw skill (copy or link mode)
-- **`/running-sdlc`** — New OpenClaw skill: launch, monitor status, or stop the SDLC runner from Discord
+- **`openclaw/scripts/sdlc-runner.mjs`** — Deterministic Node.js orchestrator that replaces the prompt-engineered heartbeat loop; drives the full SDLC cycle via `claude -p` subprocesses with code-based step sequencing, precondition validation, timeout detection, retry logic, Discord reporting, and escalation
+- **`openclaw/scripts/sdlc-config.example.json`** — Project configuration template for the SDLC runner with per-step maxTurns, timeouts, and skill references
+- **`openclaw/scripts/install-openclaw-skill.sh`** — Installer utility for the OpenClaw skill (copy or link mode)
+- **`openclaw/skills/running-sdlc/`** — OpenClaw skill: launch, monitor status, or stop the SDLC runner from Discord
 
 ### Changed
 
-- **`openclaw-automation-prompt.md`** — Replaced 410-line prompt-engineered orchestration with short documentation for the script-based approach
+- **`openclaw/README.md`** (was `openclaw-automation-prompt.md`) — Replaced 410-line prompt-engineered orchestration with short documentation for the script-based approach
 - **`/generating-prompt`** — Now generates `sdlc-config.json` instead of the old automation prompt
 - **`/installing-locally`** — Now also syncs the OpenClaw `running-sdlc` skill to `~/.openclaw/skills/` and restarts the OpenClaw gateway after installing marketplace plugins
+
+### Moved
+
+- All OpenClaw files to top-level `openclaw/` directory: `openclaw/skills/running-sdlc/`, `openclaw/scripts/`, `openclaw/README.md` — separates OpenClaw integration from the Claude Code plugin
 
 ### Removed
 
