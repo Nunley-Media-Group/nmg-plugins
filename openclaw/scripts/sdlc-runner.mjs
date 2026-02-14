@@ -160,10 +160,20 @@ function postDiscord(message) {
   }
   const escaped = message.replace(/'/g, "'\\''");
   const cmd = `openclaw message send --channel discord --target ${DISCORD_CHANNEL} -m '${escaped}'`;
-  try {
-    execSync(cmd, { timeout: 15_000, stdio: 'pipe' });
-  } catch (err) {
-    log(`Warning: Discord post failed: ${err.message}`);
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      execSync(cmd, { timeout: 30_000, stdio: 'pipe' });
+      return;
+    } catch (err) {
+      if (attempt < maxAttempts) {
+        const backoff = Math.pow(2, attempt) * 1000; // 2s, 4s
+        log(`Discord post attempt ${attempt}/${maxAttempts} failed, retrying in ${backoff / 1000}s...`);
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, backoff);
+      } else {
+        log(`Warning: Discord post failed after ${maxAttempts} attempts: ${err.message}`);
+      }
+    }
   }
 }
 
