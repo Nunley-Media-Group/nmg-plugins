@@ -112,7 +112,16 @@ Reads the specs, enters plan mode to design the implementation approach, then ex
 
 Verifies the implementation against the spec:
 - Checks each acceptance criterion against actual code
-- Runs architecture review via the dedicated `nmg-sdlc:architecture-reviewer` agent (SOLID, security, performance, testability, error handling)
+- Runs architecture review via the dedicated `nmg-sdlc:architecture-reviewer` agent, scoring five checklists 1–5:
+
+| Checklist | Focus |
+|-----------|-------|
+| SOLID Principles | Single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion |
+| Security | OWASP-aligned input validation, authentication, authorization, data protection |
+| Performance | Query efficiency, caching, lazy loading, resource management |
+| Testability | Dependency injection, mock-friendly boundaries, deterministic behavior |
+| Error Handling | Error hierarchy, propagation, recovery, logging |
+
 - Checks BDD test coverage
 - Fixes findings under ~20 lines of change; defers architectural changes or out-of-scope modifications
 - Posts verification report as a comment on the GitHub issue
@@ -129,13 +138,13 @@ Creates a pull request with:
 - Test plan
 - `Closes #42` to auto-close the issue on merge
 
+## Hooks
+
+The plugin includes a `PostToolUse` hook that runs on every `Write` or `Edit` operation. It detects spec drift by reading active spec files (`.claude/specs/*/requirements.md`, `.claude/specs/*/design.md`) and checking whether file modifications align with the current specifications.
+
 ## Automation Mode
 
-The plugin supports fully automated operation for external agents like [OpenClaw](https://openclaw.ai/). Since v1.6.0, skills detect `.claude/auto-mode` directly and skip interactive prompts — no hook-level interception needed. One hook remains:
-
-| Hook | Type | Behavior |
-|------|------|----------|
-| Spec drift detection | `PostToolUse` (agent) | Reads spec files via Glob/Read and checks whether file modifications align with active specs |
+The plugin supports fully automated operation for external agents like [OpenClaw](https://openclaw.ai/). Skills detect `.claude/auto-mode` and skip interactive prompts.
 
 ### Enable / Disable
 
@@ -156,7 +165,6 @@ When `.claude/auto-mode` does not exist, skills work interactively as normal.
 - **Issue selection**: picks the first open issue in the milestone, sorted by issue number ascending (oldest first)
 - **Confirmations**: answers yes
 - **Review gates**: auto-approves all phases (requirements, design, tasks)
-- **Draft approvals**: approves as-is
 - **Plan mode**: skipped — `EnterPlanMode` is never called (it would fail in a headless session); Claude designs the approach internally from specs
 - **Skill output**: all "Next step" suggestions suppressed; skills output `Done. Awaiting orchestrator.` instead
 
@@ -166,7 +174,7 @@ When `.claude/auto-mode` does not exist, skills work interactively as normal.
 
 ### Deterministic SDLC Runner
 
-Since v2.0.0, the SDLC orchestration is handled by a deterministic Node.js script (`scripts/sdlc-runner.mjs`) instead of prompt engineering. The script drives the full development cycle as a continuous loop of `claude -p` subprocess invocations, with code-based step sequencing, precondition validation, timeout detection, retry logic, Discord reporting, and escalation.
+The SDLC orchestration is handled by a deterministic Node.js script (`scripts/sdlc-runner.mjs`). It drives the full development cycle as a continuous loop of `claude -p` subprocess invocations, with code-based step sequencing, precondition validation, timeout detection, retry logic, Discord reporting, and escalation.
 
 See [`openclaw-automation-prompt.md`](openclaw-automation-prompt.md) for setup instructions.
 
@@ -180,12 +188,6 @@ To run directly (without OpenClaw):
 
 ```bash
 node scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json
-```
-
-To install the OpenClaw skill for Discord-driven launch/stop/status:
-
-```bash
-./scripts/install-openclaw-skill.sh
 ```
 
 ## Customization
@@ -202,51 +204,20 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | Target users | `product.md` | User personas and constraints |
 | API conventions | `tech.md` | REST, GraphQL, gRPC |
 
-## Bundled Assets
-
-### Architecture Reviewer Agent
-
-`/verifying-specs` auto-invokes the `nmg-sdlc:architecture-reviewer` subagent (via the `Task` tool) that evaluates code against five checklists, scoring each 1–5:
-
-| Checklist | Focus |
-|-----------|-------|
-| SOLID Principles | Single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion |
-| Security | OWASP-aligned input validation, authentication, authorization, data protection |
-| Performance | Query efficiency, caching, lazy loading, resource management |
-| Testability | Dependency injection, mock-friendly boundaries, deterministic behavior |
-| Error Handling | Error hierarchy, propagation, recovery, logging |
-
-### Spec Templates
-
-Used by `/writing-specs` to produce consistent specification documents:
-
-- `requirements.md` — User story, acceptance criteria (Given/When/Then), functional requirements
-- `design.md` — Architecture, data flow, API changes, alternatives considered
-- `tasks.md` — Phased implementation tasks with dependencies and acceptance criteria
-- `feature.gherkin` — BDD test scenarios derived from acceptance criteria
-
-### Steering Templates
-
-Used by `/setting-up-steering` to bootstrap project context:
-
-- `product.md` — Product vision, target users, feature prioritization (MoSCoW)
-- `tech.md` — Tech stack, testing standards, coding conventions, BDD framework config
-- `structure.md` — Directory layout, layer architecture, naming conventions
-
 ## Skills Reference
 
 ### SDLC Skills
 
 | Skill | Description |
 |-------|-------------|
-| `/starting-issues [#N]` | Select a GitHub issue, create linked feature branch, set issue to In Progress |
+| `/starting-issues [#N]` | Select a GitHub issue, create a linked feature branch, and set the issue to In Progress |
 | `/creating-issues [description]` | Interview user about a feature need, create groomed GitHub issue with BDD acceptance criteria |
 | `/writing-specs #N` | Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown |
-| `/implementing-specs #N` | Read specs, enter plan mode, then execute implementation tasks sequentially |
+| `/implementing-specs #N` | Read specs for current branch, enter plan mode, then execute implementation tasks sequentially |
 | `/verifying-specs #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
 | `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
-| `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure) — run once per project |
-| `/running-sdlc start\|status\|stop` | Launch, monitor, or stop the deterministic SDLC runner (OpenClaw skill) |
+| `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure). Run once per project |
+| `/running-sdlc start\|status\|stop` | Launch, monitor, or stop the deterministic SDLC runner for a project |
 
 ### Utility Skills
 
