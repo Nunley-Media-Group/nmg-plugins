@@ -7,7 +7,7 @@ allowed-tools: Read, Bash(cp:*), Bash(mkdir:*), Bash(source:*), Bash(ls:*)
 
 # Installing OpenClaw Plugin
 
-Copy the OpenClaw running-sdlc skill and its supporting files from the nmg-plugins repo to `~/.openclaw/skills/running-sdlc/`, then restart the OpenClaw gateway.
+Copy the OpenClaw running-sdlc skill and its supporting files from the nmg-plugins marketplace clone to `~/.openclaw/skills/running-sdlc/`, then restart the OpenClaw gateway.
 
 ## When to Use
 
@@ -19,9 +19,7 @@ Copy the OpenClaw running-sdlc skill and its supporting files from the nmg-plugi
 
 | Path | Purpose |
 |------|---------|
-| `openclaw/skills/running-sdlc/SKILL.md` | Skill source (in this repo) |
-| `openclaw/scripts/sdlc-runner.mjs` | SDLC runner script source |
-| `openclaw/scripts/sdlc-config.example.json` | Config template source |
+| `~/.claude/plugins/marketplaces/nmg-plugins/openclaw/` | Source (marketplace clone) |
 | `~/.openclaw/skills/running-sdlc/` | Installed skill directory |
 
 ## Workflow Overview
@@ -45,15 +43,14 @@ mkdir -p ~/.openclaw/skills/running-sdlc
 
 ## Step 2: Copy Skill Files
 
-Determine the repo root. If running from within the nmg-plugins repo, use the repo working directory. Otherwise, fall back to the marketplace clone at `~/.claude/plugins/marketplaces/nmg-plugins`.
+Always source from the marketplace clone at `~/.claude/plugins/marketplaces/nmg-plugins`:
 
 ```bash
-# From repo root:
-cp openclaw/skills/running-sdlc/SKILL.md \
+cp ~/.claude/plugins/marketplaces/nmg-plugins/openclaw/skills/running-sdlc/SKILL.md \
    ~/.openclaw/skills/running-sdlc/SKILL.md
-cp openclaw/scripts/sdlc-runner.mjs \
+cp ~/.claude/plugins/marketplaces/nmg-plugins/openclaw/scripts/sdlc-runner.mjs \
    ~/.openclaw/skills/running-sdlc/sdlc-runner.mjs
-cp openclaw/scripts/sdlc-config.example.json \
+cp ~/.claude/plugins/marketplaces/nmg-plugins/openclaw/scripts/sdlc-config.example.json \
    ~/.openclaw/skills/running-sdlc/sdlc-config.example.json
 ```
 
