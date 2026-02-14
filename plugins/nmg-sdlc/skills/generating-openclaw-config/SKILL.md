@@ -1,7 +1,7 @@
 ---
 name: generating-openclaw-config
 description: "Generate an SDLC runner config for the current project."
-allowed-tools: Read, Write, Bash(basename:*), Bash(pbcopy:*), Bash(xclip:*), Bash(xsel:*), Bash(wl-copy:*), Bash(clip.exe:*), Bash(cat:*), Bash(realpath:*), Bash(pwd:*)
+allowed-tools: Read, Write, Bash(basename:*), Bash(pbcopy:*), Bash(xclip:*), Bash(xsel:*), Bash(wl-copy:*), Bash(clip.exe:*), Bash(cat:*), Bash(realpath:*), Bash(pwd:*), Bash(git:*), Bash(test:*)
 ---
 
 # Generating Config
@@ -10,24 +10,36 @@ Generate a ready-to-use `sdlc-config.json` for the SDLC runner by substituting t
 
 ## Steps
 
-1. **Resolve the current project directory** — use the primary working directory (i.e., the directory Claude Code was launched in):
+1. **Resolve the project root** — find the root of the Claude Code project by locating the nearest ancestor directory containing a `.claude/` folder:
    ```bash
-   pwd
+   git rev-parse --show-toplevel
    ```
-   This is the project that the config will target.
-
-2. **Read the template** at `openclaw/scripts/sdlc-config.example.json` in the nmg-plugins repo root.
-
-3. **Derive the project name** from the project directory's basename:
+   Then verify it's a Claude Code project:
    ```bash
-   basename "$(pwd)"
+   test -d "$(git rev-parse --show-toplevel)/.claude"
+   ```
+   If `.claude/` does not exist at the repo root, **stop and tell the user**: this must be run from within a Claude Code project (a directory with `.claude/` at its root).
+
+   Use this resolved project root for all subsequent steps — do NOT use `pwd` directly, as it may differ from the project root.
+
+2. **Read the template** from the local marketplace clone:
+   ```
+   ~/.claude/plugins/marketplaces/nmg-plugins/openclaw/scripts/sdlc-config.example.json
    ```
 
-4. **Resolve the nmg-plugins path** — the absolute path to the nmg-plugins repository root (the directory containing `openclaw/scripts/sdlc-config.example.json`). Use the known path from this skill's repo.
+3. **Derive the project name** from the project root's basename:
+   ```bash
+   basename "$(git rev-parse --show-toplevel)"
+   ```
+
+4. **Resolve the nmg-plugins path** — use the marketplace clone location:
+   ```
+   ~/.claude/plugins/marketplaces/nmg-plugins
+   ```
 
 5. **Substitute values** — replace the placeholder fields in the template:
-   - `"projectPath": "/path/to/your/project"` → the resolved current project directory
-   - `"pluginsPath": "/path/to/nmg-plugins"` → the resolved nmg-plugins repo root
+   - `"projectPath": "/path/to/your/project"` → the resolved project root from Step 1
+   - `"pluginsPath": "/path/to/nmg-plugins"` → the marketplace clone path (`~/.claude/plugins/marketplaces/nmg-plugins`), expanded to the full absolute path
 
 6. **Output the result** — print the fully substituted config JSON. The output should be ready to save as `sdlc-config.json`.
 
