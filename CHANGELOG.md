@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.5] - 2026-02-14
+
+### Fixed
+
+- **`openclaw/scripts/sdlc-runner.mjs`** — Discord status posts intermittently failed with ETIMEDOUT due to single-attempt 15s timeout; added 3-attempt retry with exponential backoff (2s, 4s) and bumped timeout to 30s
+
 ## [2.1.4] - 2026-02-14
 
 ### Fixed
