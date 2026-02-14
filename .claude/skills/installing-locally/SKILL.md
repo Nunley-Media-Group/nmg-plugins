@@ -2,7 +2,7 @@
 name: installing-locally
 description: "Install or update all nmg-plugins marketplace plugins locally for the current user."
 argument-hint: ""
-allowed-tools: Read, Bash(git:*), Bash(cp:*), Bash(mkdir:*), Bash(date:*), Bash(jq:*), Bash(chmod:*), Bash(rsync:*), Bash(openclaw:*)
+allowed-tools: Read, Bash(git:*), Bash(cp:*), Bash(mkdir:*), Bash(date:*), Bash(jq:*), Bash(chmod:*), Bash(rsync:*), Bash(source:*)
 ---
 
 # Installing Locally
@@ -148,13 +148,15 @@ cp ~/.claude/plugins/marketplaces/nmg-plugins/openclaw/scripts/sdlc-config.examp
 
 ## Step 6: Restart OpenClaw Gateway
 
-Restart the OpenClaw gateway so it picks up the updated skill files:
+Restart the OpenClaw gateway so it picks up the updated skill files.
+
+Because `openclaw` is installed via nvm, it is not on PATH in non-interactive shells. Source nvm first:
 
 ```bash
-openclaw gateway restart
+source ~/.nvm/nvm.sh 2>/dev/null && openclaw gateway restart
 ```
 
-If the `openclaw` command is not found or the restart fails, warn the user but do not fail the overall install — the Claude Code plugins were still installed successfully.
+If nvm or `openclaw` is not found, or the restart fails, warn the user but do not fail the overall install — the Claude Code plugins were still installed successfully.
 
 ## Step 7: Report Results
 
