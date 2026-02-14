@@ -186,7 +186,12 @@ function validatePreconditions(step, state) {
 
     case 2: { // Start issue — clean main branch
       try {
-        const status = git('status --porcelain');
+        const RUNNER_FILES = ['.claude/sdlc-state.json', '.claude/auto-mode'];
+        const status = git('status --porcelain')
+          .split('\n')
+          .filter(line => !RUNNER_FILES.some(f => line.trimStart().endsWith(f)))
+          .join('\n')
+          .trim();
         const branch = git('rev-parse --abbrev-ref HEAD');
         if (status.length > 0) return { ok: false, reason: 'Working tree is dirty' };
         if (branch !== 'main') return { ok: false, reason: `Expected main branch, on ${branch}` };
