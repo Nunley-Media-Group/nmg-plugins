@@ -113,6 +113,7 @@ const STEPS = STEP_KEYS.map((key, i) => ({
 function defaultState() {
   return {
     currentStep: 0,
+    lastCompletedStep: 0,
     currentIssue: null,
     currentBranch: 'main',
     featureName: null,
@@ -573,7 +574,7 @@ async function escalate(step, reason, output = '') {
   postDiscord(diagnostic);
 
   // Reset state
-  updateState({ currentStep: 0 });
+  updateState({ currentStep: 0, lastCompletedStep: 0 });
 }
 
 // ---------------------------------------------------------------------------
@@ -625,6 +626,7 @@ function extractStateFromStep(step, result, state) {
   if (step.number === 9) {
     // Merged — reset for next cycle
     patch.currentStep = 0;
+    patch.lastCompletedStep = 0;
     patch.currentIssue = null;
     patch.currentBranch = 'main';
     patch.featureName = null;
@@ -718,8 +720,11 @@ function handleSignal(signal) {
     }
   } catch { /* best effort */ }
 
-  postDiscord(`SDLC runner stopped (${signal}). Work saved.`);
-  updateState({ currentStep: 0 });
+  const savedState = readState();
+  const nextStep = (savedState.lastCompletedStep || 0) + 1;
+  postDiscord(`SDLC runner stopped (${signal}). Work saved. Resume with --resume to continue from Step ${nextStep}.`);
+  // Preserve lastCompletedStep for resume — don't reset step tracking
+  updateState({ runnerPid: null });
   process.exit(0);
 }
 
@@ -769,6 +774,10 @@ async function runStep(step, state) {
   if (result.exitCode === 0) {
     // Extract state updates
     const patch = extractStateFromStep(step, result, state);
+    // Track completed step for resume (step 9 resets this to 0 via its own patch)
+    if (patch.lastCompletedStep === undefined) {
+      patch.lastCompletedStep = step.number;
+    }
     state = updateState(patch);
 
     // Special: spec validation gate after step 3
@@ -829,8 +838,9 @@ async function main() {
   let state;
   if (RESUME) {
     state = readState();
-    log(`Resuming from step ${state.currentStep}, issue #${state.currentIssue || 'none'}`);
-    postDiscord(`SDLC runner resuming from Step ${state.currentStep}.`);
+    const nextStep = (state.lastCompletedStep || 0) + 1;
+    log(`Resuming: last completed step ${state.lastCompletedStep || 0}, starting from step ${nextStep}. Issue: #${state.currentIssue || 'none'}`);
+    postDiscord(`SDLC runner resuming from Step ${nextStep}.`);
   } else {
     state = defaultState();
     writeState(state);
@@ -864,11 +874,12 @@ async function main() {
     }
 
     // Determine starting step
+    state = readState();
     let startIdx = 0;
-    if (RESUME && state.currentStep > 0) {
-      // Resume from the step that was in progress (re-run it)
-      startIdx = state.currentStep - 1;
-      RESUME && log(`Resuming from step ${state.currentStep}`);
+    if (state.lastCompletedStep > 0) {
+      // Skip already-completed steps — start from the one after lastCompletedStep
+      startIdx = state.lastCompletedStep; // 1-indexed step → 0-indexed array position of next step
+      log(`Continuing from step ${startIdx + 1} (last completed: ${state.lastCompletedStep})`);
     }
 
     for (let i = startIdx; i < STEPS.length; i++) {
@@ -908,7 +919,7 @@ async function main() {
     }
 
     // If we got here from an escalation mid-cycle, the state was already reset
-    state = updateState({ currentStep: 0 });
+    state = updateState({ currentStep: 0, lastCompletedStep: 0 });
   }
 
   log('SDLC Runner exiting.');

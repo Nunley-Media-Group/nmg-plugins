@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.4] - 2026-02-14
+
+### Fixed
+
+- **`openclaw/scripts/sdlc-runner.mjs`** — Resume started from the in-progress step instead of the next step, causing completed work to be re-run; added `lastCompletedStep` state tracking so `--resume` correctly skips already-finished steps
+- **`openclaw/scripts/sdlc-runner.mjs`** — Signal handler reset `currentStep` to 0 on graceful shutdown, losing progress; now preserves `lastCompletedStep` so the runner can resume from where it left off
+
 ## [2.1.3] - 2026-02-14
 
 ### Fixed
