@@ -8,10 +8,15 @@ Claude Code plugin marketplace repository for Nunley Media Group. Contains the `
 
 ```
 .claude-plugin/marketplace.json   — Marketplace index (plugin registry)
+.claude/skills/                   — Repo-level utility skills (not part of the plugin)
 plugins/nmg-sdlc/                 — The nmg-sdlc plugin
   .claude-plugin/plugin.json      — Plugin manifest
   skills/                         — Skill definitions (one directory per skill)
   hooks/                          — PostToolUse hooks
+  agents/                         — Subagent definitions (architecture-reviewer)
+openclaw/                         — OpenClaw integration (separate from the plugin)
+  scripts/                        — SDLC runner script and config template
+  skills/running-sdlc/            — OpenClaw skill definition
 CHANGELOG.md                      — Keep an [Unreleased] section for pending changes
 README.md                         — Public docs: workflow, installation, skills reference
 ```

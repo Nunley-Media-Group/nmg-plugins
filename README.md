@@ -217,6 +217,7 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | `/verifying-specs #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
 | `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
 | `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure). Run once per project |
+| `/installing-openclaw-plugin` | Copy the OpenClaw running-sdlc skill from the marketplace clone to `~/.openclaw/skills/` and restart the gateway |
 
 ### OpenClaw Skills
 
