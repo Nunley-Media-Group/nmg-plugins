@@ -178,10 +178,10 @@ The SDLC orchestration is handled by a deterministic Node.js script (`openclaw/s
 
 See [`openclaw/README.md`](openclaw/README.md) for setup instructions.
 
-To generate a config with your project path pre-filled:
+To generate a config with your project path pre-filled (run from within the target project):
 
 ```bash
-/generating-openclaw-config /path/to/your/project
+/generating-openclaw-config
 ```
 
 To run directly (without OpenClaw):
@@ -218,15 +218,15 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
 | `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure). Run once per project |
 | `/installing-openclaw-plugin` | Copy the OpenClaw running-sdlc skill from the marketplace clone to `~/.openclaw/skills/` and restart the gateway |
-| `/generating-openclaw-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path substituted and copied to clipboard |
+| `/generating-openclaw-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path auto-detected and written to the project root |
 
 ### OpenClaw Skills
 
-These skills are part of the [OpenClaw](https://openclaw.ai/) integration (in `openclaw/`), not the nmg-sdlc plugin:
+These skills are part of the [OpenClaw](https://openclaw.ai/) integration (in [`openclaw/`](openclaw/README.md)), not the nmg-sdlc plugin:
 
 | Skill | Description |
 |-------|-------------|
-| `/running-sdlc start\|status\|stop` | Launch, monitor, or stop the deterministic SDLC runner for a project |
+| `/running-sdlc start\|status\|stop --config <path>` | Launch, monitor, or stop the deterministic SDLC runner for a project. See [`openclaw/README.md`](openclaw/README.md) for setup and details |
 
 ### Utility Skills
 

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-02-14
+
+### Changed
+
+- **`openclaw/README.md`** — Expanded with architecture diagram, setup instructions, installation methods, error handling, state/logs, and file layout
+- **`openclaw/skills/running-sdlc/SKILL.md`** — Documented in README Skills Reference with `--config <path>` argument and link to `openclaw/README.md`
+- **`README.md`** — Fixed `/generating-openclaw-config` description (writes to file, not clipboard) and usage (no path argument); added `--config` argument and `openclaw/README.md` link to OpenClaw Skills table
+
 ## [2.1.1] - 2026-02-14
 
 ### Moved
