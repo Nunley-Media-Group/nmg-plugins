@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.7] - 2026-02-14
+
+### Fixed
+
+- **`openclaw/scripts/sdlc-runner.mjs`** — Discord status posts sent duplicate messages because `openclaw message send` CLI hangs after delivery (Discord.js WebSocket never closed); replaced `execSync` with `spawn`-based approach that detects success markers in stdout and kills the hanging process immediately ([openclaw/openclaw#16460](https://github.com/openclaw/openclaw/issues/16460))
+
+### Added
+
+- **`openclaw/scripts/patch-openclaw-message-hang.mjs`** — Idempotent patch script that fixes the `openclaw message send` hang bug by adding `process.exit(0)` to the `runMessageAction` helper in the installed openclaw CLI
+- **`/installing-openclaw-plugin`** — New Step 3 automatically runs the patch script to fix the openclaw CLI hang bug if present; added `Bash(node:*)` to allowed tools
+
 ## [2.1.6] - 2026-02-14
 
 ### Fixed

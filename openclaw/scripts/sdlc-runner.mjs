@@ -149,7 +149,7 @@ function updateState(patch) {
 // Discord reporting via openclaw system event
 // ---------------------------------------------------------------------------
 
-function postDiscord(message) {
+async function postDiscord(message) {
   if (!DISCORD_CHANNEL) {
     log('Warning: No Discord channel configured (use --discord-channel or config.discordChannelId)');
     return;
@@ -158,12 +158,45 @@ function postDiscord(message) {
     log(`[DRY-RUN] Discord: ${message}`);
     return;
   }
-  const escaped = message.replace(/'/g, "'\\''");
-  const cmd = `openclaw message send --channel discord --target ${DISCORD_CHANNEL} -m '${escaped}'`;
+  // Use spawn instead of execSync to work around openclaw CLI hang bug:
+  // `openclaw message send` delivers the message but never exits because the
+  // Discord.js WebSocket stays open (no process.exit() call).
+  // See https://github.com/openclaw/openclaw/issues/16460
+  const spawnArgs = ['message', 'send', '--channel', 'discord', '--target', DISCORD_CHANNEL, '-m', message];
   const maxAttempts = 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      execSync(cmd, { timeout: 30_000, stdio: 'pipe' });
+      await new Promise((resolve, reject) => {
+        const child = spawn('openclaw', spawnArgs, { stdio: 'pipe' });
+        let stdout = '';
+        let settled = false;
+        child.stdout.on('data', (chunk) => {
+          stdout += chunk.toString();
+          // Once we see the success marker, the message was delivered.
+          // Kill the process since it hangs after delivery.
+          if (!settled && /Sent via|Message ID/i.test(stdout)) {
+            settled = true;
+            child.kill();
+            resolve();
+          }
+        });
+        child.on('error', (err) => { if (!settled) { settled = true; reject(err); } });
+        child.on('close', (code) => {
+          if (!settled) {
+            settled = true;
+            if (code === 0 || code === null) resolve();
+            else reject(new Error(`openclaw message send exited with code ${code}: ${stdout}`));
+          }
+        });
+        // Fallback timeout — if no success marker and no exit after 30s, kill it
+        setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            child.kill();
+            reject(new Error('openclaw message send timed out (30s) with no success marker'));
+          }
+        }, 30_000);
+      });
       return;
     } catch (err) {
       if (attempt < maxAttempts) {
@@ -499,7 +532,7 @@ async function handleFailure(step, result, state) {
 
   if (patternMatch?.action === 'wait') {
     log('Rate limited. Waiting 60s before retry...');
-    postDiscord(`Rate limited on Step ${step.number}. Waiting 60s...`);
+    await postDiscord(`Rate limited on Step ${step.number}. Waiting 60s...`);
     await sleep(60_000);
   }
 
@@ -509,7 +542,7 @@ async function handleFailure(step, result, state) {
     const preconds = validatePreconditions(step, state);
     if (!preconds.ok) {
       log(`Step ${step.number} preconditions failed: ${preconds.reason}. Will retry step ${prevStep.number}.`);
-      postDiscord(`Step ${step.number} preconditions failed: ${preconds.reason}. Retrying Step ${prevStep.number}.`);
+      await postDiscord(`Step ${step.number} preconditions failed: ${preconds.reason}. Retrying Step ${prevStep.number}.`);
       return 'retry-previous';
     }
   }
@@ -540,7 +573,7 @@ async function handleFailure(step, result, state) {
 
   // 5. Increment retry and signal to relaunch
   updateState({ retries: { ...retries, [step.number]: count } });
-  postDiscord(`Step ${step.number} failed (attempt ${count}/${MAX_RETRIES}). Retrying...`);
+  await postDiscord(`Step ${step.number} failed (attempt ${count}/${MAX_RETRIES}). Retrying...`);
   log(`Retry ${count}/${MAX_RETRIES} for step ${step.number}`);
   return 'retry';
 }
@@ -581,7 +614,7 @@ async function escalate(step, reason, output = '') {
     'Manual intervention required.',
   ].filter(Boolean).join('\n');
 
-  postDiscord(diagnostic);
+  await postDiscord(diagnostic);
 
   // Reset state
   updateState({ currentStep: 0, lastCompletedStep: 0 });
@@ -710,7 +743,7 @@ function sleep(ms) {
 let currentProcess = null;
 let shuttingDown = false;
 
-function handleSignal(signal) {
+async function handleSignal(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
   log(`Received ${signal}. Shutting down gracefully...`);
@@ -732,7 +765,7 @@ function handleSignal(signal) {
 
   const savedState = readState();
   const nextStep = (savedState.lastCompletedStep || 0) + 1;
-  postDiscord(`SDLC runner stopped (${signal}). Work saved. Resume with --resume to continue from Step ${nextStep}.`);
+  await postDiscord(`SDLC runner stopped (${signal}). Work saved. Resume with --resume to continue from Step ${nextStep}.`);
   // Preserve lastCompletedStep for resume — don't reset step tracking
   updateState({ runnerPid: null });
   process.exit(0);
@@ -752,11 +785,11 @@ async function runStep(step, state) {
   const preconds = validatePreconditions(step, state);
   if (!preconds.ok) {
     log(`Preconditions failed for step ${step.number}: ${preconds.reason}`);
-    postDiscord(`Step ${step.number} (${step.key}) preconditions failed: ${preconds.reason}`);
+    await postDiscord(`Step ${step.number} (${step.key}) preconditions failed: ${preconds.reason}`);
 
     if (step.number > 1) {
       const prevStep = STEPS[step.number - 2];
-      postDiscord(`Retrying Step ${prevStep.number} (${prevStep.key}) to produce required artifacts.`);
+      await postDiscord(`Retrying Step ${prevStep.number} (${prevStep.key}) to produce required artifacts.`);
       // Increment retry for the previous step
       const retries = state.retries || {};
       const prevCount = (retries[prevStep.number] || 0) + 1;
@@ -775,7 +808,7 @@ async function runStep(step, state) {
 
   // Update state
   state = updateState({ currentStep: step.number });
-  postDiscord(`Starting Step ${step.number}: ${step.key}${state.currentIssue ? ` (issue #${state.currentIssue})` : ''}...`);
+  await postDiscord(`Starting Step ${step.number}: ${step.key}${state.currentIssue ? ` (issue #${state.currentIssue})` : ''}...`);
 
   // Run claude
   const result = await runClaude(step, state);
@@ -795,7 +828,7 @@ async function runStep(step, state) {
       const specCheck = validateSpecs(state);
       if (!specCheck.ok) {
         log(`Spec validation failed: missing ${specCheck.missing.join(', ')}`);
-        postDiscord(`Spec validation failed after Step 3 — missing: ${specCheck.missing.join(', ')}. Retrying...`);
+        await postDiscord(`Spec validation failed after Step 3 — missing: ${specCheck.missing.join(', ')}. Retrying...`);
         const retries = state.retries || {};
         const count = (retries[3] || 0) + 1;
         if (count >= MAX_RETRIES) {
@@ -812,11 +845,11 @@ async function runStep(step, state) {
       const issue = state.currentIssue || 'unknown';
       const committed = autoCommitIfDirty(`feat: implement issue #${issue}`);
       if (committed) {
-        postDiscord('Auto-committed implementation changes after Step 4.');
+        await postDiscord('Auto-committed implementation changes after Step 4.');
       }
     }
 
-    postDiscord(`Step ${step.number} (${step.key}) complete.${result.duration > 60 ? ` (${Math.round(result.duration / 60)}min)` : ''}`);
+    await postDiscord(`Step ${step.number} (${step.key}) complete.${result.duration > 60 ? ` (${Math.round(result.duration / 60)}min)` : ''}`);
     return 'ok';
   }
 
@@ -850,11 +883,11 @@ async function main() {
     state = readState();
     const nextStep = (state.lastCompletedStep || 0) + 1;
     log(`Resuming: last completed step ${state.lastCompletedStep || 0}, starting from step ${nextStep}. Issue: #${state.currentIssue || 'none'}`);
-    postDiscord(`SDLC runner resuming from Step ${nextStep}.`);
+    await postDiscord(`SDLC runner resuming from Step ${nextStep}.`);
   } else {
     state = defaultState();
     writeState(state);
-    postDiscord('SDLC runner started.');
+    await postDiscord('SDLC runner started.');
   }
 
   // Record PID
@@ -878,7 +911,7 @@ async function main() {
     // Check for open issues
     if (!DRY_RUN && !hasOpenIssues()) {
       log('No more open issues. All done!');
-      postDiscord('No more open issues in the project. SDLC runner complete.');
+      await postDiscord('No more open issues in the project. SDLC runner complete.');
       updateState({ currentStep: 0 });
       break;
     }
@@ -935,8 +968,8 @@ async function main() {
   log('SDLC Runner exiting.');
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   log(`Fatal error: ${err.message}`);
-  postDiscord(`SDLC runner crashed: ${err.message}`);
+  await postDiscord(`SDLC runner crashed: ${err.message}`);
   process.exit(1);
 });

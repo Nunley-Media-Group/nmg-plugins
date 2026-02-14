@@ -2,7 +2,7 @@
 name: installing-openclaw-plugin
 description: "Install or update the OpenClaw running-sdlc skill and restart the gateway."
 argument-hint: ""
-allowed-tools: Read, Bash(cp:*), Bash(mkdir:*), Bash(source:*), Bash(ls:*)
+allowed-tools: Read, Bash(cp:*), Bash(mkdir:*), Bash(source:*), Bash(ls:*), Bash(node:*)
 ---
 
 # Installing OpenClaw Plugin
@@ -29,8 +29,9 @@ Copy the OpenClaw running-sdlc skill and its supporting files from the nmg-plugi
     │
     ├─ 1. Create destination directory
     ├─ 2. Copy skill files
-    ├─ 3. Restart OpenClaw gateway
-    └─ 4. Report results
+    ├─ 3. Patch OpenClaw CLI (message-send hang bug)
+    ├─ 4. Restart OpenClaw gateway
+    └─ 5. Report results
 ```
 
 ---
@@ -54,7 +55,19 @@ cp ~/.claude/plugins/marketplaces/nmg-plugins/openclaw/scripts/sdlc-config.examp
    ~/.openclaw/skills/running-sdlc/sdlc-config.example.json
 ```
 
-## Step 3: Restart OpenClaw Gateway
+## Step 3: Patch OpenClaw CLI (message-send hang bug)
+
+The `openclaw message send` CLI has a known bug where the Node process hangs after delivering a message because the Discord.js WebSocket is never closed ([openclaw/openclaw#16460](https://github.com/openclaw/openclaw/issues/16460)). This causes the SDLC runner to time out and send duplicate Discord messages.
+
+Run the patch script to detect and fix the bug if present:
+
+```bash
+source ~/.nvm/nvm.sh 2>/dev/null && node ~/.claude/plugins/marketplaces/nmg-plugins/openclaw/scripts/patch-openclaw-message-hang.mjs
+```
+
+The script is idempotent — it checks whether the patch is already applied, the bug is fixed upstream, or openclaw isn't installed, and handles each case gracefully. Non-fatal: if the patch fails or openclaw is not found, warn the user but continue.
+
+## Step 4: Restart OpenClaw Gateway
 
 Restart the OpenClaw gateway so it picks up the updated skill files.
 
@@ -66,13 +79,16 @@ source ~/.nvm/nvm.sh 2>/dev/null && openclaw gateway restart
 
 If nvm or `openclaw` is not found, or the restart fails, warn the user but do not fail the overall install — the skill files were still copied successfully.
 
-## Step 4: Report Results
+## Step 5: Report Results
 
 Output a summary:
 
 ```
 --- OpenClaw Skill Synced ---
   running-sdlc → ~/.openclaw/skills/running-sdlc/
+
+--- OpenClaw CLI Patch ---
+  [message-send hang fix: applied / already patched / skipped]
 
 --- OpenClaw Gateway ---
   Restarted successfully.
