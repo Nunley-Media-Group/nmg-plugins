@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-02-13
+
 ### Changed
 
 - **All skills** — Remove deprecated "ultrathink" keyword lines (no functional effect; extended thinking is session-level)
