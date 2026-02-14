@@ -147,7 +147,6 @@ bash pty:true workdir:{{PROJECT_PATH}} background:true \
 - Always commit and push ALL changes before running the creating-prs step. Never leave work as unstaged changes.
 - Proactively monitor CI — do NOT wait for the user to tell you CI failed. Check CI status automatically and fix failures immediately.
 - **No slash commands in `-p` mode.** Slash commands are interactive-only. In headless mode, describe the task in the `-p` prompt and inject skill instructions via `--append-system-prompt`.
-- **No `/beginning-dev` in automation.** Each skill must run as a separate subprocess. The orchestrator (you) controls step sequencing.
 - **No `/clear` needed.** Each `claude -p` subprocess starts with a fresh context window. Context management is automatic.
 - **One step per subprocess — no exceptions.** Never ask a single `claude -p` session to perform multiple SDLC steps. Each subprocess handles exactly one step; the orchestrator sequences them.
 

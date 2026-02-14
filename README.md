@@ -10,10 +10,6 @@ Stack-agnostic BDD spec-driven development toolkit. Provides a GitHub issue-driv
 
 ```
 Quick Start:
-/beginning-dev  →  /starting-issues  →  /writing-specs #N  →  /implementing-specs #N
-                    ▲ runs automatically
-
-Standalone Issue Start:
 /starting-issues #42  →  /writing-specs #42  →  /implementing-specs #42
 (select issue,           (run manually)          (run manually)
  create branch)
@@ -68,25 +64,13 @@ Review and customize these documents — they provide project-specific context f
 
 ## Workflow
 
-### Quick Start: Beginning Dev
-
-```bash
-/beginning-dev
-```
-
-The fastest way to start working. Delegates to `/starting-issues` to present open issues from your current milestone, lets you pick one, creates a linked feature branch, and sets the issue to "In Progress" — then automatically chains through `/writing-specs` and `/implementing-specs`. You can also pass an issue number directly:
-
-```bash
-/beginning-dev #42
-```
-
-### Standalone: Start an Issue
+### Quick Start: Start an Issue
 
 ```bash
 /starting-issues #42
 ```
 
-If you already have an issue and just need to set up a branch, use this directly. It selects an issue (or presents a picker if no number is given), creates a linked feature branch via `gh issue develop`, and sets the issue to "In Progress" in any associated GitHub Project.
+Selects an issue (or presents a picker if no number is given), creates a linked feature branch via `gh issue develop`, and sets the issue to "In Progress" in any associated GitHub Project.
 
 ### Step 1: Create an Issue
 
@@ -176,7 +160,6 @@ When `.claude/auto-mode` does not exist, skills work interactively as normal.
 - **Review gates**: auto-approves all phases (requirements, design, tasks)
 - **Draft approvals**: approves as-is
 - **Plan mode**: skipped — `EnterPlanMode` is never called (it would fail in a headless session); Claude designs the approach internally from specs
-- **`/beginning-dev`**: runs only `/starting-issues` then stops — the orchestrator handles remaining skills with `/clear` between steps
 - **Skill output**: all "Next step" suggestions suppressed; skills output `Done. Awaiting orchestrator.` instead
 
 OpenClaw is responsible for session lifecycle management (permissions, continuation, restarts).
@@ -248,7 +231,6 @@ Used by `/setting-up-steering` to bootstrap project context:
 
 | Skill | Description |
 |-------|-------------|
-| `/beginning-dev [#N]` | Pick a GitHub issue, create feature branch, then chain through writing-specs and implementing-specs |
 | `/starting-issues [#N]` | Select a GitHub issue, create linked feature branch, set issue to In Progress |
 | `/creating-issues [description]` | Interview user about a feature need, create groomed GitHub issue with BDD acceptance criteria |
 | `/writing-specs #N` | Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown |

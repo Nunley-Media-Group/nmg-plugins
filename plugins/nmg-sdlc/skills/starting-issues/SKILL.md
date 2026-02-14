@@ -183,7 +183,7 @@ Labels: [labels or "none"]
 Status: In Progress
 ```
 
-This summary serves as the handoff contract for downstream skills like `/beginning-dev`, `/writing-specs`, and `/implementing-specs`.
+This summary serves as the handoff contract for downstream skills like `/writing-specs` and `/implementing-specs`.
 
 ---
 
@@ -192,10 +192,6 @@ This summary serves as the handoff contract for downstream skills like `/beginni
 ```
 Standalone:
 /starting-issues #N  →  /writing-specs #N  →  /implementing-specs #N
-
-Via beginning-dev:
-/beginning-dev  →  /starting-issues  →  /writing-specs #N  →  /implementing-specs #N
-                    ▲ invoked automatically
 
 Full Workflow:
 /creating-issues  →  /starting-issues #N  →  /writing-specs #N  →  /implementing-specs #N  →  /verifying-specs #N  →  /creating-prs #N

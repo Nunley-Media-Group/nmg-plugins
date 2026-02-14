@@ -11,7 +11,6 @@ All notable changes to this project will be documented in this file.
 - **`/writing-specs`** — Add Feature Name Convention section defining the `{feature-name}` algorithm (issue number + kebab-case slug)
 - **`/writing-specs`** — Add inline auto-mode conditionals at each Human Review Gate for unambiguous behavior
 - **`/implementing-specs`, `/verifying-specs`, `/creating-prs`** — Add feature-name fallback: use `Glob` to find specs if feature-name is ambiguous
-- **`/beginning-dev`** — Replace `/compact` references with natural language context summarization (slash commands can't be invoked via Skill tool)
 - **`/starting-issues`** — Specify auto-mode issue sort order: issue number ascending (oldest first)
 - **`/verifying-specs`** — Add standard Automation Mode section for consistency with other skills
 - **`/verifying-specs`** — Add fix-vs-defer heuristic: fix findings under ~20 lines; defer architectural changes
@@ -25,6 +24,7 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 
+- **`/beginning-dev`** skill — removed; use `/starting-issues` directly, then chain `/writing-specs` and `/implementing-specs` manually or via orchestrator
 - Discord notification hooks (`on-stop.sh`, `on-notification.sh`, `_lib.sh`) — redundant with heartbeat-driven orchestration; the orchestrator already detects subprocess state via polling and posts its own Discord updates
 - `OPENCLAW_DISCORD_CHANNEL` requirement from automation prompt — no hooks consume it anymore
 
