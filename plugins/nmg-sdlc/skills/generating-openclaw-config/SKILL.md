@@ -1,7 +1,7 @@
 ---
 name: generating-openclaw-config
 description: "Generate an SDLC runner config for the current project."
-allowed-tools: Read, Write, Bash(basename:*), Bash(pbcopy:*), Bash(xclip:*), Bash(xsel:*), Bash(wl-copy:*), Bash(clip.exe:*), Bash(cat:*), Bash(realpath:*), Bash(pwd:*), Bash(git:*), Bash(test:*)
+allowed-tools: Read, Write, Edit, Bash(basename:*), Bash(realpath:*), Bash(pwd:*), Bash(git:*), Bash(test:*), Bash(grep:*)
 ---
 
 # Generating Config
@@ -41,30 +41,17 @@ Generate a ready-to-use `sdlc-config.json` for the SDLC runner by substituting t
    - `"projectPath": "/path/to/your/project"` → the resolved project root from Step 1
    - `"pluginsPath": "/path/to/nmg-plugins"` → the marketplace clone path (`~/.claude/plugins/marketplaces/nmg-plugins`), expanded to the full absolute path
 
-6. **Output the result** — print the fully substituted config JSON. The output should be ready to save as `sdlc-config.json`.
+6. **Write the config file** — save the fully substituted config JSON to `sdlc-config.json` in the project root (resolved in Step 1). Use the Write tool.
 
-7. **Copy to clipboard** — write the substituted config to a temporary file, then copy it to the system clipboard using the appropriate platform command:
-   ```bash
-   if [[ "$OSTYPE" == "darwin"* ]]; then
-     cat /tmp/sdlc-config.json | pbcopy
-   elif grep -qi microsoft /proc/version 2>/dev/null || [[ -n "$WSL_DISTRO_NAME" ]]; then
-     cat /tmp/sdlc-config.json | clip.exe
-   elif command -v wl-copy &> /dev/null; then
-     cat /tmp/sdlc-config.json | wl-copy
-   elif command -v xclip &> /dev/null; then
-     cat /tmp/sdlc-config.json | xclip -selection clipboard
-   elif command -v xsel &> /dev/null; then
-     cat /tmp/sdlc-config.json | xsel --clipboard --input
-   else
-     echo "No clipboard utility found — copy the output above manually." >&2
-   fi
-   ```
-   Confirm to the user that the config has been copied to their clipboard (or advise them to copy manually if no clipboard utility was found).
+7. **Add to .gitignore** — ensure `sdlc-config.json` is listed in the project's `.gitignore`:
+   - Read the `.gitignore` file in the project root. If it does not exist, create it.
+   - If `sdlc-config.json` is NOT already present, add it under an `# SDLC runner config` comment.
+   - If it is already listed, skip this step.
 
-8. **Suggest next step** — tell the user to save the config and launch the runner:
+8. **Confirm and suggest next step** — tell the user the config has been written and is git-ignored, then suggest:
    ```
-   Save this as sdlc-config.json, then run:
-     node openclaw/scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json
+   Run the SDLC runner:
+     node openclaw/scripts/sdlc-runner.mjs --config sdlc-config.json
    Or install the OpenClaw skill and launch via Discord.
    ```
 
