@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.8] - 2026-02-14
+
+### Fixed
+
+- **`openclaw/scripts/sdlc-runner.mjs`** — Runner now auto-detects in-progress work from git state on every startup; inspects branch name, specs, commits, PR status, and CI to hydrate state from reality, preventing loss of context when restarting on a feature branch
+
 ## [2.1.7] - 2026-02-14
 
 ### Fixed

@@ -145,6 +145,134 @@ function updateState(patch) {
   return state;
 }
 
+/**
+ * Inspect git state and filesystem artifacts to detect in-progress work.
+ * Called on every startup to hydrate state from reality, not from a potentially
+ * stale state file.
+ *
+ * Returns a state patch object if work is detected, or null to fall through
+ * to normal startup behavior.
+ */
+function detectAndHydrateState() {
+  let branch;
+  try {
+    branch = git('rev-parse --abbrev-ref HEAD');
+  } catch {
+    log('detectAndHydrateState: could not determine current branch');
+    return null;
+  }
+
+  if (branch === 'main') {
+    log('detectAndHydrateState: on main branch, proceeding normally');
+    return null;
+  }
+
+  // Extract issue number from branch name (e.g. "30-feature-slug")
+  const branchMatch = branch.match(/^(\d+)-(.+)$/);
+  if (!branchMatch) {
+    log(`detectAndHydrateState: branch "${branch}" does not match <number>-<slug> pattern, skipping detection`);
+    return null;
+  }
+
+  const issueNumber = parseInt(branchMatch[1], 10);
+  log(`detectAndHydrateState: on feature branch "${branch}", issue #${issueNumber}`);
+
+  // Check if PR is already merged — if so, return to main for a fresh cycle
+  try {
+    const prState = gh('pr view --json state --jq .state');
+    if (prState === 'MERGED') {
+      log('detectAndHydrateState: PR is already merged, checking out main for fresh cycle');
+      if (!DRY_RUN) {
+        git('checkout main');
+        git('pull');
+      }
+      return { _merged: true };
+    }
+  } catch {
+    // No PR exists yet — that's fine, continue probing
+  }
+
+  // Probe artifacts from highest to lowest to determine lastCompletedStep
+  let lastCompletedStep = 2; // At minimum, we're on a feature branch (step 2 done)
+
+  // Check for spec files (step 3)
+  const specsDir = path.join(PROJECT_PATH, '.claude', 'specs');
+  let featureName = null;
+  if (fs.existsSync(specsDir)) {
+    const dirs = fs.readdirSync(specsDir)
+      .filter(d => fs.statSync(path.join(specsDir, d)).isDirectory());
+
+    // Try to match by branch slug, otherwise take the last directory
+    const slug = branchMatch[2];
+    const matched = dirs.find(d => d.includes(slug)) || (dirs.length > 0 ? dirs[dirs.length - 1] : null);
+
+    if (matched) {
+      const featureDir = path.join(specsDir, matched);
+      const required = ['requirements.md', 'design.md', 'tasks.md', 'feature.gherkin'];
+      const allPresent = required.every(f => {
+        const fp = path.join(featureDir, f);
+        return fs.existsSync(fp) && fs.statSync(fp).size > 0;
+      });
+      if (allPresent) {
+        lastCompletedStep = 3;
+        featureName = matched;
+      }
+    }
+  }
+
+  // Check for commits ahead of main (step 4 — conservative; steps 4/5 indistinguishable)
+  if (lastCompletedStep >= 3) {
+    try {
+      const aheadLog = git('log main..HEAD --oneline');
+      if (aheadLog) {
+        lastCompletedStep = 4;
+      }
+    } catch { /* ignore */ }
+  }
+
+  // Check if branch is pushed to remote with no unpushed commits (step 6)
+  if (lastCompletedStep >= 4) {
+    try {
+      const unpushed = git(`log origin/${branch}..HEAD --oneline`);
+      if (!unpushed) {
+        // All commits pushed
+        lastCompletedStep = 6;
+      }
+    } catch {
+      // Remote branch doesn't exist — not pushed yet
+    }
+  }
+
+  // Check if PR exists (step 7)
+  if (lastCompletedStep >= 6) {
+    try {
+      gh('pr view --json number');
+      lastCompletedStep = 7;
+    } catch {
+      // No PR yet
+    }
+  }
+
+  // Check if CI is passing (step 8)
+  if (lastCompletedStep >= 7) {
+    try {
+      const checks = gh('pr checks');
+      if (!/fail|pending/i.test(checks)) {
+        lastCompletedStep = 8;
+      }
+    } catch { /* ignore */ }
+  }
+
+  log(`detectAndHydrateState: detected lastCompletedStep=${lastCompletedStep}, featureName=${featureName || '<unknown>'}`);
+
+  return {
+    currentIssue: issueNumber,
+    currentBranch: branch,
+    featureName,
+    lastCompletedStep,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Discord reporting via openclaw system event
 // ---------------------------------------------------------------------------
@@ -877,14 +1005,40 @@ async function main() {
     log('Created .claude/auto-mode flag');
   }
 
-  // Write initial state (or resume from existing)
+  // Detect in-progress work from git state (runs on every startup)
+  const detected = detectAndHydrateState();
   let state;
-  if (RESUME) {
+
+  if (detected && detected._merged) {
+    // PR was merged but we were still on the feature branch — start fresh
+    state = defaultState();
+    writeState(state);
+    log('Detected merged PR on feature branch. Checked out main for fresh cycle.');
+    await postDiscord('Detected merged PR — checked out main, starting fresh cycle.');
+  } else if (detected) {
+    // In-progress work detected from git/filesystem artifacts
+    const nextStep = detected.lastCompletedStep + 1;
+
+    // Preserve retry counts from state file if --resume was passed
+    if (RESUME && fs.existsSync(STATE_PATH)) {
+      const savedState = readState();
+      detected.retries = savedState.retries || {};
+    } else {
+      detected.retries = {};
+    }
+
+    state = { ...defaultState(), ...detected };
+    writeState(state);
+    log(`Detected in-progress work: issue #${detected.currentIssue}, branch "${detected.currentBranch}", lastCompletedStep=${detected.lastCompletedStep} — resuming from step ${nextStep}`);
+    await postDiscord(`Detected in-progress work on issue #${detected.currentIssue} (step ${detected.lastCompletedStep} complete). Resuming from Step ${nextStep}.`);
+  } else if (RESUME) {
+    // No feature branch detected but --resume passed — use state file
     state = readState();
     const nextStep = (state.lastCompletedStep || 0) + 1;
     log(`Resuming: last completed step ${state.lastCompletedStep || 0}, starting from step ${nextStep}. Issue: #${state.currentIssue || 'none'}`);
     await postDiscord(`SDLC runner resuming from Step ${nextStep}.`);
   } else {
+    // Fresh start on main — normal behavior
     state = defaultState();
     writeState(state);
     await postDiscord('SDLC runner started.');
