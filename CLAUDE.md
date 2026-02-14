@@ -27,6 +27,10 @@ The `metadata.version` in `marketplace.json` is the marketplace collection versi
 
 Also update `CHANGELOG.md` — add entries under `[Unreleased]`, then move to a versioned heading on release.
 
+## Spec Drift Detection
+
+The spec drift hook intentionally checks ALL specs, not just the spec for the current branch or feature. This ensures that any file modification — even ones made outside the SDLC workflow — is validated against every existing spec. Do not scope the hook to only the "current" spec.
+
 ## Commit Style
 
 Use conventional commits: `feat:`, `fix:`, `docs:`, `chore:`, etc.
