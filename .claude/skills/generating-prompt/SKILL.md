@@ -1,13 +1,13 @@
 ---
 name: generating-prompt
-description: "Generate an OpenClaw automation prompt for a given project path."
+description: "Generate an SDLC runner config for a given project path."
 argument-hint: "/path/to/project"
-allowed-tools: Read, Write, Bash(basename:*), Bash(pbcopy:*), Bash(xclip:*), Bash(xsel:*), Bash(wl-copy:*), Bash(clip.exe:*), Bash(cat:*)
+allowed-tools: Read, Write, Bash(basename:*), Bash(pbcopy:*), Bash(xclip:*), Bash(xsel:*), Bash(wl-copy:*), Bash(clip.exe:*), Bash(cat:*), Bash(realpath:*)
 ---
 
-# Generating Prompt
+# Generating Config
 
-Generate a ready-to-use OpenClaw automation prompt by substituting a project path into the template.
+Generate a ready-to-use `sdlc-config.json` for the SDLC runner by substituting a project path into the config template.
 
 ## Argument
 
@@ -17,38 +17,50 @@ If no argument is provided, ask the user for the project path before proceeding.
 
 ## Steps
 
-1. **Read the template** at `openclaw-automation-prompt.md` in the repository root (the nmg-plugins repo where this skill lives).
+1. **Read the template** at `scripts/sdlc-config.example.json` in the repository root (the nmg-plugins repo where this skill lives).
 
 2. **Derive the project name** from the path's basename:
    ```bash
    basename "/path/to/project"
    ```
 
-3. **Substitute tokens** — replace all occurrences of:
-   - `{{PROJECT_PATH}}` → the provided absolute path (e.g., `/Volumes/Fast Brick/source/repos/chrome-cli`)
-   - `{{PROJECT_NAME}}` → the basename derived above (e.g., `chrome-cli`)
-   - `{{NMG_PLUGINS_PATH}}` → the absolute path to the nmg-plugins repository root (the directory containing `openclaw-automation-prompt.md`)
+3. **Resolve the nmg-plugins path** — the absolute path to the nmg-plugins repository root (the directory containing `scripts/sdlc-config.example.json`):
+   ```bash
+   realpath "$(dirname "$(dirname "$0")")"
+   ```
+   Or use the known working directory if already in the repo.
 
-4. **Output the result** — print the fully substituted prompt, starting from the `---` separator line (skip the header lines above it that describe the template). The output should be ready to paste directly into an OpenClaw agent configuration.
+4. **Substitute values** — replace the placeholder fields in the template:
+   - `"projectPath": "/path/to/your/project"` → the provided absolute path
+   - `"pluginsPath": "/path/to/nmg-plugins"` → the resolved nmg-plugins repo root
 
-5. **Copy to clipboard** — write the substituted prompt to a temporary file, then copy it to the system clipboard using the appropriate platform command:
+5. **Output the result** — print the fully substituted config JSON. The output should be ready to save as `sdlc-config.json`.
+
+6. **Copy to clipboard** — write the substituted config to a temporary file, then copy it to the system clipboard using the appropriate platform command:
    ```bash
    if [[ "$OSTYPE" == "darwin"* ]]; then
-     cat /tmp/openclaw-prompt.md | pbcopy
+     cat /tmp/sdlc-config.json | pbcopy
    elif grep -qi microsoft /proc/version 2>/dev/null || [[ -n "$WSL_DISTRO_NAME" ]]; then
-     cat /tmp/openclaw-prompt.md | clip.exe
+     cat /tmp/sdlc-config.json | clip.exe
    elif command -v wl-copy &> /dev/null; then
-     cat /tmp/openclaw-prompt.md | wl-copy
+     cat /tmp/sdlc-config.json | wl-copy
    elif command -v xclip &> /dev/null; then
-     cat /tmp/openclaw-prompt.md | xclip -selection clipboard
+     cat /tmp/sdlc-config.json | xclip -selection clipboard
    elif command -v xsel &> /dev/null; then
-     cat /tmp/openclaw-prompt.md | xsel --clipboard --input
+     cat /tmp/sdlc-config.json | xsel --clipboard --input
    else
      echo "No clipboard utility found — copy the output above manually." >&2
    fi
    ```
-   Confirm to the user that the prompt has been copied to their clipboard (or advise them to copy manually if no clipboard utility was found).
+   Confirm to the user that the config has been copied to their clipboard (or advise them to copy manually if no clipboard utility was found).
+
+7. **Suggest next step** — tell the user to save the config and launch the runner:
+   ```
+   Save this as sdlc-config.json, then run:
+     node scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json
+   Or install the OpenClaw skill and launch via Discord.
+   ```
 
 ## Integration with SDLC Workflow
 
-This skill is a utility for setting up OpenClaw automation agents. It is not part of the SDLC cycle itself but supports the automation layer that drives it.
+This skill is a utility for setting up the SDLC runner. It generates the configuration file that `sdlc-runner.mjs` reads to orchestrate the development cycle. It is not part of the SDLC cycle itself but supports the automation layer that drives it.

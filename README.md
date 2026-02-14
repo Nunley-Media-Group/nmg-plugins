@@ -137,8 +137,6 @@ The plugin supports fully automated operation for external agents like [OpenClaw
 |------|------|----------|
 | Spec drift detection | `PostToolUse` (agent) | Reads spec files via Glob/Read and checks whether file modifications align with active specs |
 
-Discord notification hooks (session stop, waiting for input) were removed in v1.11.0 — the heartbeat-driven orchestration model makes them redundant since the orchestrator already detects subprocess state via polling.
-
 ### Enable / Disable
 
 Create the flag file to enable, remove it to disable:
@@ -162,23 +160,33 @@ When `.claude/auto-mode` does not exist, skills work interactively as normal.
 - **Plan mode**: skipped — `EnterPlanMode` is never called (it would fail in a headless session); Claude designs the approach internally from specs
 - **Skill output**: all "Next step" suggestions suppressed; skills output `Done. Awaiting orchestrator.` instead
 
-OpenClaw is responsible for session lifecycle management (permissions, continuation, restarts).
-
 ### Safety net
 
 `/verifying-specs` runs fully autonomously (even outside automation mode) and validates the implementation against specs. It serves as the quality gate — catching deviations, running architecture review, and auto-fixing findings.
 
-### Example: OpenClaw automation prompt
+### Deterministic SDLC Runner
 
-See [`openclaw-automation-prompt.md`](openclaw-automation-prompt.md) for a complete prompt you can give to an [OpenClaw](https://openclaw.ai/) agent to continuously develop issues end-to-end. It uses headless `claude -p` per-step sessions (one session per SDLC skill) to drive the full cycle — start issue, write specs, implement, verify, create PR, monitor CI, merge — with artifact validation gates between steps, retry caps (3 attempts per step), and a self-healing watchdog cron.
+Since v2.0.0, the SDLC orchestration is handled by a deterministic Node.js script (`scripts/sdlc-runner.mjs`) instead of prompt engineering. The script drives the full development cycle as a continuous loop of `claude -p` subprocess invocations, with code-based step sequencing, precondition validation, timeout detection, retry logic, Discord reporting, and escalation.
 
-To generate a ready-to-use prompt with your project path substituted in, use the `/generating-prompt` skill:
+See [`openclaw-automation-prompt.md`](openclaw-automation-prompt.md) for setup instructions.
+
+To generate a config with your project path pre-filled:
 
 ```bash
 /generating-prompt /path/to/your/project
 ```
 
-This reads the template, replaces `{{PROJECT_PATH}}`, `{{PROJECT_NAME}}`, and `{{NMG_PLUGINS_PATH}}` with your values, and copies the result to your clipboard.
+To run directly (without OpenClaw):
+
+```bash
+node scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json
+```
+
+To install the OpenClaw skill for Discord-driven launch/stop/status:
+
+```bash
+./scripts/install-openclaw-skill.sh
+```
 
 ## Customization
 
@@ -238,6 +246,7 @@ Used by `/setting-up-steering` to bootstrap project context:
 | `/verifying-specs #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
 | `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
 | `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure) — run once per project |
+| `/running-sdlc start\|status\|stop` | Launch, monitor, or stop the deterministic SDLC runner (OpenClaw skill) |
 
 ### Utility Skills
 
@@ -245,7 +254,7 @@ These are repo-level utilities (not part of the nmg-sdlc plugin itself):
 
 | Skill | Description |
 |-------|-------------|
-| `/generating-prompt /path/to/project` | Generate a ready-to-use OpenClaw automation prompt from the template, with project path substituted and copied to clipboard |
+| `/generating-prompt /path/to/project` | Generate an `sdlc-config.json` for the SDLC runner, with project path substituted and copied to clipboard |
 | `/installing-locally` | Install or update all marketplace plugins to the local Claude Code plugin cache — useful for testing after pushing changes |
 
 ## Updating

@@ -4,11 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Fixed
+### Added
 
-- **OpenClaw prompt** — Watchdog cron now detects orphaned state when `currentStep > 0` regardless of `currentIssue` (fixes missed Step 1→2 transitions)
-- **OpenClaw prompt** — Watchdog cron posts to Discord in ALL scenarios (healthy/idle/stalled/orphaned) instead of silently returning HEARTBEAT_OK
-- **OpenClaw prompt** — Add `lastTransitionAt` timestamp to `sdlc-state.json` for stale-transition detection
+- **`scripts/sdlc-runner.mjs`** — Deterministic Node.js orchestrator that replaces the prompt-engineered heartbeat loop; drives the full SDLC cycle via `claude -p` subprocesses with code-based step sequencing, precondition validation, timeout detection, retry logic, Discord reporting, and escalation
+- **`scripts/sdlc-config.example.json`** — Project configuration template for the SDLC runner with per-step maxTurns, timeouts, and skill references
+- **`scripts/install-openclaw-skill.sh`** — Installer utility for the OpenClaw skill (copy or link mode)
+- **`/running-sdlc`** — New OpenClaw skill: launch, monitor status, or stop the SDLC runner from Discord
+
+### Changed
+
+- **`openclaw-automation-prompt.md`** — Replaced 410-line prompt-engineered orchestration with short documentation for the script-based approach
+- **`/generating-prompt`** — Now generates `sdlc-config.json` instead of the old automation prompt
+
+### Removed
+
+- Heartbeat-driven orchestration loop (replaced by deterministic `for` loop in `sdlc-runner.mjs`)
+- Watchdog cron prompt engineering (replaced by simple PID check or script crash recovery)
+- All prompt-based state management, retry counting, timeout detection, and Discord posting logic
 
 ## [1.12.0] - 2026-02-13
 
