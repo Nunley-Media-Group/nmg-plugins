@@ -218,6 +218,7 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
 | `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure). Run once per project |
 | `/installing-openclaw-plugin` | Copy the OpenClaw running-sdlc skill from the marketplace clone to `~/.openclaw/skills/` and restart the gateway |
+| `/generating-openclaw-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path substituted and copied to clipboard |
 
 ### OpenClaw Skills
 
@@ -233,7 +234,6 @@ These are repo-level utilities (not part of the nmg-sdlc plugin itself):
 
 | Skill | Description |
 |-------|-------------|
-| `/generating-openclaw-config /path/to/project` | Generate an `sdlc-config.json` for the SDLC runner, with project path substituted and copied to clipboard |
 | `/installing-locally` | Install or update all marketplace plugins to the local Claude Code plugin cache, sync the OpenClaw skill, and restart the OpenClaw gateway |
 
 ## Updating
