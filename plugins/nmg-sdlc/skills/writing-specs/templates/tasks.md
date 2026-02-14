@@ -279,3 +279,87 @@ Before moving to IMPLEMENT phase:
 - [ ] No circular dependencies
 - [ ] Tasks are in logical execution order
 ```
+
+---
+
+# Defect Tasks Variant
+
+**Use this variant when the GitHub issue has the `bug` label.** It replaces the phased feature task breakdown above with a flat 2–4 task list focused on fix, test, and verify. Omit the 5-phase structure, dependency graph, and 17-task breakdown.
+
+---
+
+```markdown
+# Tasks: [Bug Summary]
+
+**Issue**: #[number]
+**Date**: [YYYY-MM-DD]
+**Status**: Planning | In Progress | Complete
+**Author**: [name]
+
+---
+
+## Summary
+
+| Task | Description | Status |
+|------|-------------|--------|
+| T001 | Fix the defect | [ ] |
+| T002 | Add regression test | [ ] |
+| T003 | Verify no regressions | [ ] |
+
+---
+
+### T001: Fix the Defect
+
+**File(s)**: `path/to/affected/file(s)`
+**Type**: Modify
+**Depends**: None
+**Acceptance**:
+- [ ] Bug no longer reproduces using the steps from requirements.md
+- [ ] Root cause from design.md is addressed (not just symptoms)
+- [ ] No unrelated changes included in the diff
+
+**Notes**: Follow the fix strategy from design.md. Keep changes minimal.
+
+### T002: Add Regression Test
+
+**File(s)**: `{test-layer}/features/[feature-name].feature`, `{test-layer}/steps/...`
+**Type**: Create
+**Depends**: T001
+**Acceptance**:
+- [ ] Gherkin scenario reproduces the original bug condition
+- [ ] Scenario tagged `@regression`
+- [ ] Step definitions implemented
+- [ ] Test passes with the fix applied
+- [ ] Test fails if the fix is reverted (confirms it catches the bug)
+
+### T003: Verify No Regressions
+
+**File(s)**: [existing test files]
+**Type**: Verify (no file changes)
+**Depends**: T001, T002
+**Acceptance**:
+- [ ] All existing tests pass
+- [ ] No side effects in related code paths (per blast radius from design.md)
+
+### T004: [Additional Fix Task — if needed]
+
+*Include only if the fix spans multiple files or requires a separate preparatory change. Most defects need only T001–T003.*
+
+**File(s)**: `path/to/file`
+**Type**: Modify
+**Depends**: [dependency]
+**Acceptance**:
+- [ ] [Specific criterion]
+
+---
+
+## Validation Checklist
+
+Before moving to IMPLEMENT phase:
+
+- [ ] Tasks are focused on the fix — no feature work
+- [ ] Regression test is included (T002)
+- [ ] Each task has verifiable acceptance criteria
+- [ ] No scope creep beyond the defect
+- [ ] File paths reference actual project structure (per `structure.md`)
+```

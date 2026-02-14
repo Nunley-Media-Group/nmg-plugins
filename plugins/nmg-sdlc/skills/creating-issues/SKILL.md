@@ -50,10 +50,20 @@ Topics to cover (skip any already answered):
 
 Adapt questions based on the type of work:
 - **Feature**: Focus on user story, acceptance criteria, UI/UX needs
-- **Bug fix**: Focus on reproduction steps, expected vs actual behavior
+- **Bug fix**: Focus on reproduction and diagnosis:
+  - "What are the exact steps to reproduce this bug?"
+  - "What do you expect to happen vs what actually happens?"
+  - "What environment does this occur in?" (OS, browser, version, configuration)
+  - "How often does it happen?" (always, intermittent, one-time)
+  - "Are there any error messages, stack traces, or log output?"
+  - "When did this start? Was there a recent change that might have caused it?"
 - **Enhancement**: Focus on current behavior, desired improvement, impact
 
 ### Step 3: Synthesize into Issue Body
+
+Choose the appropriate template based on the type of work identified in Step 2.
+
+#### Feature / Enhancement Template
 
 Draft the issue using this structure:
 
@@ -106,6 +116,62 @@ Each criterion uses Given/When/Then format. These become Gherkin BDD test scenar
 ## Notes
 
 [Any additional context, links, references, or technical considerations]
+```
+
+#### Bug Report Template
+
+For bug fixes, use this structure instead:
+
+```markdown
+## Bug Report
+
+[1-2 sentence summary of the bug]
+
+## Reproduction Steps
+
+1. [First step]
+2. [Second step]
+3. [Step that triggers the bug]
+
+## Expected Behavior
+
+[What should happen]
+
+## Actual Behavior
+
+[What actually happens]
+
+## Environment
+
+| Factor | Value |
+|--------|-------|
+| **OS / Platform** | [e.g., macOS 15.2, Ubuntu 24.04] |
+| **Version / Commit** | [app version or commit SHA] |
+| **Browser / Runtime** | [if applicable] |
+
+## Acceptance Criteria
+
+### AC1: Bug Is Fixed
+
+**Given** [the reproduction precondition]
+**When** [the action that previously triggered the bug]
+**Then** [the correct expected behavior]
+
+### AC2: No Regression
+
+**Given** [a related scenario that currently works]
+**When** [a related action]
+**Then** [existing behavior is preserved]
+
+## Functional Requirements
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| FR1 | [The fix] | Must |
+
+## Out of Scope
+
+- [Related improvements not part of this fix]
 ```
 
 ### Step 4: Present Draft for Review

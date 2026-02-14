@@ -50,6 +50,16 @@ Read the GitHub issue for the original acceptance criteria:
 gh issue view #N
 ```
 
+### Bug Fix Verification
+
+When verifying a **defect fix** (specs use defect variants):
+
+- **Reproduction check**: Verify the bug no longer reproduces using the exact steps from `requirements.md`
+- **Regression scenarios**: All `@regression`-tagged Gherkin scenarios must pass
+- **Architecture review**: Focus on blast radius assessment — full SOLID review is optional for small, targeted fixes
+- **Regression test is mandatory**: A `@regression`-tagged test must exist; flag if missing
+- **Minimal change check**: Review the diff for unrelated modifications — flag any changes outside the fix scope
+
 ### Step 3: Verify Implementation
 
 Check each acceptance criterion against actual code:

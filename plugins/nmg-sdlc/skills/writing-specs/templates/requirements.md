@@ -194,3 +194,113 @@ Before moving to PLAN phase:
 - [ ] Out of scope is defined
 - [ ] Open questions are documented (or resolved)
 ```
+
+---
+
+# Defect Requirements Variant
+
+**Use this variant when the GitHub issue has the `bug` label.** It replaces the feature template above with a lighter structure focused on reproduction, root cause, and regression prevention. Omit User Story, Background narrative, Non-Functional Requirements, UI/UX Requirements, Data Requirements, Dependencies, Success Metrics, and Open Questions.
+
+---
+
+```markdown
+# Defect Report: [Bug Summary]
+
+**Issue**: #[number]
+**Date**: [YYYY-MM-DD]
+**Status**: Draft | In Review | Approved
+**Author**: [name]
+**Severity**: Critical | High | Medium | Low
+
+---
+
+## Reproduction
+
+### Steps to Reproduce
+
+1. [First step]
+2. [Second step]
+3. [Step that triggers the bug]
+
+### Environment
+
+| Factor | Value |
+|--------|-------|
+| **OS / Platform** | [e.g., macOS 15.2, Ubuntu 24.04, iOS 18] |
+| **Version / Commit** | [app version or commit SHA] |
+| **Browser / Runtime** | [if applicable] |
+| **Configuration** | [any relevant settings] |
+
+### Frequency
+
+[Always / Intermittent (~X% of the time) / One-time]
+
+---
+
+## Expected vs Actual
+
+| | Description |
+|---|-------------|
+| **Expected** | [What should happen] |
+| **Actual** | [What actually happens] |
+
+### Error Output
+
+```
+[Stack trace, error message, or log output — if applicable]
+```
+
+---
+
+## Acceptance Criteria
+
+**IMPORTANT: Each criterion becomes a Gherkin BDD test scenario.**
+
+### AC1: Bug Is Fixed
+
+**Given** [the reproduction precondition]
+**When** [the action that previously triggered the bug]
+**Then** [the correct expected behavior]
+
+### AC2: No Regression in Related Behavior
+
+**Given** [a related scenario that currently works]
+**When** [a related action]
+**Then** [existing behavior is preserved]
+
+### AC3: [Additional Edge Case — if applicable]
+
+**Given** [edge case precondition]
+**When** [action]
+**Then** [expected behavior]
+
+---
+
+## Functional Requirements
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| FR1 | [The fix — what must change] | Must |
+| FR2 | [Regression guard — if applicable] | Should |
+
+---
+
+## Out of Scope
+
+- [Related improvements that are not part of this fix]
+- [Refactoring beyond the minimal fix]
+
+---
+
+## Validation Checklist
+
+Before moving to PLAN phase:
+
+- [ ] Reproduction steps are repeatable and specific
+- [ ] Expected vs actual behavior is clearly stated
+- [ ] Severity is assessed
+- [ ] Acceptance criteria use Given/When/Then format
+- [ ] At least one regression scenario is included
+- [ ] Fix scope is minimal — no feature work mixed in
+- [ ] Out of scope is defined
+```

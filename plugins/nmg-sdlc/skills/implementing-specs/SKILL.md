@@ -101,6 +101,15 @@ For each task in `tasks.md`:
 4. **Test**: Run relevant tests if specified in `tech.md`
 5. **Complete**: Mark task done, move to next
 
+### Bug Fix Implementation
+
+When specs follow the **defect format** (root cause analysis in `design.md`, flat task list in `tasks.md`):
+
+- Follow the fix strategy from `design.md` precisely — it describes the minimal correct change
+- The task list is flat (2–4 tasks), not phased — execute linearly: fix → regression test → verify
+- Minimize change scope — don't refactor surrounding code, clean up adjacent files, or add features
+- Write the regression test (T002) before marking the fix complete — it must fail without the fix and pass with it
+
 ### Implementation Rules
 
 | Rule | Rationale |

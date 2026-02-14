@@ -57,6 +57,26 @@ This matches the branch name format (`N-feature-name`), so specs and branches st
 1. A GitHub issue exists (created via `/creating-issues` or manually)
 2. Steering documents exist in `.claude/steering/` (create with `/setting-up-steering` if missing)
 
+## Defect Detection
+
+After reading the issue in Phase 1, check whether the issue has the **`bug`** label:
+
+```bash
+gh issue view #N --json labels --jq '.labels[].name'
+```
+
+If any label is `bug`, this is a **defect issue**. All three phases use the **Defect Variant** from their respective templates instead of the full feature template:
+
+| Phase | Feature (default) | Defect (bug label) |
+|-------|-------------------|--------------------|
+| SPECIFY | Full requirements template | Defect Requirements Variant — reproduction, expected vs actual, 2–3 ACs |
+| PLAN | Full design template | Defect Design Variant — root cause analysis, fix strategy, blast radius |
+| TASKS | 5-phase, 17-task breakdown | Defect Tasks Variant — flat 2–4 tasks: fix, regression test, verify |
+
+> **Complexity escape hatch:** For complex bugs involving architectural changes, supplement the defect variant with sections from the full template as needed. The defect variant is a floor, not a ceiling.
+
+---
+
 ## Steering Documents
 
 Steering documents provide project-specific context. They live in `.claude/steering/`:
@@ -88,11 +108,14 @@ Extract from the issue:
 ### Process
 
 1. Read the issue via `gh issue view #N`
-2. Read `.claude/steering/product.md` for user context and product vision
-3. Create `requirements.md` using [templates/requirements.md](templates/requirements.md)
-4. Bootstrap acceptance criteria from the issue body
-5. Fill in functional and non-functional requirements
-6. Consult steering docs for project-specific requirements (e.g., accessibility, platform support)
+2. **Check for `bug` label** — if present, use the Defect Requirements Variant (see [Defect Detection](#defect-detection))
+3. Read `.claude/steering/product.md` for user context and product vision
+4. Create `requirements.md` using [templates/requirements.md](templates/requirements.md)
+5. Bootstrap acceptance criteria from the issue body
+6. Fill in requirements per the appropriate variant:
+   - **Feature**: Full template — user story, ACs, functional/non-functional requirements, UI/UX, data requirements, dependencies, success metrics
+   - **Defect**: Defect variant — reproduction steps, expected vs actual, severity, 2–3 acceptance criteria (bug fixed + no regression), lightweight functional requirements. Omit NFRs table, UI/UX table, data requirements, success metrics.
+7. Consult steering docs for project-specific requirements (e.g., accessibility, platform support)
 
 ### Output
 
@@ -125,10 +148,12 @@ Do not proceed to Phase 2 until the user approves.
 2. Explore the codebase to understand existing patterns:
    - Use `Glob` and `Grep` to find related code
    - Use `Task` with `subagent_type='Explore'` for deeper investigation
-3. Create `design.md` using [templates/design.md](templates/design.md)
-4. Map the feature to the project's architecture layers
-5. Design data flow, API changes, database changes, state management
-6. Consider alternatives and document the decision
+3. Create `design.md` using [templates/design.md](templates/design.md), selecting the appropriate variant:
+   - **Feature**: Full design template — component diagram, data flow, API schemas, DB schemas/migrations, state management, UI hierarchy, security/performance checklists, testing strategy
+   - **Defect**: Defect Design Variant — root cause analysis with affected code references, minimal fix strategy, blast radius assessment, regression risk table. Omit component diagrams, data flow, API schemas, DB migrations, state management, UI components, security/performance checklists.
+4. Design the solution per variant:
+   - **Feature**: Map to the project's architecture layers; design data flow, API changes, database changes, state management; consider alternatives
+   - **Defect**: Identify root cause with specific code references; propose minimal fix; assess blast radius and regression risk; document alternatives only if multiple fix approaches exist
 
 ### Output
 
@@ -156,16 +181,22 @@ Do not proceed to Phase 3 until the user approves.
 
 ### Process
 
-1. Break the design into atomic, agent-friendly tasks using [templates/tasks.md](templates/tasks.md)
+1. Break the design into tasks using [templates/tasks.md](templates/tasks.md), selecting the appropriate variant:
+   - **Feature**: Full 5-phase breakdown (Setup → Backend → Frontend → Integration → Testing) with atomic, agent-friendly tasks
+   - **Defect**: Flat 2–4 task list — fix the bug, add regression test, verify no regressions. No phased structure.
 2. Map tasks to actual file paths in the project (reference `structure.md`)
-3. Define dependencies between tasks
+3. Define dependencies between tasks:
+   - **Feature**: Map the full dependency graph across phases
+   - **Defect**: Dependencies are linear (fix → test → verify)
 4. Ensure each task has verifiable acceptance criteria
 5. Include BDD testing tasks
-6. Create the Gherkin feature file using [templates/feature.gherkin](templates/feature.gherkin)
+6. Create the Gherkin feature file using [templates/feature.gherkin](templates/feature.gherkin):
+   - **Feature**: Full feature scenarios with happy path, alternatives, errors, edge cases
+   - **Defect**: Regression scenarios tagged `@regression` — bug is fixed + related behavior preserved
 
-### Phasing
+### Phasing (Features Only)
 
-Tasks should follow this order:
+For **feature** issues, tasks should follow this order:
 
 | Phase | Purpose | Examples |
 |-------|---------|---------|
@@ -174,6 +205,8 @@ Tasks should follow this order:
 | Frontend | Client-side | Models, state management, UI components |
 | Integration | Wiring | Navigation, provider registration, cross-feature |
 | Testing | Verification | BDD feature files, step definitions, unit tests |
+
+For **defect** issues, skip phasing. Use the flat task list from the Defect Tasks Variant (typically T001: Fix, T002: Regression Test, T003: Verify).
 
 ### Output
 
@@ -189,6 +222,20 @@ Write to:
 - "Are the tasks properly scoped?"
 - "Are dependencies correct?"
 - "Is the phasing logical?"
+
+---
+
+## Defect Workflow Summary
+
+Quick reference for the defect path through all three phases:
+
+| Phase | Produces | Key Sections | Typical Size |
+|-------|----------|-------------|--------------|
+| SPECIFY | `requirements.md` | Reproduction, Expected vs Actual, 2–3 ACs, Lightweight FRs | ~50% of feature spec |
+| PLAN | `design.md` | Root Cause, Fix Strategy, Blast Radius, Regression Risk | ~30% of feature design |
+| TASKS | `tasks.md` + `feature.gherkin` | Fix (T001), Regression Test (T002), Verify (T003) | 2–4 tasks vs 15–17 |
+
+The pipeline shape is identical to features (SPECIFY → PLAN → TASKS with human review gates). Only the template sections used within each phase differ.
 
 ---
 

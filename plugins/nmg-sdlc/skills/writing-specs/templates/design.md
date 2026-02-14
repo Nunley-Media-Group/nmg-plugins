@@ -246,3 +246,90 @@ Before moving to TASKS phase:
 - [ ] Alternatives were considered and documented
 - [ ] Risks identified with mitigations
 ```
+
+---
+
+# Defect Design Variant
+
+**Use this variant when the GitHub issue has the `bug` label.** It replaces the feature design template above with a root cause analysis focused on minimal, targeted fixes. Omit Component diagram, Data Flow, API schemas, Database schemas/migrations, State Management, UI Components/hierarchy, Security checklist, Performance checklist, and full Testing Strategy table.
+
+---
+
+```markdown
+# Root Cause Analysis: [Bug Summary]
+
+**Issue**: #[number]
+**Date**: [YYYY-MM-DD]
+**Status**: Draft | In Review | Approved
+**Author**: [name]
+
+---
+
+## Root Cause
+
+[2-3 paragraphs explaining why the bug occurs. Describe the code path, the incorrect assumption or logic error, and the conditions that trigger it.]
+
+### Affected Code
+
+| File | Lines | Role |
+|------|-------|------|
+| `path/to/file` | [line range] | [what this code does in the bug path] |
+
+### Triggering Conditions
+
+- [Condition 1 that must be true]
+- [Condition 2 that must be true]
+- [Why these conditions weren't caught before]
+
+---
+
+## Fix Strategy
+
+### Approach
+
+[1-2 paragraphs: what will change and why this is the minimal correct fix.]
+
+### Changes
+
+| File | Change | Rationale |
+|------|--------|-----------|
+| `path/to/file` | [what changes] | [why this fixes the root cause] |
+
+### Blast Radius
+
+[Assessment of what other code paths or features could be affected by this change. Reference callers, dependents, and shared state.]
+
+- **Direct impact**: [files/functions directly modified]
+- **Indirect impact**: [callers or dependents of modified code]
+- **Risk level**: Low / Medium / High
+
+---
+
+## Regression Risk
+
+| Risk | Likelihood | Mitigation |
+|------|------------|------------|
+| [What could break] | Low/Med/High | [How the regression test or fix guards against it] |
+
+---
+
+## Alternatives Considered
+
+| Option | Description | Why Not Selected |
+|--------|-------------|------------------|
+| [Alternative fix] | [approach] | [why the chosen approach is better] |
+
+*Omit this section if only one reasonable fix approach exists.*
+
+---
+
+## Validation Checklist
+
+Before moving to TASKS phase:
+
+- [ ] Root cause is identified with specific code references
+- [ ] Fix is minimal — no unrelated refactoring
+- [ ] Blast radius is assessed
+- [ ] Regression risks are documented with mitigations
+- [ ] Fix follows existing project patterns (per `structure.md`)
+```

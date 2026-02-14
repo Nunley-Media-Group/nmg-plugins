@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-02-14
+
+### Added
+
+- **Defect-specific spec handling** — Bug issues (detected via `bug` label) now use lighter, defect-focused template variants throughout the 3-phase spec process, replacing the heavyweight feature templates with reproduction steps, root cause analysis, and flat 2–4 task lists
+- **`/writing-specs`** — Defect Detection section: reads `bug` label from GitHub issue and routes all three phases to defect template variants; includes complexity escape hatch for architectural bugs
+- **`/creating-issues`** — Bug Report issue body template with reproduction steps, expected/actual behavior, environment table, and defect-focused acceptance criteria; expanded bug interview questions
+- **`/implementing-specs`** — Bug Fix Implementation guidance: follow fix strategy precisely, flat task execution, minimize change scope, regression test required
+- **`/verifying-specs`** — Bug Fix Verification guidance: reproduction check, `@regression` scenario validation, blast radius focus, minimal change audit
+- **Templates** — Defect Requirements Variant (reproduction, expected vs actual, severity, lightweight FRs), Defect Design Variant (root cause analysis, fix strategy, blast radius, regression risk), Defect Tasks Variant (flat T001–T003: fix/test/verify), Defect Regression Scenarios (Gherkin with `@regression` tags)
+
 ## [2.1.8] - 2026-02-14
 
 ### Fixed
