@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 - Move heartbeat orchestration instructions to top of automation prompt so agent prioritizes them
 - Make heartbeat explicitly drive orchestration loop instead of passive HEARTBEAT_OK
 - Watchdog cron now remediates orphaned state instead of only reporting it
+- Add `--model opus` to all `claude -p` invocations to prevent Sonnet fallback
+- Add artifact validation gates between steps — spec files verified before advancing to implementation
+- Strengthen retry cap to 3 attempts with shared state tracking in `sdlc-state.json`
+- Add pre-retry checklist requiring root cause investigation before retrying failed steps
+- Explicitly prohibit combined multi-step `claude -p` sessions in both heartbeat and watchdog
 
 ## [1.10.1] - 2026-02-13
 

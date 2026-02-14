@@ -30,14 +30,40 @@ You MUST set up the 5-minute watchdog cron before starting the development cycle
 
 ```bash
 openclaw cron add --every "5m" --session isolated --name "cc-watchdog" \
-  --message "Watchdog health check. Run 'process action:list' to find running Claude Code subprocesses. Evaluate each scenario:
+  --message "Watchdog health check. Read {{PROJECT_PATH}}/.claude/sdlc-state.json for current cycle state and retry counts. Run 'process action:list' to find running Claude Code subprocesses. Evaluate each scenario:
 
-STALLED PROCESS (running beyond its step stall timeout — see Step Reference table: 5 min for short steps, 15 min for specs, 30 min for implementation, 20 min for verification, 10 min for CI — note: claude -p --output-format json produces no stdout until exit, so lack of output does NOT mean stalled, only elapsed time matters): Kill the process. Check the project workdir for uncommitted work (run git status). Commit and push any recoverable changes. Relaunch the failed step. Post a Discord alert explaining what happened and what you did.
+STALLED PROCESS (running beyond its step stall timeout — see Step Reference table: 5 min for short steps, 15 min for specs, 30 min for implementation, 20 min for verification, 10 min for CI — note: claude -p --output-format json produces no stdout until exit, so lack of output does NOT mean stalled, only elapsed time matters): Kill the process. Run the Pre-retry Checklist (see Error Recovery). If retry count in sdlc-state.json has reached 3 for this step, follow the Escalation Protocol instead. Otherwise, increment the retry count, commit and push any recoverable changes, and launch ONLY the single next step as a new subprocess. Post a Discord alert explaining what happened and what you did.
 
-ORPHANED STATE (no subprocess running but the development cycle appears incomplete — e.g., feature branch exists with uncommitted work, or a step completed but the next step was never launched): Check git status in the project workdir. Commit and push any uncommitted work. Determine the next step in the cycle and launch it. Post a Discord alert.
+ORPHANED STATE (no subprocess running but the development cycle appears incomplete — e.g., feature branch exists with uncommitted work, or a step completed but the next step was never launched): Check git status in the project workdir. Commit and push any uncommitted work. Consult sdlc-state.json to determine the current step. Validate the next step's preconditions (see Step Preconditions table). Launch ONLY the single next step as a new subprocess. Post a Discord alert.
 
 ALL HEALTHY (subprocess running within its timeout, or no work in progress): Post a brief health summary."
 ```
+
+### Cycle state tracking (`sdlc-state.json`)
+
+Before starting the first cycle, create a shared state file that both the heartbeat loop and watchdog cron read and write:
+
+```bash
+mkdir -p "{{PROJECT_PATH}}/.claude"
+cat > "{{PROJECT_PATH}}/.claude/sdlc-state.json" << 'EOF'
+{
+  "currentStep": 0,
+  "currentIssue": null,
+  "currentBranch": "main",
+  "featureName": null,
+  "retries": {}
+}
+EOF
+```
+
+**Fields:**
+- `currentStep` — The step number (1–9) currently in progress, or 0 if idle.
+- `currentIssue` — GitHub issue number (e.g., `42`) or `null`.
+- `currentBranch` — Branch name being worked on.
+- `featureName` — The feature directory name under `.claude/specs/`.
+- `retries` — Object mapping step numbers to retry counts (e.g., `{"3": 1, "4": 2}`).
+
+**Update this file** at every step transition: set `currentStep`, reset the step's retry count to 0, and update `currentIssue`/`currentBranch`/`featureName` when they change. On retry, increment `retries[step]`.
 
 ## Orchestration
 
@@ -53,9 +79,9 @@ On every heartbeat tick, you MUST:
 2. If a subprocess is running: run `process action:poll sessionId:XXX` to check whether it has exited.
    - Still running and within the step's stall timeout → HEARTBEAT_OK
    - Still running but exceeded the step's stall timeout → kill process, post stall alert, retry step
-3. If the subprocess exited with code 0: parse the results, post a Discord status update, and **launch the next step immediately**.
-4. If the subprocess exited with non-zero code: follow Error Recovery below.
-5. If no subprocess is running: check if there's a pending next step and launch it. **After step 9 (Merge), the next step is always step 1 of a new cycle** — return to the top of the Development Cycle. Only report "all done" if the milestone has no more open issues.
+3. If the subprocess exited with code 0: parse the results, post a Discord status update, **validate the next step's preconditions** (see Step Preconditions table), update `sdlc-state.json`, and launch the next step immediately.
+4. If the subprocess exited with non-zero code: follow Error Recovery (including the Pre-retry Checklist) below.
+5. If no subprocess is running: check `sdlc-state.json` for the current step and launch the next one. **After step 9 (Merge), the next step is always step 1 of a new cycle** — return to the top of the Development Cycle. Only report "all done" if the milestone has no more open issues.
 
 **NEVER reply HEARTBEAT_OK without first polling the subprocess.** The heartbeat exists to drive orchestration — a heartbeat that doesn't poll is a wasted turn that delays the entire cycle.
 
@@ -66,18 +92,21 @@ On every heartbeat tick, you MUST:
 | Subprocess state | Heartbeat action |
 |-----------------|-----------------|
 | Running, within stall timeout | HEARTBEAT_OK |
-| Running, exceeded stall timeout | Kill process, post stall alert, retry step |
-| Exited, exit code 0 | Parse results, post Discord, **launch next step immediately** |
-| Exited, exit code != 0 | Post failure alert, check for uncommitted work, retry or escalate |
-| No subprocess running | Launch next step — after Merge, this means step 1 of a new cycle (only "all done" if no issues remain) |
+| Running, exceeded stall timeout | Kill process, post stall alert, run Pre-retry Checklist, retry step (update retry count in `sdlc-state.json`; if count reaches 3 → Escalation Protocol) |
+| Exited, exit code 0 | Parse results, post Discord, **validate next step's preconditions** (Step Preconditions table), update `sdlc-state.json`, then launch next step |
+| Exited, exit code != 0 | Post failure alert, run Pre-retry Checklist (see Error Recovery), retry or escalate per `sdlc-state.json` retry count |
+| No subprocess running | Check `sdlc-state.json`, launch next step — after Merge, this means step 1 of a new cycle (only "all done" if no issues remain) |
+
+**Step transition validation:** When a subprocess exits code 0, validate the next step's preconditions (see Step Preconditions table) before advancing. Exit code 0 does NOT guarantee all artifacts were produced — a session may succeed at the task it attempted but still leave required outputs incomplete.
 
 ### Safety net: Watchdog cron
 
 The watchdog cron (set up in the Setup section) runs every 5 minutes in an isolated session. Unlike the heartbeat — which you control — the watchdog is an independent safety net that **remediates** when the heartbeat misses a step transition:
 
-- **Stalled processes:** Kills the process, recovers uncommitted work from the project workdir, relaunches the step, and posts an alert.
-- **Orphaned state** (no subprocess running, but incomplete work detected): Commits/pushes uncommitted changes, determines and launches the next step, posts an alert.
+- **Stalled processes:** Kills the process, runs the Pre-retry Checklist, recovers uncommitted work from the project workdir, relaunches the step (respecting retry caps in `sdlc-state.json`), and posts an alert.
+- **Orphaned state** (no subprocess running, but incomplete work detected): Commits/pushes uncommitted changes, consults `sdlc-state.json` for the current step, validates preconditions, determines and launches the next step, posts an alert.
 - **Healthy state:** Posts a brief health summary.
+- **One step per subprocess:** The watchdog MUST follow the step-by-step session model. Consult `sdlc-state.json` to determine which single step to launch — never combine multiple steps into one session.
 
 The watchdog exists because heartbeats can fail silently (e.g., the agent replies HEARTBEAT_OK without actually polling). If the heartbeat loop is working correctly, the watchdog will never need to intervene.
 
@@ -91,13 +120,15 @@ Each SDLC step runs as a **separate headless `claude -p` subprocess** — not as
 3. OpenClaw detects the exit via heartbeat polling and launches the next step
 4. Process exit = step complete. No input submission, no ambiguity.
 
+**One step per subprocess — no exceptions.** Each `claude -p` invocation handles exactly one SDLC step. Never combine multiple steps (e.g., "write specs then implement") into a single subprocess. The orchestrator controls step sequencing; subprocesses execute a single step and exit.
+
 **Why not an interactive session with send-keys?** Both direct PTY input (`process action:submit`) and tmux (`send-keys`) require text and Enter to be sent separately with timing delays. If timing is off, the command is typed but never submitted — the session sits idle. `claude -p` eliminates input submission entirely: the task is a CLI argument.
 
 **Skill injection:** Skills are injected via `--append-system-prompt` with the SKILL.md content. The model follows skill instructions as if it were running the skill natively:
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
     '<task description>' \
     --append-system-prompt \"$(cat '{{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/<skill-name>/SKILL.md')\" \
     --dangerously-skip-permissions \
@@ -126,6 +157,7 @@ bash pty:true workdir:{{PROJECT_PATH}} background:true \
 - **No slash commands in `-p` mode.** Slash commands are interactive-only. In headless mode, describe the task in the `-p` prompt and inject skill instructions via `--append-system-prompt`.
 - **No `/beginning-dev` in automation.** Each skill must run as a separate subprocess. The orchestrator (you) controls step sequencing.
 - **No `/clear` needed.** Each `claude -p` subprocess starts with a fresh context window. Context management is automatic.
+- **One step per subprocess — no exceptions.** Never ask a single `claude -p` session to perform multiple SDLC steps. Each subprocess handles exactly one step; the orchestrator sequences them.
 
 ## Status Updates
 
@@ -138,9 +170,37 @@ If a Claude Code subprocess crashes, times out, or exits non-zero:
 1. Post: "Session died. Reason: [signal/timeout/error]. Checking for uncommitted work..."
 2. Check the working directory for any unstaged or uncommitted changes.
 3. If uncommitted work exists, commit and push it before starting a new session.
-4. Post: "Recovered [N] uncommitted files. Retrying [step name]..."
-5. **Relaunch the step** with `OPENCLAW_DISCORD_CHANNEL` set inline (see Setup section).
-6. If the same step fails twice, escalate: post an alert and wait for guidance.
+4. Post: "Recovered [N] uncommitted files. Running pre-retry checklist..."
+5. **Run the Pre-retry Checklist** (below) before retrying anything.
+6. **Relaunch the step** with `OPENCLAW_DISCORD_CHANNEL` set inline (see Setup section). Update `sdlc-state.json` retry count.
+7. If the step has failed 3 times (check `sdlc-state.json`), follow the **Escalation Protocol** instead of retrying.
+
+### Pre-retry Checklist
+
+Before retrying ANY failed step, run through this checklist in order:
+
+1. **Input artifacts exist?** Check the Step Preconditions table. If required inputs are missing, retry the *previous* step instead (it failed to produce them). Update `sdlc-state.json` to reflect the corrected step.
+2. **Working tree clean?** Run `git status`. Commit and push any dirty working tree before retrying.
+3. **Known error patterns?** Parse the subprocess output for these patterns:
+   - `context_window_exceeded` → **Escalate immediately** (step needs restructuring)
+   - `signal: 9` / `signal: SIGKILL` → **Escalate immediately** (OOM or system kill)
+   - `rate_limit` → Wait 60 seconds, then retry
+   - `permission denied` → Diagnose the permission issue, post details, escalate
+   - `EnterPlanMode` in output → **Escalate immediately** (headless session tried to enter plan mode)
+4. **Retry count?** Read `retries` from `sdlc-state.json`. If the count for this step has reached 3, **escalate immediately** — do not retry.
+
+### Escalation Protocol
+
+When a step has exhausted its retries or hit an unrecoverable error:
+
+1. Post a diagnostic summary to Discord:
+   - Which step failed and how many times
+   - Last error output (truncated to 500 chars)
+   - Current branch and git status
+   - Contents of `sdlc-state.json`
+2. Disable the watchdog cron: `openclaw cron remove --name "cc-watchdog"`
+3. Post resume instructions: "To resume, fix the issue manually, update `sdlc-state.json`, re-enable the watchdog cron, and relaunch the failed step."
+4. **STOP.** Do not retry, do not advance, do not start a new cycle.
 
 ## Development Cycle
 
@@ -148,13 +208,29 @@ If a Claude Code subprocess crashes, times out, or exits non-zero:
 
 Each skill-based step launches a new `claude -p` subprocess. Non-skill steps (commit/push, merge) use plain `claude -p` with a task description.
 
+### Step Preconditions
+
+Before launching a step, verify its required input artifacts exist. If preconditions fail, retry the step that should have produced them (counts toward that step's retry cap).
+
+| Step | Required Input | Verification |
+|------|---------------|-------------|
+| 1. Start cycle | None | — |
+| 2. Start issue | Clean `main` branch, up to date with remote | `git status` shows clean, `git log -1` matches remote |
+| 3. Write specs | Feature branch exists, issue linked | Branch checked out, issue number known |
+| 4. Implement | All 4 spec files: `requirements.md`, `design.md`, `tasks.md`, `feature.gherkin` | `ls .claude/specs/{feature-name}/` shows all 4 files with non-zero size |
+| 5. Verify | Implementation committed on feature branch | `git diff --cached` is empty, recent commits exist |
+| 6. Commit/push | All changes staged or committed | `git status` shows clean or only staged changes |
+| 7. Create PR | Branch pushed to remote | `git log origin/{branch}..HEAD` is empty |
+| 8. Monitor CI | PR exists | `gh pr view` succeeds |
+| 9. Merge | CI passing, PR approved or auto-mergeable | `gh pr checks` all pass |
+
 ### 1. Start cycle
 
 Post: "Starting new development cycle. Checking out main and pulling latest..."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
     'Check out main and pull latest. Run: git checkout main && git pull. Report the current branch and latest commit.' \
     --dangerously-skip-permissions \
     --output-format json \
@@ -167,7 +243,7 @@ Post: "On main, up to date. Selecting an issue..."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
     'Select and start the next GitHub issue from the current milestone. Create a linked feature branch and set the issue to In Progress. \
      Skill instructions are appended to your system prompt. \
      Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/starting-issues/.' \
@@ -183,7 +259,7 @@ Post: "Issue selected: [issue title/number]. Branch created: [branch name]."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
     'Write BDD specifications for issue #<number> on branch <branch>. \
      Skill instructions are appended to your system prompt. \
      Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/writing-specs/.' \
@@ -195,11 +271,24 @@ bash pty:true workdir:{{PROJECT_PATH}} background:true \
 
 Post: "Specs written for issue [number]."
 
+#### Spec Validation Gate (mandatory)
+
+After Step 3 completes, verify all 4 spec files exist before advancing to Step 4:
+
+```bash
+ls -la "{{PROJECT_PATH}}/.claude/specs/{feature-name}/requirements.md" \
+       "{{PROJECT_PATH}}/.claude/specs/{feature-name}/design.md" \
+       "{{PROJECT_PATH}}/.claude/specs/{feature-name}/tasks.md" \
+       "{{PROJECT_PATH}}/.claude/specs/{feature-name}/feature.gherkin"
+```
+
+If any file is missing or empty, **do not advance to Step 4**. Instead, retry Step 3 (counts toward Step 3's retry cap in `sdlc-state.json`). Post: "Spec validation failed — missing: [list]. Retrying spec writing..."
+
 ### 4. Implement (max-turns: 100)
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
     'Implement the specifications for issue #<number> on branch <branch>. \
      Do NOT call EnterPlanMode — this is a headless session with no user to approve plans. Design your approach internally, then implement directly. \
      Skill instructions are appended to your system prompt. \
@@ -216,7 +305,7 @@ Post: "Implementation complete for issue [number]."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
     'Verify the implementation for issue #<number> on branch <branch>. Fix any findings. \
      Skill instructions are appended to your system prompt. \
      Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/verifying-specs/.' \
@@ -232,7 +321,7 @@ Post verification results to Discord. If findings remain after the first pass, r
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
     'Stage all changes, commit with a meaningful conventional-commit message summarizing the work for issue #<number>, and push to the remote branch <branch>. Verify the push succeeded.' \
     --dangerously-skip-permissions \
     --output-format json \
@@ -245,7 +334,7 @@ Post: "All changes committed and pushed to [branch name]. [N] files changed."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
     'Create a pull request for branch <branch> targeting main for issue #<number>. \
      Skill instructions are appended to your system prompt. \
      Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/creating-prs/.' \
@@ -261,7 +350,7 @@ Post: "PR created: [PR link/number]"
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
     'Monitor CI status for PR #<pr-number>. Poll until CI completes. If CI fails, diagnose the failure, fix it locally, verify the fix, commit and push. Repeat until CI passes. Report the final CI status.' \
     --dangerously-skip-permissions \
     --output-format json \
@@ -274,7 +363,7 @@ Post: "CI passed for PR [number]." or "CI failed — [summary]. Fixing..."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude -p \
+  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
     'Merge PR #<pr-number> to main and delete the remote branch <branch>.' \
     --dangerously-skip-permissions \
     --output-format json \
