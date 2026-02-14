@@ -6,6 +6,10 @@
         "matcher": "Write|Edit",
         "hooks": [
           {
+            "type": "command",
+            "command": "ls .claude/specs/*/requirements.md >/dev/null 2>&1"
+          },
+          {
             "type": "agent",
             "prompt": "A file was modified. Check $ARGUMENTS for the file path and change details. Use Glob to find spec files at .claude/specs/*/requirements.md and .claude/specs/*/design.md. If specs exist for the current feature, Read them and check whether the modification aligns with the spec. Respond with JSON: {\"ok\": true, \"reason\": \"...\"} where ok is false only if the change clearly deviates from the spec. If no spec exists, respond with {\"ok\": true, \"reason\": \"no spec found\"}.",
             "timeout": 60

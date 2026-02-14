@@ -27,6 +27,12 @@ All notable changes to this project will be documented in this file.
 - Watchdog cron prompt engineering (replaced by simple PID check or script crash recovery)
 - All prompt-based state management, retry counting, timeout detection, and Discord posting logic
 
+## [2.0.2] - 2026-02-14
+
+### Fixed
+
+- **Spec alignment hook** — Add `command`-type gate that short-circuits when no spec files exist, avoiding expensive agent spawns on every Write/Edit in projects without specs
+
 ## [1.12.0] - 2026-02-13
 
 ### Changed
