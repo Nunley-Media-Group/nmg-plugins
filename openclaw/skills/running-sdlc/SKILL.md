@@ -26,15 +26,22 @@ Launch, monitor, or stop the deterministic SDLC orchestrator (`sdlc-runner.mjs`)
    - Same directory as this SKILL.md: `<skill-dir>/sdlc-runner.mjs`
    - The nmg-plugins openclaw directory: `<pluginsPath>/openclaw/scripts/sdlc-runner.mjs` (read `pluginsPath` from the config)
 
-5. Launch the runner as a background process:
+5. Determine the Discord channel ID for status updates. Run:
    ```bash
-   nohup node <runner-path>/sdlc-runner.mjs --config <config-path> > /tmp/sdlc-runner.log 2>&1 &
+   openclaw sessions --active 5 --json
+   ```
+   Find the session whose `key` contains `discord:channel:` and is most recently updated. Extract the channel ID from the key (the numeric segment after `discord:channel:`). If no Discord session is found, check the config for `discordChannelId`. This will be passed to the runner so it can post progress updates back to the originating channel.
+
+6. Launch the runner as a background process, passing the Discord channel ID:
+   ```bash
+   nohup node <runner-path>/sdlc-runner.mjs --config <config-path> --discord-channel <channel-id> > /tmp/sdlc-runner.log 2>&1 &
    echo $!
    ```
+   If no Discord channel ID is available, omit the `--discord-channel` flag (the runner will skip Discord updates).
 
-6. Post to Discord: "SDLC runner started for [project name]. PID: [pid]. Logs: /tmp/sdlc-runner.log"
+7. Post to Discord: "SDLC runner started for [project name]. PID: [pid]. Logs: /tmp/sdlc-runner.log"
 
-7. Report the PID to the user. The runner is now autonomous — it handles all step sequencing, retries, Discord updates, and error recovery.
+8. Report the PID to the user. The runner is now autonomous — it handles all step sequencing, retries, Discord updates, and error recovery.
 
 ### `status` — Check current runner state
 
@@ -73,11 +80,12 @@ Launch, monitor, or stop the deterministic SDLC orchestrator (`sdlc-runner.mjs`)
 
 The runner supports additional flags that can be passed after `start`:
 
+- **`--discord-channel <id>`** — Discord channel ID for posting status updates. Passed automatically from the invoking channel.
 - **`--dry-run`** — Logs every action without executing. Useful for validating step sequencing.
 - **`--step N`** — Run only step N (1-9) then exit. Useful for debugging a single step.
 - **`--resume`** — Resume from existing `sdlc-state.json` instead of starting fresh. Use after a crash or manual stop.
 
-Example: `start --config /path/to/config.json --resume`
+Example: `start --config /path/to/config.json --discord-channel 1234567890 --resume`
 
 ## Integration with SDLC Workflow
 

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`openclaw/scripts/sdlc-runner.mjs`** — Discord status updates were silently failing because `openclaw system event` doesn't route to Discord channels; switched to `openclaw message send --channel discord --target <id>` with channel ID passed via `--discord-channel` CLI flag or `discordChannelId` config field
+- **`openclaw/skills/running-sdlc/SKILL.md`** — Skill now auto-detects the source Discord channel via `openclaw sessions` and passes it to the runner via `--discord-channel`
+
+### Changed
+
+- **`openclaw/scripts/sdlc-config.example.json`** — Added optional `discordChannelId` field for static Discord channel configuration
+- **`openclaw/README.md`** — Documented `--discord-channel` flag, Discord channel auto-detection, and `discordChannelId` config option
+- **`README.md`** — Updated direct-run example with `--discord-channel` flag and auto-detection note
+
 ## [2.1.2] - 2026-02-14
 
 ### Changed

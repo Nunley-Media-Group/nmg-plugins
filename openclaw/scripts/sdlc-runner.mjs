@@ -27,6 +27,7 @@ const { values: args } = parseArgs({
   options: {
     config:  { type: 'string'  },
     'dry-run': { type: 'boolean', default: false },
+    'discord-channel': { type: 'string' },
     step:    { type: 'string'  },
     resume:  { type: 'boolean', default: false },
     help:    { type: 'boolean', default: false },
@@ -39,11 +40,12 @@ if (args.help) {
 Usage: node sdlc-runner.mjs --config <path> [options]
 
 Options:
-  --config <path>   Path to sdlc-config.json (required)
-  --dry-run         Log actions without executing
-  --step <N>        Run only step N (1-9), then exit
-  --resume          Resume from existing sdlc-state.json
-  --help            Show this help
+  --config <path>            Path to sdlc-config.json (required)
+  --dry-run                  Log actions without executing
+  --discord-channel <id>     Discord channel ID for status updates
+  --step <N>                 Run only step N (1-9), then exit
+  --resume                   Resume from existing sdlc-state.json
+  --help                     Show this help
 `);
   process.exit(0);
 }
@@ -72,6 +74,8 @@ const PROJECT_PATH = config.projectPath;
 const PLUGINS_PATH = config.pluginsPath;
 const MODEL = config.model || 'opus';
 const MAX_RETRIES = config.maxRetriesPerStep || 3;
+
+const DISCORD_CHANNEL = args['discord-channel'] || config.discordChannelId || null;
 
 if (!PROJECT_PATH || !PLUGINS_PATH) {
   console.error('Error: config must include projectPath and pluginsPath');
@@ -145,12 +149,16 @@ function updateState(patch) {
 // ---------------------------------------------------------------------------
 
 function postDiscord(message) {
-  const escaped = message.replace(/'/g, "'\\''");
-  const cmd = `openclaw system event --text '${escaped}' --mode now`;
+  if (!DISCORD_CHANNEL) {
+    log('Warning: No Discord channel configured (use --discord-channel or config.discordChannelId)');
+    return;
+  }
   if (DRY_RUN) {
     log(`[DRY-RUN] Discord: ${message}`);
     return;
   }
+  const escaped = message.replace(/'/g, "'\\''");
+  const cmd = `openclaw message send --channel discord --target ${DISCORD_CHANNEL} -m '${escaped}'`;
   try {
     execSync(cmd, { timeout: 15_000, stdio: 'pipe' });
   } catch (err) {
@@ -755,6 +763,7 @@ async function main() {
   log(`Project: ${PROJECT_PATH}`);
   log(`Plugins: ${PLUGINS_PATH}`);
   log(`Model: ${MODEL}`);
+  log(`Discord channel: ${DISCORD_CHANNEL || 'none (updates will be skipped)'}`);
   if (DRY_RUN) log('DRY-RUN MODE — no actions will be executed');
   if (SINGLE_STEP) log(`Single step mode: running only step ${SINGLE_STEP}`);
   if (RESUME) log('Resume mode: continuing from existing state');

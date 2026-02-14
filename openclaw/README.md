@@ -19,7 +19,7 @@ OpenClaw Agent
             └─ Step 9: merge         — merge PR, delete branch
 ```
 
-Each step runs as a `claude -p` subprocess with the relevant nmg-sdlc skill injected via `--append-system-prompt`. The runner handles step sequencing, precondition validation, timeout detection, retry logic, state management, Discord reporting, and escalation — all in code, not prompts.
+Each step runs as a `claude -p` subprocess with the relevant nmg-sdlc skill injected via `--append-system-prompt`. The runner handles step sequencing, precondition validation, timeout detection, retry logic, state management, Discord reporting (via `openclaw message send`), and escalation — all in code, not prompts.
 
 ## Setup
 
@@ -31,7 +31,7 @@ From within the target project (must have a `.claude/` directory):
 /generating-openclaw-config
 ```
 
-This writes `sdlc-config.json` to the project root and adds it to `.gitignore`. The config specifies `projectPath`, `pluginsPath`, per-step `maxTurns` and `timeoutMin`, and which nmg-sdlc skills to inject.
+This writes `sdlc-config.json` to the project root and adds it to `.gitignore`. The config specifies `projectPath`, `pluginsPath`, per-step `maxTurns` and `timeoutMin`, which nmg-sdlc skills to inject, and an optional `discordChannelId` for status updates.
 
 ### 2. Install the OpenClaw skill
 
@@ -81,6 +81,7 @@ Gracefully stops the runner. It sends SIGTERM, which triggers the runner to kill
 
 These can be appended after `start`:
 
+- `--discord-channel <id>` — Discord channel ID for posting status updates (auto-detected from the invoking channel when launched via OpenClaw; can also be set as `discordChannelId` in the config)
 - `--resume` — Resume from existing state after a crash or manual stop
 - `--dry-run` — Log actions without executing
 - `--step N` — Run only step N (1-9) then exit
@@ -92,10 +93,10 @@ Example: `/running-sdlc start --config sdlc-config.json --resume`
 The runner can be invoked directly without the OpenClaw platform:
 
 ```bash
-node openclaw/scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json
+node openclaw/scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json --discord-channel 1234567890
 ```
 
-This requires `claude` CLI to be on PATH and the project to have `.claude/auto-mode` set (the runner creates this automatically).
+This requires `claude` CLI and `openclaw` CLI to be on PATH. The project must have `.claude/auto-mode` set (the runner creates this automatically). The `--discord-channel` flag is optional — without it (and without `discordChannelId` in the config), Discord updates are skipped.
 
 ## State & Logs
 

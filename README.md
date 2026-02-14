@@ -187,8 +187,10 @@ To generate a config with your project path pre-filled (run from within the targ
 To run directly (without OpenClaw):
 
 ```bash
-node openclaw/scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json
+node openclaw/scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json --discord-channel 1234567890
 ```
+
+The `--discord-channel` flag is optional. When launched via OpenClaw, the channel ID is auto-detected from the invoking Discord channel. It can also be set as `discordChannelId` in the config file.
 
 ## Customization
 

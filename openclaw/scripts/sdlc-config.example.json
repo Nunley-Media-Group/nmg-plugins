@@ -2,6 +2,7 @@
   "projectPath": "/path/to/your/project",
   "pluginsPath": "/path/to/nmg-plugins",
   "model": "opus",
+  "discordChannelId": "",
   "steps": {
     "startCycle":   { "maxTurns": 5,   "timeoutMin": 5  },
     "startIssue":   { "maxTurns": 15,  "timeoutMin": 5,  "skill": "starting-issues" },
