@@ -1,5 +1,5 @@
 ---
-name: generating-prompt
+name: generating-openclaw-config
 description: "Generate an SDLC runner config for a given project path."
 argument-hint: "/path/to/project"
 allowed-tools: Read, Write, Bash(basename:*), Bash(pbcopy:*), Bash(xclip:*), Bash(xsel:*), Bash(wl-copy:*), Bash(clip.exe:*), Bash(cat:*), Bash(realpath:*)

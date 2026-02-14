@@ -181,7 +181,7 @@ See [`openclaw/README.md`](openclaw/README.md) for setup instructions.
 To generate a config with your project path pre-filled:
 
 ```bash
-/generating-prompt /path/to/your/project
+/generating-openclaw-config /path/to/your/project
 ```
 
 To run directly (without OpenClaw):
@@ -232,7 +232,7 @@ These are repo-level utilities (not part of the nmg-sdlc plugin itself):
 
 | Skill | Description |
 |-------|-------------|
-| `/generating-prompt /path/to/project` | Generate an `sdlc-config.json` for the SDLC runner, with project path substituted and copied to clipboard |
+| `/generating-openclaw-config /path/to/project` | Generate an `sdlc-config.json` for the SDLC runner, with project path substituted and copied to clipboard |
 | `/installing-locally` | Install or update all marketplace plugins to the local Claude Code plugin cache, sync the OpenClaw skill, and restart the OpenClaw gateway |
 
 ## Updating
