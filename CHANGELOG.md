@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-02-14
+
+### Moved
+
+- **`/generating-openclaw-config`** — Moved from repo-level skill (`.claude/skills/`) to plugin skill (`plugins/nmg-sdlc/skills/`) so it's available in all projects with nmg-sdlc installed
+
 ## [2.1.0] - 2026-02-14
 
 ### Added
