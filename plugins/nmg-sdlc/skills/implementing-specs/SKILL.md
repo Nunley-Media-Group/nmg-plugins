@@ -2,7 +2,7 @@
 name: implementing-specs
 description: "Read specs for current branch, enter plan mode, then execute implementation tasks sequentially."
 argument-hint: "[#issue-number]"
-allowed-tools: Read, Glob, Grep, Task, Write, Edit, WebFetch, WebSearch, EnterPlanMode, Skill, Bash(gh:*), Bash(git:*)
+allowed-tools: Read, Glob, Grep, Task, Write, Edit, WebFetch, WebSearch, EnterPlanMode, Bash(gh:*), Bash(git:*)
 ---
 
 # Implementing Specs

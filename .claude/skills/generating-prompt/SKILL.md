@@ -2,7 +2,7 @@
 name: generating-prompt
 description: "Generate an OpenClaw automation prompt for a given project path."
 argument-hint: "/path/to/project"
-allowed-tools: Read, Write, Bash(basename:*), Bash(pbcopy:*), Bash(xclip:*), Bash(xsel:*), Bash(wl-copy:*), Bash(clip.exe:*), Bash(cat * | *)
+allowed-tools: Read, Write, Bash(basename:*), Bash(pbcopy:*), Bash(xclip:*), Bash(xsel:*), Bash(wl-copy:*), Bash(clip.exe:*), Bash(cat:*)
 ---
 
 # Generating Prompt

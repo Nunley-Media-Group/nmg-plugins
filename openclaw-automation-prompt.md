@@ -16,14 +16,6 @@ Before starting any development cycles, enable automation mode in the target pro
 mkdir -p "{{PROJECT_PATH}}/.claude" && touch "{{PROJECT_PATH}}/.claude/auto-mode"
 ```
 
-### Discord notification channel (CRITICAL)
-
-The on-stop hook requires `OPENCLAW_DISCORD_CHANNEL` to be set in the environment of every Claude Code session. If this variable is missing, the hook silently exits and **no Discord notifications are sent** when sessions end.
-
-**You MUST pass the env var inline with every `claude` invocation.** Do NOT rely on a one-time `export` — it will not propagate to sessions launched via `exec`.
-
-Replace `<channel-id>` with the target Discord channel ID (e.g., `1234567890123456789`).
-
 ### Watchdog cron (CRITICAL)
 
 You MUST set up the 5-minute watchdog cron before starting the development cycle. This is a safety net that detects stalled Claude Code subprocesses in an isolated session:
@@ -128,7 +120,7 @@ Each SDLC step runs as a **separate headless `claude -p` subprocess** — not as
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
+  command:"claude --model opus -p \
     '<task description>' \
     --append-system-prompt \"$(cat '{{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/<skill-name>/SKILL.md')\" \
     --dangerously-skip-permissions \
@@ -172,7 +164,7 @@ If a Claude Code subprocess crashes, times out, or exits non-zero:
 3. If uncommitted work exists, commit and push it before starting a new session.
 4. Post: "Recovered [N] uncommitted files. Running pre-retry checklist..."
 5. **Run the Pre-retry Checklist** (below) before retrying anything.
-6. **Relaunch the step** with `OPENCLAW_DISCORD_CHANNEL` set inline (see Setup section). Update `sdlc-state.json` retry count.
+6. **Relaunch the step.** Update `sdlc-state.json` retry count.
 7. If the step has failed 3 times (check `sdlc-state.json`), follow the **Escalation Protocol** instead of retrying.
 
 ### Pre-retry Checklist
@@ -230,7 +222,7 @@ Post: "Starting new development cycle. Checking out main and pulling latest..."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
+  command:"claude --model opus -p \
     'Check out main and pull latest. Run: git checkout main && git pull. Report the current branch and latest commit.' \
     --dangerously-skip-permissions \
     --output-format json \
@@ -243,7 +235,7 @@ Post: "On main, up to date. Selecting an issue..."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
+  command:"claude --model opus -p \
     'Select and start the next GitHub issue from the current milestone. Create a linked feature branch and set the issue to In Progress. \
      Skill instructions are appended to your system prompt. \
      Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/starting-issues/.' \
@@ -259,7 +251,7 @@ Post: "Issue selected: [issue title/number]. Branch created: [branch name]."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
+  command:"claude --model opus -p \
     'Write BDD specifications for issue #<number> on branch <branch>. \
      Skill instructions are appended to your system prompt. \
      Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/writing-specs/.' \
@@ -288,7 +280,7 @@ If any file is missing or empty, **do not advance to Step 4**. Instead, retry St
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
+  command:"claude --model opus -p \
     'Implement the specifications for issue #<number> on branch <branch>. \
      Do NOT call EnterPlanMode — this is a headless session with no user to approve plans. Design your approach internally, then implement directly. \
      Skill instructions are appended to your system prompt. \
@@ -305,7 +297,7 @@ Post: "Implementation complete for issue [number]."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
+  command:"claude --model opus -p \
     'Verify the implementation for issue #<number> on branch <branch>. Fix any findings. \
      Skill instructions are appended to your system prompt. \
      Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/verifying-specs/.' \
@@ -321,7 +313,7 @@ Post verification results to Discord. If findings remain after the first pass, r
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
+  command:"claude --model opus -p \
     'Stage all changes, commit with a meaningful conventional-commit message summarizing the work for issue #<number>, and push to the remote branch <branch>. Verify the push succeeded.' \
     --dangerously-skip-permissions \
     --output-format json \
@@ -334,7 +326,7 @@ Post: "All changes committed and pushed to [branch name]. [N] files changed."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
+  command:"claude --model opus -p \
     'Create a pull request for branch <branch> targeting main for issue #<number>. \
      Skill instructions are appended to your system prompt. \
      Resolve relative file references from {{NMG_PLUGINS_PATH}}/plugins/nmg-sdlc/skills/creating-prs/.' \
@@ -350,7 +342,7 @@ Post: "PR created: [PR link/number]"
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
+  command:"claude --model opus -p \
     'Monitor CI status for PR #<pr-number>. Poll until CI completes. If CI fails, diagnose the failure, fix it locally, verify the fix, commit and push. Repeat until CI passes. Report the final CI status.' \
     --dangerously-skip-permissions \
     --output-format json \
@@ -363,7 +355,7 @@ Post: "CI passed for PR [number]." or "CI failed — [summary]. Fixing..."
 
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
-  command:"OPENCLAW_DISCORD_CHANNEL=<channel-id> claude --model opus -p \
+  command:"claude --model opus -p \
     'Merge PR #<pr-number> to main and delete the remote branch <branch>.' \
     --dangerously-skip-permissions \
     --output-format json \

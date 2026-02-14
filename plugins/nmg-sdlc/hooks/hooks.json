@@ -1,32 +1,14 @@
 {
+  "description": "Spec drift detection on file modifications",
   "hooks": {
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "A file was modified. Check $ARGUMENTS for details. If a spec exists at .claude/specs/ for the current feature, check whether the change aligns with the spec. Respond with JSON: {\"ok\": true, \"reason\": \"...\"} where ok is false only if the change clearly deviates from the spec. If no spec exists, respond with {\"ok\": true, \"reason\": \"no spec found\"}."
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/on-notification.sh"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/on-stop.sh"
+            "type": "agent",
+            "prompt": "A file was modified. Check $ARGUMENTS for the file path and change details. Use Glob to find spec files at .claude/specs/*/requirements.md and .claude/specs/*/design.md. If specs exist for the current feature, Read them and check whether the modification aligns with the spec. Respond with JSON: {\"ok\": true, \"reason\": \"...\"} where ok is false only if the change clearly deviates from the spec. If no spec exists, respond with {\"ok\": true, \"reason\": \"no spec found\"}.",
+            "timeout": 60
           }
         ]
       }

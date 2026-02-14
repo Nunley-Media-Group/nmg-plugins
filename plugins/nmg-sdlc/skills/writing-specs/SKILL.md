@@ -2,7 +2,7 @@
 name: writing-specs
 description: "Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown."
 argument-hint: "[#issue-number]"
-allowed-tools: Read, Glob, Grep, Task, Write, Edit, WebFetch, WebSearch, EnterPlanMode, Skill, Bash(gh:*)
+allowed-tools: Read, Glob, Grep, Task, Write, Edit, WebFetch, WebSearch, Bash(gh:*)
 ---
 
 # Writing Specs

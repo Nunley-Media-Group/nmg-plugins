@@ -1,7 +1,7 @@
 ---
 name: architecture-reviewer
 description: "Evaluates architecture quality: SOLID principles, layer separation, security, performance, testability. Auto-invoked by verifying-specs."
-tools: Read, Glob, Grep, Task
+tools: Read, Glob, Grep
 model: opus
 skills: verifying-specs
 ---
@@ -16,8 +16,10 @@ This agent is automatically invoked by `/verifying-specs` during Step 4 (Archite
 
 ## Review Process
 
-1. **Map the architecture**: Identify all layers and their boundaries
-2. **Trace dependencies**: Verify unidirectional dependency flow
+Use `Read`, `Glob`, and `Grep` directly to explore the codebase — do not use `Task` to spawn subagents.
+
+1. **Map the architecture**: Use `Glob` to discover source directories and `Grep` to trace imports/dependencies across layers
+2. **Trace dependencies**: Verify unidirectional dependency flow by grepping for import/require statements
 3. **Evaluate SOLID**: Check each principle using `checklists/solid-principles.md`
 4. **Check security**: Review using `checklists/security.md`
 5. **Assess performance**: Review using `checklists/performance.md`

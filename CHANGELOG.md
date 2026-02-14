@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Removed
+
+- Discord notification hooks (`on-stop.sh`, `on-notification.sh`, `_lib.sh`) — redundant with heartbeat-driven orchestration; the orchestrator already detects subprocess state via polling and posts its own Discord updates
+- `OPENCLAW_DISCORD_CHANNEL` requirement from automation prompt — no hooks consume it anymore
+
 ### Fixed
 
 - Move heartbeat orchestration instructions to top of automation prompt so agent prioritizes them
@@ -14,6 +19,13 @@ All notable changes to this project will be documented in this file.
 - Strengthen retry cap to 3 attempts with shared state tracking in `sdlc-state.json`
 - Add pre-retry checklist requiring root cause investigation before retrying failed steps
 - Explicitly prohibit combined multi-step `claude -p` sessions in both heartbeat and watchdog
+- Remove unused `EnterPlanMode` and `Skill` from `/writing-specs` allowed-tools — prevents unintended plan mode entry during spec writing
+- Remove unused `Skill` from `/implementing-specs` allowed-tools
+- Remove `Task` from architecture-reviewer agent tools — subagents cannot nest; agent now uses Read/Glob/Grep directly
+- Clarify `/verifying-specs` Step 4 to explicitly delegate to the `nmg-sdlc:architecture-reviewer` agent instead of generic Explore subagents
+- Upgrade spec alignment PostToolUse hook from `prompt` to `agent` type so it can read spec files when checking for drift
+- Add top-level `description` to hooks.json
+- Fix `generating-prompt` skill's `Bash(cat * | *)` allowed-tools pattern to standard `Bash(cat:*)`
 
 ## [1.10.1] - 2026-02-13
 

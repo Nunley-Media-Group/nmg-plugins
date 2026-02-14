@@ -62,7 +62,7 @@ Check each acceptance criterion against actual code:
 
 ### Step 4: Architecture Review
 
-Run the architecture review using checklists. Use the `Task` tool with `subagent_type='Explore'` for deeper investigation.
+Run the architecture review using the `Task` tool with `subagent_type='nmg-sdlc:architecture-reviewer'`. The architecture-reviewer agent evaluates the implementation against all five checklists and returns structured scores and findings.
 
 Reference `.claude/steering/tech.md` for project-specific conventions.
 

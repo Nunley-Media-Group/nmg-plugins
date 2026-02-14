@@ -145,23 +145,13 @@ Creates a pull request with:
 
 ## Automation Mode
 
-The plugin supports fully automated operation for external agents like [OpenClaw](https://openclaw.ai/). Since v1.6.0, skills detect `.claude/auto-mode` directly and skip interactive prompts — no hook-level interception needed. Three hooks remain:
+The plugin supports fully automated operation for external agents like [OpenClaw](https://openclaw.ai/). Since v1.6.0, skills detect `.claude/auto-mode` directly and skip interactive prompts — no hook-level interception needed. One hook remains:
 
 | Hook | Type | Behavior |
 |------|------|----------|
 | Spec drift detection | `PostToolUse` | Checks file modifications against active specs |
-| Waiting notification | `Notification` | Notifies Discord via OpenClaw when CC is waiting for input (60s debounce) |
-| Stop notification | `Stop` | Notifies Discord via OpenClaw when a session ends |
 
-Both notification hooks read the Discord channel from the `OPENCLAW_DISCORD_CHANNEL` environment variable (set by OpenClaw before launching sessions). They only fire when both auto-mode and the env var are present.
-
-To suppress Discord notifications for a specific project (e.g., during local debugging), create a `.claude/.nodiscord` file:
-
-```bash
-touch .claude/.nodiscord
-```
-
-This silences both the Notification and Stop hooks without disabling automation mode itself.
+Discord notifications (session stop, waiting for input) were removed in v1.11.0 — the heartbeat-driven orchestration model makes them redundant since the orchestrator already detects subprocess state via polling.
 
 ### Enable / Disable
 
@@ -175,7 +165,7 @@ mkdir -p .claude && touch .claude/auto-mode
 rm .claude/auto-mode
 ```
 
-When `.claude/auto-mode` does not exist, skills work interactively as normal and the stop hook is a no-op.
+When `.claude/auto-mode` does not exist, skills work interactively as normal.
 
 ### Default behaviors in automation mode
 
