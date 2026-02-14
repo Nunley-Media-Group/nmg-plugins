@@ -22,13 +22,15 @@ You MUST set up the 5-minute watchdog cron before starting the development cycle
 
 ```bash
 openclaw cron add --every "5m" --session isolated --name "cc-watchdog" \
-  --message "Watchdog health check. Read {{PROJECT_PATH}}/.claude/sdlc-state.json for current cycle state and retry counts. Run 'process action:list' to find running Claude Code subprocesses. Evaluate each scenario:
+  --message "Watchdog health check. Read {{PROJECT_PATH}}/.claude/sdlc-state.json for current cycle state, retry counts, and lastTransitionAt. Run 'process action:list' to find running Claude Code subprocesses. You MUST post a status message to Discord in EVERY scenario — never return only HEARTBEAT_OK. Evaluate exactly ONE of these four scenarios:
 
-STALLED PROCESS (running beyond its step stall timeout — see Step Reference table: 5 min for short steps, 15 min for specs, 30 min for implementation, 20 min for verification, 10 min for CI — note: claude -p --output-format json produces no stdout until exit, so lack of output does NOT mean stalled, only elapsed time matters): Kill the process. Run the Pre-retry Checklist (see Error Recovery). If retry count in sdlc-state.json has reached 3 for this step, follow the Escalation Protocol instead. Otherwise, increment the retry count, commit and push any recoverable changes, and launch ONLY the single next step as a new subprocess. Post a Discord alert explaining what happened and what you did.
+STALLED PROCESS — Condition: a subprocess IS running AND it has exceeded its step stall timeout (see Step Reference table: 5 min for short steps, 15 min for specs, 30 min for implementation, 20 min for verification, 10 min for CI). Note: claude -p --output-format json produces no stdout until exit, so lack of output does NOT mean stalled — only elapsed time matters. Action: Kill the process. Run the Pre-retry Checklist (see Error Recovery). If retry count in sdlc-state.json has reached 3 for this step, follow the Escalation Protocol instead. Otherwise, increment the retry count, update lastTransitionAt, commit and push any recoverable changes, and launch ONLY the single next step as a new subprocess. Post to Discord: '⚠️ Watchdog: Killed stalled Step [N] subprocess (ran [X] min, timeout [Y] min). Retry [count]/3. Relaunching step.'
 
-ORPHANED STATE (no subprocess running but the development cycle appears incomplete — e.g., feature branch exists with uncommitted work, or a step completed but the next step was never launched): Check git status in the project workdir. Commit and push any uncommitted work. Consult sdlc-state.json to determine the current step. Validate the next step's preconditions (see Step Preconditions table). Launch ONLY the single next step as a new subprocess. Post a Discord alert.
+ORPHANED STATE — Condition: NO subprocess is running AND currentStep > 0 in sdlc-state.json. This means a step completed but the next step was never launched — regardless of whether currentIssue is set (Step 1 does not set currentIssue; that happens in Step 2). Action: Check git status in the project workdir. Commit and push any uncommitted work. Consult sdlc-state.json to determine the current step. Validate the next step's preconditions (see Step Preconditions table). Update lastTransitionAt. Launch ONLY the single next step as a new subprocess. Post to Discord: '🔄 Watchdog: Detected orphaned state at Step [N]. No subprocess running. Advancing to Step [N+1].'
 
-ALL HEALTHY (subprocess running within its timeout, or no work in progress): Post a brief health summary."
+HEALTHY — Condition: a subprocess IS running AND it is within its step stall timeout. Action: Post to Discord: '✅ Watchdog: Step [N] subprocess running ([X] min elapsed, timeout [Y] min). lastTransitionAt: [timestamp].'
+
+IDLE — Condition: NO subprocess is running AND currentStep == 0 in sdlc-state.json. Action: Post to Discord: '💤 Watchdog: No active cycle. currentStep is 0, no subprocess running.'"
 ```
 
 ### Cycle state tracking (`sdlc-state.json`)
@@ -43,6 +45,7 @@ cat > "{{PROJECT_PATH}}/.claude/sdlc-state.json" << 'EOF'
   "currentIssue": null,
   "currentBranch": "main",
   "featureName": null,
+  "lastTransitionAt": null,
   "retries": {}
 }
 EOF
@@ -53,9 +56,10 @@ EOF
 - `currentIssue` — GitHub issue number (e.g., `42`) or `null`.
 - `currentBranch` — Branch name being worked on.
 - `featureName` — The feature directory name under `.claude/specs/`.
+- `lastTransitionAt` — ISO 8601 timestamp of the last step transition or retry (e.g., `"2026-02-13T14:30:00Z"`), or `null` if no cycle has started. The watchdog uses this to detect stale state (>10 min since last transition).
 - `retries` — Object mapping step numbers to retry counts (e.g., `{"3": 1, "4": 2}`).
 
-**Update this file** at every step transition: set `currentStep`, reset the step's retry count to 0, and update `currentIssue`/`currentBranch`/`featureName` when they change. On retry, increment `retries[step]`.
+**Update this file** at every step transition: set `currentStep`, set `lastTransitionAt` to the current ISO 8601 timestamp, reset the step's retry count to 0, and update `currentIssue`/`currentBranch`/`featureName` when they change. On retry, increment `retries[step]` and update `lastTransitionAt`.
 
 ## Orchestration
 
@@ -70,10 +74,10 @@ On every heartbeat tick, you MUST:
 1. Run `process action:list` to find running subprocesses.
 2. If a subprocess is running: run `process action:poll sessionId:XXX` to check whether it has exited.
    - Still running and within the step's stall timeout → HEARTBEAT_OK
-   - Still running but exceeded the step's stall timeout → kill process, post stall alert, retry step
-3. If the subprocess exited with code 0: parse the results, post a Discord status update, **validate the next step's preconditions** (see Step Preconditions table), update `sdlc-state.json`, and launch the next step immediately.
-4. If the subprocess exited with non-zero code: follow Error Recovery (including the Pre-retry Checklist) below.
-5. If no subprocess is running: check `sdlc-state.json` for the current step and launch the next one. **After step 9 (Merge), the next step is always step 1 of a new cycle** — return to the top of the Development Cycle. Only report "all done" if the milestone has no more open issues.
+   - Still running but exceeded the step's stall timeout → kill process, post stall alert, update `lastTransitionAt` in `sdlc-state.json`, retry step
+3. If the subprocess exited with code 0: parse the results, post a Discord status update, **validate the next step's preconditions** (see Step Preconditions table), update `sdlc-state.json` (including `lastTransitionAt`), and launch the next step immediately.
+4. If the subprocess exited with non-zero code: follow Error Recovery (including the Pre-retry Checklist) below. Update `lastTransitionAt` in `sdlc-state.json` when retrying.
+5. If no subprocess is running: check `sdlc-state.json` for the current step, update `lastTransitionAt`, and launch the next one. **After step 9 (Merge), the next step is always step 1 of a new cycle** — return to the top of the Development Cycle. Only report "all done" if the milestone has no more open issues.
 
 **NEVER reply HEARTBEAT_OK without first polling the subprocess.** The heartbeat exists to drive orchestration — a heartbeat that doesn't poll is a wasted turn that delays the entire cycle.
 
@@ -84,23 +88,26 @@ On every heartbeat tick, you MUST:
 | Subprocess state | Heartbeat action |
 |-----------------|-----------------|
 | Running, within stall timeout | HEARTBEAT_OK |
-| Running, exceeded stall timeout | Kill process, post stall alert, run Pre-retry Checklist, retry step (update retry count in `sdlc-state.json`; if count reaches 3 → Escalation Protocol) |
-| Exited, exit code 0 | Parse results, post Discord, **validate next step's preconditions** (Step Preconditions table), update `sdlc-state.json`, then launch next step |
-| Exited, exit code != 0 | Post failure alert, run Pre-retry Checklist (see Error Recovery), retry or escalate per `sdlc-state.json` retry count |
-| No subprocess running | Check `sdlc-state.json`, launch next step — after Merge, this means step 1 of a new cycle (only "all done" if no issues remain) |
+| Running, exceeded stall timeout | Kill process, post stall alert, run Pre-retry Checklist, retry step (update retry count and `lastTransitionAt` in `sdlc-state.json`; if count reaches 3 → Escalation Protocol) |
+| Exited, exit code 0 | Parse results, post Discord, **validate next step's preconditions** (Step Preconditions table), update `sdlc-state.json` (including `lastTransitionAt`), then launch next step |
+| Exited, exit code != 0 | Post failure alert, run Pre-retry Checklist (see Error Recovery), update `lastTransitionAt`, retry or escalate per `sdlc-state.json` retry count |
+| No subprocess running | Check `sdlc-state.json`, update `lastTransitionAt`, launch next step — after Merge, this means step 1 of a new cycle (only "all done" if no issues remain) |
 
 **Step transition validation:** When a subprocess exits code 0, validate the next step's preconditions (see Step Preconditions table) before advancing. Exit code 0 does NOT guarantee all artifacts were produced — a session may succeed at the task it attempted but still leave required outputs incomplete.
 
 ### Safety net: Watchdog cron
 
-The watchdog cron (set up in the Setup section) runs every 5 minutes in an isolated session. Unlike the heartbeat — which you control — the watchdog is an independent safety net that **remediates** when the heartbeat misses a step transition:
+The watchdog cron (set up in the Setup section) runs every 5 minutes in an isolated session. Unlike the heartbeat — which you control — the watchdog is an independent safety net that **remediates** when the heartbeat misses a step transition. Every watchdog run MUST post to Discord. The watchdog exists for visibility as much as remediation.
 
-- **Stalled processes:** Kills the process, runs the Pre-retry Checklist, recovers uncommitted work from the project workdir, relaunches the step (respecting retry caps in `sdlc-state.json`), and posts an alert.
-- **Orphaned state** (no subprocess running, but incomplete work detected): Commits/pushes uncommitted changes, consults `sdlc-state.json` for the current step, validates preconditions, determines and launches the next step, posts an alert.
-- **Healthy state:** Posts a brief health summary.
+The watchdog evaluates exactly one of four scenarios:
+
+- **Stalled process** (subprocess running beyond stall timeout): Kills the process, runs the Pre-retry Checklist, recovers uncommitted work, updates `lastTransitionAt`, relaunches the step (respecting retry caps in `sdlc-state.json`), and posts a stall alert to Discord.
+- **Orphaned state** (no subprocess running AND `currentStep > 0`): This means a step completed but the next step was never launched. Does NOT require `currentIssue` to be set — Step 1 doesn't set it. Commits/pushes uncommitted changes, consults `sdlc-state.json` for the current step, validates preconditions, updates `lastTransitionAt`, determines and launches the next step, and posts an orphaned-state alert to Discord.
+- **Healthy** (subprocess running within stall timeout): Posts a health summary to Discord with elapsed time and `lastTransitionAt`.
+- **Idle** (no subprocess running AND `currentStep == 0`): Posts idle status to Discord.
 - **One step per subprocess:** The watchdog MUST follow the step-by-step session model. Consult `sdlc-state.json` to determine which single step to launch — never combine multiple steps into one session.
 
-The watchdog exists because heartbeats can fail silently (e.g., the agent replies HEARTBEAT_OK without actually polling). If the heartbeat loop is working correctly, the watchdog will never need to intervene.
+The watchdog exists because heartbeats can fail silently (e.g., the agent replies HEARTBEAT_OK without actually polling). If the heartbeat loop is working correctly, the watchdog will never need to intervene — but it still posts status for visibility.
 
 ## Session Model
 

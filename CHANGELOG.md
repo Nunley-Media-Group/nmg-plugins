@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **OpenClaw prompt** — Watchdog cron now detects orphaned state when `currentStep > 0` regardless of `currentIssue` (fixes missed Step 1→2 transitions)
+- **OpenClaw prompt** — Watchdog cron posts to Discord in ALL scenarios (healthy/idle/stalled/orphaned) instead of silently returning HEARTBEAT_OK
+- **OpenClaw prompt** — Add `lastTransitionAt` timestamp to `sdlc-state.json` for stale-transition detection
+
 ## [1.12.0] - 2026-02-13
 
 ### Changed
