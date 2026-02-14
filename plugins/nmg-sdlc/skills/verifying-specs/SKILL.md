@@ -9,17 +9,20 @@ allowed-tools: Read, Glob, Grep, Task, WebFetch, WebSearch, Write, Edit, Bash(gh
 
 Verify the implementation against specifications, fix any findings, review architecture and test coverage, then update the GitHub issue with evidence.
 
-**REQUIRED: Use ultrathink (extended thinking mode) throughout the verification process.**
-
 ## When to Use
 
 - After implementation is complete via `/implementing-specs`
 - Before creating a pull request via `/creating-prs`
 - When reviewing whether a feature meets its specification
 
+## Automation Mode
+
+If the file `.claude/auto-mode` exists in the project directory:
+- All approval gates are pre-approved. Do NOT call `AskUserQuestion` — proceed through all steps without stopping for user input.
+
 ## Prerequisites
 
-1. Specs exist at `.claude/specs/{feature-name}/`
+1. Specs exist at `.claude/specs/{feature-name}/`. The `{feature-name}` is the issue number + kebab-case slug of the title (e.g., `42-add-precipitation-overlay`), matching the branch name. If unsure, use `Glob` to find `.claude/specs/*/requirements.md` and match against the current issue number or branch name.
 2. Implementation is complete (or believed to be complete)
 3. A GitHub issue exists for tracking
 
@@ -114,6 +117,8 @@ Reference `.claude/steering/tech.md` for the project's test command. Run the ful
 Re-check modified files against acceptance criteria and architecture checklists. Update scores if fixes improved them.
 
 #### 6d. Handle Unfixable Findings
+
+Fix findings that can be resolved in roughly 20 lines of change or fewer. Defer findings that would require architectural changes, new dependencies, or modifications outside the feature's scope.
 
 If a finding cannot be safely fixed (e.g., requires spec clarification, would change scope, or risks breaking unrelated functionality):
 1. Document **why** it cannot be fixed now

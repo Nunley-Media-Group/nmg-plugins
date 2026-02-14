@@ -9,8 +9,6 @@ allowed-tools: Read, Glob, Grep, Bash(gh:*), WebSearch, WebFetch
 
 Interview the user to understand their need, then create a well-groomed GitHub issue with BDD acceptance criteria.
 
-**REQUIRED: Use ultrathink (extended thinking mode) throughout this process.**
-
 ## When to Use
 
 - Starting new work on a feature, bug fix, or enhancement
@@ -20,7 +18,7 @@ Interview the user to understand their need, then create a well-groomed GitHub i
 ## Automation Mode
 
 If the file `.claude/auto-mode` exists in the project directory:
-- Skip the interview (Step 2) — use the provided argument as the feature description and infer requirements from context.
+- Skip the interview (Step 2) — use the provided argument as the feature description. Read `.claude/steering/product.md` for product context. Generate 3–5 Given/When/Then acceptance criteria covering the happy path, one alternative path, and one error case.
 - Skip the review (Step 4) — do not call `AskUserQuestion`. Proceed directly to creating the issue.
 
 ## Workflow
@@ -37,7 +35,9 @@ Read `.claude/steering/product.md` if it exists to understand:
 
 ### Step 2: Interview the User
 
-Ask structured questions to refine the need. Don't ask all at once — have a conversation:
+Ask questions adaptively to refine the need. If the user's initial description already covers a topic, skip it. Group related questions when natural — aim for 2–3 rounds, not 6 sequential questions.
+
+Topics to cover (skip any already answered):
 
 1. **Who is the user?** What role or persona benefits from this?
 2. **What's the problem?** What pain point or gap exists today?

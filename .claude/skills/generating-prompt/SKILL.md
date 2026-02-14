@@ -9,8 +9,6 @@ allowed-tools: Read, Write, Bash(basename:*), Bash(pbcopy:*), Bash(xclip:*), Bas
 
 Generate a ready-to-use OpenClaw automation prompt by substituting a project path into the template.
 
-**REQUIRED: Use ultrathink (extended thinking mode) throughout this process.**
-
 ## Argument
 
 The user must provide the absolute path to the target project as the argument (e.g., `/Volumes/Fast Brick/source/repos/chrome-cli`).

@@ -171,7 +171,7 @@ If a Claude Code subprocess crashes, times out, or exits non-zero:
 
 Before retrying ANY failed step, run through this checklist in order:
 
-1. **Input artifacts exist?** Check the Step Preconditions table. If required inputs are missing, retry the *previous* step instead (it failed to produce them). Update `sdlc-state.json` to reflect the corrected step.
+1. **Input artifacts exist?** Check the Step Preconditions table. If Step N's required inputs are missing, retry Step N-1 instead (it failed to produce them). This counts toward Step N-1's retry cap. Update `sdlc-state.json` to reflect the corrected step.
 2. **Working tree clean?** Run `git status`. Commit and push any dirty working tree before retrying.
 3. **Known error patterns?** Parse the subprocess output for these patterns:
    - `context_window_exceeded` → **Escalate immediately** (step needs restructuring)
@@ -185,14 +185,15 @@ Before retrying ANY failed step, run through this checklist in order:
 
 When a step has exhausted its retries or hit an unrecoverable error:
 
-1. Post a diagnostic summary to Discord:
+1. Commit and push any uncommitted work on the current branch (for forensics), then check out main: `git add -A && git commit -m "chore: save partial work before escalation" && git push && git checkout main`.
+2. Post a diagnostic summary to Discord:
    - Which step failed and how many times
    - Last error output (truncated to 500 chars)
    - Current branch and git status
    - Contents of `sdlc-state.json`
-2. Disable the watchdog cron: `openclaw cron remove --name "cc-watchdog"`
-3. Post resume instructions: "To resume, fix the issue manually, update `sdlc-state.json`, re-enable the watchdog cron, and relaunch the failed step."
-4. **STOP.** Do not retry, do not advance, do not start a new cycle.
+3. Disable the watchdog cron: `openclaw cron remove --name "cc-watchdog"`
+4. Post resume instructions: "To resume, fix the issue manually, update `sdlc-state.json`, re-enable the watchdog cron, and relaunch the failed step."
+5. **STOP.** Do not retry, do not advance, do not start a new cycle.
 
 ## Development Cycle
 
@@ -202,14 +203,14 @@ Each skill-based step launches a new `claude -p` subprocess. Non-skill steps (co
 
 ### Step Preconditions
 
-Before launching a step, verify its required input artifacts exist. If preconditions fail, retry the step that should have produced them (counts toward that step's retry cap).
+Before launching a step, verify its required input artifacts exist. If Step N's preconditions fail, retry Step N-1 (the step that should have produced the missing artifacts). This counts toward Step N-1's retry cap.
 
 | Step | Required Input | Verification |
 |------|---------------|-------------|
 | 1. Start cycle | None | — |
 | 2. Start issue | Clean `main` branch, up to date with remote | `git status` shows clean, `git log -1` matches remote |
 | 3. Write specs | Feature branch exists, issue linked | Branch checked out, issue number known |
-| 4. Implement | All 4 spec files: `requirements.md`, `design.md`, `tasks.md`, `feature.gherkin` | `ls .claude/specs/{feature-name}/` shows all 4 files with non-zero size |
+| 4. Implement | All 4 spec files: `requirements.md`, `design.md`, `tasks.md`, `feature.gherkin` | `ls .claude/specs/*/` shows all 4 files with non-zero size (use `featureName` from `sdlc-state.json` if set) |
 | 5. Verify | Implementation committed on feature branch | `git diff --cached` is empty, recent commits exist |
 | 6. Commit/push | All changes staged or committed | `git status` shows clean or only staged changes |
 | 7. Create PR | Branch pushed to remote | `git log origin/{branch}..HEAD` is empty |
@@ -265,14 +266,16 @@ Post: "Specs written for issue [number]."
 
 #### Spec Validation Gate (mandatory)
 
-After Step 3 completes, verify all 4 spec files exist before advancing to Step 4:
+After Step 3 completes, verify all 4 spec files exist before advancing to Step 4. Use a glob since the feature-name is determined by the subprocess:
 
 ```bash
-ls -la "{{PROJECT_PATH}}/.claude/specs/{feature-name}/requirements.md" \
-       "{{PROJECT_PATH}}/.claude/specs/{feature-name}/design.md" \
-       "{{PROJECT_PATH}}/.claude/specs/{feature-name}/tasks.md" \
-       "{{PROJECT_PATH}}/.claude/specs/{feature-name}/feature.gherkin"
+ls "{{PROJECT_PATH}}"/.claude/specs/*/requirements.md \
+   "{{PROJECT_PATH}}"/.claude/specs/*/design.md \
+   "{{PROJECT_PATH}}"/.claude/specs/*/tasks.md \
+   "{{PROJECT_PATH}}"/.claude/specs/*/feature.gherkin
 ```
+
+Update `sdlc-state.json`'s `featureName` field by extracting the directory name from the glob results (e.g., if `requirements.md` is at `.claude/specs/42-add-overlay/requirements.md`, set `featureName` to `42-add-overlay`).
 
 If any file is missing or empty, **do not advance to Step 4**. Instead, retry Step 3 (counts toward Step 3's retry cap in `sdlc-state.json`). Post: "Spec validation failed — missing: [list]. Retrying spec writing..."
 
@@ -356,7 +359,7 @@ Post: "CI passed for PR [number]." or "CI failed — [summary]. Fixing..."
 ```bash
 bash pty:true workdir:{{PROJECT_PATH}} background:true \
   command:"claude --model opus -p \
-    'Merge PR #<pr-number> to main and delete the remote branch <branch>.' \
+    'First verify CI is passing with gh pr checks <pr-number>. If any check is failing, do NOT merge — report the failure and exit with a non-zero status. If all checks pass, merge PR #<pr-number> to main and delete the remote branch <branch>.' \
     --dangerously-skip-permissions \
     --output-format json \
     --max-turns 5"

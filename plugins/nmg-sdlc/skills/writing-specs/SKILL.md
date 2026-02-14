@@ -9,8 +9,6 @@ allowed-tools: Read, Glob, Grep, Task, Write, Edit, WebFetch, WebSearch, Bash(gh
 
 Create BDD specifications from a GitHub issue through three phases: requirements, technical design, and implementation tasks. Each phase has a human review gate.
 
-**REQUIRED: Use ultrathink (extended thinking mode) throughout all specification processes.**
-
 ## Core Principles
 
 | Principle | Description |
@@ -29,6 +27,19 @@ Create BDD specifications from a GitHub issue through three phases: requirements
 ## Automation Mode
 
 If the file `.claude/auto-mode` exists in the project directory, all Human Review Gates in this workflow are **pre-approved**. Do NOT call `AskUserQuestion` at any gate — proceed directly from each phase to the next without stopping for user input.
+
+## Feature Name Convention
+
+The `{feature-name}` used in `.claude/specs/{feature-name}/` is derived from the **issue title** as a kebab-case slug — the same algorithm used for branch names in `/starting-issues`:
+
+1. Take the issue title (e.g., "Add precipitation overlay to map")
+2. Lowercase, replace spaces and special characters with hyphens
+3. Remove leading/trailing hyphens, collapse consecutive hyphens
+4. Prepend the issue number: `42-add-precipitation-overlay-to-map`
+
+This matches the branch name format (`N-feature-name`), so specs and branches stay aligned.
+
+**Fallback:** If the feature-name cannot be determined from context, use `Glob` to find `.claude/specs/*/requirements.md` and match against the current issue number or branch name.
 
 ## Workflow Overview
 
@@ -89,12 +100,14 @@ Write to `.claude/specs/{feature-name}/requirements.md`
 
 ### Human Review Gate
 
-Present the requirements spec to the user:
+**[If `.claude/auto-mode` exists]:** Gate is pre-approved — proceed immediately to Phase 2.
+
+**[If `.claude/auto-mode` does NOT exist]:** Present the requirements spec to the user:
 - "Does this capture the requirements correctly?"
 - "Are all acceptance criteria testable?"
 - "Anything missing from scope?"
 
-**Do not proceed to Phase 2 until the user approves.**
+Do not proceed to Phase 2 until the user approves.
 
 ---
 
@@ -123,12 +136,14 @@ Write to `.claude/specs/{feature-name}/design.md`
 
 ### Human Review Gate
 
-Present the technical design to the user:
+**[If `.claude/auto-mode` exists]:** Gate is pre-approved — proceed immediately to Phase 3.
+
+**[If `.claude/auto-mode` does NOT exist]:** Present the technical design to the user:
 - "Does this architecture align with the project?"
 - "Are there concerns about the approach?"
 - "Any alternatives to consider?"
 
-**Do not proceed to Phase 3 until the user approves.**
+Do not proceed to Phase 3 until the user approves.
 
 ---
 
@@ -168,7 +183,9 @@ Write to:
 
 ### Human Review Gate
 
-Present the task breakdown to the user:
+**[If `.claude/auto-mode` exists]:** Gate is pre-approved — proceed immediately to output.
+
+**[If `.claude/auto-mode` does NOT exist]:** Present the task breakdown to the user:
 - "Are the tasks properly scoped?"
 - "Are dependencies correct?"
 - "Is the phasing logical?"

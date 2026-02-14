@@ -9,8 +9,6 @@ allowed-tools: Read, Glob, Grep, Bash(gh:*), Bash(git:*), Skill
 
 Pick a GitHub issue to work on, then automatically chain through `/writing-specs` and `/implementing-specs` for a full spec-driven development cycle.
 
-**REQUIRED: Use ultrathink (extended thinking mode) throughout this process.**
-
 ## When to Use
 
 - Starting your day and want to pick up a new issue
@@ -50,7 +48,7 @@ Capture the output — it provides the issue number, title, branch name, milesto
 
 ## Step 2: Chain to Writing Specs
 
-**Before invoking writing-specs, clear context.** Output a handoff summary:
+**Before invoking writing-specs, summarize and hand off context.** Output a handoff summary:
 
 ```
 --- Phase 1 complete ---
@@ -61,7 +59,7 @@ Milestone: [milestone or "none"]
 Proceeding to /writing-specs #N...
 ```
 
-Then compact the conversation (`/compact`) to free context for the next phase.
+Summarize the results from the previous phase in a brief handoff message to preserve context while minimizing token usage.
 
 Invoke the writing-specs skill for the selected issue:
 
@@ -73,7 +71,7 @@ Use the `Skill` tool to invoke this. Wait for it to complete — this includes a
 
 ## Step 3: Chain to Implementing Specs
 
-**Before invoking implementing-specs, clear context.** Output a handoff summary:
+**Before invoking implementing-specs, summarize and hand off context.** Output a handoff summary:
 
 ```
 --- Phase 2 complete ---
@@ -84,7 +82,7 @@ Specs written to: .claude/specs/{feature-name}/
 Proceeding to /implementing-specs #N...
 ```
 
-Then compact the conversation (`/compact`) to free context for the next phase.
+Summarize the results from the previous phase in a brief handoff message to preserve context while minimizing token usage.
 
 Invoke the implementing-specs skill:
 

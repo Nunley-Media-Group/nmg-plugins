@@ -9,8 +9,6 @@ allowed-tools: Read, Glob, Grep, Bash(gh:*), Bash(git:*)
 
 Select a GitHub issue to work on, create a linked feature branch, and set the issue to "In Progress" in any associated GitHub Project.
 
-**REQUIRED: Use ultrathink (extended thinking mode) throughout this process.**
-
 ## When to Use
 
 - Starting work on a specific GitHub issue
@@ -21,7 +19,7 @@ Select a GitHub issue to work on, create a linked feature branch, and set the is
 
 If the file `.claude/auto-mode` exists in the project directory:
 - If an issue number was provided as an argument, skip Steps 2–3 (selection and confirmation) — go directly to Step 4.
-- If no issue number was provided, select the first available issue from the current milestone (or all open issues if no milestone exists) without calling `AskUserQuestion`. Skip Step 3 confirmation.
+- If no issue number was provided, select the first available issue (sorted by issue number ascending — oldest first) from the current milestone (or all open issues if no milestone exists) without calling `AskUserQuestion`. Skip Step 3 confirmation.
 
 ## Workflow Overview
 

@@ -9,8 +9,6 @@ allowed-tools: Read, Glob, Grep, Task, Write, Edit, WebFetch, WebSearch, EnterPl
 
 Read the specifications for the current branch's issue, enter plan mode to design the implementation approach, then execute tasks sequentially.
 
-**REQUIRED: Use ultrathink (extended thinking mode) throughout the implementation process.**
-
 ## When to Use
 
 - After specs have been written and approved via `/writing-specs`
@@ -20,12 +18,12 @@ Read the specifications for the current branch's issue, enter plan mode to desig
 ## Automation Mode
 
 If the file `.claude/auto-mode` exists in the project directory:
-- **Do NOT call `EnterPlanMode`.** Design the implementation approach internally in your thinking based on the specs, then proceed directly to Step 5 (Execute Tasks). Calling `EnterPlanMode` in a headless session will fail because there is no user to approve the plan.
+- **Do NOT call `EnterPlanMode`.** Still perform Steps 1–3 (identify context, read specs, read steering docs), then design the implementation approach internally in your thinking and proceed to Step 5 (Execute Tasks). Only Step 4 is skipped — calling `EnterPlanMode` in a headless session will fail because there is no user to approve the plan.
 - All approval gates are pre-approved. Do NOT call `AskUserQuestion` — proceed without stopping for user input.
 
 ## Prerequisites
 
-1. Specs exist at `.claude/specs/{feature-name}/` (created by `/writing-specs`)
+1. Specs exist at `.claude/specs/{feature-name}/` (created by `/writing-specs`). The `{feature-name}` is the issue number + kebab-case slug of the title (e.g., `42-add-precipitation-overlay`), matching the branch name. If unsure, use `Glob` to find `.claude/specs/*/requirements.md` and match against the current issue number or branch name.
 2. A feature branch exists for this issue (or will be created)
 3. Steering documents exist at `.claude/steering/`
 

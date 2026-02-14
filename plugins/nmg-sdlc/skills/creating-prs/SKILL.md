@@ -17,7 +17,7 @@ Create a pull request with a spec-driven summary that links to the GitHub issue 
 
 ## Prerequisites
 
-1. Implementation is complete (all tasks from `tasks.md` done)
+1. Implementation is complete (all tasks from `tasks.md` done). The `{feature-name}` in spec paths is the issue number + kebab-case slug of the title (e.g., `42-add-precipitation-overlay`), matching the branch name. If unsure, use `Glob` to find `.claude/specs/*/requirements.md` and match against the current issue number or branch name.
 2. Verification has passed (via `/verifying-specs`)
 3. Changes are committed to a feature branch
 
@@ -95,6 +95,8 @@ Base: main ← [branch-name]
 Issue: Closes #N
 
 The PR links to specs at .claude/specs/{feature}/ and will close issue #N when merged.
+
+[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ---

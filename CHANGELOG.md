@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **All skills** — Remove deprecated "ultrathink" keyword lines (no functional effect; extended thinking is session-level)
+- **`/implementing-specs`** — Clarify auto-mode: Steps 1–3 are still required, only Step 4 (EnterPlanMode) is skipped
+- **`/writing-specs`** — Add Feature Name Convention section defining the `{feature-name}` algorithm (issue number + kebab-case slug)
+- **`/writing-specs`** — Add inline auto-mode conditionals at each Human Review Gate for unambiguous behavior
+- **`/implementing-specs`, `/verifying-specs`, `/creating-prs`** — Add feature-name fallback: use `Glob` to find specs if feature-name is ambiguous
+- **`/beginning-dev`** — Replace `/compact` references with natural language context summarization (slash commands can't be invoked via Skill tool)
+- **`/starting-issues`** — Specify auto-mode issue sort order: issue number ascending (oldest first)
+- **`/verifying-specs`** — Add standard Automation Mode section for consistency with other skills
+- **`/verifying-specs`** — Add fix-vs-defer heuristic: fix findings under ~20 lines; defer architectural changes
+- **`/creating-issues`** — Clarify auto-mode inference: read `product.md`, generate 3–5 Given/When/Then acceptance criteria
+- **`/creating-issues`** — Reword interview as adaptive questioning (skip answered topics, aim for 2–3 rounds)
+- **`/creating-prs`** — Add auto-mode conditional output (`Done. Awaiting orchestrator.`)
+- **OpenClaw prompt** — Spec validation gate uses glob instead of unresolved `{feature-name}` template variable
+- **OpenClaw prompt** — Merge step now verifies CI via `gh pr checks` before merging
+- **OpenClaw prompt** — Clarify retry count attribution: Step N precondition failure retries Step N-1 against N-1's cap
+- **OpenClaw prompt** — Escalation protocol now commits/pushes partial work and checks out main before stopping
+
 ### Removed
 
 - Discord notification hooks (`on-stop.sh`, `on-notification.sh`, `_lib.sh`) — redundant with heartbeat-driven orchestration; the orchestrator already detects subprocess state via polling and posts its own Discord updates

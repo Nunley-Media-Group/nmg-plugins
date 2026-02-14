@@ -9,8 +9,6 @@ allowed-tools: Read, Bash(git:*), Bash(cp:*), Bash(mkdir:*), Bash(date:*), Bash(
 
 Install or update all plugins from the nmg-plugins marketplace to the local user's Claude Code plugin cache.
 
-**REQUIRED: Use ultrathink (extended thinking mode) throughout this process.**
-
 ## When to Use
 
 - After pushing new commits to the nmg-plugins repo and wanting to test locally
