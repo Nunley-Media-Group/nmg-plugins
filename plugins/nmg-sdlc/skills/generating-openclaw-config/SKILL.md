@@ -43,10 +43,10 @@ Generate a ready-to-use `sdlc-config.json` for the SDLC runner by substituting t
 
 6. **Write the config file** — save the fully substituted config JSON to `sdlc-config.json` in the project root (resolved in Step 1). Use the Write tool.
 
-7. **Add to .gitignore** — ensure `sdlc-config.json` is listed in the project's `.gitignore`:
+7. **Add to .gitignore** — ensure `sdlc-config.json` and `.claude/sdlc-state.json` are listed in the project's `.gitignore`:
    - Read the `.gitignore` file in the project root. If it does not exist, create it.
-   - If `sdlc-config.json` is NOT already present, add it under an `# SDLC runner config` comment.
-   - If it is already listed, skip this step.
+   - For each of `sdlc-config.json` and `.claude/sdlc-state.json`: if NOT already present, add it under an `# SDLC runner config` comment.
+   - If both are already listed, skip this step.
 
 8. **Confirm and suggest next step** — tell the user the config has been written and is git-ignored, then suggest:
    ```
