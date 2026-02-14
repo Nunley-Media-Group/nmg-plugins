@@ -11,7 +11,7 @@
           },
           {
             "type": "agent",
-            "prompt": "A file was modified. Check $ARGUMENTS for the file path and change details. Use Glob to find spec files at .claude/specs/*/requirements.md and .claude/specs/*/design.md. If specs exist for the current feature, Read them and check whether the modification aligns with the spec. Respond with JSON: {\"ok\": true, \"reason\": \"...\"} where ok is false only if the change clearly deviates from the spec. If no spec exists, respond with {\"ok\": true, \"reason\": \"no spec found\"}.",
+            "prompt": "A file was just modified. $ARGUMENTS contains the file path and change details. Glob for spec files at .claude/specs/*/requirements.md and .claude/specs/*/design.md. Read any specs found and determine whether the modification aligns with them. Return {\"ok\": true} if aligned or no specs exist, {\"ok\": false, \"reason\": \"...\"} only if the change clearly deviates from the spec.",
             "timeout": 60
           }
         ]
