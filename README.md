@@ -226,7 +226,7 @@ These are repo-level utilities (not part of the nmg-sdlc plugin itself):
 | Skill | Description |
 |-------|-------------|
 | `/generating-prompt /path/to/project` | Generate an `sdlc-config.json` for the SDLC runner, with project path substituted and copied to clipboard |
-| `/installing-locally` | Install or update all marketplace plugins to the local Claude Code plugin cache — useful for testing after pushing changes |
+| `/installing-locally` | Install or update all marketplace plugins to the local Claude Code plugin cache, sync the OpenClaw skill, and restart the OpenClaw gateway |
 
 ## Updating
 

@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 
 - **`openclaw-automation-prompt.md`** — Replaced 410-line prompt-engineered orchestration with short documentation for the script-based approach
 - **`/generating-prompt`** — Now generates `sdlc-config.json` instead of the old automation prompt
+- **`/installing-locally`** — Now also syncs the OpenClaw `running-sdlc` skill to `~/.openclaw/skills/` and restarts the OpenClaw gateway after installing marketplace plugins
 
 ### Removed
 

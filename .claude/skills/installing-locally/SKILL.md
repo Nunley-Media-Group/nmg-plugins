@@ -2,12 +2,12 @@
 name: installing-locally
 description: "Install or update all nmg-plugins marketplace plugins locally for the current user."
 argument-hint: ""
-allowed-tools: Read, Bash(git:*), Bash(cp:*), Bash(mkdir:*), Bash(date:*), Bash(jq:*), Bash(chmod:*), Bash(rsync:*)
+allowed-tools: Read, Bash(git:*), Bash(cp:*), Bash(mkdir:*), Bash(date:*), Bash(jq:*), Bash(chmod:*), Bash(rsync:*), Bash(openclaw:*)
 ---
 
 # Installing Locally
 
-Install or update all plugins from the nmg-plugins marketplace to the local user's Claude Code plugin cache.
+Install or update all plugins from the nmg-plugins marketplace to the local user's Claude Code plugin cache, sync the OpenClaw skill, and restart the OpenClaw gateway.
 
 ## When to Use
 
@@ -23,6 +23,7 @@ Install or update all plugins from the nmg-plugins marketplace to the local user
 | `~/.claude/plugins/marketplaces/nmg-plugins/` | Local git clone of the marketplace repo |
 | `~/.claude/plugins/cache/nmg-plugins/{plugin}/{version}/` | Versioned snapshot of each installed plugin |
 | `~/.claude/plugins/installed_plugins.json` | Registry of installed plugins (scope, version, path, git SHA) |
+| `~/.openclaw/skills/running-sdlc/` | OpenClaw skill directory (SKILL.md, sdlc-runner.mjs, config) |
 
 ## Workflow Overview
 
@@ -33,7 +34,9 @@ Install or update all plugins from the nmg-plugins marketplace to the local user
     ├─ 2. Discover plugins from marketplace.json
     ├─ 3. For each plugin, sync to cache
     ├─ 4. Update installed_plugins.json
-    └─ 5. Report results
+    ├─ 5. Sync OpenClaw skill
+    ├─ 6. Restart OpenClaw gateway
+    └─ 7. Report results
 ```
 
 ---
@@ -122,7 +125,38 @@ date -u +"%Y-%m-%dT%H:%M:%S.000Z"
 
 Write the updated JSON back to `~/.claude/plugins/installed_plugins.json` using `jq` or direct file write, preserving the `"version": 2` schema field.
 
-## Step 5: Report Results
+## Step 5: Sync OpenClaw Skill
+
+Copy the OpenClaw running-sdlc skill and its supporting files from the marketplace clone to `~/.openclaw/skills/running-sdlc/`.
+
+### 5a. Create the destination directory
+
+```bash
+mkdir -p ~/.openclaw/skills/running-sdlc
+```
+
+### 5b. Copy skill files
+
+```bash
+cp ~/.claude/plugins/marketplaces/nmg-plugins/plugins/nmg-sdlc/skills/running-sdlc/SKILL.md \
+   ~/.openclaw/skills/running-sdlc/SKILL.md
+cp ~/.claude/plugins/marketplaces/nmg-plugins/scripts/sdlc-runner.mjs \
+   ~/.openclaw/skills/running-sdlc/sdlc-runner.mjs
+cp ~/.claude/plugins/marketplaces/nmg-plugins/scripts/sdlc-config.example.json \
+   ~/.openclaw/skills/running-sdlc/sdlc-config.example.json
+```
+
+## Step 6: Restart OpenClaw Gateway
+
+Restart the OpenClaw gateway so it picks up the updated skill files:
+
+```bash
+openclaw gateway restart
+```
+
+If the `openclaw` command is not found or the restart fails, warn the user but do not fail the overall install — the Claude Code plugins were still installed successfully.
+
+## Step 7: Report Results
 
 Output a summary:
 
@@ -132,11 +166,23 @@ Marketplace: nmg-plugins (commit {short-SHA})
   {plugin-name}: v{version} → ~/.claude/plugins/cache/nmg-plugins/{plugin-name}/{version}/
   ...
 
-Restart Claude Code for changes to take effect.
+--- OpenClaw Skill Synced ---
+  running-sdlc → ~/.openclaw/skills/running-sdlc/
+
+--- OpenClaw Gateway ---
+  Restarted successfully.
+
+Restart Claude Code for plugin changes to take effect.
 ```
 
 If any plugin had a version mismatch between marketplace.json and its own plugin.json, include a warning:
 
 ```
 ⚠ Version mismatch: {plugin-name} marketplace.json says {v1} but plugin.json says {v2}
+```
+
+If the OpenClaw gateway restart failed, include:
+
+```
+⚠ OpenClaw gateway restart failed — run `openclaw gateway restart` manually.
 ```
