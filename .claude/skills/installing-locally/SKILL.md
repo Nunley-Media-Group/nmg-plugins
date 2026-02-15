@@ -114,7 +114,7 @@ Each entry is an array of installation scopes. For user-level installs, ensure t
 ```
 
 Rules:
-- Use the **full expanded path** (not `~`) for `installPath` (e.g., `/Users/rnunley/.claude/plugins/cache/...`)
+- Use the **full expanded path** (not `~`) for `installPath` (e.g., `$HOME/.claude/plugins/cache/...`)
 - Preserve the original `installedAt` if the plugin was previously installed; only update `lastUpdated`
 - If this is a new install, set both `installedAt` and `lastUpdated` to the current timestamp
 - Generate the ISO 8601 timestamp:

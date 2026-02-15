@@ -246,4 +246,4 @@ These are repo-level utilities (not part of the nmg-sdlc plugin itself):
 
 ## License
 
-Proprietary. Copyright Nunley Media Group.
+MIT License. See [LICENSE](LICENSE) for details.
