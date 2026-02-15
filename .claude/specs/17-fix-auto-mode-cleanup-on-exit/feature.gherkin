@@ -1,0 +1,56 @@
+# File: .claude/specs/17-fix-auto-mode-cleanup-on-exit/feature.gherkin
+#
+# Generated from: .claude/specs/17-fix-auto-mode-cleanup-on-exit/requirements.md
+# Issue: #17
+# Type: Defect regression
+
+@regression
+Feature: SDLC runner auto-mode cleanup on exit
+  The SDLC runner previously left .claude/auto-mode in the target project
+  after exiting, causing all subsequent manual SDLC skill usage to silently
+  skip interactive prompts. This was fixed by adding a centralized
+  removeAutoMode() helper called from every exit path.
+
+  Background:
+    Given the SDLC runner has started and created .claude/auto-mode in the target project
+
+  # --- Bug Is Fixed (all exit paths) ---
+
+  @regression
+  Scenario: Auto-mode cleaned up on graceful shutdown
+    Given the runner is processing steps
+    When the runner receives SIGTERM or SIGINT
+    Then .claude/auto-mode is deleted before the process exits
+
+  @regression
+  Scenario: Auto-mode cleaned up on escalation
+    Given the runner has exhausted retries for a step
+    When the escalation handler completes
+    Then .claude/auto-mode is deleted in the target project
+
+  @regression
+  Scenario: Auto-mode cleaned up when no issues remain
+    Given no more open issues exist in the project
+    When the runner exits the main loop
+    Then .claude/auto-mode is deleted
+
+  @regression
+  Scenario: Auto-mode cleaned up on fatal crash
+    Given the runner encounters an unhandled exception
+    When the fatal error handler runs
+    Then .claude/auto-mode is deleted on a best-effort basis
+
+  @regression
+  Scenario: Auto-mode cleaned up on single-step exit
+    Given the runner is invoked in single-step mode
+    When the single step completes
+    Then .claude/auto-mode is deleted before the process exits
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Auto-mode remains active during execution
+    Given the runner is actively processing steps
+    When a skill is invoked via a claude -p subprocess
+    Then .claude/auto-mode still exists
+    And the skill operates in headless mode
