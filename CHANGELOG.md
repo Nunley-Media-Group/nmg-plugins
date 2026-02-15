@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-02-14
+
+### Changed
+
+- Renamed `/installing-openclaw-plugin` skill to `/installing-openclaw-skill`
+- Restructured README automation section with clear 4-step OpenClaw setup guide
+
 ## [2.2.0] - 2026-02-14
 
 ### Added
