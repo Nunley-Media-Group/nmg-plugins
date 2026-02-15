@@ -39,7 +39,7 @@ Three options:
 
 ```bash
 # Option A: Via the plugin skill (from any project with nmg-sdlc installed)
-/installing-openclaw-plugin
+/installing-openclaw-skill
 
 # Option B: Via the dev workflow (from within the nmg-plugins repo)
 /installing-locally

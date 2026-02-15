@@ -1,11 +1,11 @@
 ---
-name: installing-openclaw-plugin
+name: installing-openclaw-skill
 description: "Install or update the OpenClaw running-sdlc skill and restart the gateway."
 argument-hint: ""
 allowed-tools: Read, Bash(cp:*), Bash(mkdir:*), Bash(source:*), Bash(ls:*), Bash(node:*)
 ---
 
-# Installing OpenClaw Plugin
+# Installing OpenClaw Skill
 
 Copy the OpenClaw running-sdlc skill and its supporting files from the nmg-plugins marketplace clone to `~/.openclaw/skills/running-sdlc/`, then restart the OpenClaw gateway.
 
@@ -25,7 +25,7 @@ Copy the OpenClaw running-sdlc skill and its supporting files from the nmg-plugi
 ## Workflow Overview
 
 ```
-/installing-openclaw-plugin
+/installing-openclaw-skill
     │
     ├─ 1. Create destination directory
     ├─ 2. Copy skill files

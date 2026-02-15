@@ -30,7 +30,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **`openclaw/scripts/patch-openclaw-message-hang.mjs`** — Idempotent patch script that fixes the `openclaw message send` hang bug by adding `process.exit(0)` to the `runMessageAction` helper in the installed openclaw CLI
-- **`/installing-openclaw-plugin`** — New Step 3 automatically runs the patch script to fix the openclaw CLI hang bug if present; added `Bash(node:*)` to allowed tools
+- **`/installing-openclaw-skill`** — New Step 3 automatically runs the patch script to fix the openclaw CLI hang bug if present; added `Bash(node:*)` to allowed tools
 
 ## [2.1.6] - 2026-02-14
 

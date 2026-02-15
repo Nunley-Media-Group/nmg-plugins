@@ -154,10 +154,10 @@ Follow the [OpenClaw getting started guide](https://openclaw.ai/) to install the
 
 #### 2. Install the OpenClaw skill
 
-The `/installing-openclaw-plugin` skill copies the `running-sdlc` skill and SDLC runner script from the nmg-plugins marketplace clone to `~/.openclaw/skills/running-sdlc/`, patches a known CLI bug, and restarts the OpenClaw gateway. Run it from any project that has nmg-sdlc installed:
+The `/installing-openclaw-skill` skill copies the `running-sdlc` skill and SDLC runner script from the nmg-plugins marketplace clone to `~/.openclaw/skills/running-sdlc/`, patches a known CLI bug, and restarts the OpenClaw gateway. Run it from any project that has nmg-sdlc installed:
 
 ```bash
-/installing-openclaw-plugin
+/installing-openclaw-skill
 ```
 
 This is the recommended method. It sources files from the marketplace clone at `~/.claude/plugins/marketplaces/nmg-plugins/`, so make sure you've installed the plugin first (see [Installation](#installation)). Re-run it any time you update the plugin to keep the OpenClaw skill in sync.
@@ -256,7 +256,7 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | `/verifying-specs #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
 | `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
 | `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure). Run once per project |
-| `/installing-openclaw-plugin` | Copy the OpenClaw running-sdlc skill from the marketplace clone to `~/.openclaw/skills/` and restart the gateway |
+| `/installing-openclaw-skill` | Copy the OpenClaw running-sdlc skill from the marketplace clone to `~/.openclaw/skills/` and restart the gateway |
 | `/generating-openclaw-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path auto-detected and written to the project root |
 
 ### OpenClaw Skills
