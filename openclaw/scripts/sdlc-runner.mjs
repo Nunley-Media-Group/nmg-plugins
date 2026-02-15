@@ -1061,6 +1061,7 @@ async function main() {
     const step = STEPS[SINGLE_STEP - 1];
     if (!step) {
       console.error(`Invalid step number: ${SINGLE_STEP}`);
+      removeAutoMode();
       process.exit(1);
     }
     state = readState();
