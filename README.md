@@ -144,11 +144,68 @@ The plugin includes a `PostToolUse` hook that runs on every `Write` or `Edit` op
 
 ## Automation Mode
 
-The plugin supports fully automated operation for external agents like [OpenClaw](https://openclaw.ai/). Skills detect `.claude/auto-mode` and skip interactive prompts.
+The plugin supports fully automated operation via [OpenClaw](https://openclaw.ai/), an AI agent platform that orchestrates Claude Code sessions. A deterministic Node.js runner drives the full development cycle — issue selection, spec writing, implementation, verification, PR creation, CI monitoring, and merge — looping continuously until no open issues remain.
 
-### Enable / Disable
+### Setup
 
-Create the flag file to enable, remove it to disable:
+#### 1. Install OpenClaw
+
+Follow the [OpenClaw getting started guide](https://openclaw.ai/) to install the `openclaw` CLI and connect it to your Discord server.
+
+#### 2. Install the OpenClaw skill
+
+The `/installing-openclaw-plugin` skill copies the `running-sdlc` skill and SDLC runner script from the nmg-plugins marketplace clone to `~/.openclaw/skills/running-sdlc/`, patches a known CLI bug, and restarts the OpenClaw gateway. Run it from any project that has nmg-sdlc installed:
+
+```bash
+/installing-openclaw-plugin
+```
+
+This is the recommended method. It sources files from the marketplace clone at `~/.claude/plugins/marketplaces/nmg-plugins/`, so make sure you've installed the plugin first (see [Installation](#installation)). Re-run it any time you update the plugin to keep the OpenClaw skill in sync.
+
+Alternative install methods (for development or CI):
+
+```bash
+# From within the nmg-plugins repo — installs everything including the OpenClaw skill
+/installing-locally
+
+# Standalone shell script (copy mode)
+./openclaw/scripts/install-openclaw-skill.sh
+
+# Standalone shell script (symlink mode — stays in sync with the repo)
+./openclaw/scripts/install-openclaw-skill.sh --link
+```
+
+#### 3. Generate a project config
+
+From within the target project (must have a `.claude/` directory):
+
+```bash
+/generating-openclaw-config
+```
+
+This writes `sdlc-config.json` to the project root and adds it to `.gitignore`. The config specifies the project path, per-step timeouts and turn limits, which nmg-sdlc skills to inject, and an optional Discord channel ID for status updates.
+
+#### 4. Launch the runner
+
+Via OpenClaw (from Discord or the CLI):
+
+```
+/running-sdlc start --config /path/to/sdlc-config.json
+```
+
+Or run directly without OpenClaw:
+
+```bash
+node openclaw/scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json --discord-channel 1234567890
+```
+
+The `--discord-channel` flag is optional. When launched via OpenClaw, the channel ID is auto-detected from the invoking Discord channel. It can also be set as `discordChannelId` in the config file.
+
+See [`openclaw/README.md`](openclaw/README.md) for all commands (`start`, `status`, `stop`), flags (`--resume`, `--dry-run`, `--step N`), state files, and error handling details.
+
+### Auto-mode flag
+
+The runner creates `.claude/auto-mode` automatically. When this file exists, skills skip interactive prompts. You can also toggle it manually:
 
 ```bash
 # Enable automation mode
@@ -171,26 +228,6 @@ When `.claude/auto-mode` does not exist, skills work interactively as normal.
 ### Safety net
 
 `/verifying-specs` runs fully autonomously (even outside automation mode) and validates the implementation against specs. It serves as the quality gate — catching deviations, running architecture review, and auto-fixing findings.
-
-### Deterministic SDLC Runner
-
-The SDLC orchestration is handled by a deterministic Node.js script (`openclaw/scripts/sdlc-runner.mjs`). It drives the full development cycle as a continuous loop of `claude -p` subprocess invocations, with code-based step sequencing, precondition validation, timeout detection, retry logic, Discord reporting, and escalation.
-
-See [`openclaw/README.md`](openclaw/README.md) for setup instructions.
-
-To generate a config with your project path pre-filled (run from within the target project):
-
-```bash
-/generating-openclaw-config
-```
-
-To run directly (without OpenClaw):
-
-```bash
-node openclaw/scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json --discord-channel 1234567890
-```
-
-The `--discord-channel` flag is optional. When launched via OpenClaw, the channel ID is auto-detected from the invoking Discord channel. It can also be set as `discordChannelId` in the config file.
 
 ## Customization
 
