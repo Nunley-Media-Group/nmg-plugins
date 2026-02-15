@@ -36,6 +36,10 @@ Also update `CHANGELOG.md` — add entries under `[Unreleased]`, then move to a 
 
 The spec drift hook intentionally checks ALL specs, not just the spec for the current branch or feature. This ensures that any file modification — even ones made outside the SDLC workflow — is validated against every existing spec. Do not scope the hook to only the "current" spec.
 
+## README Updates
+
+When making changes that affect how users interact with the plugin (new skills, changed workflows, new steering documents, etc.), update `README.md` accordingly. The README is the primary public documentation — it must stay in sync with actual capabilities.
+
 ## Commit Style
 
 Use conventional commits: `feat:`, `fix:`, `docs:`, `chore:`, etc.

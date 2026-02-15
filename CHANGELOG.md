@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`/running-retrospectives`** — New skill that batch-analyzes defect specs to identify spec-writing gaps (missing ACs, undertested boundaries, domain-specific gaps) and produces `.claude/steering/retrospective.md` with actionable learnings
+
+### Changed
+
+- **`/writing-specs`** — Phase 1 now reads `retrospective.md` (when present) to apply defect-derived learnings when drafting acceptance criteria
+
 ## [2.4.0] - 2026-02-14
 
 ### Added
