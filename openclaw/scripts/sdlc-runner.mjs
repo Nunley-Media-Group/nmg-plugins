@@ -358,6 +358,13 @@ function gh(args, cwd = PROJECT_PATH) {
 // Runner-managed files that should not count as "dirty" working tree
 const RUNNER_ARTIFACTS = ['.claude/sdlc-state.json', '.claude/auto-mode'];
 
+function removeAutoMode() {
+  try {
+    fs.unlinkSync(path.join(PROJECT_PATH, '.claude', 'auto-mode'));
+    log('Removed .claude/auto-mode flag');
+  } catch { /* best effort — file may not exist */ }
+}
+
 /**
  * Commit and push any dirty working-tree changes (excluding runner artifacts).
  * Non-fatal — logs warnings on failure. Returns true if a commit was made.
@@ -744,7 +751,8 @@ async function escalate(step, reason, output = '') {
 
   await postDiscord(diagnostic);
 
-  // Reset state
+  // Clean up auto-mode flag and reset state
+  removeAutoMode();
   updateState({ currentStep: 0, lastCompletedStep: 0 });
 }
 
@@ -896,6 +904,7 @@ async function handleSignal(signal) {
   await postDiscord(`SDLC runner stopped (${signal}). Work saved. Resume with --resume to continue from Step ${nextStep}.`);
   // Preserve lastCompletedStep for resume — don't reset step tracking
   updateState({ runnerPid: null });
+  removeAutoMode();
   process.exit(0);
 }
 
@@ -1052,11 +1061,13 @@ async function main() {
     const step = STEPS[SINGLE_STEP - 1];
     if (!step) {
       console.error(`Invalid step number: ${SINGLE_STEP}`);
+      removeAutoMode();
       process.exit(1);
     }
     state = readState();
     const result = await runStep(step, state);
     log(`Single step result: ${result}`);
+    removeAutoMode();
     process.exit(result === 'ok' ? 0 : 1);
   }
 
@@ -1067,6 +1078,7 @@ async function main() {
       log('No more open issues. All done!');
       await postDiscord('No more open issues in the project. SDLC runner complete.');
       updateState({ currentStep: 0 });
+      removeAutoMode();
       break;
     }
 
@@ -1125,5 +1137,6 @@ async function main() {
 main().catch(async (err) => {
   log(`Fatal error: ${err.message}`);
   await postDiscord(`SDLC runner crashed: ${err.message}`);
+  removeAutoMode();
   process.exit(1);
 });
