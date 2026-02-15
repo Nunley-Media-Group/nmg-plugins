@@ -1,0 +1,46 @@
+# File: .claude/specs/7-verifying-specs-skill/feature.gherkin
+#
+# Generated from: .claude/specs/7-verifying-specs-skill/requirements.md
+# Issue: #7
+
+Feature: Verifying Specs Skill
+  As a developer who has implemented a feature
+  I want automated verification that my implementation matches the spec
+  So that I can catch spec drift and architectural problems before opening a PR
+
+  # --- Happy Path ---
+
+  Scenario: Implementation is verified against spec
+    Given I invoke "/verifying-specs" for a completed feature
+    When verification runs
+    Then each acceptance criterion from the spec is checked against the implementation
+    And each is marked as Pass or Fail with file path evidence
+
+  Scenario: Architecture review evaluates quality
+    Given spec verification is complete
+    When the architecture review runs
+    Then the architecture-reviewer agent evaluates SOLID, security, performance, testability, and error handling
+    And scores are returned on a 1-5 scale
+
+  # --- Auto-Fix ---
+
+  Scenario: Findings are fixed during verification
+    Given findings are discovered during verification
+    When a finding requires fewer than 20 lines to fix
+    Then the skill fixes it, runs tests, and re-verifies
+    And larger findings are deferred with documentation
+
+  # --- GitHub Integration ---
+
+  Scenario: GitHub issue is updated with evidence
+    Given verification is complete
+    When the report is generated
+    Then the GitHub issue is updated with a comment containing verification results
+
+  # --- Bug Fix ---
+
+  Scenario: Bug fix verification checks regression
+    Given the feature is a bug fix
+    When verification runs
+    Then it checks reproduction and validates regression scenarios
+    And it audits blast radius and confirms minimal change scope

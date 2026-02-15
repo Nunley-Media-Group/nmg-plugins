@@ -1,0 +1,43 @@
+# File: .claude/specs/6-implementing-specs-skill/feature.gherkin
+#
+# Generated from: .claude/specs/6-implementing-specs-skill/requirements.md
+# Issue: #6
+
+Feature: Implementing Specs Skill
+  As a developer with completed specs
+  I want a skill that reads specs and executes tasks sequentially
+  So that I can implement features methodically following the spec-defined task order
+
+  # --- Happy Path ---
+
+  Scenario: Specs are read before implementation
+    Given I invoke "/implementing-specs" with a feature name
+    When the skill starts
+    Then it reads all spec files from ".claude/specs/{feature-name}/" before any code changes
+
+  Scenario: Plan mode gets approval before coding
+    Given specs have been read in interactive mode
+    When the skill enters plan mode
+    Then the implementation plan is presented for user approval before any code is written
+
+  Scenario: Tasks execute sequentially
+    Given the implementation plan is approved
+    When implementation begins
+    Then tasks from the tasks spec are executed in order, one at a time
+
+  # --- Bug Fix ---
+
+  Scenario: Bug fixes follow fix strategy
+    Given the spec is for a bug fix
+    When implementation begins
+    Then the skill follows the fix strategy precisely
+    And it minimizes change scope
+    And it includes a regression test
+
+  # --- Automation Mode ---
+
+  Scenario: Automation mode skips plan approval
+    Given automation mode is active
+    When the skill runs
+    Then plan mode is skipped
+    And tasks execute without approval gates

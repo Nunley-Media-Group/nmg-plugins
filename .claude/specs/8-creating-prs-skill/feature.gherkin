@@ -1,0 +1,29 @@
+# File: .claude/specs/8-creating-prs-skill/feature.gherkin
+#
+# Generated from: .claude/specs/8-creating-prs-skill/requirements.md
+# Issue: #8
+
+Feature: Creating PRs Skill
+  As a developer ready to merge a verified feature
+  I want a skill that creates a PR with spec-driven summary
+  So that reviewers get full context without manual write-up
+
+  Scenario: PR links to originating issue
+    Given I invoke "/creating-prs" after verification
+    When the PR is created
+    Then the PR body contains "Closes #N" referencing the originating issue
+
+  Scenario: PR references spec files
+    Given specs exist in ".claude/specs/{feature-name}/"
+    When the PR is created
+    Then the PR body links to the requirements, design, and tasks spec files
+
+  Scenario: PR summary reflects implementation
+    Given the implementation and verification are complete
+    When the PR body is generated
+    Then it summarizes what was built, key decisions, and verification status
+
+  Scenario: Automation mode outputs completion signal
+    Given automation mode is active
+    When the PR is created
+    Then the skill outputs "Done. Awaiting orchestrator."

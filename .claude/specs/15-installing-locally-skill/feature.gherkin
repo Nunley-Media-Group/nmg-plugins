@@ -1,0 +1,29 @@
+# File: .claude/specs/15-installing-locally-skill/feature.gherkin
+#
+# Generated from: .claude/specs/15-installing-locally-skill/requirements.md
+# Issue: #15
+
+Feature: Installing Locally Skill
+  As a plugin developer or user
+  I want a one-command skill that installs all marketplace plugins locally
+  So that I can use or test the latest plugin versions without manual copying
+
+  Scenario: All marketplace plugins are installed
+    Given I invoke "/installing-locally" in the nmg-plugins repo
+    When the skill completes
+    Then all plugins listed in marketplace.json are installed to "~/.claude/plugins/"
+
+  Scenario: Skills, hooks, and agents are copied
+    Given a plugin has skills, hooks, and agents
+    When installation runs
+    Then all skill directories, hook configurations, and agent definitions are copied
+
+  Scenario: OpenClaw skill is synced
+    Given the OpenClaw running-sdlc skill exists in the repo
+    When "/installing-locally" runs
+    Then the skill is synced to "~/.openclaw/skills/running-sdlc/"
+
+  Scenario: Gateway is restarted after sync
+    Given the OpenClaw skill is synced
+    When the sync completes
+    Then the OpenClaw gateway is restarted

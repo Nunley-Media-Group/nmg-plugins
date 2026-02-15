@@ -1,0 +1,50 @@
+# File: .claude/specs/5-writing-specs-skill/feature.gherkin
+#
+# Generated from: .claude/specs/5-writing-specs-skill/requirements.md
+# Issue: #5
+
+Feature: Writing Specs Skill
+  As a developer working on a GitHub issue
+  I want an automated 3-phase specification process
+  So that implementation is guided by well-structured BDD specs
+
+  # --- Happy Path ---
+
+  Scenario: Requirements spec captures issue intent
+    Given I invoke "/writing-specs" with a GitHub issue reference
+    When Phase 1 completes
+    Then a requirements spec is created in ".claude/specs/{feature-name}/"
+    And it contains acceptance criteria from the issue
+
+  Scenario: Design spec defines technical approach
+    Given the requirements spec has been reviewed and approved
+    When Phase 2 completes
+    Then a design spec is created with architecture decisions and component design
+
+  Scenario: Tasks spec provides implementation plan
+    Given the design spec has been reviewed and approved
+    When Phase 3 completes
+    Then a tasks spec is created with ordered implementation tasks
+    And a Gherkin feature file is created with BDD scenarios
+
+  # --- Review Gates ---
+
+  Scenario: Human review gates pause between phases
+    Given I am not in automation mode
+    When a phase completes
+    Then the skill pauses for human review before proceeding
+
+  # --- Naming ---
+
+  Scenario: Feature name follows naming convention
+    Given a GitHub issue with number 42 and title "Add user auth"
+    When the feature name is derived
+    Then it uses the format "42-add-user-auth"
+
+  # --- Defect Handling ---
+
+  Scenario: Bug issues use defect templates
+    Given the GitHub issue has a "bug" label
+    When the spec phases execute
+    Then defect-focused templates are used
+    And they include reproduction steps, root cause analysis, and flat task lists

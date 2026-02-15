@@ -1,0 +1,29 @@
+# File: .claude/specs/14-installing-openclaw-skill/feature.gherkin
+#
+# Generated from: .claude/specs/14-installing-openclaw-skill/requirements.md
+# Issue: #14
+
+Feature: Installing OpenClaw Skill
+  As a developer using OpenClaw for SDLC automation
+  I want a skill that installs the OpenClaw running-sdlc skill
+  So that I can deploy the latest orchestration skill without manual file copying
+
+  Scenario: Skill files are installed locally
+    Given I invoke "/installing-openclaw-skill"
+    When the skill completes
+    Then the running-sdlc skill is copied to "~/.openclaw/skills/running-sdlc/"
+
+  Scenario: Gateway is restarted
+    Given skill files are installed
+    When installation completes
+    Then the OpenClaw gateway is restarted
+
+  Scenario: CLI hang patch is applied
+    Given the openclaw CLI has the message send hang bug
+    When the skill runs
+    Then it automatically runs the patch script to fix the hang issue
+
+  Scenario: Standalone installer supports link mode
+    Given I run "install-openclaw-skill.sh --link"
+    When the script completes
+    Then the skill directory is symlinked instead of copied

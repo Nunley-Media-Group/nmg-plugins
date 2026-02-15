@@ -1,0 +1,34 @@
+# File: .claude/specs/10-starting-issues-skill/feature.gherkin
+#
+# Generated from: .claude/specs/10-starting-issues-skill/requirements.md
+# Issue: #10
+
+Feature: Starting Issues Skill
+  As a developer ready to begin work on a feature
+  I want a skill that selects an issue, creates a branch, and sets it to In Progress
+  So that I can start development with proper branch hygiene and issue tracking
+
+  Scenario: Issue selection presents open issues
+    Given I invoke "/starting-issues" in interactive mode
+    When the skill starts
+    Then it lists open GitHub issues for me to select from
+
+  Scenario: Feature branch is created and linked
+    Given I select a GitHub issue
+    When branch setup completes
+    Then a feature branch is created and linked to the issue via "gh issue develop"
+
+  Scenario: Issue status is updated
+    Given a feature branch is created
+    When the issue is linked
+    Then the issue status is set to "In Progress" in any associated GitHub Project
+
+  Scenario: Automation mode auto-selects oldest issue
+    Given automation mode is active
+    When "/starting-issues" runs
+    Then it selects the oldest open issue without user confirmation
+
+  Scenario: Issue number can be provided as argument
+    Given I invoke "/starting-issues" with an issue number
+    When the skill runs
+    Then it skips issue selection and uses the provided issue number directly

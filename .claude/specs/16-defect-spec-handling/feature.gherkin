@@ -1,0 +1,44 @@
+# File: .claude/specs/16-defect-spec-handling/feature.gherkin
+#
+# Generated from: .claude/specs/16-defect-spec-handling/requirements.md
+# Issue: #16
+
+Feature: Defect-Specific Spec Handling
+  As a developer fixing a bug
+  I want the spec workflow to use lightweight, defect-focused templates
+  So that bug fixes get appropriate documentation without feature-level overhead
+
+  Scenario: Bug label triggers defect templates
+    Given a GitHub issue has the "bug" label
+    When any SDLC skill processes the issue
+    Then defect-focused template variants are used instead of feature templates
+
+  Scenario: Bug report captures reproduction steps
+    Given I'm creating an issue for a bug via "/creating-issues"
+    When the bug report template is used
+    Then it includes reproduction steps, expected/actual behavior, environment table, and defect-focused acceptance criteria
+
+  Scenario: Defect specs use root cause analysis
+    Given "/writing-specs" runs for a bug issue
+    When the design phase executes
+    Then it uses the defect design variant with root cause analysis, fix strategy, blast radius assessment, and regression risk
+
+  Scenario: Defect tasks are flat and minimal
+    Given "/writing-specs" runs for a bug issue
+    When the tasks phase executes
+    Then it produces a flat T001-T003 task list instead of a full task hierarchy
+
+  Scenario: Implementation minimizes change scope
+    Given "/implementing-specs" runs for a bug fix
+    When implementation begins
+    Then it follows the fix strategy precisely, minimizes change scope, and requires a regression test
+
+  Scenario: Verification checks regression scenarios
+    Given "/verifying-specs" runs for a bug fix
+    When verification executes
+    Then it checks reproduction, validates "@regression" Gherkin scenarios, audits blast radius, and confirms minimal change
+
+  Scenario: Related Spec field links to original feature
+    Given a defect spec is for a bug in a previously-specified feature
+    When the requirements spec is written
+    Then it can include an optional "Related Spec" field referencing the original feature spec

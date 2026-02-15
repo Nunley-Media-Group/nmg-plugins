@@ -1,0 +1,39 @@
+# File: .claude/specs/4-creating-issues-skill/feature.gherkin
+#
+# Generated from: .claude/specs/4-creating-issues-skill/requirements.md
+# Issue: #4
+
+Feature: Creating Issues Skill
+  As a developer or product owner
+  I want a guided interview process that produces well-groomed GitHub issues
+  So that every feature request is captured in a structured, spec-ready format
+
+  # --- Happy Path ---
+
+  Scenario: Interactive interview gathers requirements
+    Given I invoke "/creating-issues" without automation mode
+    When the skill starts
+    Then it asks adaptive questions about the feature need
+    And it skips topics I've already addressed
+
+  Scenario: Issue body follows BDD template
+    Given the interview is complete
+    When the GitHub issue is created
+    Then the body contains User Story, Background, Acceptance Criteria, Functional Requirements, and Out of Scope sections
+    And acceptance criteria use Given/When/Then format
+
+  # --- Bug Report ---
+
+  Scenario: Bug report uses defect template
+    Given I'm creating an issue for a bug
+    When I indicate it's a defect
+    Then the issue uses the bug report template
+    And it includes reproduction steps, expected/actual behavior, and environment table
+
+  # --- Automation Mode ---
+
+  Scenario: Automation mode skips interview
+    Given automation mode is active with ".claude/auto-mode" file present
+    When I invoke "/creating-issues" with a feature description argument
+    Then the skill skips the interview
+    And it infers 3-5 acceptance criteria from steering docs

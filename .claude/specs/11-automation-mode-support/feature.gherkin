@@ -1,0 +1,39 @@
+# File: .claude/specs/11-automation-mode-support/feature.gherkin
+#
+# Generated from: .claude/specs/11-automation-mode-support/requirements.md
+# Issue: #11
+
+Feature: Automation Mode Support
+  As an automation platform operator
+  I want all SDLC skills to detect a headless mode flag
+  So that the full workflow can be driven by external agents without human intervention
+
+  Scenario: Auto-mode flag enables headless operation
+    Given ".claude/auto-mode" exists in the project
+    When any SDLC skill is invoked
+    Then it operates without interactive prompts or human review gates
+
+  Scenario: Writing-specs skips human review gates
+    Given automation mode is active
+    When "/writing-specs" runs
+    Then all 3 human review gates between phases are skipped automatically
+
+  Scenario: Implementing-specs skips plan mode
+    Given automation mode is active
+    When "/implementing-specs" runs
+    Then plan mode is skipped and implementation proceeds without approval
+
+  Scenario: Creating-issues infers criteria
+    Given automation mode is active
+    When "/creating-issues" is invoked with a feature description
+    Then it skips the interview and generates acceptance criteria from steering docs
+
+  Scenario: Starting-issues auto-selects oldest
+    Given automation mode is active
+    When "/starting-issues" runs without an issue number argument
+    Then it selects the oldest open issue automatically
+
+  Scenario: Skills suppress next-step suggestions
+    Given automation mode is active
+    When any skill completes
+    Then it outputs "Done. Awaiting orchestrator." instead of next-step suggestions

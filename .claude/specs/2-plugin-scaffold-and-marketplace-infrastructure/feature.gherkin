@@ -1,0 +1,30 @@
+# File: .claude/specs/2-plugin-scaffold-and-marketplace-infrastructure/feature.gherkin
+#
+# Generated from: .claude/specs/2-plugin-scaffold-and-marketplace-infrastructure/requirements.md
+# Issue: #2
+
+Feature: Plugin Scaffold and Marketplace Infrastructure
+  As a Claude Code user
+  I want a plugin marketplace that hosts installable plugins
+  So that I can extend Claude Code with reusable development workflows
+
+  # --- Happy Path ---
+
+  Scenario: Marketplace index lists available plugins
+    Given the marketplace repository is cloned
+    When I inspect ".claude-plugin/marketplace.json"
+    Then I see a "plugins" array with at least one plugin entry
+    And each entry contains name, version, description, and path fields
+
+  Scenario: Plugin manifest declares metadata
+    Given I navigate to a plugin directory "plugins/nmg-sdlc/"
+    When I inspect ".claude-plugin/plugin.json"
+    Then I see the plugin's name, version, description, author, and repository fields
+
+  # --- Installation ---
+
+  Scenario: Local installation copies plugin files
+    Given I run the "/installing-locally" skill
+    When the skill completes
+    Then all plugin skills, hooks, and agents are installed to "~/.claude/plugins/"
+    And the installed_plugins.json registry is updated with version and path

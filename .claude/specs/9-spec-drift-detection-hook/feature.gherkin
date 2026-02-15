@@ -1,0 +1,29 @@
+# File: .claude/specs/9-spec-drift-detection-hook/feature.gherkin
+#
+# Generated from: .claude/specs/9-spec-drift-detection-hook/requirements.md
+# Issue: #9
+
+Feature: Spec Drift Detection Hook
+  As a developer working on a codebase with active specs
+  I want automatic detection when file modifications drift from specifications
+  So that I catch unintended spec violations in real-time
+
+  Scenario: Drift detected on file edit
+    Given specs exist in ".claude/specs/"
+    When I edit a file that conflicts with a spec's requirements
+    Then the hook flags the drift with an explanation of which spec requirement is violated
+
+  Scenario: All specs are checked
+    Given multiple specs exist for different features
+    When I edit any file in the project
+    Then the hook checks the modification against all existing specs
+
+  Scenario: No-op when no specs exist
+    Given no spec files exist in ".claude/specs/"
+    When I edit any file
+    Then the hook short-circuits immediately without spawning an agent
+
+  Scenario: Hook fires on Write and Edit
+    Given specs exist in the project
+    When I use the Write or Edit tool
+    Then the PostToolUse hook fires and checks for spec alignment
