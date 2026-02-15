@@ -1,0 +1,94 @@
+# File: .claude/specs/1-spec-retrospective-skill/feature.gherkin
+#
+# Generated from: .claude/specs/1-spec-retrospective-skill/requirements.md
+# Issue: #1
+
+Feature: Spec Retrospective Skill
+  As a developer using the nmg-sdlc workflow
+  I want defect patterns to automatically feed back into how specs are written
+  So that future specs avoid the same gaps that led to past bugs
+
+  # --- Happy Path ---
+
+  Scenario: Retrospective skill produces steering doc from defect specs
+    Given defect specs exist in ".claude/specs/" with "Severity:" fields
+    And at least one defect spec has a "Related Spec:" link to a feature spec
+    And the linked feature spec exists at the referenced path
+    When the user runs "/running-retrospectives"
+    Then the skill reads each eligible defect spec and its linked feature spec
+    And the skill identifies gaps between the feature spec coverage and the defect finding
+    And each gap is classified as "Missing Acceptance Criteria", "Undertested Boundaries", or "Domain-Specific Gaps"
+    And the skill creates ".claude/steering/retrospective.md" using the template
+    And the retrospective doc contains a table entry for each learning with Source Defect, Related Feature Spec, and Recommendation columns
+    And the skill outputs a summary showing defect specs analyzed and learnings generated
+
+  # --- Integration ---
+
+  Scenario: Writing-specs reads retrospective during Phase 1
+    Given a ".claude/steering/retrospective.md" file exists with learnings
+    And the learnings include "Authentication specs should include session timeout edge cases"
+    When the user runs "/writing-specs" for a new feature spec
+    Then Phase 1 reads ".claude/steering/retrospective.md"
+    And relevant learnings are applied when drafting acceptance criteria
+    And the generated requirements reflect domain-specific guidance from past defects
+
+  # --- Empty State ---
+
+  Scenario: Graceful handling when no defect specs exist
+    Given no requirements.md files in ".claude/specs/" contain a "Severity:" field
+    When the user runs "/running-retrospectives"
+    Then the skill reports "No defect specs found"
+    And no ".claude/steering/retrospective.md" file is created or modified
+
+  Scenario: Graceful handling when defect specs lack Related Spec links
+    Given defect specs exist in ".claude/specs/" with "Severity:" fields
+    But none of the defect specs have a "Related Spec:" field
+    When the user runs "/running-retrospectives"
+    Then the skill reports "No defect specs with Related Spec links found"
+    And no ".claude/steering/retrospective.md" file is created or modified
+
+  # --- Filtering ---
+
+  Scenario: Only spec-quality learnings are captured
+    Given a defect spec exists caused by a missing acceptance criterion in the feature spec
+    And a defect spec exists caused by an implementation typo
+    And a defect spec exists caused by a CI misconfiguration
+    And all three have "Related Spec:" links to feature specs
+    When the user runs "/running-retrospectives"
+    Then a learning is generated for the missing acceptance criterion defect
+    And no learning is generated for the implementation typo defect
+    And no learning is generated for the CI misconfiguration defect
+
+  # --- Incremental Update ---
+
+  Scenario: Retrospective doc is incrementally updated with new learnings
+    Given a ".claude/steering/retrospective.md" exists with 3 learnings from a previous run
+    And 2 new defect specs with "Related Spec:" links have been added since the last run
+    And the 3 original defect specs still exist
+    When the user runs "/running-retrospectives"
+    Then the retrospective doc is updated with learnings from the new defect specs
+    And the 3 existing learnings are preserved
+    And the "Last Updated" date is refreshed
+
+  Scenario: Retrospective doc removes outdated learnings
+    Given a ".claude/steering/retrospective.md" exists with learnings
+    And one of the source defect specs has been deleted since the last run
+    When the user runs "/running-retrospectives"
+    Then the learning from the deleted defect spec is removed
+    And learnings from still-existing defect specs are preserved
+
+  # --- Error Handling ---
+
+  Scenario: Broken Related Spec link is handled gracefully
+    Given a defect spec has a "Related Spec:" link to ".claude/specs/nonexistent-feature/"
+    And the referenced spec directory does not exist
+    When the user runs "/running-retrospectives"
+    Then the skill warns about the broken link
+    And the defect spec is skipped
+    And other eligible defect specs are still processed
+
+  Scenario: Sparse defect spec produces best-effort learning
+    Given a defect spec has a "Related Spec:" link and minimal content
+    When the user runs "/running-retrospectives"
+    Then the skill produces a best-effort learning from available information
+    And the learning is flagged as low-confidence if insufficient detail exists
