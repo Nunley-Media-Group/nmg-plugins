@@ -211,6 +211,7 @@ Before moving to PLAN phase:
 **Status**: Draft | In Review | Approved
 **Author**: [name]
 **Severity**: Critical | High | Medium | Low
+**Related Spec**: `.claude/specs/[original-feature-name]/` *(optional — link to the feature spec this bug was found in, if one exists)*
 
 ---
 

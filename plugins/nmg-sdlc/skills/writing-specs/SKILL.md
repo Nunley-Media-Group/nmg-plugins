@@ -114,7 +114,7 @@ Extract from the issue:
 5. Bootstrap acceptance criteria from the issue body
 6. Fill in requirements per the appropriate variant:
    - **Feature**: Full template — user story, ACs, functional/non-functional requirements, UI/UX, data requirements, dependencies, success metrics
-   - **Defect**: Defect variant — reproduction steps, expected vs actual, severity, 2–3 acceptance criteria (bug fixed + no regression), lightweight functional requirements. Omit NFRs table, UI/UX table, data requirements, success metrics.
+   - **Defect**: Defect variant — reproduction steps, expected vs actual, severity, 2–3 acceptance criteria (bug fixed + no regression), lightweight functional requirements. Omit NFRs table, UI/UX table, data requirements, success metrics. If the bug relates to an existing feature spec, populate the optional **Related Spec** field.
 7. Consult steering docs for project-specific requirements (e.g., accessibility, platform support)
 
 ### Output

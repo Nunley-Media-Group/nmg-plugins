@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-02-14
+
+### Added
+
+- **Defect requirements template** — Optional `Related Spec` field linking defect specs back to the original feature spec, improving traceability when bugs are found in previously-specified features
+
 ## [2.3.0] - 2026-02-14
 
 ### Changed
