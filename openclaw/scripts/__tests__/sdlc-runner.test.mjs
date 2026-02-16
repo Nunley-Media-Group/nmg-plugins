@@ -44,6 +44,7 @@ const runner = await import('../sdlc-runner.mjs');
 
 const {
   detectSoftFailure,
+  detectAndHydrateState,
   matchErrorPattern,
   incrementBounceCount,
   defaultState,
@@ -63,6 +64,8 @@ const {
   writeState,
   updateState,
   removeAutoMode,
+  runClaude,
+  log,
   writeStepLog,
   extractSessionId,
   enforceMaxDisk,
@@ -925,5 +928,133 @@ describe('STEP_KEYS and STEPS', () => {
       'startCycle', 'startIssue', 'writeSpecs', 'implement',
       'verify', 'commitPush', 'createPR', 'monitorCI', 'merge',
     ]);
+  });
+});
+
+// ===========================================================================
+// Edge case regression tests (Issue #51)
+// ===========================================================================
+
+describe('Edge case fixes (#51)', () => {
+  // F1: currentProcess is assigned during runClaude and cleared after
+  describe('F1: currentProcess lifecycle in runClaude', () => {
+    it('assigns currentProcess during execution and clears on close', async () => {
+      // Create a mock process that behaves like a ChildProcess
+      let closeHandler;
+      const mockProc = {
+        stdout: { on: jest.fn() },
+        stderr: { on: jest.fn() },
+        on: jest.fn((event, handler) => {
+          if (event === 'close') closeHandler = handler;
+        }),
+        kill: jest.fn(),
+        killed: false,
+      };
+      mockSpawn.mockReturnValue(mockProc);
+
+      // Need to read skill for buildClaudeArgs
+      mockFs.existsSync.mockReturnValue(false);
+
+      const step = { ...STEPS[0], timeoutMin: 1 };
+      const state = defaultState();
+
+      // Start runClaude (it returns a promise)
+      const promise = runClaude(step, state);
+
+      // After spawn, currentProcess should be set
+      expect(__test__.currentProcess).toBe(mockProc);
+
+      // Simulate process close
+      closeHandler(0);
+
+      await promise;
+
+      // After close, currentProcess should be cleared
+      expect(__test__.currentProcess).toBeNull();
+    });
+  });
+
+  // F2: No Atomics.wait in source — uses async sleep instead
+  describe('F2: No synchronous Atomics.wait in source', () => {
+    it('source file does not contain Atomics.wait', () => {
+      // Verify the exported postDiscord function's source does not reference Atomics
+      const src = runner.postDiscord.toString();
+      expect(src).not.toContain('Atomics');
+      expect(src).toContain('sleep');
+    });
+  });
+
+  // F3: autoCommitIfDirty uses shellEscape for commit messages
+  describe('F3: shellEscape in autoCommitIfDirty', () => {
+    it('wraps commit message in single quotes via shellEscape', () => {
+      const dangerousMessage = 'feat: $(rm -rf /) `whoami`';
+      let commitCmd = '';
+      mockExecSync.mockImplementation((cmd) => {
+        if (cmd.includes('status --porcelain')) return 'M src/index.js';
+        if (cmd.includes('commit')) { commitCmd = cmd; return ''; }
+        return '';
+      });
+
+      autoCommitIfDirty(dangerousMessage);
+
+      // shellEscape wraps in single quotes: 'feat: $(rm -rf /) `whoami`'
+      expect(commitCmd).toContain("'");
+      expect(commitCmd).not.toContain('"' + dangerousMessage);
+      // The dangerous subshell/backtick content should be inside single quotes
+      expect(commitCmd).toMatch(/commit -m '.*\$\(rm -rf \/\).*`whoami`.*'/);
+    });
+  });
+
+  // F4: detectAndHydrateState returns null (not throws) when checkout fails on merged PR
+  describe('F4: merged-PR checkout failure returns null', () => {
+    it('returns null when git checkout main fails after merged PR', () => {
+      mockExecSync.mockImplementation((cmd) => {
+        if (cmd.includes('rev-parse --abbrev-ref HEAD')) return '42-feature';
+        if (cmd.includes('pr view --json state --jq .state')) return 'MERGED';
+        if (cmd.includes('checkout main')) throw new Error('error: Your local changes would be overwritten');
+        return '';
+      });
+
+      // DRY_RUN must be false so it attempts the checkout
+      __test__.setConfig({ dryRun: false });
+
+      const result = detectAndHydrateState();
+      expect(result).toBeNull();
+    });
+  });
+
+  // F5: log warning when --resume + missing state file
+  describe('F5: --resume with missing state file logs warning', () => {
+    it('main() source contains the RESUME warning log', () => {
+      // Verify the main function source contains the conditional warning
+      const src = runner.main.toString();
+      expect(src).toContain('--resume specified but state file not found');
+    });
+  });
+
+  // F6: spawn is called without signal option
+  describe('F6: no AbortController signal in spawn options', () => {
+    it('spawn is called without signal option', async () => {
+      const mockProc = {
+        stdout: { on: jest.fn() },
+        stderr: { on: jest.fn() },
+        on: jest.fn((event, handler) => {
+          if (event === 'close') handler(0);
+        }),
+        kill: jest.fn(),
+        killed: false,
+      };
+      mockSpawn.mockReturnValue(mockProc);
+      mockFs.existsSync.mockReturnValue(false);
+
+      const step = { ...STEPS[0], timeoutMin: 1 };
+      const state = defaultState();
+
+      await runClaude(step, state);
+
+      // Check the spawn options (3rd argument)
+      const spawnOptions = mockSpawn.mock.calls[0][2];
+      expect(spawnOptions).not.toHaveProperty('signal');
+    });
   });
 });

@@ -1,0 +1,81 @@
+# File: openclaw/scripts/__tests__/features/sdlc-runner-edge-cases.feature
+#
+# Generated from: .claude/specs/51-sdlc-runner-edge-case-fixes/requirements.md
+# Issue: #51
+# Type: Defect regression
+
+@regression
+Feature: SDLC runner edge case fixes
+  The SDLC runner (sdlc-runner.mjs) had 6 bugs identified through edge case
+  analysis: orphaned subprocesses on SIGTERM, blocking event loop during Discord
+  retry, incomplete shell escaping, uncaught exception on merged-PR checkout,
+  silent retry reset on resume, and dead AbortController code.
+
+  # --- F1: currentProcess assigned for signal handling ---
+
+  @regression
+  Scenario: SIGTERM kills active Claude subprocess
+    Given the SDLC runner is executing a Claude subprocess via runClaude()
+    When the runner receives a SIGTERM signal
+    Then the active subprocess is killed via SIGTERM
+    And currentProcess is set to the spawned process during execution
+    And currentProcess is cleared to null after the process closes
+
+  # --- F2: Non-blocking Discord retry ---
+
+  @regression
+  Scenario: Discord retry uses non-blocking async sleep
+    Given a Discord post fails and enters the retry loop
+    When the retry backoff delay elapses
+    Then the delay uses the async sleep() helper
+    And the event loop remains responsive during the retry delay
+    And no Atomics.wait() call is present in the retry path
+
+  # --- F3: Safe shell escaping for commit messages ---
+
+  @regression
+  Scenario: Commit messages are safely escaped against shell injection
+    Given autoCommitIfDirty is called with a commit message containing shell metacharacters
+    When the message is passed to git commit
+    Then the message is escaped using shellEscape() with single-quote wrapping
+    And backticks and $() subshell syntax are neutralized
+
+  # --- F4: Graceful handling of dirty working tree on merged PR ---
+
+  @regression
+  Scenario: Dirty working tree during merged-PR checkout does not crash
+    Given detectAndHydrateState() detects a merged PR on the current branch
+    And the working tree has uncommitted changes
+    When the function attempts git checkout main
+    Then the error is caught and a warning is logged
+    And the function returns null to fall through to normal startup
+
+  # --- F5: Warning on resume with missing state file ---
+
+  @regression
+  Scenario: Warning logged when --resume used with missing state file
+    Given the runner is started with --resume
+    And the state file sdlc-state.json does not exist
+    When the runner initializes retry counters from detected git state
+    Then a warning is logged indicating the state file was not found
+    And retry counters reset to empty (existing behavior preserved)
+
+  # --- F6: Dead AbortController code removed ---
+
+  @regression
+  Scenario: No unused AbortController in runClaude
+    Given runClaude() spawns a Claude subprocess
+    When the subprocess is created via spawn()
+    Then no AbortController is instantiated
+    And no abort signal is passed to spawn()
+    And timeout handling uses only setTimeout and proc.kill()
+
+  # --- Regression: existing behavior preserved ---
+
+  @regression
+  Scenario: Existing runner behavior preserved after fixes
+    Given the SDLC runner is configured with a valid config file
+    When a step completes successfully
+    Then state is updated with lastCompletedStep
+    And the next step's preconditions are validated
+    And Discord status updates are posted
