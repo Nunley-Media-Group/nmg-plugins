@@ -543,7 +543,21 @@ function buildClaudeArgs(step, state) {
 
     7: `Create a pull request for branch ${branch} targeting main for issue #${issue}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
-    8: `Monitor CI status for the current PR on branch ${branch}. Poll until CI completes. If CI fails, diagnose the failure, fix it locally, verify the fix, commit and push. Repeat until CI passes. Report the final CI status.`,
+    8: [
+      `Monitor CI for the PR on branch ${branch}. Follow these steps exactly:`,
+      `1. Run \`gh pr checks\` and poll every 30 seconds until no checks are "pending".`,
+      `2. If all checks pass, report success and exit with code 0.`,
+      `3. If any check fails:`,
+      `   a. Read the CI logs for the failing check(s) to diagnose the root cause.`,
+      `   b. Before applying any fix, review the spec files in .claude/specs/ to ensure`,
+      `      the fix does not deviate from specified behavior. If the only correct fix`,
+      `      would change specified behavior, exit with a non-zero status explaining why.`,
+      `   c. Apply the minimal fix, commit with a "fix:" conventional-commit message, and push.`,
+      `   d. Return to step 1 to re-poll CI after the push.`,
+      `4. If you cannot fix the failure after 3 attempts, exit with a non-zero status`,
+      `   explaining what failed and why you could not fix it.`,
+      `5. Only exit with code 0 when ALL CI checks show as passing.`,
+    ].join('\n'),
 
     9: `First verify CI is passing with gh pr checks. If any check is failing, do NOT merge — report the failure and exit with a non-zero status. If all checks pass, merge the current PR to main and delete the remote branch ${branch}.`,
   };
@@ -865,6 +879,22 @@ function validateSpecs(state) {
 }
 
 // ---------------------------------------------------------------------------
+// CI validation gate (post-step-8)
+// ---------------------------------------------------------------------------
+
+function validateCI() {
+  try {
+    const checks = gh('pr checks');
+    if (/fail/i.test(checks)) {
+      return { ok: false, reason: 'CI checks still failing after Step 8' };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, reason: `Could not check CI status: ${err.message}` };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Utility
 // ---------------------------------------------------------------------------
 
@@ -983,6 +1013,23 @@ async function runStep(step, state) {
       const committed = autoCommitIfDirty(`feat: implement issue #${issue}`);
       if (committed) {
         await postDiscord('Auto-committed implementation changes after Step 4.');
+      }
+    }
+
+    // Special: CI validation gate after step 8
+    if (step.number === 8) {
+      const ciCheck = validateCI();
+      if (!ciCheck.ok) {
+        log(`CI validation failed: ${ciCheck.reason}`);
+        await postDiscord(`CI validation failed after Step 8 — ${ciCheck.reason}. Retrying...`);
+        const retries = state.retries || {};
+        const count = (retries[8] || 0) + 1;
+        if (count >= MAX_RETRIES) {
+          await escalate(step, `CI validation failed after ${MAX_RETRIES} attempts`);
+          return 'escalated';
+        }
+        updateState({ retries: { ...retries, 8: count } });
+        return 'retry';
       }
     }
 

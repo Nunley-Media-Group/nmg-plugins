@@ -1,0 +1,50 @@
+# File: .claude/specs/20-fix-monitorci-step8/feature.gherkin
+#
+# Generated from: .claude/specs/20-fix-monitorci-step8/requirements.md
+# Issue: #20
+# Type: Defect regression
+
+@regression
+Feature: Step 8 (monitorCI) resolves CI failures before advancing
+  The monitorCI step previously reported CI status and exited cleanly without
+  fixing failures, creating a retry loop that burned through MAX_RETRIES.
+  This was fixed by rewriting the prompt, adding a CI validation gate, and
+  increasing resource limits.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: CI failures are automatically diagnosed and fixed
+    Given a PR with failing CI checks on the current branch
+    When Step 8 (monitorCI) runs
+    Then the Claude session reads CI logs and diagnoses the failure
+    And applies a minimal fix that does not deviate from the spec
+    And commits, pushes, and re-polls CI until checks pass
+
+  # --- Validation Gate Catches False Success ---
+
+  @regression
+  Scenario: Runner validates CI is green before advancing to merge
+    Given Step 8 completes with exit code 0
+    When the runner evaluates whether to advance to Step 9
+    Then it runs the CI validation gate to check if checks are passing
+    And retries Step 8 if any CI check is still failing
+    And escalates if retries exceed MAX_RETRIES
+
+  # --- Spec Deviation Triggers Escalation ---
+
+  @regression
+  Scenario: Spec-deviating fixes trigger escalation
+    Given a CI failure that cannot be fixed without changing specified behavior
+    When the Claude session determines the fix would deviate from the spec
+    Then it exits with a non-zero status code
+    And the runner escalates for manual intervention
+
+  # --- Sufficient Resources ---
+
+  @regression
+  Scenario: Step 8 has sufficient resources for fix cycles
+    Given Step 8 is configured with default resource limits
+    When the step configuration is loaded
+    Then maxTurns is at least 40
+    And timeoutMin is at least 20
