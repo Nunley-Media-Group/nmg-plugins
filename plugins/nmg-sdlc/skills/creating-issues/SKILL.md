@@ -51,10 +51,12 @@ Based on the classification from Step 2, perform a targeted codebase investigati
 
 1. **Explore existing specs**: Use `Glob` for `.claude/specs/*/requirements.md` and read any that relate to the area described by the user
 2. **Explore source code**: Use `Glob` and `Grep` to find files related to the enhancement area (e.g., the relevant SKILL.md, templates, hooks, or application code)
-3. **Summarize findings**: Produce a "Current State" summary capturing:
+3. **Read steering docs**: Read `.claude/steering/tech.md` and `.claude/steering/structure.md` (if they exist) and note any technical or architectural constraints relevant to the enhancement area
+4. **Summarize findings**: Produce a "Current State" summary capturing:
    - What exists today (relevant code, patterns, specs)
    - How the current implementation works
    - What patterns should be preserved or built upon
+   - Relevant constraints from steering docs (e.g., required review steps, technology restrictions, structural rules)
 
 If no relevant code or specs are found, note that this appears to be a greenfield addition and move on.
 
@@ -62,11 +64,13 @@ If no relevant code or specs are found, note that this appears to be a greenfiel
 
 1. **Search for related code**: Use `Grep` to find code related to the bug description (error messages, function names, file patterns the user mentioned)
 2. **Trace code paths**: `Read` the relevant files and follow the logic through the affected paths
-3. **Form hypothesis**: Formulate a root cause hypothesis describing:
+3. **Read steering docs**: Read `.claude/steering/tech.md` and `.claude/steering/structure.md` (if they exist) and note any constraints relevant to the bug's domain
+4. **Form hypothesis**: Formulate a root cause hypothesis describing:
    - What code is involved
    - What the incorrect behavior or assumption is
    - Why it manifests as the reported bug
-4. **Confirm with user**: Present the hypothesis via `AskUserQuestion`:
+   - Any steering doc constraints that inform the fix approach
+5. **Confirm with user**: Present the hypothesis via `AskUserQuestion`:
    - "Yes, that matches"
    - "Not quite — let me clarify"
 
