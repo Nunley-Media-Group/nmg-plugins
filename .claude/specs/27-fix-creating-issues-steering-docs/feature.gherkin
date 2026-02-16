@@ -1,0 +1,45 @@
+# File: .claude/specs/27-fix-creating-issues-steering-docs/feature.gherkin
+#
+# Generated from: .claude/specs/27-fix-creating-issues-steering-docs/requirements.md
+# Issue: #27
+# Type: Defect regression
+
+@regression
+Feature: Creating-issues investigation reads steering docs
+  The creating-issues skill's Step 3 (Investigate Codebase) previously did not read
+  tech.md or structure.md, causing technical and architectural constraints to be
+  invisible during issue creation. This was fixed by adding steering doc reads to
+  both the Enhancement and Bug investigation flows.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Steering docs are read during enhancement investigation
+    Given ".claude/steering/tech.md" and ".claude/steering/structure.md" exist in the project
+    When the creating-issues skill reaches Step 3 for an enhancement
+    Then it reads "tech.md" and "structure.md" alongside existing spec and source exploration
+    And surfaces any constraints relevant to the enhancement area in the investigation summary
+
+  @regression
+  Scenario: Steering docs are read during bug investigation
+    Given ".claude/steering/tech.md" and ".claude/steering/structure.md" exist in the project
+    When the creating-issues skill reaches Step 3 for a bug
+    Then it reads "tech.md" and "structure.md" alongside existing code search and tracing
+    And incorporates relevant constraints into the root cause hypothesis
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Product steering is still read in Step 1
+    Given ".claude/steering/product.md" exists in the project
+    When the creating-issues skill executes Step 1 (Gather Context)
+    Then "product.md" is read for product vision, users, and priorities
+    And the Step 1 behavior is unchanged from before the fix
+
+  # --- Constraints Flow to Output ---
+
+  @regression
+  Scenario: Relevant constraints surface in issue output
+    Given "tech.md" contains a constraint relevant to the enhancement area
+    When the issue is synthesized in Step 5
+    Then the relevant constraint is reflected in the issue's acceptance criteria or notes section
