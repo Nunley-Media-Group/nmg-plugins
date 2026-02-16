@@ -3,7 +3,7 @@ name: creating-prs
 description: "Create a pull request with spec-driven summary, linking GitHub issue and spec documents."
 argument-hint: "[#issue-number]"
 disable-model-invocation: true
-allowed-tools: Read, Glob, Grep, Bash(gh:*), Bash(git:*)
+allowed-tools: Read, Glob, Grep, Write, Edit, Bash(gh:*), Bash(git:*), AskUserQuestion
 ---
 
 # Creating PRs
@@ -37,7 +37,56 @@ Gather all information needed for the PR:
    - `git log main..HEAD --oneline` — commits on this branch
    - `git diff main...HEAD --stat` — files changed vs main
 
-### Step 2: Generate PR Content
+### Step 2: Determine Version Bump
+
+If a `VERSION` file exists in the project root, determine the appropriate version bump. If no `VERSION` file exists, skip this step and Step 3 entirely.
+
+1. **Read the current version**: Read the `VERSION` file and verify it contains a valid semver string (X.Y.Z). If the content is not valid semver, warn and skip versioning.
+2. **Read issue labels**: Run `gh issue view #N --json labels --jq '.labels[].name'` to get the issue's labels.
+3. **Apply the classification matrix**:
+
+   | Label | Bump Type | Example |
+   |-------|-----------|---------|
+   | `bug` | Patch | 2.11.0 → 2.11.1 |
+   | `enhancement` | Minor | 2.11.0 → 2.12.0 |
+   | (no label match) | Minor | 2.11.0 → 2.12.0 |
+
+4. **Check milestone completion**: Read the issue's milestone via `gh issue view #N --json milestone --jq '.milestone.title // empty'`. If the issue has a milestone, query its open issue count: `gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title=="{milestone_title}") | .open_issues'`. If `open_issues` is 1 (this issue is the last one open), propose a **major** bump instead (e.g., 2.11.0 → 3.0.0).
+5. **Calculate the new version string** based on the classification.
+6. **Present to user** (via `AskUserQuestion`):
+   ```
+   question: "Version bump: {current} → {proposed} ({bump_type}). Accept or override?"
+   options:
+     - "Accept {proposed}"
+     - "Patch ({current} → {patch_version})"
+     - "Minor ({current} → {minor_version})"
+     - "Major ({current} → {major_version})"
+   ```
+
+> **Auto-mode**: Apply the classified bump without confirmation. Do not call `AskUserQuestion`.
+
+### Step 3: Update Version Artifacts
+
+If Step 2 determined a version bump, update all version-related files before generating the PR content. If Step 2 was skipped (no VERSION file), skip this step as well.
+
+1. **Update the VERSION file**: Write the new version string to the `VERSION` file.
+2. **Update CHANGELOG.md**: If `CHANGELOG.md` exists:
+   - Find the `## [Unreleased]` heading.
+   - Insert a new version heading `## [{new_version}] - {YYYY-MM-DD}` immediately after it.
+   - Move all entries that were under `[Unreleased]` to under the new version heading.
+   - Leave the `[Unreleased]` section empty (just the heading with a blank line after it).
+3. **Update stack-specific files**: Read `.claude/steering/tech.md` and look for the `## Versioning` section. If it exists, parse the table of stack-specific files and update each one:
+   - For **JSON files** (e.g., `package.json`): Use the dot-notation path to locate and update the version field.
+   - For **TOML files** (e.g., `Cargo.toml`): Use the dot-notation path to locate and update the version field.
+   - For **plain text files**: Replace the version string on the specified line (or the entire file content if no line is specified).
+   - If the Versioning section does not exist or the table is empty, only update the VERSION file and CHANGELOG.md.
+4. **Commit the version bump**: Stage and commit all version-related file changes:
+   ```
+   git add VERSION CHANGELOG.md [stack-specific files...]
+   git commit -m "chore: bump version to {new_version}"
+   ```
+
+### Step 4: Generate PR Content
 
 **Title**: Concise (<70 chars), references the issue
 - Format: `feat: [description] (#N)` or `fix: [description] (#N)`
@@ -65,6 +114,11 @@ From `.claude/specs/{feature}/tasks.md` testing phase:
 - [ ] [Test type]: [what was tested]
 - [ ] [Test type]: [what was tested]
 
+## Version
+
+<!-- Include this section only if Step 2/3 performed a version bump -->
+**{bump_type}** bump: {old_version} → {new_version}
+
 ## Specs
 
 - Requirements: `.claude/specs/{feature}/requirements.md`
@@ -74,7 +128,7 @@ From `.claude/specs/{feature}/tasks.md` testing phase:
 Closes #N
 ```
 
-### Step 3: Push and Create PR
+### Step 5: Push and Create PR
 
 1. **Ensure branch is pushed**: Check if remote tracking branch exists
    - If not: `git push -u origin HEAD`
@@ -85,7 +139,7 @@ Closes #N
    ```
 3. **Add labels** if appropriate (same labels as the issue)
 
-### Step 4: Output
+### Step 6: Output
 
 ```
 PR created: [PR URL]

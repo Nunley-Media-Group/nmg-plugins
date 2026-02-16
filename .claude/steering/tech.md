@@ -43,6 +43,17 @@ OpenClaw (optional automation layer)
 
 ---
 
+## Versioning
+
+The `VERSION` file at the project root is the single source of truth for the current version. Stack-specific files are kept in sync via `/creating-prs`.
+
+| File | Path | Notes |
+|------|------|-------|
+| `plugins/nmg-sdlc/.claude-plugin/plugin.json` | `version` | Plugin manifest version |
+| `.claude-plugin/marketplace.json` | `plugins[0].version` | Marketplace index — must match plugin.json |
+
+---
+
 ## Technical Constraints
 
 ### Performance

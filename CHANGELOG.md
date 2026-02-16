@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.0] - 2026-02-16
+
+### Added
+
+- **Integrated versioning system** — `VERSION` file (plain text semver) as the single source of truth for project versions
+- **`/creating-issues`** — Milestone assignment step: reads VERSION for major version default, creates milestones via `gh api` if missing, passes `--milestone` to `gh issue create`
+- **`/creating-prs`** — Automatic version bump classification: reads issue labels (`bug` → patch, `enhancement` → minor), detects milestone completion for major bumps, updates VERSION/CHANGELOG/stack-specific files
+- **`/migrating-projects`** — CHANGELOG.md analysis: generates from git history if missing, reconciles existing changelogs with Keep a Changelog format
+- **`/migrating-projects`** — VERSION file analysis: derives expected version from CHANGELOG/git tags, creates or updates VERSION
+- **tech.md template** — New `## Versioning` section: declares stack-specific version file mappings (file/path/notes table) bridging VERSION to package.json, Cargo.toml, etc.
+
+### Changed
+
+- **`/creating-issues`** — Workflow expanded from 8 to 9 steps (milestone assignment inserted as Step 3); auto-mode runs Step 3 non-interactively
+- **`/creating-prs`** — Workflow expanded from 4 to 6 steps (version bump classification as Step 2, version artifact updates as Step 3); PR body includes Version section
+- **`/migrating-projects`** — Workflow expanded from 8 to 10 steps (CHANGELOG analysis as Step 7, VERSION analysis as Step 8); "What Gets Analyzed" section updated
+
 ## [2.11.0] - 2026-02-16
 
 ### Added
