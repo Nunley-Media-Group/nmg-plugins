@@ -1,0 +1,126 @@
+# File: .claude/specs/33-failure-loop-detection/feature.gherkin
+#
+# Generated from: .claude/specs/33-failure-loop-detection/requirements.md
+# Issue: #33
+
+Feature: Failure Loop Detection and Halt
+  As a developer relying on OpenClaw for autonomous SDLC execution
+  I want the runner to detect failure loops and halt with a detailed Discord report
+  So that wasted compute is minimized and I get actionable diagnostics
+
+  # --- Happy Path ---
+
+  Scenario: Successful cycle resets consecutive escalation counter
+    Given the runner has completed 1 escalation on issue #10
+    And the consecutiveEscalations counter is 1
+    When the runner completes a full cycle successfully through step 9 (merge)
+    Then the consecutiveEscalations counter is reset to 0
+    And the runner continues to the next cycle normally
+
+  # --- Consecutive Escalation Detection ---
+
+  Scenario: Runner halts after 2 consecutive escalations
+    Given the runner is in continuous loop mode processing open issues
+    And the first cycle escalates on issue #10 at step 5
+    When the second consecutive cycle escalates on issue #11 at step 3
+    Then the runner posts a failure-loop diagnostic to Discord containing "FAILURE LOOP DETECTED: consecutive escalations"
+    And the diagnostic includes issue numbers #10 and #11
+    And the diagnostic includes the step number and escalation count
+    And the diagnostic includes the last 500 characters of subprocess output
+    And the runner exits with a non-zero exit code
+
+  Scenario: Single escalation does not halt the runner
+    Given the runner is in continuous loop mode processing open issues
+    When a cycle escalates on issue #10 at step 4
+    Then the runner performs normal escalation cleanup
+    And the runner continues to the next cycle
+
+  # --- Same-Issue Loop Detection ---
+
+  Scenario: Runner skips previously-escalated issue
+    Given issue #10 caused an escalation in the current runner session
+    And the escalatedIssues set contains issue #10
+    When the runner begins step 2 to select the next issue
+    Then the step 2 prompt includes "Do NOT select any of these previously-escalated issues: #10"
+    And the runner selects a different open issue
+
+  Scenario: Runner halts when all open issues have been escalated
+    Given issues #10, #11, and #12 have all been escalated in this session
+    And no other open issues exist in the repository
+    When the runner checks for non-escalated issues before the next cycle
+    Then the runner posts a failure-loop diagnostic containing "FAILURE LOOP DETECTED: all issues escalated"
+    And the diagnostic lists all escalated issue numbers
+    And the runner exits with a non-zero exit code
+
+  Scenario: Runner halts when Claude selects an escalated issue despite exclusion prompt
+    Given issue #10 has been escalated in this session
+    And issue #10 is the only open issue remaining
+    When step 2 completes and the extracted issue number is #10
+    Then the runner posts a failure-loop diagnostic containing "all issues escalated"
+    And the runner exits with a non-zero exit code
+
+  # --- Step Bounce Loop Detection ---
+
+  Scenario: Runner halts on excessive step-back transitions
+    Given a cycle is in progress for issue #10 on step 5
+    And maxRetriesPerStep is configured as 3
+    When step 5 fails preconditions and bounces back to step 4 a total of 4 times
+    Then the runner escalates the current cycle with reason "Bounce loop"
+    And the runner posts a diagnostic containing "FAILURE LOOP DETECTED"
+    And the diagnostic includes the bounce count and threshold
+    And the runner exits with a non-zero exit code
+
+  Scenario: Step bounces within threshold proceed normally
+    Given a cycle is in progress for issue #10
+    And maxRetriesPerStep is configured as 3
+    When step 5 bounces back to step 4 twice (bounceCount = 2)
+    Then the runner retries step 4 normally
+    And the runner does not halt
+
+  Scenario: Bounce counter resets at the start of each cycle
+    Given the previous cycle had 2 step-back transitions
+    When a new cycle begins
+    Then the bounceCount is reset to 0
+
+  # --- Discord Diagnostics ---
+
+  Scenario: Consecutive escalation diagnostic contains all required fields
+    Given a consecutive escalation failure loop is detected
+    When the runner posts the halt notification to Discord
+    Then the message includes the text "FAILURE LOOP DETECTED: consecutive escalations"
+    And the message includes the affected issue numbers
+    And the message includes the last step number and key
+    And the message includes the consecutive escalation count
+    And the message includes the last 500 characters of subprocess output
+    And the message includes "State preserved for manual inspection"
+
+  Scenario: Bounce loop diagnostic contains all required fields
+    Given a bounce loop failure is detected
+    When the runner posts the halt notification to Discord
+    Then the message includes the text "FAILURE LOOP DETECTED"
+    And the message includes the bounce count and threshold
+    And the message includes the affected issue number
+    And the message includes "State preserved for manual inspection"
+
+  # --- State Preservation ---
+
+  Scenario: State preserved on consecutive escalation halt
+    Given a consecutive escalation failure loop is detected
+    When the runner exits with non-zero exit code
+    Then sdlc-state.json is NOT reset to default values
+    And .claude/auto-mode file is NOT removed
+    And the working tree is left as-is with no git checkout
+    And the current branch is NOT changed to main
+
+  Scenario: State preserved on bounce loop halt
+    Given a bounce loop failure is detected on branch "10-add-feature"
+    When the runner exits with non-zero exit code
+    Then sdlc-state.json retains the last step and retry information
+    And .claude/auto-mode file is NOT removed
+    And the git branch remains "10-add-feature"
+
+  Scenario: State preserved on all-issues-escalated halt
+    Given all open issues have been escalated
+    When the runner halts with non-zero exit code
+    Then sdlc-state.json is NOT reset
+    And .claude/auto-mode file is NOT removed

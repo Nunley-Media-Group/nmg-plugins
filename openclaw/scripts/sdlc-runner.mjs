@@ -86,6 +86,7 @@ if (!PROJECT_PATH || !PLUGINS_PATH) {
 const STATE_PATH = path.join(PROJECT_PATH, '.claude', 'sdlc-state.json');
 
 // Failure loop detection — in-memory, not persisted to state file
+const MAX_CONSECUTIVE_ESCALATIONS = 2;
 let consecutiveEscalations = 0;
 const escalatedIssues = new Set();
 let bounceCount = 0;
@@ -713,6 +714,23 @@ function matchErrorPattern(output) {
 }
 
 // ---------------------------------------------------------------------------
+// Bounce loop detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Increment the per-cycle bounce counter and check whether the bounce-loop
+ * threshold has been exceeded.  Returns true when the caller should escalate.
+ */
+function incrementBounceCount() {
+  bounceCount++;
+  if (bounceCount > MAX_RETRIES) {
+    log(`Bounce loop detected: ${bounceCount} step-back transitions exceed threshold ${MAX_RETRIES}`);
+    return true;
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
 // Failure handling
 // ---------------------------------------------------------------------------
 
@@ -738,9 +756,7 @@ async function handleFailure(step, result, state) {
     const prevStep = STEPS[step.number - 2];
     const preconds = validatePreconditions(step, state);
     if (!preconds.ok) {
-      bounceCount++;
-      if (bounceCount > MAX_RETRIES) {
-        log(`Bounce loop detected in handleFailure: ${bounceCount} bounces exceed threshold ${MAX_RETRIES}`);
+      if (incrementBounceCount()) {
         await escalate(step, `Bounce loop: ${bounceCount} step-back transitions exceed threshold ${MAX_RETRIES}`, output);
         return 'escalated';
       }
@@ -793,7 +809,7 @@ async function escalate(step, reason, output = '') {
   if (state.currentIssue) escalatedIssues.add(state.currentIssue);
   consecutiveEscalations++;
 
-  if (consecutiveEscalations >= 2) {
+  if (consecutiveEscalations >= MAX_CONSECUTIVE_ESCALATIONS) {
     await haltFailureLoop('consecutive escalations', [
       `Issues: ${[...escalatedIssues].map(i => `#${i}`).join(', ')}`,
       `Last step: ${step.number} (${step.key})`,
@@ -1075,9 +1091,7 @@ async function runStep(step, state) {
 
     if (step.number > 1) {
       const prevStep = STEPS[step.number - 2];
-      bounceCount++;
-      if (bounceCount > MAX_RETRIES) {
-        log(`Bounce loop detected in runStep preconditions: ${bounceCount} bounces exceed threshold ${MAX_RETRIES}`);
+      if (incrementBounceCount()) {
         await escalate(prevStep, `Bounce loop: ${bounceCount} step-back transitions exceed threshold ${MAX_RETRIES} (precondition: ${preconds.reason})`);
         return 'escalated';
       }
