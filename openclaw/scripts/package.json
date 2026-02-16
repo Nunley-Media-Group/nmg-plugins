@@ -1,0 +1,16 @@
+{
+  "name": "sdlc-runner-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+  },
+  "jest": {
+    "transform": {},
+    "testMatch": ["**/__tests__/**/*.mjs", "**/?(*.)+(spec|test).mjs"]
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "@jest/globals": "^29.7.0"
+  }
+}

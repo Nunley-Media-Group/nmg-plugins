@@ -1,0 +1,58 @@
+# File: openclaw/scripts/__tests__/sdlc-runner.test.mjs
+#
+# Generated from: .claude/specs/38-detect-soft-failures-runner-tests/requirements.md
+# Issue: #38
+# Type: Defect regression
+
+@regression
+Feature: Soft failure detection in SDLC runner
+  The SDLC runner previously treated exit code 0 as unconditional success,
+  even when Claude's JSON output indicated the step failed (error_max_turns,
+  permission_denials). This was fixed by adding a detectSoftFailure() check
+  after exit code evaluation, routing soft failures to the retry/escalation path.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Runner detects error_max_turns as failure
+    Given a step exits with code 0
+    And the JSON output contains subtype "error_max_turns"
+    When the runner evaluates the step result
+    Then the step is treated as a failure
+    And the runner enters the retry/escalation path
+
+  @regression
+  Scenario: Runner detects permission denials as failure
+    Given a step exits with code 0
+    And the JSON output contains non-empty permission_denials
+    When the runner evaluates the step result
+    Then the step is treated as a failure
+    And the runner enters the retry/escalation path
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Normal exit code 0 still treated as success
+    Given a step exits with code 0
+    And the JSON output has subtype "success" and no permission_denials
+    When the runner evaluates the step result
+    Then the step is treated as success
+    And the runner advances to the next step
+
+  @regression
+  Scenario: Non-JSON output does not trigger false positive
+    Given a step exits with code 0
+    And the stdout is plain text (not valid JSON)
+    When the runner evaluates the step result
+    Then the step is treated as success
+    And the runner advances to the next step
+
+  # --- Auto-Mode Compliance ---
+
+  @regression
+  Scenario: Starting-issues skill respects auto-mode in headless execution
+    Given the starting-issues SKILL.md is loaded
+    And the file .claude/auto-mode exists in the project directory
+    When Claude reads the skill instructions
+    Then the automation directive to skip AskUserQuestion is prominently visible
+    And the directive appears before the interactive workflow steps
