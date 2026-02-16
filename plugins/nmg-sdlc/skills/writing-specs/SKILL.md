@@ -111,7 +111,7 @@ Extract from the issue:
 1. Read the issue via `gh issue view #N`
 2. **Check for `bug` label** — if present, use the Defect Requirements Variant (see [Defect Detection](#defect-detection))
 3. Read `.claude/steering/product.md` for user context and product vision
-4. If `.claude/steering/retrospective.md` exists, read it and apply relevant learnings when drafting acceptance criteria — especially for features in domains where past defects revealed spec gaps
+4. If `.claude/steering/retrospective.md` exists, read it and apply relevant learnings when drafting acceptance criteria — read each learning as a transferable principle; adapt it to the current feature's domain by mapping the abstract pattern to concrete scenarios relevant to this feature. For example, a learning like "When specifying features that interact with external systems via session-scoped protocols, include ACs for state persistence across invocations" applied to a database connection pool feature becomes: "Given a connection is checked out and used for a query / When the connection is returned to the pool / Then any session-level state (temp tables, variables) is reset before reuse"
 5. Create `requirements.md` using [templates/requirements.md](templates/requirements.md)
 6. Bootstrap acceptance criteria from the issue body
 7. Fill in requirements per the appropriate variant:
