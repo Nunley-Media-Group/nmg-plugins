@@ -6,7 +6,9 @@ Claude Code plugins by Nunley Media Group.
 
 ### nmg-sdlc
 
-Stack-agnostic BDD spec-driven development toolkit. Provides a GitHub issue-driven workflow:
+The **nmg-sdlc** plugin is a stack-agnostic, BDD spec-driven development toolkit that brings structured software delivery to Claude Code. It covers the entire development lifecycle through 11 slash-command skills — from issue creation and grooming with acceptance criteria, through three-phase specification writing (requirements, technical design, and task breakdown), to plan-mode implementation, automated verification, and PR creation with integrated versioning. A dedicated architecture reviewer agent scores every implementation across five quality checklists (SOLID principles, security, performance, testability, and error handling), while exercise-based verification can scaffold and test plugin projects end-to-end. Steering documents (`product.md`, `tech.md`, `structure.md`) let teams encode project-specific conventions that guide every skill, and a retrospective system analyzes past defects to continuously improve spec quality. The entire workflow runs interactively with human review gates, or fully headless through [OpenClaw](https://openclaw.ai/) integration — a deterministic Node.js runner that orchestrates Claude Code sessions to autonomously select issues, write specs, implement, verify, create PRs, monitor CI, and merge.
+
+It provides a GitHub issue-driven workflow:
 
 ```
 Quick Start:
