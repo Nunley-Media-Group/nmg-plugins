@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Removed
+
+- **Spec drift detection hook** — PostToolUse hook that ran on every `Write`/`Edit` removed; with 23+ spec directories the agent consistently hit the 60-second timeout, producing errors on every file modification
+
 ### Added
 
 - **`/migrating-projects`** — New skill that updates existing project specs, steering docs, and OpenClaw configs to latest template standards by diffing headings against current templates and merging missing sections while preserving all user content

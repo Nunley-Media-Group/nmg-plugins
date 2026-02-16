@@ -80,7 +80,6 @@ All feature development should align with these guidelines.
 
 ### Should Have
 - Issue branch linking and status management (`/starting-issues`)
-- Spec drift detection hook (PostToolUse)
 - Defect-specific spec templates (bug label detection)
 - OpenClaw automation mode support
 
@@ -154,7 +153,7 @@ The SDLC pipeline is a chain. Each skill's output is a contract with the next:
   Postcondition: .claude/specs/{feature}/ contains requirements.md, design.md, tasks.md, feature.gherkin
   ↓ (spec files feed into)
 /implementing-specs #N
-  Postcondition: Code changes implement all tasks; spec drift hook passes
+  Postcondition: Code changes implement all tasks
   ↓ (implementation feeds into)
 /verifying-specs #N
   Postcondition: Verification report posted to issue; all ACs pass or deferred items documented

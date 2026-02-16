@@ -12,7 +12,6 @@ Claude Code CLI
     ↓ (plugin system)
 nmg-sdlc Plugin
     ├── Skills (SKILL.md files — prompt-based workflows)
-    ├── Hooks (PostToolUse — spec drift detection)
     ├── Agents (architecture-reviewer — subagent for verification)
     └── Templates (spec, steering, checklist files)
 
@@ -30,7 +29,6 @@ OpenClaw (optional automation layer)
 |-------|------------|---------|
 | Plugin host | Claude Code CLI | Latest |
 | Skill definitions | Markdown (SKILL.md) | N/A |
-| Hook definitions | JSON + Agent prompts | N/A |
 | Automation runner | Node.js (ESM) | v24+ |
 | Issue tracker | GitHub Issues + Projects | gh CLI |
 | Automation platform | OpenClaw | Latest |
@@ -51,7 +49,6 @@ OpenClaw (optional automation layer)
 
 | Metric | Target | Rationale |
 |--------|--------|-----------|
-| Spec drift hook latency | < 60s per check | PostToolUse agent must not block the developer |
 | Skill execution | Reasonable for task complexity | Skills are interactive; no hard time limits in manual mode |
 | Runner step timeout | Per-step config (5–30 min) | Prevents runaway automation sessions |
 
@@ -93,16 +90,6 @@ This project MUST work on macOS, Windows, and Linux. All contributions must resp
 | Arguments | Use `$ARGUMENTS` placeholder to capture user input |
 | Supporting files | Place templates, examples, and scripts alongside SKILL.md in the skill directory |
 | Dynamic context | Use `` !`command` `` syntax to inject shell output before Claude processes the skill |
-
-### Hooks (hooks.json)
-
-| Aspect | Best Practice |
-|--------|---------------|
-| Paths | Use `${CLAUDE_PLUGIN_ROOT}` for file references in hook commands |
-| Matchers | Narrow scope with matchers (e.g., `Write\|Edit`) — don't fire on every tool use |
-| Exit codes | Exit 0 = allow, exit 2 = block (stderr becomes Claude's feedback) |
-| Hook types | `command` (shell script), `prompt` (single LLM call), `agent` (multi-turn with tools) |
-| Events | `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, `SubagentStart`, `SubagentStop`, etc. |
 
 ### Agents (.md files)
 
@@ -237,7 +224,6 @@ Since nmg-plugins is a template/plugin repository (not a runtime application), v
 |------|--------|----------|
 | Spec verification | `/verifying-specs` skill | Manual or automated |
 | Architecture review | `architecture-reviewer` agent | 5 checklists scored 1–5 |
-| Drift detection | PostToolUse hook | Runs on every Write/Edit |
 | Manual testing | Install plugin locally, run skills | `/installing-locally` |
 
 ---
@@ -289,10 +275,10 @@ The architecture-reviewer checklists were designed for runtime codebases. Apply 
 | Checklist | Applies To | Skip For | Reinterpretation |
 |-----------|-----------|----------|-----------------|
 | SOLID | Scripts (sdlc-runner.mjs) | Markdown skills | For skills: SRP = one skill does one workflow step; DIP = skills reference steering docs, not hardcoded details |
-| Security | Scripts, hook definitions | Markdown templates | Focus: no secrets in committed files, safe `gh` CLI patterns, no shell injection in skill commands |
-| Performance | Hooks, runner script | Skills, templates | Focus: hook latency < 60s, runner timeouts configured, no blocking operations |
+| Security | Scripts | Markdown templates | Focus: no secrets in committed files, safe `gh` CLI patterns, no shell injection in skill commands |
+| Performance | Runner script | Skills, templates | Focus: runner timeouts configured, no blocking operations |
 | Testability | All — reinterpret | N/A | For skills: steps can be followed manually with predictable results; scenarios are independent; templates produce valid output |
-| Error Handling | Scripts, hooks | Markdown skills | Focus: runner exit codes, hook exit codes (0=allow, 2=block), graceful failures with meaningful stderr |
+| Error Handling | Scripts | Markdown skills | Focus: runner exit codes, graceful failures with meaningful stderr |
 
 ### Prompt Quality Verification
 
@@ -310,7 +296,7 @@ For Markdown skills, the "code quality" equivalent is prompt quality:
 
 ### Script Verification
 
-For `sdlc-runner.mjs`, `install-openclaw-skill.sh`, and other runtime scripts, apply traditional contracts:
+For `sdlc-runner.mjs`, `install-openclaw-skill.sh`, and other runtime scripts:
 
 | Contract | Check |
 |----------|-------|

@@ -138,10 +138,6 @@ Creates a pull request with:
 - Test plan
 - `Closes #42` to auto-close the issue on merge
 
-## Hooks
-
-The plugin includes a `PostToolUse` hook that runs on every `Write` or `Edit` operation. It detects spec drift by reading active spec files (`.claude/specs/*/requirements.md`, `.claude/specs/*/design.md`) and checking whether file modifications align with the current specifications.
-
 ## Automation Mode
 
 The plugin supports fully automated operation via [OpenClaw](https://openclaw.ai/), an AI agent platform that orchestrates Claude Code sessions. A deterministic Node.js runner drives the full development cycle — issue selection, spec writing, implementation, verification, PR creation, CI monitoring, and merge — looping continuously until no open issues remain.

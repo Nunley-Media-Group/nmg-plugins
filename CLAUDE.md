@@ -12,7 +12,6 @@ Claude Code plugin marketplace repository for Nunley Media Group. Contains the `
 plugins/nmg-sdlc/                 — The nmg-sdlc plugin
   .claude-plugin/plugin.json      — Plugin manifest
   skills/                         — Skill definitions (one directory per skill)
-  hooks/                          — PostToolUse hooks
   agents/                         — Subagent definitions (architecture-reviewer)
 openclaw/                         — OpenClaw integration (separate from the plugin)
   scripts/                        — SDLC runner script and config template
@@ -31,10 +30,6 @@ When bumping a plugin version, you MUST update BOTH files — the marketplace in
 The `metadata.version` in `marketplace.json` is the marketplace collection version, NOT any individual plugin version. Only bump it if the marketplace structure itself changes.
 
 Also update `CHANGELOG.md` — add entries under `[Unreleased]`, then move to a versioned heading on release.
-
-## Spec Drift Detection
-
-The spec drift hook intentionally checks ALL specs, not just the spec for the current branch or feature. This ensures that any file modification — even ones made outside the SDLC workflow — is validated against every existing spec. Do not scope the hook to only the "current" spec.
 
 ## README Updates
 

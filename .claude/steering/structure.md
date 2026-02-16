@@ -36,8 +36,6 @@ nmg-plugins/
 │       │   │   └── checklists/   # Architecture review checklists
 │       │   └── writing-specs/
 │       │       └── templates/    # Spec document templates
-│       ├── hooks/
-│       │   └── hooks.json        # PostToolUse hook (spec drift detection)
 │       └── agents/
 │           └── architecture-reviewer.md  # Subagent for verification
 ├── openclaw/                     # OpenClaw integration (separate from plugin)
@@ -76,10 +74,6 @@ Plugin Package (plugins/nmg-sdlc/)
 └────────┬────────────┘
          ↓ (used by)
 ┌─────────────────────┐
-│  Hooks (hooks.json) │ ← Runtime validation (spec drift detection)
-└────────┬────────────┘
-         ↓ (invokes)
-┌─────────────────────┐
 │  Agents (*.md)      │ ← Specialized subagents (architecture review)
 └─────────────────────┘
 
@@ -96,7 +90,6 @@ Claude Code sessions via `claude -p`
 | Plugin manifest | Declares plugin identity and metadata | Define workflows |
 | Skills | Define SDLC workflow steps, prompt Claude | Execute code directly; skills are Markdown |
 | Templates | Provide output structure for generated documents | Contain logic or conditionals |
-| Hooks | Validate file modifications against specs at runtime | Modify files or block writes |
 | Agents | Perform specialized analysis (architecture review) | Spawn subagents or use Task tool |
 | OpenClaw scripts | Orchestrate `claude -p` sessions deterministically | Contain SDLC logic (that lives in skills) |
 
@@ -214,14 +207,6 @@ These are hard contracts that must never be violated. `/verifying-specs` should 
 | Auto-mode must be opt-in | Manual mode is the default; automation requires `.claude/auto-mode` | Every `AskUserQuestion` call must be guarded by auto-mode check |
 | Skill output feeds the next skill | The pipeline is a chain; each skill's output format is a contract | Verify output templates match the input expectations of downstream skills |
 
-### Hook Contracts
-
-| Invariant | Rationale | How to Verify |
-|-----------|-----------|---------------|
-| Drift hook checks ALL specs | Any file change could violate any spec, not just the "current" one | Hook iterates `.claude/specs/*/` without filtering by branch |
-| Hooks must not modify files | Hooks validate and report; they don't fix | Hook exit codes only (0=allow, 2=block with feedback) |
-| Hook matchers must be scoped | Hooks should fire only on relevant tool uses | Matchers specify tool patterns (e.g., `Write\|Edit`), not `*` |
-
 ### Agent Contracts
 
 | Invariant | Rationale | How to Verify |
@@ -252,7 +237,6 @@ These are hard contracts that must never be violated. `/verifying-specs` should 
 
 | Anti-Pattern | Problem | Solution |
 |--------------|---------|----------|
-| Scoping drift hook to current spec only | Misses cross-spec violations | Check ALL specs on every Write/Edit |
 | Updating only plugin.json version | Marketplace index becomes stale | Always update BOTH plugin.json and marketplace.json |
 | Adding npm dependencies to scripts | Breaks zero-dependency portability | Use only Node.js built-in modules |
 | Nesting subagents in architecture-reviewer | Task tool not available to agents | Use Read/Glob/Grep directly |
