@@ -58,6 +58,116 @@ creating-issues SKILL.md (single file modification)
 
 ---
 
+## API / Interface Changes
+
+### New Endpoints / Methods
+
+| Endpoint / Method | Type | Auth | Purpose |
+|-------------------|------|------|---------|
+| [path or signature] | [GET/POST/etc or method] | [Yes/No] | [description] |
+
+### Request / Response Schemas
+
+#### [Endpoint or Method Name]
+
+**Input:**
+```json
+{
+  "field1": "string",
+  "field2": 123
+}
+```
+
+**Output (success):**
+```json
+{
+  "id": "string",
+  "field1": "string",
+  "createdAt": "ISO8601"
+}
+```
+
+**Errors:**
+
+| Code / Type | Condition |
+|-------------|-----------|
+| [error code] | [when this happens] |
+
+---
+
+## Database / Storage Changes
+
+### Schema Changes
+
+| Table / Collection | Column / Field | Type | Nullable | Default | Change |
+|--------------------|----------------|------|----------|---------|--------|
+| [name] | [name] | [type] | Yes/No | [value] | Add/Modify/Remove |
+
+### Migration Plan
+
+```
+-- Describe the migration approach
+-- Reference tech.md for migration conventions
+```
+
+### Data Migration
+
+[If existing data needs transformation, describe the approach]
+
+---
+
+## State Management
+
+Reference `structure.md` and `tech.md` for the project's state management patterns.
+
+### New State Shape
+
+```
+// Pseudocode — use project's actual language/framework
+FeatureState {
+  isLoading: boolean
+  items: List<Item>
+  error: string | null
+  selected: Item | null
+}
+```
+
+### State Transitions
+
+```
+Initial → Loading → Success (with data)
+                  → Error (with message)
+
+User action → Optimistic update → Confirm / Rollback
+```
+
+---
+
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## Detailed Design
 
 ### Step 2: Classify Issue Type (NEW)
@@ -163,6 +273,25 @@ Steps 6 (Review), 7 (Create Issue), and 8 (Output) are unchanged. The review ste
 | **B: Three-option classification** | Separate "Feature" and "Enhancement" options | Finer granularity | Issue already groups feature/enhancement; bug vs non-bug is the meaningful distinction for investigation | Rejected — two options is cleaner |
 | **C: Use Task/Explore subagent for investigation** | Delegate codebase exploration to a subagent | Deeper exploration, protects main context | Slower, heavier; investigation scope is bounded enough for direct Glob/Grep/Read | Rejected — direct tool use is sufficient |
 | **D: Explicit question per step** | Ask classification via `AskUserQuestion` | Clear, explicit, user chooses | **Selected** — aligns with human-in-loop principle |
+
+---
+
+## Security Considerations
+
+- [ ] **Authentication**: [How auth is enforced]
+- [ ] **Authorization**: [Permission checks required]
+- [ ] **Input Validation**: [Validation approach]
+- [ ] **Data Sanitization**: [How data is sanitized]
+- [ ] **Sensitive Data**: [How sensitive data is handled]
+
+---
+
+## Performance Considerations
+
+- [ ] **Caching**: [Caching strategy]
+- [ ] **Pagination**: [Pagination approach for large datasets]
+- [ ] **Lazy Loading**: [What loads lazily]
+- [ ] **Indexing**: [Database indexes or search indexes needed]
 
 ---
 

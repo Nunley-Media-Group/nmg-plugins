@@ -92,6 +92,79 @@ function cleanupProcesses() { ... }
 
 ---
 
+## Database / Storage Changes
+
+### Schema Changes
+
+| Table / Collection | Column / Field | Type | Nullable | Default | Change |
+|--------------------|----------------|------|----------|---------|--------|
+| [name] | [name] | [type] | Yes/No | [value] | Add/Modify/Remove |
+
+### Migration Plan
+
+```
+-- Describe the migration approach
+-- Reference tech.md for migration conventions
+```
+
+### Data Migration
+
+[If existing data needs transformation, describe the approach]
+
+---
+
+## State Management
+
+Reference `structure.md` and `tech.md` for the project's state management patterns.
+
+### New State Shape
+
+```
+// Pseudocode — use project's actual language/framework
+FeatureState {
+  isLoading: boolean
+  items: List<Item>
+  error: string | null
+  selected: Item | null
+}
+```
+
+### State Transitions
+
+```
+Initial → Loading → Success (with data)
+                  → Error (with message)
+
+User action → Optimistic update → Confirm / Rollback
+```
+
+---
+
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## Implementation Details
 
 ### Config Loading
@@ -216,6 +289,25 @@ Update `openclaw/skills/running-sdlc/SKILL.md` to document the new config option
 | **A: Process group killing** | Use `kill -TERM -<pgid>` to kill the entire process group of each Claude subprocess | Kills all descendants automatically | Platform-specific; requires process group tracking; kills Claude subprocess too early on timeout | Rejected — too invasive, platform issues |
 | **B: pgrep/pkill with -f** | Pattern-match against full command line | Simple; cross-platform (macOS + Linux); precise targeting via CLI flags | Requires user to know command-line patterns | **Selected** — matches issue requirements exactly |
 | **C: Node.js process listing** | Use `node:child_process` to parse `ps aux` output and kill programmatically | Full control; richer logging | More code; `ps` output format varies across platforms; reinvents pkill | Rejected — unnecessary complexity |
+
+---
+
+## Security Considerations
+
+- [ ] **Authentication**: [How auth is enforced]
+- [ ] **Authorization**: [Permission checks required]
+- [ ] **Input Validation**: [Validation approach]
+- [ ] **Data Sanitization**: [How data is sanitized]
+- [ ] **Sensitive Data**: [How sensitive data is handled]
+
+---
+
+## Performance Considerations
+
+- [ ] **Caching**: [Caching strategy]
+- [ ] **Pagination**: [Pagination approach for large datasets]
+- [ ] **Lazy Loading**: [What loads lazily]
+- [ ] **Indexing**: [Database indexes or search indexes needed]
 
 ---
 

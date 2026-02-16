@@ -54,6 +54,116 @@ The skill follows a 6-step workflow: identify context (from argument, branch, or
 
 ---
 
+## API / Interface Changes
+
+### New Endpoints / Methods
+
+| Endpoint / Method | Type | Auth | Purpose |
+|-------------------|------|------|---------|
+| [path or signature] | [GET/POST/etc or method] | [Yes/No] | [description] |
+
+### Request / Response Schemas
+
+#### [Endpoint or Method Name]
+
+**Input:**
+```json
+{
+  "field1": "string",
+  "field2": 123
+}
+```
+
+**Output (success):**
+```json
+{
+  "id": "string",
+  "field1": "string",
+  "createdAt": "ISO8601"
+}
+```
+
+**Errors:**
+
+| Code / Type | Condition |
+|-------------|-----------|
+| [error code] | [when this happens] |
+
+---
+
+## Database / Storage Changes
+
+### Schema Changes
+
+| Table / Collection | Column / Field | Type | Nullable | Default | Change |
+|--------------------|----------------|------|----------|---------|--------|
+| [name] | [name] | [type] | Yes/No | [value] | Add/Modify/Remove |
+
+### Migration Plan
+
+```
+-- Describe the migration approach
+-- Reference tech.md for migration conventions
+```
+
+### Data Migration
+
+[If existing data needs transformation, describe the approach]
+
+---
+
+## State Management
+
+Reference `structure.md` and `tech.md` for the project's state management patterns.
+
+### New State Shape
+
+```
+// Pseudocode — use project's actual language/framework
+FeatureState {
+  isLoading: boolean
+  items: List<Item>
+  error: string | null
+  selected: Item | null
+}
+```
+
+### State Transitions
+
+```
+Initial → Loading → Success (with data)
+                  → Error (with message)
+
+User action → Optimistic update → Confirm / Rollback
+```
+
+---
+
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## File Changes
 
 | File | Type | Purpose |
@@ -94,6 +204,22 @@ The skill follows a 6-step workflow: identify context (from argument, branch, or
 |-------|------|----------|
 | Task Execution | BDD | Scenarios for sequential execution, plan mode, auto-mode |
 | Bug Fix Mode | BDD | Scenario for minimal change scope |
+
+---
+
+## Risks & Mitigations
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| [risk] | Low/Med/High | Low/Med/High | [approach] |
+
+---
+
+## Open Questions
+
+- [ ] [Technical question]
+- [ ] [Architecture question]
+- [ ] [Integration question]
 
 ---
 

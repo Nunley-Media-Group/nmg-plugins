@@ -68,6 +68,116 @@ The design is intentionally simple: the skill is a prompt-based workflow (SKILL.
 
 ---
 
+## API / Interface Changes
+
+### New Endpoints / Methods
+
+| Endpoint / Method | Type | Auth | Purpose |
+|-------------------|------|------|---------|
+| [path or signature] | [GET/POST/etc or method] | [Yes/No] | [description] |
+
+### Request / Response Schemas
+
+#### [Endpoint or Method Name]
+
+**Input:**
+```json
+{
+  "field1": "string",
+  "field2": 123
+}
+```
+
+**Output (success):**
+```json
+{
+  "id": "string",
+  "field1": "string",
+  "createdAt": "ISO8601"
+}
+```
+
+**Errors:**
+
+| Code / Type | Condition |
+|-------------|-----------|
+| [error code] | [when this happens] |
+
+---
+
+## Database / Storage Changes
+
+### Schema Changes
+
+| Table / Collection | Column / Field | Type | Nullable | Default | Change |
+|--------------------|----------------|------|----------|---------|--------|
+| [name] | [name] | [type] | Yes/No | [value] | Add/Modify/Remove |
+
+### Migration Plan
+
+```
+-- Describe the migration approach
+-- Reference tech.md for migration conventions
+```
+
+### Data Migration
+
+[If existing data needs transformation, describe the approach]
+
+---
+
+## State Management
+
+Reference `structure.md` and `tech.md` for the project's state management patterns.
+
+### New State Shape
+
+```
+// Pseudocode — use project's actual language/framework
+FeatureState {
+  isLoading: boolean
+  items: List<Item>
+  error: string | null
+  selected: Item | null
+}
+```
+
+### State Transitions
+
+```
+Initial → Loading → Success (with data)
+                  → Error (with message)
+
+User action → Optimistic update → Confirm / Rollback
+```
+
+---
+
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## File Changes
 
 ### New Files
@@ -245,6 +355,25 @@ The retrospective doc is optional because:
 | **B: Per-defect incremental mode** | Process one defect at a time as they're filed | Lower latency per invocation | Complex state management; harder to identify cross-defect patterns | Rejected — batch mode captures patterns across defects (per issue scope) |
 | **C: Inline in writing-specs** | Build analysis directly into `/writing-specs` Phase 1 | No new skill needed | Violates single-responsibility; makes writing-specs slower; can't run analysis independently | Rejected — separate skill is cleaner |
 | **D: Structured SKILL.md + template** | New skill with workflow steps, output template, and writing-specs integration | Simple, follows existing patterns, separately invocable | Requires manual invocation (not automatic) | **Selected** |
+
+---
+
+## Security Considerations
+
+- [ ] **Authentication**: [How auth is enforced]
+- [ ] **Authorization**: [Permission checks required]
+- [ ] **Input Validation**: [Validation approach]
+- [ ] **Data Sanitization**: [How data is sanitized]
+- [ ] **Sensitive Data**: [How sensitive data is handled]
+
+---
+
+## Performance Considerations
+
+- [ ] **Caching**: [Caching strategy]
+- [ ] **Pagination**: [Pagination approach for large datasets]
+- [ ] **Lazy Loading**: [What loads lazily]
+- [ ] **Indexing**: [Database indexes or search indexes needed]
 
 ---
 

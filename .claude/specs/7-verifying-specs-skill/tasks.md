@@ -20,6 +20,27 @@
 
 ---
 
+## Task Format
+
+Each task follows this structure:
+
+```
+### T[NNN]: [Task Title]
+
+**File(s)**: `{layer}/path/to/file`
+**Type**: Create | Modify | Delete
+**Depends**: T[NNN], T[NNN] (or None)
+**Acceptance**:
+- [ ] [Verifiable criterion 1]
+- [ ] [Verifiable criterion 2]
+
+**Notes**: [Optional implementation hints]
+```
+
+Map `{layer}/` placeholders to actual project paths using `structure.md`.
+
+---
+
 ## Phase 1: Setup
 
 ### T001: Create Skill Directory Structure
@@ -146,6 +167,20 @@
 **Status**: Complete
 **Acceptance**:
 - [x] All 5 acceptance criteria have corresponding scenarios
+
+---
+
+## Dependency Graph
+
+```
+T001 ──┬──▶ T002 ──┬──▶ T003 ──▶ T004 ──▶ T005 ──▶ T006
+       │           │
+       │           └──▶ T007 ──▶ T008 ──▶ T009 ──▶ T010 ──▶ T011
+       │                                    │
+       │                                    └──▶ T012, T013 ──▶ T014
+       │
+       └──▶ T015 ──▶ T016, T017
+```
 
 ---
 

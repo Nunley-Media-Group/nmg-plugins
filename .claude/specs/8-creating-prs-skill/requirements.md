@@ -71,6 +71,37 @@ The `/creating-prs` skill creates a GitHub pull request using `gh pr create` wit
 
 ---
 
+## UI/UX Requirements
+
+Reference `structure.md` and `product.md` for project-specific design standards.
+
+| Element | Requirement |
+|---------|-------------|
+| **Interaction** | [Touch targets, gesture requirements] |
+| **Typography** | [Minimum text sizes, font requirements] |
+| **Contrast** | [Accessibility contrast requirements] |
+| **Loading States** | [How loading should be displayed] |
+| **Error States** | [How errors should be displayed] |
+| **Empty States** | [How empty data should be displayed] |
+
+---
+
+## Data Requirements
+
+### Input Data
+
+| Field | Type | Validation | Required |
+|-------|------|------------|----------|
+| [field] | [type] | [rules] | Yes/No |
+
+### Output Data
+
+| Field | Type | Description |
+|-------|------|-------------|
+| [field] | [type] | [what it represents] |
+
+---
+
 ## Dependencies
 
 ### Internal Dependencies
@@ -89,6 +120,22 @@ The `/creating-prs` skill creates a GitHub pull request using `gh pr create` wit
 - Automatic PR review assignment
 - CI/CD pipeline triggering or status checking
 - Auto-merge after approval
+
+---
+
+## Success Metrics
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| [metric] | [target value] | [how to measure] |
+
+---
+
+## Open Questions
+
+- [ ] [Question needing stakeholder input]
+- [ ] [Technical question to research]
+- [ ] [UX question to validate]
 
 ---
 

@@ -198,6 +198,20 @@ gh pr merge <number> --merge
 
 ---
 
+## Database Standards
+
+<!-- Pre-fill if database conventions are discoverable -->
+
+### Naming
+
+| Element | Convention | Example |
+|---------|------------|---------|
+| Tables | [convention] | [example] |
+| Columns | [convention] | [example] |
+| Primary keys | [convention] | [example] |
+
+---
+
 ## Testing Standards
 
 ### BDD Testing (Required for nmg-sdlc)

@@ -156,6 +156,22 @@ Feature: Detect Existing Steering Enhancement Flow
 
 ---
 
+## Data Requirements
+
+### Input Data
+
+| Field | Type | Validation | Required |
+|-------|------|------------|----------|
+| [field] | [type] | [rules] | Yes/No |
+
+### Output Data
+
+| Field | Type | Description |
+|-------|------|-------------|
+| [field] | [type] | [what it represents] |
+
+---
+
 ## Dependencies
 
 ### Internal Dependencies
