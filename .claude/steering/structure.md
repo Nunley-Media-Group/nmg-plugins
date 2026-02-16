@@ -200,6 +200,54 @@ import { parseArgs } from 'node:util';
 
 ---
 
+## Architectural Invariants
+
+These are hard contracts that must never be violated. `/verifying-specs` should flag any change that breaks one.
+
+### Skill Contracts
+
+| Invariant | Rationale | How to Verify |
+|-----------|-----------|---------------|
+| Skills must be stack-agnostic | Skills work across any project; project specifics live in steering docs | Grep skill content for hardcoded language/framework/tool names that aren't Claude Code tools |
+| One skill = one SDLC step | Each skill has a single, well-defined purpose in the pipeline | A skill's postconditions must be the preconditions of exactly one downstream skill |
+| Skills must reference steering docs for project context | Decouples workflow logic from project specifics | Skills say "reference `tech.md` for..." rather than embedding conventions directly |
+| Auto-mode must be opt-in | Manual mode is the default; automation requires `.claude/auto-mode` | Every `AskUserQuestion` call must be guarded by auto-mode check |
+| Skill output feeds the next skill | The pipeline is a chain; each skill's output format is a contract | Verify output templates match the input expectations of downstream skills |
+
+### Hook Contracts
+
+| Invariant | Rationale | How to Verify |
+|-----------|-----------|---------------|
+| Drift hook checks ALL specs | Any file change could violate any spec, not just the "current" one | Hook iterates `.claude/specs/*/` without filtering by branch |
+| Hooks must not modify files | Hooks validate and report; they don't fix | Hook exit codes only (0=allow, 2=block with feedback) |
+| Hook matchers must be scoped | Hooks should fire only on relevant tool uses | Matchers specify tool patterns (e.g., `Write\|Edit`), not `*` |
+
+### Agent Contracts
+
+| Invariant | Rationale | How to Verify |
+|-----------|-----------|---------------|
+| Agents must not spawn subagents | `Task` tool is not available to agents | Agent `.md` files must not instruct use of `Task` tool |
+| Agents use only declared tools | Least-privilege access | `tools` frontmatter lists only what's needed (Read, Glob, Grep) |
+| Agent output is structured | Parent skill must be able to parse agent results | Output section defines a predictable format |
+
+### Version and Release Contracts
+
+| Invariant | Rationale | How to Verify |
+|-----------|-----------|---------------|
+| Version bumps update both files | Marketplace reads `marketplace.json`, not `plugin.json` | `plugin.json` version == matching entry in `marketplace.json` `plugins` array |
+| CHANGELOG has `[Unreleased]` section | Pending changes accumulate before release | `CHANGELOG.md` contains `## [Unreleased]` heading |
+| Templates are declarative | Templates define structure, not logic | No conditionals, loops, or executable code in template `.md` files |
+
+### Cross-Platform Contracts
+
+| Invariant | Rationale | How to Verify |
+|-----------|-----------|---------------|
+| No hardcoded path separators in scripts | macOS/Linux use `/`, Windows uses `\` | Scripts use `node:path` or `path.join()`; shell scripts use POSIX syntax |
+| No symlink dependencies | Windows requires elevated privileges for symlinks | Core functionality works without symlinks |
+| POSIX-compatible shell commands in skills | Skills run on any OS | No Bash-specific syntax (`[[ ]]`, `<<<`, associative arrays) |
+
+---
+
 ## Anti-Patterns to Avoid
 
 | Anti-Pattern | Problem | Solution |

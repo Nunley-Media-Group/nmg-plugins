@@ -125,6 +125,48 @@ All feature development should align with these guidelines.
 
 ---
 
+## Intent Verification
+
+Each product principle translates to a verifiable behavioral contract. `/verifying-specs` should check these when evaluating whether a change serves the product mission.
+
+### Principle → Postcondition Mapping
+
+| Product Principle | Behavioral Contract | Verification Check |
+|-------------------|--------------------|--------------------|
+| **Stack-agnostic** | Skills must not contain language, framework, or tool-specific instructions | Grep changed skill files for technology names (e.g., "React", "Python", "npm") that aren't Claude Code tool names |
+| **OS-agnostic** | No platform-specific paths, commands, or assumptions | Grep for hardcoded separators, Bash-only syntax, macOS/Windows/Linux-specific commands |
+| **Spec as source of truth** | Every implementation change traces to a requirement in the spec | Each modified file must map to a task in `tasks.md` or an AC in `requirements.md` |
+| **Human gates by default** | Interactive approval exists at every decision point | Skills contain `AskUserQuestion` at gates, guarded by auto-mode check |
+| **Process over tooling** | Skills define workflow structure; project details live in steering docs | Skills reference steering docs for conventions, not hardcode them |
+
+### Skill Pipeline Contracts
+
+The SDLC pipeline is a chain. Each skill's output is a contract with the next:
+
+```
+/creating-issues
+  Postcondition: GitHub issue exists with BDD acceptance criteria
+  ↓ (issue # feeds into)
+/starting-issues #N
+  Postcondition: Feature branch exists, issue status = In Progress
+  ↓ (branch context feeds into)
+/writing-specs #N
+  Postcondition: .claude/specs/{feature}/ contains requirements.md, design.md, tasks.md, feature.gherkin
+  ↓ (spec files feed into)
+/implementing-specs #N
+  Postcondition: Code changes implement all tasks; spec drift hook passes
+  ↓ (implementation feeds into)
+/verifying-specs #N
+  Postcondition: Verification report posted to issue; all ACs pass or deferred items documented
+  ↓ (verified implementation feeds into)
+/creating-prs #N
+  Postcondition: PR created linking issue, specs, and verification report
+```
+
+When verifying a change to any skill, confirm it preserves these contracts — the postconditions of the changed skill must still satisfy the preconditions of its downstream consumer.
+
+---
+
 ## Brand Voice
 
 | Attribute | Do | Don't |

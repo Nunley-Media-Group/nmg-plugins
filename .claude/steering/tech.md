@@ -242,6 +242,85 @@ Since nmg-plugins is a template/plugin repository (not a runtime application), v
 
 ---
 
+## Verification Strategy — Behavioral Contracts
+
+This project is prompt-based: skills are Markdown instructions that Claude Code executes. Traditional code quality metrics (test coverage, cyclomatic complexity) don't apply to most of the codebase. Instead, verification uses **Design by Contract** — each skill and component has preconditions, postconditions, invariants, and behavioral boundaries that `/verifying-specs` checks.
+
+### Contract Framework
+
+| Contract Type | Question It Answers |
+|---------------|-------------------|
+| **Preconditions** | What must be true before the skill/component runs? |
+| **Postconditions** | What must be true after successful execution? |
+| **Invariants** | What must remain true throughout execution? |
+| **Behavioral boundaries** | What must the skill/component NOT do? |
+
+### Skill-Level Contracts
+
+Every skill has implicit contracts. When verifying a skill change, check:
+
+#### Preconditions (Step 0 / Prerequisites)
+- Required files exist (specs, steering docs, issues)
+- Required tools are available (`gh` CLI, git)
+- Correct branch / working directory state
+
+#### Postconditions (Step N / Output)
+- Output files created in the correct location and format
+- GitHub issue/PR updated with expected content
+- No orphaned files or partial state left behind
+- Downstream skills can consume the output (e.g., `/writing-specs` output feeds `/implementing-specs`)
+
+#### Invariants (Throughout Execution)
+- Stack-agnostic: no project-specific technology hardcoded in skill instructions
+- Steering docs used as the abstraction layer for project-specific details
+- Auto-mode gates: interactive prompts present unless `.claude/auto-mode` exists
+- Cross-platform: no platform-specific paths, commands, or assumptions
+
+#### Behavioral Boundaries
+- Skills must not modify files outside their declared scope
+- Skills must not commit, push, or merge unless that is their explicit purpose
+- Skills must not skip interactive gates in manual mode
+- Skills must not introduce dependencies on external services not declared in tech.md
+
+### Checklist Applicability
+
+The architecture-reviewer checklists were designed for runtime codebases. Apply them to nmg-plugins with these adjustments:
+
+| Checklist | Applies To | Skip For | Reinterpretation |
+|-----------|-----------|----------|-----------------|
+| SOLID | Scripts (sdlc-runner.mjs) | Markdown skills | For skills: SRP = one skill does one workflow step; DIP = skills reference steering docs, not hardcoded details |
+| Security | Scripts, hook definitions | Markdown templates | Focus: no secrets in committed files, safe `gh` CLI patterns, no shell injection in skill commands |
+| Performance | Hooks, runner script | Skills, templates | Focus: hook latency < 60s, runner timeouts configured, no blocking operations |
+| Testability | All — reinterpret | N/A | For skills: steps can be followed manually with predictable results; scenarios are independent; templates produce valid output |
+| Error Handling | Scripts, hooks | Markdown skills | Focus: runner exit codes, hook exit codes (0=allow, 2=block), graceful failures with meaningful stderr |
+
+### Prompt Quality Verification
+
+For Markdown skills, the "code quality" equivalent is prompt quality:
+
+| Criterion | What to Check |
+|-----------|---------------|
+| **Unambiguous instructions** | Each step has one clear interpretation; no room for Claude to guess |
+| **Complete workflow paths** | Happy path, error/edge cases, and auto-mode all covered |
+| **Correct tool references** | Skills name the right tools (`Read`, `Glob`, `Grep` — not `cat`, `find`, `grep`) |
+| **Logical step ordering** | Dependencies flow forward; no step references information from a later step |
+| **Gate integrity** | Decision points have `AskUserQuestion` (or auto-mode bypass) |
+| **Template-output chain** | Output format matches what downstream skills expect as input |
+| **Cross-reference validity** | Links to templates, checklists, and other skills resolve correctly |
+
+### Script Verification
+
+For `sdlc-runner.mjs`, `install-openclaw-skill.sh`, and other runtime scripts, apply traditional contracts:
+
+| Contract | Check |
+|----------|-------|
+| Preconditions | Required env vars documented; input validation at entry point |
+| Postconditions | Non-zero exit on failure; meaningful stdout/stderr; no partial state on error |
+| Invariants | Zero external dependencies (`node:*` only); cross-platform paths via `node:path` |
+| Boundaries | No network calls beyond declared services; idempotent re-runs |
+
+---
+
 ## Environment Variables
 
 ### Required
