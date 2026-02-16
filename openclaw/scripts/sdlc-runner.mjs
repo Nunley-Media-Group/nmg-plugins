@@ -16,7 +16,9 @@
 
 import { spawn, execSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
 
 // ---------------------------------------------------------------------------
@@ -84,6 +86,24 @@ if (!PROJECT_PATH || !PLUGINS_PATH) {
 }
 
 const STATE_PATH = path.join(PROJECT_PATH, '.claude', 'sdlc-state.json');
+
+// ---------------------------------------------------------------------------
+// Logging configuration
+// ---------------------------------------------------------------------------
+
+function resolveLogDir(cfg, projectPath) {
+  if (cfg.logDir) return path.resolve(cfg.logDir);
+  return path.join(os.tmpdir(), 'sdlc-logs', path.basename(projectPath));
+}
+
+const LOG_DIR = resolveLogDir(config, PROJECT_PATH);
+const MAX_LOG_DISK_BYTES = (config.maxLogDiskUsageMB || 500) * 1024 * 1024;
+
+try {
+  fs.mkdirSync(LOG_DIR, { recursive: true });
+} catch { /* non-fatal — log() will silently skip file writes */ }
+
+const ORCHESTRATION_LOG = path.join(LOG_DIR, 'sdlc-runner.log');
 
 // Failure loop detection — in-memory, not persisted to state file
 const MAX_CONSECUTIVE_ESCALATIONS = 2;
@@ -347,7 +367,63 @@ async function postDiscord(message) {
 
 function log(msg) {
   const ts = new Date().toISOString();
-  console.log(`[${ts}] ${msg}`);
+  const line = `[${ts}] ${msg}`;
+  console.log(line);
+  try { fs.appendFileSync(ORCHESTRATION_LOG, line + '\n'); } catch { /* non-fatal */ }
+}
+
+// ---------------------------------------------------------------------------
+// Per-step log persistence
+// ---------------------------------------------------------------------------
+
+function extractSessionId(jsonOutput) {
+  try {
+    const parsed = JSON.parse(jsonOutput);
+    if (parsed.session_id) return String(parsed.session_id).slice(0, 12);
+  } catch { /* not valid JSON or no session_id */ }
+  return randomUUID().slice(0, 12);
+}
+
+function enforceMaxDisk(logDir, maxBytes) {
+  try {
+    const entries = fs.readdirSync(logDir)
+      .filter(f => f.endsWith('.log') && f !== 'sdlc-runner.log')
+      .map(f => {
+        const fp = path.join(logDir, f);
+        const stat = fs.statSync(fp);
+        return { path: fp, size: stat.size, mtime: stat.mtimeMs };
+      })
+      .sort((a, b) => a.mtime - b.mtime); // oldest first
+
+    let total = entries.reduce((sum, e) => sum + e.size, 0);
+    for (const entry of entries) {
+      if (total <= maxBytes) break;
+      fs.unlinkSync(entry.path);
+      total -= entry.size;
+      log(`Pruned old log: ${path.basename(entry.path)}`);
+    }
+  } catch (err) { log(`Warning: disk cleanup failed: ${err.message}`); }
+}
+
+function writeStepLog(stepKey, result) {
+  try {
+    enforceMaxDisk(LOG_DIR, MAX_LOG_DISK_BYTES);
+    const sessionId = extractSessionId(result.stdout);
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `${stepKey}-${sessionId}-${ts}.log`;
+    const header = [
+      `Step: ${stepKey}`,
+      `Session: ${sessionId}`,
+      `Exit code: ${result.exitCode}`,
+      `Duration: ${result.duration}s`,
+      `Timestamp: ${new Date().toISOString()}`,
+      '---',
+      '',
+    ].join('\n');
+    const body = `=== STDOUT ===\n${result.stdout}\n\n=== STDERR ===\n${result.stderr}\n`;
+    fs.writeFileSync(path.join(LOG_DIR, filename), header + body);
+    log(`Step log written: ${filename}`);
+  } catch (err) { log(`Warning: failed to write step log for ${stepKey}: ${err.message}`); }
 }
 
 // ---------------------------------------------------------------------------
@@ -1119,6 +1195,7 @@ async function runStep(step, state) {
   // Run claude
   const result = await runClaude(step, state);
   log(`Step ${step.number} exited with code ${result.exitCode} in ${result.duration}s`);
+  writeStepLog(step.key, result);
   cleanupProcesses();
 
   if (result.exitCode === 0) {

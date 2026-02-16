@@ -34,12 +34,13 @@ Launch, monitor, or stop the deterministic SDLC orchestrator (`sdlc-runner.mjs`)
 
 6. Launch the runner as a background process, passing the Discord channel ID:
    ```bash
-   nohup node <runner-path>/sdlc-runner.mjs --config <config-path> --discord-channel <channel-id> > /tmp/sdlc-runner.log 2>&1 &
+   nohup node <runner-path>/sdlc-runner.mjs --config <config-path> --discord-channel <channel-id> 2>&1 &
    echo $!
    ```
    If no Discord channel ID is available, omit the `--discord-channel` flag (the runner will skip Discord updates).
+   The runner writes its own orchestration log to `<logDir>/sdlc-runner.log` (see Logging section below).
 
-7. Post to Discord: "SDLC runner started for [project name]. PID: [pid]. Logs: /tmp/sdlc-runner.log"
+7. Post to Discord: "SDLC runner started for [project name]. PID: [pid]. Logs: `<os.tmpdir()>/sdlc-logs/<project-name>/sdlc-runner.log`"
 
 8. Report the PID to the user. The runner is now autonomous — it handles all step sequencing, retries, Discord updates, and error recovery.
 
@@ -103,6 +104,40 @@ The runner can automatically kill orphaned processes (e.g., headed Chrome) that 
 - **When it runs**: After every step completes (success or failure), on escalation, and on graceful shutdown (SIGTERM/SIGINT).
 - **Safety**: The runner's own PID is always excluded from kills.
 - **Backward-compatible**: If `cleanup` is omitted or `processPatterns` is empty, no cleanup occurs.
+
+## Logging
+
+The runner persists logs to an OS-agnostic directory for debugging headless sessions.
+
+### Log directory
+
+Default: `<os.tmpdir()>/sdlc-logs/<project-name>/` (e.g., `/tmp/sdlc-logs/my-app/` on Linux/macOS). Override with the `logDir` config field.
+
+### Files
+
+- **`sdlc-runner.log`** — Orchestration log. Every `log()` call dual-writes to stdout and this file.
+- **`<step>-<sessionId>-<timestamp>.log`** — Per-step log containing the full stdout/stderr from each `claude -p` subprocess. Written after every step completes (success or failure). Example: `implement-a1b2c3d4e5f6-2026-02-16T14-30-00.log`.
+
+### Disk limits
+
+The `maxLogDiskUsageMB` config field (default: 500) caps total per-step log disk usage. Before each new step log is written, the runner deletes the oldest step logs until usage is under the threshold. The orchestration log (`sdlc-runner.log`) is never pruned.
+
+### Config fields
+
+| Field | Default | Description |
+|---|---|---|
+| `logDir` | `<os.tmpdir()>/sdlc-logs/<project-name>/` | Directory for all log files |
+| `maxLogDiskUsageMB` | `500` | Max disk usage (MB) for per-step logs |
+
+### Tailing logs
+
+```bash
+# Orchestration log
+tail -f "$(node -e "const os=require('os');const p=require('path');console.log(p.join(os.tmpdir(),'sdlc-logs','<project-name>','sdlc-runner.log'))")"
+
+# Latest step log
+ls -t <logDir>/*.log | head -1 | xargs tail -100
+```
 
 ## Integration with SDLC Workflow
 
