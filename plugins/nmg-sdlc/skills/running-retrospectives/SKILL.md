@@ -55,10 +55,28 @@ For each defect spec with a valid `Related Spec` link:
 1. **Read the defect spec** (`requirements.md`) — extract reproduction steps, acceptance criteria, severity, and root cause context
 2. **Read the related feature spec** (`requirements.md`) — extract the original acceptance criteria, functional requirements, and scope
 3. **Compare**: What did the feature spec cover? What scenario caused the defect? What was the gap?
-4. **Extract a learning**: A concise statement of what the feature spec should have included
-5. **Formulate a recommendation**: Actionable guidance for writing future specs (e.g., "When specifying authentication features, include ACs for session timeout and token expiry edge cases")
+4. **Identify the transferable spec-writing pattern** — strip project-specific details and frame as a principle applicable to any domain
+5. **Formulate a recommendation**: Actionable guidance for writing future specs
 
-### Step 4: Classify Learnings
+**Generalization guidance**: Each learning must be a forward-looking principle, not a backward-looking description of what one spec missed. Remove project-specific terminology, file names, and implementation details.
+
+| Framing | Example |
+|---------|---------|
+| **Bad** (project-specific) | "Feature spec for `emulate status` did not account for CDP session isolation" |
+| **Good** (transferable) | "When specifying features that interact with external systems via session-scoped protocols, include ACs for state persistence across invocations" |
+
+### Step 4: Aggregate Cross-Cutting Patterns
+
+After analyzing all defects individually, review the full set of per-defect learnings:
+
+1. **Group learnings** that share a root pattern type into a single cross-cutting learning — grouping requires a shared root *pattern type* (e.g., "missing ACs for protocol statefulness"), not just a shared category
+2. **Merge grouped learnings** into one consolidated learning that captures the common principle
+3. **List all contributing defect specs** as evidence for each aggregated learning (comma-separated paths)
+4. **Preserve ungrouped learnings** as-is — not every learning will aggregate
+
+The goal is to surface higher-order patterns. If three defects all stem from missing ACs around session state, the output is one learning about session-state ACs with three evidence references, not three separate learnings.
+
+### Step 5: Classify Learnings
 
 Classify each learning into exactly **one** of three pattern types:
 
@@ -68,7 +86,7 @@ Classify each learning into exactly **one** of three pattern types:
 | **Undertested Boundaries** | The feature spec had related ACs but didn't cover the specific boundary or edge condition | Feature spec tested valid inputs but not empty string or max-length |
 | **Domain-Specific Gaps** | The feature spec missed domain knowledge that should have been captured as requirements | Financial feature spec didn't consider rounding rules for currency |
 
-### Step 5: Filter Learnings
+### Step 6: Filter Learnings
 
 **Include** only learnings that would improve `/writing-specs` effectiveness — gaps a better-written feature spec could have prevented.
 
@@ -83,7 +101,15 @@ Classify each learning into exactly **one** of three pattern types:
 
 **Heuristic**: If the defect could have been prevented by a better-written feature spec (more ACs, tighter boundary definitions, deeper domain analysis), it produces a learning. If not, exclude it.
 
-### Step 6: Load Existing Retrospective (If Present)
+**Abstraction-level check** — each surviving learning must sit at the right level of generality:
+
+| Level | Indicator | Action |
+|-------|-----------|--------|
+| **Too specific** | References project domain terms, specific file names, or implementation details | Generalize further — strip domain terms, describe the *category* of interaction |
+| **Too generic** | Could apply to any software without narrowing (e.g., "write better ACs") | Add specificity — name the *category* of feature or interaction pattern |
+| **Right level** | Describes the category of feature or interaction pattern without naming the specific technology | Keep as-is |
+
+### Step 7: Load Existing Retrospective (If Present)
 
 Read `.claude/steering/retrospective.md` if it exists.
 
@@ -94,7 +120,7 @@ Read `.claude/steering/retrospective.md` if it exists.
 
 The output is always a complete, self-consistent document reflecting the current state of all defect specs.
 
-### Step 7: Write Retrospective Document
+### Step 8: Write Retrospective Document
 
 Write `.claude/steering/retrospective.md` using [templates/retrospective.md](templates/retrospective.md).
 
@@ -103,14 +129,13 @@ Fill in:
 - **Defect Specs Analyzed**: count of eligible defect specs processed
 - **Learnings Generated**: total count of learnings across all three pattern types
 - **Table rows**: One row per learning in the appropriate pattern-type section, with columns:
-  - **Learning**: Concise description of the spec gap
-  - **Source Defect**: Path to the defect spec directory (e.g., `.claude/specs/20-login-timeout-bug/`)
-  - **Related Feature Spec**: Path to the feature spec directory (e.g., `.claude/specs/5-login-feature/`)
+  - **Learning**: Transferable spec-writing pattern (domain-agnostic)
   - **Recommendation**: Actionable guidance for future spec writing
+  - **Evidence (defect specs)**: Comma-separated paths to defect spec directories that support this learning (e.g., `.claude/specs/20-bug/, .claude/specs/25-bug/`)
 
 Remove placeholder rows from sections with no learnings — leave only the table header.
 
-### Step 8: Output Summary
+### Step 9: Output Summary
 
 ```
 Retrospective complete.

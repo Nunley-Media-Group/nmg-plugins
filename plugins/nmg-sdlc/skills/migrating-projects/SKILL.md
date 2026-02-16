@@ -20,7 +20,7 @@ Update existing project files (steering docs, specs, OpenClaw configs) to the la
 ## What Gets Analyzed
 
 ```
-.claude/steering/*.md          — Steering docs (product, tech, structure)
+.claude/steering/*.md          — Steering docs (product, tech, structure, retrospective)
 .claude/specs/*/requirements.md — Spec requirements (feature + defect variants)
 .claude/specs/*/design.md      — Spec designs (feature + defect variants)
 .claude/specs/*/tasks.md       — Spec task breakdowns (feature + defect variants)
@@ -40,6 +40,8 @@ Locate the template directories from the installed plugin. Use this skill's own 
 
 - **Steering templates:** `plugins/nmg-sdlc/skills/setting-up-steering/templates/*.md`
   - `product.md`, `tech.md`, `structure.md`
+- **Retrospective template:** `plugins/nmg-sdlc/skills/running-retrospectives/templates/retrospective.md`
+  - Maps to `.claude/steering/retrospective.md`
 - **Spec templates:** `plugins/nmg-sdlc/skills/writing-specs/templates/*.md`
   - `requirements.md`, `design.md`, `tasks.md`
 - **Config template:** `openclaw/scripts/sdlc-config.example.json`
@@ -67,7 +69,7 @@ sdlc-config.json
 For each existing steering doc (e.g., `.claude/steering/product.md`):
 
 1. **Read the template file** (e.g., `setting-up-steering/templates/product.md`)
-2. **Extract template content** from inside the ` ```markdown ... ``` ` code block — the template files wrap their content in a fenced code block. Parse only the content between the opening ` ```markdown ` and the closing ` ``` `.
+2. **Extract template content** — steering templates from `setting-up-steering/` wrap their content in a ` ```markdown ... ``` ` code block; parse only the content between the opening ` ```markdown ` and the closing ` ``` `. The retrospective template (`running-retrospectives/templates/retrospective.md`) is direct markdown — use the file content as-is.
 3. **Parse headings** — Extract all `## ` headings from both the template content and the existing project file.
 4. **Diff headings** — Identify headings present in the template but absent from the project file.
 5. **Extract missing sections** — For each missing heading, extract the full section content from the template (from the `## ` heading to the next `## ` heading or end of content).
