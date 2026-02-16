@@ -257,6 +257,7 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
 | `/running-retrospectives` | Batch-analyze defect specs to identify spec-writing gaps and produce `.claude/steering/retrospective.md` with actionable learnings |
 | `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure). Run once per project |
+| `/migrating-projects` | Update project specs, steering docs, and configs to latest template standards |
 | `/installing-openclaw-skill` | Copy the OpenClaw running-sdlc skill from the marketplace clone to `~/.openclaw/skills/` and restart the gateway |
 | `/generating-openclaw-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path auto-detected and written to the project root |
 
