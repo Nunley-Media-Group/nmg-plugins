@@ -20,25 +20,42 @@ import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
+import { fileURLToPath } from 'node:url';
 
 // ---------------------------------------------------------------------------
-// CLI argument parsing
+// CLI argument parsing & configuration (guarded for testability)
 // ---------------------------------------------------------------------------
 
-const { values: args } = parseArgs({
-  options: {
-    config:  { type: 'string'  },
-    'dry-run': { type: 'boolean', default: false },
-    'discord-channel': { type: 'string' },
-    step:    { type: 'string'  },
-    resume:  { type: 'boolean', default: false },
-    help:    { type: 'boolean', default: false },
-  },
-  strict: true,
-});
+const isMainModule = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 
-if (args.help) {
-  console.log(`
+let DRY_RUN = false;
+let SINGLE_STEP = null;
+let RESUME = false;
+let PROJECT_PATH = '';
+let PLUGINS_PATH = '';
+let MODEL = 'opus';
+let MAX_RETRIES = 3;
+let DISCORD_CHANNEL = null;
+let CLEANUP_PATTERNS = [];
+let STATE_PATH = '';
+let configPath = '';
+let configSteps = {};
+
+if (isMainModule) {
+  const { values: args } = parseArgs({
+    options: {
+      config:  { type: 'string'  },
+      'dry-run': { type: 'boolean', default: false },
+      'discord-channel': { type: 'string' },
+      step:    { type: 'string'  },
+      resume:  { type: 'boolean', default: false },
+      help:    { type: 'boolean', default: false },
+    },
+    strict: true,
+  });
+
+  if (args.help) {
+    console.log(`
 Usage: node sdlc-runner.mjs --config <path> [options]
 
 Options:
@@ -49,43 +66,42 @@ Options:
   --resume                   Resume from existing sdlc-state.json
   --help                     Show this help
 `);
-  process.exit(0);
+    process.exit(0);
+  }
+
+  if (!args.config) {
+    console.error('Error: --config <path> is required');
+    process.exit(1);
+  }
+
+  DRY_RUN = args['dry-run'];
+  SINGLE_STEP = args.step ? parseInt(args.step, 10) : null;
+  RESUME = args.resume;
+
+  // Load configuration
+  configPath = path.resolve(args.config);
+  if (!fs.existsSync(configPath)) {
+    console.error(`Error: config file not found: ${configPath}`);
+    process.exit(1);
+  }
+
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  PROJECT_PATH = config.projectPath;
+  PLUGINS_PATH = config.pluginsPath;
+  MODEL = config.model || 'opus';
+  MAX_RETRIES = config.maxRetriesPerStep || 3;
+
+  DISCORD_CHANNEL = args['discord-channel'] || config.discordChannelId || null;
+  CLEANUP_PATTERNS = config.cleanup?.processPatterns || [];
+  configSteps = config.steps || {};
+
+  if (!PROJECT_PATH || !PLUGINS_PATH) {
+    console.error('Error: config must include projectPath and pluginsPath');
+    process.exit(1);
+  }
+
+  STATE_PATH = path.join(PROJECT_PATH, '.claude', 'sdlc-state.json');
 }
-
-if (!args.config) {
-  console.error('Error: --config <path> is required');
-  process.exit(1);
-}
-
-const DRY_RUN = args['dry-run'];
-const SINGLE_STEP = args.step ? parseInt(args.step, 10) : null;
-const RESUME = args.resume;
-
-// ---------------------------------------------------------------------------
-// Load configuration
-// ---------------------------------------------------------------------------
-
-const configPath = path.resolve(args.config);
-if (!fs.existsSync(configPath)) {
-  console.error(`Error: config file not found: ${configPath}`);
-  process.exit(1);
-}
-
-const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-const PROJECT_PATH = config.projectPath;
-const PLUGINS_PATH = config.pluginsPath;
-const MODEL = config.model || 'opus';
-const MAX_RETRIES = config.maxRetriesPerStep || 3;
-
-const DISCORD_CHANNEL = args['discord-channel'] || config.discordChannelId || null;
-const CLEANUP_PATTERNS = config.cleanup?.processPatterns || [];
-
-if (!PROJECT_PATH || !PLUGINS_PATH) {
-  console.error('Error: config must include projectPath and pluginsPath');
-  process.exit(1);
-}
-
-const STATE_PATH = path.join(PROJECT_PATH, '.claude', 'sdlc-state.json');
 
 // ---------------------------------------------------------------------------
 // Logging configuration
@@ -96,14 +112,22 @@ function resolveLogDir(cfg, projectPath) {
   return path.join(os.tmpdir(), 'sdlc-logs', path.basename(projectPath));
 }
 
-const LOG_DIR = resolveLogDir(config, PROJECT_PATH);
-const MAX_LOG_DISK_BYTES = (config.maxLogDiskUsageMB || 500) * 1024 * 1024;
+let LOG_DIR = '';
+let MAX_LOG_DISK_BYTES = 500 * 1024 * 1024;
+let ORCHESTRATION_LOG = '';
 
-try {
-  fs.mkdirSync(LOG_DIR, { recursive: true });
-} catch { /* non-fatal — log() will silently skip file writes */ }
+if (isMainModule) {
+  // Re-read config for logging setup (config was parsed inside the guard above)
+  const _cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  LOG_DIR = resolveLogDir(_cfg, PROJECT_PATH);
+  MAX_LOG_DISK_BYTES = (_cfg.maxLogDiskUsageMB || 500) * 1024 * 1024;
 
-const ORCHESTRATION_LOG = path.join(LOG_DIR, 'sdlc-runner.log');
+  try {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+  } catch { /* non-fatal — log() will silently skip file writes */ }
+
+  ORCHESTRATION_LOG = path.join(LOG_DIR, 'sdlc-runner.log');
+}
 
 // Failure loop detection — in-memory, not persisted to state file
 const MAX_CONSECUTIVE_ESCALATIONS = 2;
@@ -130,7 +154,7 @@ const STEP_KEYS = [
 const STEPS = STEP_KEYS.map((key, i) => ({
   number: i + 1,
   key,
-  ...(config.steps?.[key] || {}),
+  ...(configSteps[key] || {}),
 }));
 
 // ---------------------------------------------------------------------------
@@ -790,6 +814,25 @@ function matchErrorPattern(output) {
 }
 
 // ---------------------------------------------------------------------------
+// Soft failure detection (exit code 0 but step did not succeed)
+// ---------------------------------------------------------------------------
+
+function detectSoftFailure(stdout) {
+  try {
+    const parsed = JSON.parse(stdout);
+    if (parsed.subtype === 'error_max_turns') {
+      return { isSoftFailure: true, reason: 'error_max_turns' };
+    }
+    if (Array.isArray(parsed.permission_denials) && parsed.permission_denials.length > 0) {
+      return { isSoftFailure: true, reason: `permission_denials: ${parsed.permission_denials.join(', ')}` };
+    }
+  } catch {
+    // Not valid JSON — treat as non-soft-failure (graceful fallback)
+  }
+  return { isSoftFailure: false };
+}
+
+// ---------------------------------------------------------------------------
 // Bounce loop detection
 // ---------------------------------------------------------------------------
 
@@ -1199,6 +1242,14 @@ async function runStep(step, state) {
   cleanupProcesses();
 
   if (result.exitCode === 0) {
+    // Check for soft failures (exit code 0 but step did not succeed)
+    const softFailure = detectSoftFailure(result.stdout);
+    if (softFailure.isSoftFailure) {
+      log(`Soft failure detected: ${softFailure.reason}`);
+      await postDiscord(`Step ${step.number} (${step.key}) soft failure: ${softFailure.reason}`);
+      return await handleFailure(step, result, state);
+    }
+
     // Extract state updates
     const patch = extractStateFromStep(step, result, state);
     // Track completed step for resume (step 9 resets this to 0 via its own patch)
@@ -1442,9 +1493,87 @@ async function main() {
   log('SDLC Runner exiting.');
 }
 
-main().catch(async (err) => {
-  log(`Fatal error: ${err.message}`);
-  await postDiscord(`SDLC runner crashed: ${err.message}`);
-  removeAutoMode();
-  process.exit(1);
-});
+if (isMainModule) {
+  main().catch(async (err) => {
+    log(`Fatal error: ${err.message}`);
+    await postDiscord(`SDLC runner crashed: ${err.message}`);
+    removeAutoMode();
+    process.exit(1);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Test helpers
+// ---------------------------------------------------------------------------
+
+const __test__ = {
+  resetState() {
+    bounceCount = 0;
+    consecutiveEscalations = 0;
+    escalatedIssues.clear();
+  },
+  setConfig(cfg) {
+    PROJECT_PATH = cfg.projectPath ?? PROJECT_PATH;
+    PLUGINS_PATH = cfg.pluginsPath ?? PLUGINS_PATH;
+    MODEL = cfg.model ?? MODEL;
+    MAX_RETRIES = cfg.maxRetriesPerStep ?? MAX_RETRIES;
+    DISCORD_CHANNEL = cfg.discordChannelId ?? DISCORD_CHANNEL;
+    CLEANUP_PATTERNS = cfg.cleanup?.processPatterns ?? CLEANUP_PATTERNS;
+    STATE_PATH = cfg.statePath ?? STATE_PATH;
+    DRY_RUN = cfg.dryRun ?? DRY_RUN;
+    LOG_DIR = cfg.logDir ?? LOG_DIR;
+    ORCHESTRATION_LOG = cfg.orchestrationLog ?? ORCHESTRATION_LOG;
+  },
+  get bounceCount() { return bounceCount; },
+  set bounceCount(v) { bounceCount = v; },
+  get consecutiveEscalations() { return consecutiveEscalations; },
+  set consecutiveEscalations(v) { consecutiveEscalations = v; },
+  get escalatedIssues() { return escalatedIssues; },
+};
+
+// ---------------------------------------------------------------------------
+// Named exports for testability
+// ---------------------------------------------------------------------------
+
+export {
+  detectSoftFailure,
+  detectAndHydrateState,
+  validatePreconditions,
+  extractStateFromStep,
+  matchErrorPattern,
+  incrementBounceCount,
+  defaultState,
+  validateSpecs,
+  validateCI,
+  validatePush,
+  autoCommitIfDirty,
+  buildClaudeArgs,
+  readSkill,
+  handleFailure,
+  escalate,
+  haltFailureLoop,
+  runStep,
+  postDiscord,
+  log,
+  readState,
+  writeState,
+  updateState,
+  runClaude,
+  removeAutoMode,
+  cleanupProcesses,
+  hasOpenIssues,
+  hasNonEscalatedIssues,
+  writeStepLog,
+  extractSessionId,
+  enforceMaxDisk,
+  resolveLogDir,
+  sleep,
+  main,
+  STEPS,
+  STEP_KEYS,
+  RUNNER_ARTIFACTS,
+  IMMEDIATE_ESCALATION_PATTERNS,
+  RATE_LIMIT_PATTERN,
+  MAX_CONSECUTIVE_ESCALATIONS,
+  __test__,
+};

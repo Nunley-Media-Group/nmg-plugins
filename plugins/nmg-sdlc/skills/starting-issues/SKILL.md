@@ -5,6 +5,8 @@ argument-hint: "[#issue-number]"
 allowed-tools: Read, Glob, Grep, Bash(gh:*), Bash(git:*)
 ---
 
+> **CRITICAL (Headless/Auto-Mode):** If `.claude/auto-mode` exists, **NEVER** call `AskUserQuestion`. Select issues automatically and skip all confirmation steps. Calling `AskUserQuestion` in pipe mode will be denied and waste all turns.
+
 # Starting Issues
 
 Select a GitHub issue to work on, create a linked feature branch, and set the issue to "In Progress" in any associated GitHub Project.
@@ -18,8 +20,8 @@ Select a GitHub issue to work on, create a linked feature branch, and set the is
 ## Automation Mode
 
 If the file `.claude/auto-mode` exists in the project directory:
-- If an issue number was provided as an argument, skip Steps 2–3 (selection and confirmation) — go directly to Step 4.
-- If no issue number was provided, select the first available issue (sorted by issue number ascending — oldest first) from the current milestone (or all open issues if no milestone exists) without calling `AskUserQuestion`. Skip Step 3 confirmation.
+- If an issue number was provided as an argument, **skip Steps 2–3** (selection and confirmation) — go directly to Step 4.
+- If no issue number was provided, **select the first available issue** (sorted by issue number ascending — oldest first) from the current milestone (or all open issues if no milestone exists) **without calling `AskUserQuestion`**. **Skip Step 3 confirmation.**
 
 ## Workflow Overview
 
@@ -61,6 +63,8 @@ gh issue list -s open -L 10 --json number,title,labels
 ```
 
 ## Step 2: Present Issue Selection
+
+> **Auto-mode:** If `.claude/auto-mode` exists, skip this step entirely — do NOT call `AskUserQuestion`.
 
 Use `AskUserQuestion` to present up to 4 issues as options.
 
