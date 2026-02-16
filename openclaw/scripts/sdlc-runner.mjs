@@ -85,6 +85,12 @@ if (!PROJECT_PATH || !PLUGINS_PATH) {
 
 const STATE_PATH = path.join(PROJECT_PATH, '.claude', 'sdlc-state.json');
 
+// Failure loop detection — in-memory, not persisted to state file
+const MAX_CONSECUTIVE_ESCALATIONS = 2;
+let consecutiveEscalations = 0;
+const escalatedIssues = new Set();
+let bounceCount = 0;
+
 // ---------------------------------------------------------------------------
 // Step definitions
 // ---------------------------------------------------------------------------
@@ -574,7 +580,7 @@ function buildClaudeArgs(step, state) {
   const prompts = {
     1: 'Check out main and pull latest. Run: git checkout main && git pull. Report the current branch and latest commit.',
 
-    2: `Select and start the next GitHub issue from the current milestone. Create a linked feature branch and set the issue to In Progress. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
+    2: `Select and start the next GitHub issue from the current milestone. Create a linked feature branch and set the issue to In Progress.${escalatedIssues.size > 0 ? ` Do NOT select any of these previously-escalated issues: ${[...escalatedIssues].map(i => `#${i}`).join(', ')}.` : ''} Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
     3: `Write BDD specifications for issue #${issue} on branch ${branch}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
@@ -708,6 +714,23 @@ function matchErrorPattern(output) {
 }
 
 // ---------------------------------------------------------------------------
+// Bounce loop detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Increment the per-cycle bounce counter and check whether the bounce-loop
+ * threshold has been exceeded.  Returns true when the caller should escalate.
+ */
+function incrementBounceCount() {
+  bounceCount++;
+  if (bounceCount > MAX_RETRIES) {
+    log(`Bounce loop detected: ${bounceCount} step-back transitions exceed threshold ${MAX_RETRIES}`);
+    return true;
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
 // Failure handling
 // ---------------------------------------------------------------------------
 
@@ -733,8 +756,12 @@ async function handleFailure(step, result, state) {
     const prevStep = STEPS[step.number - 2];
     const preconds = validatePreconditions(step, state);
     if (!preconds.ok) {
-      log(`Step ${step.number} preconditions failed: ${preconds.reason}. Will retry step ${prevStep.number}.`);
-      await postDiscord(`Step ${step.number} preconditions failed: ${preconds.reason}. Retrying Step ${prevStep.number}.`);
+      if (incrementBounceCount()) {
+        await escalate(step, `Bounce loop: ${bounceCount} step-back transitions exceed threshold ${MAX_RETRIES}`, output);
+        return 'escalated';
+      }
+      log(`Step ${step.number} preconditions failed: ${preconds.reason}. Will retry step ${prevStep.number}. (bounce ${bounceCount}/${MAX_RETRIES})`);
+      await postDiscord(`Step ${step.number} preconditions failed: ${preconds.reason}. Retrying Step ${prevStep.number}. (bounce ${bounceCount}/${MAX_RETRIES})`);
       return 'retry-previous';
     }
   }
@@ -777,6 +804,20 @@ async function handleFailure(step, result, state) {
 async function escalate(step, reason, output = '') {
   const state = readState();
   const truncated = (output || '').slice(-500);
+
+  // Track escalated issues and consecutive escalation count
+  if (state.currentIssue) escalatedIssues.add(state.currentIssue);
+  consecutiveEscalations++;
+
+  if (consecutiveEscalations >= MAX_CONSECUTIVE_ESCALATIONS) {
+    await haltFailureLoop('consecutive escalations', [
+      `Issues: ${[...escalatedIssues].map(i => `#${i}`).join(', ')}`,
+      `Last step: ${step.number} (${step.key})`,
+      `Reason: ${reason}`,
+      truncated ? `Last output: ...${truncated}` : '',
+    ]);
+  }
+
   cleanupProcesses();
 
   log(`ESCALATION: Step ${step.number} — ${reason}`);
@@ -812,6 +853,25 @@ async function escalate(step, reason, output = '') {
   // Clean up auto-mode flag and reset state
   removeAutoMode();
   updateState({ currentStep: 0, lastCompletedStep: 0 });
+}
+
+/**
+ * Halt the runner due to a detected failure loop.
+ * Does NOT call removeAutoMode(), updateState(), or git checkout —
+ * preserves all state for manual inspection.
+ */
+async function haltFailureLoop(loopType, details) {
+  const diagnostic = [
+    `FAILURE LOOP DETECTED: ${loopType}`,
+    ...details,
+    `Consecutive escalations: ${consecutiveEscalations}`,
+    `Escalated issues: ${escalatedIssues.size > 0 ? [...escalatedIssues].map(i => `#${i}`).join(', ') : 'none'}`,
+    'State preserved for manual inspection.',
+  ].filter(Boolean).join('\n');
+
+  log(diagnostic);
+  await postDiscord(diagnostic);
+  process.exit(1);
 }
 
 // ---------------------------------------------------------------------------
@@ -884,6 +944,17 @@ function hasOpenIssues() {
     return parsed.length > 0;
   } catch {
     log('Warning: could not check for open issues. Assuming there are some.');
+    return true;
+  }
+}
+
+function hasNonEscalatedIssues() {
+  try {
+    const issues = gh('issue list --state open --json number');
+    const parsed = JSON.parse(issues);
+    return parsed.some(i => !escalatedIssues.has(i.number));
+  } catch {
+    log('Warning: could not check for non-escalated issues. Assuming there are some.');
     return true;
   }
 }
@@ -1020,7 +1091,11 @@ async function runStep(step, state) {
 
     if (step.number > 1) {
       const prevStep = STEPS[step.number - 2];
-      await postDiscord(`Retrying Step ${prevStep.number} (${prevStep.key}) to produce required artifacts.`);
+      if (incrementBounceCount()) {
+        await escalate(prevStep, `Bounce loop: ${bounceCount} step-back transitions exceed threshold ${MAX_RETRIES} (precondition: ${preconds.reason})`);
+        return 'escalated';
+      }
+      await postDiscord(`Retrying Step ${prevStep.number} (${prevStep.key}) to produce required artifacts. (bounce ${bounceCount}/${MAX_RETRIES})`);
       // Increment retry for the previous step
       const retries = state.retries || {};
       const prevCount = (retries[prevStep.number] || 0) + 1;
@@ -1211,6 +1286,14 @@ async function main() {
       break;
     }
 
+    // Check if all remaining issues have been escalated this session
+    if (!DRY_RUN && escalatedIssues.size > 0 && !hasNonEscalatedIssues()) {
+      await haltFailureLoop('all issues escalated', [
+        `All open issues have been escalated: ${[...escalatedIssues].map(i => `#${i}`).join(', ')}`,
+        'No non-escalated issues remain.',
+      ]);
+    }
+
     // Determine starting step
     state = readState();
     let startIdx = 0;
@@ -1219,6 +1302,9 @@ async function main() {
       startIdx = state.lastCompletedStep; // 1-indexed step → 0-indexed array position of next step
       log(`Continuing from step ${startIdx + 1} (last completed: ${state.lastCompletedStep})`);
     }
+
+    // Reset bounce counter for each cycle
+    bounceCount = 0;
 
     for (let i = startIdx; i < STEPS.length; i++) {
       if (shuttingDown) break;
@@ -1246,6 +1332,22 @@ async function main() {
       if (result === 'skip') {
         log(`Skipping step ${step.number}`);
         continue;
+      }
+
+      // Post-step-2 safety check: halt if Claude selected an escalated issue
+      if (result === 'ok' && step.number === 2) {
+        const freshState = readState();
+        if (freshState.currentIssue && escalatedIssues.has(freshState.currentIssue)) {
+          await haltFailureLoop('all issues escalated', [
+            `Step 2 selected issue #${freshState.currentIssue} which was previously escalated.`,
+            `Escalated issues: ${[...escalatedIssues].map(i => `#${i}`).join(', ')}`,
+          ]);
+        }
+      }
+
+      // After successful merge (step 9), reset consecutive escalation counter
+      if (result === 'ok' && step.number === 9) {
+        consecutiveEscalations = 0;
       }
     }
 
