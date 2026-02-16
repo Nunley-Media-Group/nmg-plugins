@@ -116,7 +116,7 @@ Default: `<os.tmpdir()>/sdlc-logs/<project-name>/` (e.g., `/tmp/sdlc-logs/my-app
 ### Files
 
 - **`sdlc-runner.log`** — Orchestration log. Every `log()` call dual-writes to stdout and this file.
-- **`<step>-<sessionId>-<timestamp>.log`** — Per-step log containing the full stdout/stderr from each `claude -p` subprocess. Written after every step completes (success or failure). Example: `implement-a1b2c3d4e5f6-2026-02-16T14-30-00.000Z.log`.
+- **`<step>-<sessionId>-<timestamp>.log`** — Per-step log containing the full stdout/stderr from each `claude -p` subprocess. Written after every step completes (success or failure). Example: `implement-a1b2c3d4e5f6-2026-02-16T14-30-00.log`.
 
 ### Disk limits
 

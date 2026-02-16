@@ -400,18 +400,20 @@ function enforceMaxDisk(logDir, maxBytes) {
       if (total <= maxBytes) break;
       fs.unlinkSync(entry.path);
       total -= entry.size;
+      log(`Pruned old log: ${path.basename(entry.path)}`);
     }
-  } catch { /* non-fatal */ }
+  } catch (err) { log(`Warning: disk cleanup failed: ${err.message}`); }
 }
 
 function writeStepLog(stepKey, result) {
   try {
     enforceMaxDisk(LOG_DIR, MAX_LOG_DISK_BYTES);
     const sessionId = extractSessionId(result.stdout);
-    const ts = new Date().toISOString().replace(/:/g, '-');
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const filename = `${stepKey}-${sessionId}-${ts}.log`;
     const header = [
       `Step: ${stepKey}`,
+      `Session: ${sessionId}`,
       `Exit code: ${result.exitCode}`,
       `Duration: ${result.duration}s`,
       `Timestamp: ${new Date().toISOString()}`,
@@ -420,7 +422,8 @@ function writeStepLog(stepKey, result) {
     ].join('\n');
     const body = `=== STDOUT ===\n${result.stdout}\n\n=== STDERR ===\n${result.stderr}\n`;
     fs.writeFileSync(path.join(LOG_DIR, filename), header + body);
-  } catch { /* non-fatal */ }
+    log(`Step log written: ${filename}`);
+  } catch (err) { log(`Warning: failed to write step log for ${stepKey}: ${err.message}`); }
 }
 
 // ---------------------------------------------------------------------------
