@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **`/setting-up-steering`** — Now detects existing steering files and offers an enhancement flow instead of always running the bootstrap flow; metadata and documentation updated to reflect iterative use
 - **`/writing-specs`** — Phase 1 now reads `retrospective.md` (when present) to apply defect-derived learnings when drafting acceptance criteria
 - **`/creating-issues`** — Interview questions now branch explicitly by issue type instead of adapting passively; workflow expanded from 6 steps to 8 steps (classification and investigation inserted as Steps 2–3); auto-mode references updated accordingly
 
