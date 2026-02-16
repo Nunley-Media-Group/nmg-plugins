@@ -582,7 +582,7 @@ function buildClaudeArgs(step, state) {
 
     5: `Verify the implementation for issue #${issue} on branch ${branch}. Fix any findings. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
-    6: `Stage all changes, commit with a meaningful conventional-commit message summarizing the work for issue #${issue}, and push to the remote branch ${branch}. Verify the push succeeded.`,
+    6: `Stage all changes, commit with a meaningful conventional-commit message summarizing the work for issue #${issue}, and push to the remote branch ${branch}. After pushing, verify the push succeeded by running git log origin/${branch}..HEAD --oneline — if any unpushed commits remain, or if git push reported an error, exit with a non-zero status code.`,
 
     7: `Create a pull request for branch ${branch} targeting main for issue #${issue}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
@@ -939,6 +939,24 @@ function validateCI() {
 }
 
 // ---------------------------------------------------------------------------
+// Push validation gate (post-step-6)
+// ---------------------------------------------------------------------------
+
+function validatePush() {
+  try {
+    const branch = git('rev-parse --abbrev-ref HEAD');
+    git('fetch');
+    const unpushed = git(`log origin/${branch}..HEAD --oneline`);
+    if (unpushed) {
+      return { ok: false, reason: 'Unpushed commits remain after push' };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, reason: `Push validation check failed: ${err.message}` };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Utility
 // ---------------------------------------------------------------------------
 
@@ -1050,6 +1068,23 @@ async function runStep(step, state) {
           return 'escalated';
         }
         updateState({ retries: { ...retries, 3: count } });
+        return 'retry';
+      }
+    }
+
+    // Special: push validation gate after step 6
+    if (step.number === 6) {
+      const pushCheck = validatePush();
+      if (!pushCheck.ok) {
+        log(`Push validation failed: ${pushCheck.reason}`);
+        await postDiscord(`Push validation failed after Step 6 — ${pushCheck.reason}. Retrying...`);
+        const retries = state.retries || {};
+        const count = (retries[6] || 0) + 1;
+        if (count >= MAX_RETRIES) {
+          await escalate(step, `Push validation failed after ${MAX_RETRIES} attempts`);
+          return 'escalated';
+        }
+        updateState({ retries: { ...retries, 6: count } });
         return 'retry';
       }
     }
