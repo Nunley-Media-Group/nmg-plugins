@@ -65,6 +65,50 @@ OpenClaw (optional automation layer)
 
 ---
 
+## Claude Code Resource Development
+
+**Before creating or modifying any Claude Code resource (skill, agent, hook, plugin manifest), review the official Claude Code documentation to ensure best practices are followed.**
+
+### Skills (SKILL.md)
+
+| Aspect | Best Practice |
+|--------|---------------|
+| Frontmatter | Use YAML frontmatter for `name`, `description`, `allowed-tools`, `model`, `context`, `user-invocable`, `disable-model-invocation`, `argument-hint` |
+| Size | Keep under 500 lines — move detailed reference material to separate files |
+| Arguments | Use `$ARGUMENTS` placeholder to capture user input |
+| Supporting files | Place templates, examples, and scripts alongside SKILL.md in the skill directory |
+| Dynamic context | Use `` !`command` `` syntax to inject shell output before Claude processes the skill |
+
+### Hooks (hooks.json)
+
+| Aspect | Best Practice |
+|--------|---------------|
+| Paths | Use `${CLAUDE_PLUGIN_ROOT}` for file references in hook commands |
+| Matchers | Narrow scope with matchers (e.g., `Write\|Edit`) — don't fire on every tool use |
+| Exit codes | Exit 0 = allow, exit 2 = block (stderr becomes Claude's feedback) |
+| Hook types | `command` (shell script), `prompt` (single LLM call), `agent` (multi-turn with tools) |
+| Events | `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, `SubagentStart`, `SubagentStop`, etc. |
+
+### Agents (.md files)
+
+| Aspect | Best Practice |
+|--------|---------------|
+| Frontmatter | Use YAML frontmatter for `name`, `description`, `tools`, `disallowedTools`, `model`, `maxTurns`, `permissionMode` |
+| Tool access | Grant only necessary tools — use `disallowedTools` to deny inherited ones |
+| Focus | Each agent should excel at one specific task |
+| Description | Write detailed descriptions — Claude uses them to decide when to delegate |
+
+### Plugin Manifests
+
+| Aspect | Best Practice |
+|--------|---------------|
+| plugin.json location | Only `plugin.json` goes inside `.claude-plugin/` — all other components at plugin root |
+| Component paths | Must be relative, starting with `./` (no absolute or traversing paths) |
+| Versioning | Semver (MAJOR.MINOR.PATCH); update both `plugin.json` and `marketplace.json` |
+| Testing | Use `claude --plugin-dir ./my-plugin` during development |
+
+---
+
 ## Coding Standards
 
 ### Markdown (Skills, Templates, Steering)

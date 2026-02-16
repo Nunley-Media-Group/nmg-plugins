@@ -27,6 +27,8 @@ nmg-plugins/
 │       │   ├── generating-openclaw-config/
 │       │   ├── implementing-specs/
 │       │   ├── installing-openclaw-skill/
+│       │   ├── running-retrospectives/
+│       │   │   └── templates/    # Retrospective output template
 │       │   ├── setting-up-steering/
 │       │   │   └── templates/    # Steering document templates
 │       │   ├── starting-issues/
