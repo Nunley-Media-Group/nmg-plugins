@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.10.0] - 2026-02-16
+
+### Added
+
+- **Failure loop detection** — SDLC runner (`openclaw/scripts/sdlc-runner.mjs`) now detects three failure loop patterns and halts with a diagnostic Discord message instead of looping indefinitely:
+  - **Consecutive escalations** — halts after 2 back-to-back escalations across cycles
+  - **Same-issue loops** — tracks escalated issues in-memory, excludes them from step 2 issue selection, and halts when all open issues have been escalated
+  - **Step bounce loops** — counts step-back transitions per cycle, escalates when bounces exceed `maxRetriesPerStep`
+- **`haltFailureLoop()`** — New halt function that posts a `FAILURE LOOP DETECTED` diagnostic to Discord and exits without cleanup, preserving state for manual inspection
+
 ### Removed
 
 - **Spec drift detection hook** — PostToolUse hook that ran on every `Write`/`Edit` removed; with 23+ spec directories the agent consistently hit the 60-second timeout, producing errors on every file modification
