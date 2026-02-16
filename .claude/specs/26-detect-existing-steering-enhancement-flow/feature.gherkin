@@ -1,0 +1,81 @@
+# File: .claude/specs/26-detect-existing-steering-enhancement-flow/feature.gherkin
+#
+# Generated from: .claude/specs/26-detect-existing-steering-enhancement-flow/requirements.md
+# Issue: #26
+
+Feature: Detect Existing Steering Enhancement Flow
+  As a developer using the nmg-sdlc workflow
+  I want the setting-up-steering skill to detect existing steering documents
+  So that I can iteratively improve my steering docs without losing customizations
+
+  # --- Happy Path ---
+
+  Scenario: Existing steering files are detected
+    Given the ".claude/steering/" directory contains "product.md", "tech.md", and "structure.md"
+    When the user invokes "/setting-up-steering"
+    Then the skill detects the existing files
+    And the skill enters the enhancement flow instead of the bootstrap flow
+
+  Scenario: User is asked what enhancement they want
+    Given the skill has detected existing steering files
+    When the enhancement flow begins
+    Then the skill reports which steering files were found
+    And the skill asks an open-ended question about what enhancement to make
+
+  Scenario: Enhancement is implemented per user instructions
+    Given the user has described the enhancement "Add a QA engineer persona to product.md"
+    When the skill processes their request
+    Then the skill reads "product.md"
+    And makes the requested changes following the user's instructions
+    And writes the updated file
+
+  Scenario: Enhancement spanning multiple files
+    Given "product.md" and "tech.md" exist with user customizations
+    And the user requests "Add a QA engineer persona and add pytest-bdd to the tech stack"
+    When the skill processes their request
+    Then the skill reads both "product.md" and "tech.md"
+    And updates "product.md" with the new persona
+    And updates "tech.md" with pytest-bdd in the tech stack table
+    And all other content in both files is preserved
+
+  Scenario: Existing customizations are preserved
+    Given "tech.md" contains custom coding standards and BDD testing configuration
+    And the user requests "Update the tech stack table with Redis"
+    When the skill applies the enhancement
+    Then the tech stack table in "tech.md" is updated with Redis
+    And the coding standards section remains unchanged
+    And the BDD testing section remains unchanged
+
+  # --- Alternative Path ---
+
+  Scenario: Bootstrap flow still works for new projects
+    Given the ".claude/steering/" directory does not exist
+    When the user invokes "/setting-up-steering"
+    Then the skill scans the codebase for languages, frameworks, and structure
+    And generates steering documents from templates
+    And writes "product.md", "tech.md", and "structure.md" to ".claude/steering/"
+    And prompts the user to review and customize
+
+  # --- Edge Cases ---
+
+  Scenario: Partial steering files trigger enhancement flow
+    Given the ".claude/steering/" directory contains only "product.md"
+    And "tech.md" and "structure.md" do not exist
+    When the user invokes "/setting-up-steering"
+    Then the skill detects the existing file
+    And the skill enters the enhancement flow
+    And the skill reports that only "product.md" was found
+
+  Scenario Outline: Detection checks all three steering files
+    Given the ".claude/steering/" directory contains <existing_files>
+    When the skill checks for existing steering files
+    Then the skill enters the <flow> flow
+
+    Examples:
+      | existing_files                           | flow        |
+      | "product.md"                             | enhancement |
+      | "tech.md"                                | enhancement |
+      | "structure.md"                           | enhancement |
+      | "product.md" and "tech.md"               | enhancement |
+      | all three files                          | enhancement |
+      | none                                     | bootstrap   |

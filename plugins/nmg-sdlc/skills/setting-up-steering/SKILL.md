@@ -45,7 +45,7 @@ Check whether steering documents already exist:
    - `.claude/steering/structure.md`
 
 2. **If at least one file is found** → go to **Enhancement Flow**
-3. **If no files are found** → go to **Bootstrap Flow**
+3. **If no files are found** (directory missing, empty, or contains only non-steering files) → go to **Bootstrap Flow**
 
 ---
 
