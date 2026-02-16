@@ -30,7 +30,7 @@ If the file `.claude/auto-mode` exists in the project directory:
 
 ## Workflow
 
-### Step 1: Load Specifications
+### Step 1: Load Specifications and Steering Docs
 
 Read all spec documents:
 
@@ -41,6 +41,17 @@ Read all spec documents:
 ├── tasks.md           — Task completion to confirm
 └── feature.gherkin    — BDD scenarios to check
 ```
+
+Read all steering documents (these define project conventions used throughout verification):
+
+```
+.claude/steering/
+├── tech.md        — Technology stack, coding standards, testing strategy, behavioral contracts
+├── structure.md   — Code organization, naming conventions, architectural invariants
+└── product.md     — Product principles, intent verification postconditions
+```
+
+**These are required inputs, not optional references.** Steering docs define the verification framework (behavioral contracts, checklist applicability, script verification contracts) and must be loaded before any evaluation begins. They must also be provided to any subagents dispatched during the review.
 
 ### Step 2: Load Issue
 
@@ -77,7 +88,9 @@ Check each acceptance criterion against actual code:
 
 Run the architecture review using the `Task` tool with `subagent_type='nmg-sdlc:architecture-reviewer'`. The architecture-reviewer agent evaluates the implementation against all five checklists and returns structured scores and findings.
 
-Reference `.claude/steering/tech.md` for project-specific conventions.
+**You MUST include the steering doc content in the subagent prompt.** The architecture-reviewer has no access to conversation context — it only sees the prompt you give it. Include:
+- `tech.md` — checklist applicability table (which checklists apply to scripts vs. skills), script verification contracts (preconditions/postconditions/invariants/boundaries), coding standards, cross-platform constraints
+- `structure.md` — architectural invariants (hard contracts that must never be violated), cross-platform contracts
 
 | Area | Checklist | Priority |
 |------|-----------|----------|
