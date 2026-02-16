@@ -11,12 +11,6 @@ The **nmg-sdlc** plugin is a stack-agnostic, BDD spec-driven development toolkit
 It provides a GitHub issue-driven workflow:
 
 ```
-Quick Start:
-/starting-issues #42  →  /writing-specs #42  →  /implementing-specs #42
-(select issue,           (run manually)          (run manually)
- create branch)
-
-Full Workflow:
 Step 1               Step 2                   Step 3                  Step 4                     Step 5                    Step 6
 /creating-issues  →  /starting-issues #42  →  /writing-specs #42  →  /implementing-specs #42  →  /verifying-specs #42  →  /creating-prs #42
 Interview user,      Select issue, create     Read issue, create      Read specs, enter plan     Verify implementation,    Create PR with
