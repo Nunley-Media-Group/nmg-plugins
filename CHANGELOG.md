@@ -7,10 +7,14 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **`/running-retrospectives`** — New skill that batch-analyzes defect specs to identify spec-writing gaps (missing ACs, undertested boundaries, domain-specific gaps) and produces `.claude/steering/retrospective.md` with actionable learnings
+- **`/creating-issues`** — Upfront issue type classification: first question after gathering context asks whether this is a Bug or Enhancement/Feature via `AskUserQuestion`, then performs type-specific codebase investigation before the interview
+- **`/creating-issues`** — Enhancement path: explores existing specs and source code, adds "Current State" section to issue body between Background and Acceptance Criteria
+- **`/creating-issues`** — Bug path: searches codebase, traces code paths, forms root cause hypothesis, confirms with user, adds "Root Cause Analysis" section to issue body
 
 ### Changed
 
 - **`/writing-specs`** — Phase 1 now reads `retrospective.md` (when present) to apply defect-derived learnings when drafting acceptance criteria
+- **`/creating-issues`** — Interview questions now branch explicitly by issue type instead of adapting passively; workflow expanded from 6 steps to 8 steps (classification and investigation inserted as Steps 2–3); auto-mode references updated accordingly
 
 ## [2.4.0] - 2026-02-14
 

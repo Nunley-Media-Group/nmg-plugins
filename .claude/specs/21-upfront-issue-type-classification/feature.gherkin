@@ -1,0 +1,74 @@
+# File: .claude/specs/21-upfront-issue-type-classification/feature.gherkin
+#
+# Generated from: .claude/specs/21-upfront-issue-type-classification/requirements.md
+# Issue: #21
+
+Feature: Upfront Issue Type Classification
+  As a developer using the creating-issues skill
+  I want the skill to proactively classify the issue type and perform type-specific codebase investigation
+  So that issues are created with richer context for downstream SDLC phases
+
+  # --- Happy Path ---
+
+  Scenario: Upfront Type Classification
+    Given the user invokes "/creating-issues" with or without an argument
+    When the interview begins after gathering context
+    Then the very first question asks whether this is a "Bug" or "Enhancement / Feature"
+    And the question is presented via AskUserQuestion with descriptive options
+
+  # --- Enhancement Path ---
+
+  Scenario: Enhancement Path — Codebase Exploration
+    Given the user selects "Enhancement / Feature" as the issue type
+    When the skill gathers context for the enhancement
+    Then it searches existing specs in ".claude/specs/" for relevant areas
+    And examines relevant source code using Glob and Grep
+    And produces a "Current State" summary of what exists today
+
+  Scenario: Current State Section in Enhancement Issues
+    Given the enhancement investigation has completed
+    When the issue body is synthesized in Step 5
+    Then the issue body includes a "Current State" section
+    And the section is placed between "Background" and "Acceptance Criteria"
+    And the section summarizes the codebase exploration findings
+
+  # --- Bug Path ---
+
+  Scenario: Bug Path — Root Cause Investigation
+    Given the user selects "Bug" as the issue type
+    When the skill gathers context for the bug
+    Then it searches the codebase for related code using Grep
+    And traces code paths by reading affected files
+    And forms a root cause hypothesis
+    And presents the hypothesis to the user for confirmation via AskUserQuestion
+
+  Scenario: Root Cause Section in Bug Issues
+    Given the bug investigation has completed and the user confirmed the hypothesis
+    When the issue body is synthesized in Step 5
+    Then the issue body includes a "Root Cause Analysis" section
+    And the section contains the hypothesis and relevant code references
+    And the section includes the user's confirmation status
+
+  # --- Auto-mode ---
+
+  Scenario: Automation Mode Unchanged
+    Given the ".claude/auto-mode" file exists in the project directory
+    When the creating-issues skill is invoked
+    Then the classification step is skipped
+    And the investigation step is skipped
+    And the interview step is skipped
+    And issue creation follows the existing auto-mode path unchanged
+
+  # --- Interview Adaptation ---
+
+  Scenario: Interview Flow Adapts for Enhancement
+    Given the issue type has been classified as "Enhancement / Feature"
+    When the remaining interview questions are asked in Step 4
+    Then questions focus on persona, pain point, desired outcome, acceptance criteria, scope, and priority
+    And reproduction-specific questions are not asked
+
+  Scenario: Interview Flow Adapts for Bug
+    Given the issue type has been classified as "Bug"
+    When the remaining interview questions are asked in Step 4
+    Then questions focus on reproduction steps, expected vs actual behavior, environment, frequency, error output, and recent changes
+    And enhancement-specific questions like impact assessment are not asked

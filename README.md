@@ -78,7 +78,7 @@ Selects an issue (or presents a picker if no number is given), creates a linked 
 /creating-issues "add user authentication"
 ```
 
-Interviews you about the feature need, refines it into a groomed user story with Given/When/Then acceptance criteria, and creates a GitHub issue.
+Classifies the issue type (Bug or Enhancement/Feature), investigates the codebase for relevant context, then interviews you with type-specific questions. Produces a groomed issue with Given/When/Then acceptance criteria — enhancements include a "Current State" section from the investigation, bugs include a "Root Cause Analysis" section.
 
 ### Step 2: Write Specs
 
