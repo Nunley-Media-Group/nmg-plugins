@@ -210,6 +210,9 @@ import { parseArgs } from 'node:util';
 | Nesting subagents in architecture-reviewer | Task tool not available to agents | Use Read/Glob/Grep directly |
 | Skipping [Unreleased] in CHANGELOG | Version history becomes inconsistent | Always add entries under [Unreleased] first |
 | Hardcoding project-specific details in skills | Breaks stack-agnostic principle | Put specifics in steering docs, not skill definitions |
+| Using platform-specific paths or commands | Breaks cross-platform compatibility | Use `node:path` for paths, POSIX-compatible shell syntax |
+| Relying on symlinks for core functionality | Fails on Windows without elevated privileges | Use file copies or config-based indirection |
+| Hardcoding path separators (`/` or `\`) | Breaks on other operating systems | Use `path.join()` or `path.resolve()` in scripts |
 
 ---
 

@@ -55,6 +55,21 @@ OpenClaw (optional automation layer)
 | Skill execution | Reasonable for task complexity | Skills are interactive; no hard time limits in manual mode |
 | Runner step timeout | Per-step config (5–30 min) | Prevents runaway automation sessions |
 
+### Cross-Platform Compatibility
+
+This project MUST work on macOS, Windows, and Linux. All contributions must respect cross-platform constraints:
+
+| Constraint | Guideline |
+|------------|-----------|
+| File paths | Use forward slashes or `path.join()` — never hardcode `\` or `/` separators |
+| Line endings | Files should use LF (`\n`); configure `.gitattributes` if needed |
+| Shell commands in skills | Use POSIX-compatible commands; avoid Bash-specific syntax (e.g., `[[ ]]`, `<<<`) |
+| Scripts | Node.js scripts must use `node:path` for path manipulation, never string concatenation |
+| Case sensitivity | Treat file paths as case-sensitive (Linux is case-sensitive, macOS/Windows are not by default) |
+| Symlinks | Do not rely on symlinks for core functionality (Windows requires elevated privileges) |
+| Environment variables | Use cross-platform approaches; document platform differences where unavoidable |
+| Executable permissions | Document `chmod +x` requirements; Windows users may need alternative setup |
+
 ### Security
 
 | Requirement | Implementation |

@@ -49,6 +49,7 @@ All feature development should align with these guidelines.
 | Principle | Description |
 |-----------|-------------|
 | Stack-agnostic | Never assume a specific language, framework, or tool — let steering docs provide specifics |
+| OS-agnostic | Must work on macOS, Windows, and Linux — no platform-specific assumptions |
 | Process over tooling | Provide the workflow structure; project steering provides the technical details |
 | Human gates by default | Interactive review at each phase; auto-mode is opt-in for automation |
 | Spec as source of truth | All implementation and verification traces back to spec documents |
