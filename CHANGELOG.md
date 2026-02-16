@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.2] - 2026-02-16
+
+### Fixed
+
+- **`openclaw/scripts/sdlc-runner.mjs`** — 6 edge case bugs: `currentProcess` never assigned so SIGTERM couldn't kill subprocess (F1); `Atomics.wait()` blocking event loop during Discord retry (F2); incomplete shell escaping in `autoCommitIfDirty` (F3); uncaught exception on merged-PR `git checkout` with dirty worktree (F4); silent retry counter reset when `--resume` used with missing state file (F5); unused `AbortController` dead code in `runClaude()` (F6)
+
 ## [2.12.1] - 2026-02-16
 
 ### Added

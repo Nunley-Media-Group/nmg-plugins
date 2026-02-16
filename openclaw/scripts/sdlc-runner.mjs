@@ -234,8 +234,13 @@ function detectAndHydrateState() {
     if (prState === 'MERGED') {
       log('detectAndHydrateState: PR is already merged, checking out main for fresh cycle');
       if (!DRY_RUN) {
-        git('checkout main');
-        git('pull');
+        try {
+          git('checkout main');
+          git('pull');
+        } catch (err) {
+          log(`Warning: could not checkout main after merged PR: ${err.message}`);
+          return null;
+        }
       }
       return { _merged: true };
     }
@@ -381,7 +386,7 @@ async function postDiscord(message) {
       if (attempt < maxAttempts) {
         const backoff = Math.pow(2, attempt) * 1000; // 2s, 4s
         log(`Discord post attempt ${attempt}/${maxAttempts} failed, retrying in ${backoff / 1000}s...`);
-        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, backoff);
+        await sleep(backoff);
       } else {
         log(`Warning: Discord post failed after ${maxAttempts} attempts: ${err.message}`);
       }
@@ -499,7 +504,7 @@ function autoCommitIfDirty(message) {
     }
 
     git('add -A');
-    git(`commit -m "${message.replace(/"/g, '\\"')}"`);
+    git(`commit -m ${shellEscape(message)}`);
     git('push');
     log(`Auto-committed: ${message}`);
     return true;
@@ -742,13 +747,12 @@ function runClaude(step, state) {
 
   return new Promise((resolve) => {
     const startTime = Date.now();
-    const ac = new AbortController();
 
     const proc = spawn('claude', claudeArgs, {
       cwd: PROJECT_PATH,
       stdio: ['ignore', 'pipe', 'pipe'],
-      signal: ac.signal,
     });
+    currentProcess = proc;
 
     let stdout = '';
     let stderr = '';
@@ -770,6 +774,7 @@ function runClaude(step, state) {
     }, timeoutMs);
 
     proc.on('close', (code) => {
+      currentProcess = null;
       clearTimeout(timer);
       resolve({
         exitCode: code ?? 1,
@@ -780,6 +785,7 @@ function runClaude(step, state) {
     });
 
     proc.on('error', (err) => {
+      currentProcess = null;
       clearTimeout(timer);
       resolve({
         exitCode: 1,
@@ -1365,6 +1371,7 @@ async function main() {
       const savedState = readState();
       detected.retries = savedState.retries || {};
     } else {
+      if (RESUME) log('Warning: --resume specified but state file not found — retry history lost. Starting with empty retry counters.');
       detected.retries = {};
     }
 
@@ -1521,6 +1528,7 @@ const __test__ = {
     CLEANUP_PATTERNS = cfg.cleanup?.processPatterns ?? CLEANUP_PATTERNS;
     STATE_PATH = cfg.statePath ?? STATE_PATH;
     DRY_RUN = cfg.dryRun ?? DRY_RUN;
+    RESUME = cfg.resume ?? RESUME;
     LOG_DIR = cfg.logDir ?? LOG_DIR;
     ORCHESTRATION_LOG = cfg.orchestrationLog ?? ORCHESTRATION_LOG;
   },
@@ -1529,6 +1537,7 @@ const __test__ = {
   get consecutiveEscalations() { return consecutiveEscalations; },
   set consecutiveEscalations(v) { consecutiveEscalations = v; },
   get escalatedIssues() { return escalatedIssues; },
+  get currentProcess() { return currentProcess; },
 };
 
 // ---------------------------------------------------------------------------
