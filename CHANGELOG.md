@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.1] - 2026-02-16
+
+### Added
+
+- **`/verifying-specs`** — Exercise-based verification for plugin projects: generates targeted exercises that test plugin capabilities through real usage scenarios instead of relying on traditional test suites
+
 ## [2.12.0] - 2026-02-16
 
 ### Added
