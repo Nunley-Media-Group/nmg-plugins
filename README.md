@@ -52,7 +52,7 @@ Run `/setting-up-steering` in your project to generate steering documents:
 /setting-up-steering
 ```
 
-This analyzes your codebase and creates three documents in `.claude/steering/`:
+On first run, this analyzes your codebase and creates three documents in `.claude/steering/`. Re-running it when steering files already exist enters an enhancement flow that preserves your customizations:
 
 | Document | Purpose |
 |----------|---------|
@@ -256,7 +256,7 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | `/verifying-specs #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
 | `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
 | `/running-retrospectives` | Batch-analyze defect specs to identify spec-writing gaps and produce `.claude/steering/retrospective.md` with actionable learnings |
-| `/setting-up-steering` | Analyze codebase and generate steering documents (product, tech, structure). Run once per project |
+| `/setting-up-steering` | Set up or enhance project steering documents (product, tech, structure) — bootstraps on first run, enhances existing docs on subsequent runs |
 | `/migrating-projects` | Update project specs, steering docs, and configs to latest template standards |
 | `/installing-openclaw-skill` | Copy the OpenClaw running-sdlc skill from the marketplace clone to `~/.openclaw/skills/` and restart the gateway |
 | `/generating-openclaw-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path auto-detected and written to the project root |
