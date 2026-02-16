@@ -2,7 +2,7 @@
 name: verifying-specs
 description: "Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue."
 argument-hint: "[#issue-number]"
-allowed-tools: Read, Glob, Grep, Task, WebFetch, WebSearch, Write, Edit, Bash(gh:*), Bash(git:*), Bash(node:*), Bash(which:*), Bash(timeout:*), Bash(rm:*)
+allowed-tools: Read, Glob, Grep, Task, WebFetch, WebSearch, Write, Edit, Bash(gh:*), Bash(git:*), Bash(node:*), Bash(which:*), Bash(rm:*)
 ---
 
 # Verifying Specs
@@ -174,35 +174,52 @@ Check if the Agent SDK is available using `Bash`:
 node -e "require('@anthropic-ai/claude-agent-sdk'); console.log('available')"
 ```
 
-If available, run the following inline Node.js script via `Bash` (substitute `{skill-name}`, `{plugin-path}`, `{test-project-path}`, `{output-file}`, and `{exercise-prompt}` with actual values):
+If available, write the following Node.js script to `{test-project-path}/exercise.mjs` using the `Write` tool, then run it via `Bash`. Substitute `{skill-name}`, `{plugin-path}`, `{test-project-path}`, `{output-file}`, and `{exercise-prompt}` with actual values:
 
-```bash
-timeout 300 node -e "
-const { query } = require('@anthropic-ai/claude-agent-sdk');
-const fs = require('fs');
+```javascript
+// exercise.mjs — written to {test-project-path}/exercise.mjs
+import { query } from "@anthropic-ai/claude-agent-sdk";
+import fs from "node:fs";
 
-(async () => {
-  const messages = [];
-  const result = await query({
-    prompt: '{exercise-prompt}',
-    plugins: [{ type: 'local', path: '{plugin-path}' }],
-    workingDirectory: '{test-project-path}',
-    canUseTool: (tool) => {
-      if (tool.name === 'AskUserQuestion') {
+const messages = [];
+for await (const message of query({
+  prompt: "{exercise-prompt}",
+  options: {
+    plugins: [{ type: "local", path: "{plugin-path}" }],
+    cwd: "{test-project-path}",
+    permissionMode: "bypassPermissions",
+    allowDangerouslySkipPermissions: true,
+    maxTurns: 30,
+    env: { ...process.env, CLAUDECODE: "" },  // Allow nested session
+    canUseTool: async (toolName, input) => {
+      if (toolName === "AskUserQuestion") {
         // Auto-select first option for deterministic testing
-        const questions = JSON.parse(tool.input).questions;
         const answers = {};
-        questions.forEach((q, i) => { answers['question_' + i] = q.options[0].label; });
-        return { result: JSON.stringify({ answers }) };
+        for (const q of input.questions) {
+          answers[q.question] = q.options[0].label;
+        }
+        return { behavior: "allow", updatedInput: { ...input, answers } };
       }
-      return true;
+      return { behavior: "allow", updatedInput: input };
     },
-    onMessage: (msg) => messages.push(JSON.stringify(msg)),
-  });
-  fs.writeFileSync('{output-file}', messages.join('\n'));
-  console.log('Exercise complete. Output written to {output-file}');
-})().catch(e => { console.error('Exercise error:', e.message); process.exit(1); });
-" 2>&1
+  },
+})) {
+  if (message.type === "assistant" && message.message?.content) {
+    for (const block of message.message.content) {
+      if ("text" in block) messages.push(block.text);
+    }
+  } else if (message.type === "result") {
+    messages.push(`Result: ${message.subtype}`);
+    if ("result" in message) messages.push(message.result);
+  }
+}
+fs.writeFileSync("{output-file}", messages.join("\n"));
+console.log("Exercise complete. Output written to {output-file}");
+```
+
+Run the exercise script via `Bash` with a 5-minute timeout (set the `timeout` parameter to `300000`):
+```bash
+node {test-project-path}/exercise.mjs 2>&1
 ```
 
 The `{exercise-prompt}` is: `"/{skill-name} [appropriate args based on the skill's argument-hint]"`
@@ -218,9 +235,10 @@ Check if the `claude` CLI is available using `Bash`:
 which claude
 ```
 
-If available, run via `Bash`:
+If available, run via `Bash` with a 5-minute timeout (set the `timeout` parameter to `300000`):
 ```bash
-timeout 300 claude -p "{exercise-prompt}" \
+claude -p "{exercise-prompt}" \
+  --plugin-dir {plugin-path} \
   --disallowedTools AskUserQuestion \
   --project-dir {test-project-path} \
   --append-system-prompt "Make reasonable default choices. Do not ask questions." \
@@ -232,7 +250,7 @@ Note: The `claude -p` fallback only tests the non-interactive path. Record this 
 
 **If neither Agent SDK nor `claude` CLI is available**: Skip exercise testing entirely and proceed to 5e (cleanup is a no-op since no project was scaffolded). Record the reason for the report's Exercise Test Results section (graceful degradation).
 
-**Timeout**: The `timeout 300` wrapper (5 minutes) kills the subprocess if it exceeds the time limit. If a timeout occurs, capture whatever output was produced before the timeout and report it as a graceful degradation in the Exercise Test Results section.
+**Timeout**: Set the Bash tool's `timeout` parameter to `300000` (5 minutes). If a timeout occurs, capture whatever output was produced before the timeout and report it as a graceful degradation in the Exercise Test Results section.
 
 **Exercise errors**: If the exercise subprocess exits with a non-zero status, capture the error output. Report it as a finding and continue with evaluation of whatever output was captured.
 
