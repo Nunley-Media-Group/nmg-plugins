@@ -281,7 +281,7 @@ for await (const message of query({
   prompt: "/nmg-sdlc:skill-name arguments",
   options: {
     plugins: [{ type: "local", path: "./plugins/nmg-sdlc" }],
-    workingDirectory: "/path/to/test-project",
+    cwd: "/path/to/test-project",
     canUseTool: async (toolName, input) => {
       if (toolName === "AskUserQuestion") {
         // Auto-select first option for each question (deterministic)

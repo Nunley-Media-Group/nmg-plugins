@@ -115,6 +115,43 @@ Use this template to generate the final verification report.
 
 ---
 
+## Exercise Test Results
+
+*Include this section when exercise-based verification was performed for plugin changes. Omit entirely for non-plugin projects.*
+
+**If exercise was performed:**
+
+| Field | Value |
+|-------|-------|
+| **Skill Exercised** | [skill name] |
+| **Test Project** | [temp dir path] |
+| **Exercise Method** | Agent SDK with `canUseTool` / `claude -p` fallback |
+| **AskUserQuestion Handling** | Programmatic first-option / Denied / N/A |
+| **Duration** | [seconds] |
+
+### Captured Output Summary
+
+[Brief summary of what the skill produced during exercise — files created, commands generated, key output messages]
+
+### AC Evaluation
+
+| AC | Description | Verdict | Evidence |
+|----|-------------|---------|----------|
+| AC1 | [criterion] | Pass/Fail/Partial | [evidence from exercise output] |
+
+### Notes
+
+[Any additional observations — e.g., "Only non-interactive path tested (fallback method)", "GitHub operations evaluated via dry-run"]
+
+**If exercise was skipped (graceful degradation):**
+
+| Field | Value |
+|-------|-------|
+| **Reason** | [e.g., claude CLI not found, Agent SDK unavailable, timeout] |
+| **Recommendation** | Manual exercise testing recommended as follow-up |
+
+---
+
 ## Fixes Applied
 
 | Severity | Category | Location | Original Issue | Fix Applied |
