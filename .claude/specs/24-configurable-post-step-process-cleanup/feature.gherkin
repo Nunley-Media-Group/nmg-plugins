@@ -1,0 +1,70 @@
+# File: .claude/specs/24-configurable-post-step-process-cleanup/feature.gherkin
+#
+# Generated from: .claude/specs/24-configurable-post-step-process-cleanup/requirements.md
+# Issue: #24
+
+Feature: Configurable Post-Step Process Cleanup
+  As an OpenClaw agent operator
+  I want the SDLC runner to clean up orphaned processes after each step
+  So that processes spawned by Claude subprocesses don't accumulate and exhaust host resources
+
+  # --- Configuration ---
+
+  Scenario: Configurable process cleanup patterns
+    Given a config file with a "cleanup" object containing "processPatterns" set to ["--remote-debugging-port", "chromium"]
+    When the runner loads the config
+    Then it stores the patterns ["--remote-debugging-port", "chromium"] in CLEANUP_PATTERNS for use in post-step cleanup
+
+  # --- Post-Step Cleanup ---
+
+  Scenario: Post-step cleanup runs after a successful step
+    Given process patterns ["--remote-debugging-port"] are configured
+    And a process matching "--remote-debugging-port" is running
+    And step 3 completes successfully
+    When the runner transitions to step 4
+    Then the process matching "--remote-debugging-port" is killed before step 4 begins
+
+  Scenario: Post-step cleanup runs after a failed step
+    Given process patterns ["--remote-debugging-port"] are configured
+    And a process matching "--remote-debugging-port" is running
+    And step 4 fails with a non-zero exit code
+    When the runner handles the failure
+    Then the process matching "--remote-debugging-port" is killed before retry or escalation
+
+  # --- Escalation ---
+
+  Scenario: Cleanup runs on escalation
+    Given process patterns ["--remote-debugging-port"] are configured
+    And a process matching "--remote-debugging-port" is running
+    When a step fails and triggers escalation
+    Then the process matching "--remote-debugging-port" is killed before the runner commits partial work and returns to main
+
+  # --- Graceful Shutdown ---
+
+  Scenario: Cleanup runs on graceful shutdown
+    Given process patterns ["--remote-debugging-port"] are configured
+    And a process matching "--remote-debugging-port" is running
+    When the runner receives SIGTERM
+    Then the process matching "--remote-debugging-port" is killed before the runner exits
+
+  # --- Backward Compatibility ---
+
+  Scenario: Cleanup is optional and backward-compatible
+    Given a config file without a "cleanup" field
+    When the runner loads the config and runs steps normally
+    Then no process cleanup is performed
+    And behavior is identical to the version without cleanup support
+
+  # --- Logging ---
+
+  Scenario: Cleanup logs actions when processes are killed
+    Given process patterns ["--remote-debugging-port"] are configured
+    And 3 processes matching "--remote-debugging-port" are running
+    When post-step cleanup runs
+    Then the runner logs "[CLEANUP] Killed 3 process(es) matching \"--remote-debugging-port\""
+
+  Scenario: Cleanup does not log when no processes match
+    Given process patterns ["--remote-debugging-port"] are configured
+    And no processes matching "--remote-debugging-port" are running
+    When post-step cleanup runs
+    Then no cleanup log message is emitted

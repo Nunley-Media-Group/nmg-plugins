@@ -76,6 +76,7 @@ const MODEL = config.model || 'opus';
 const MAX_RETRIES = config.maxRetriesPerStep || 3;
 
 const DISCORD_CHANNEL = args['discord-channel'] || config.discordChannelId || null;
+const CLEANUP_PATTERNS = config.cleanup?.processPatterns || [];
 
 if (!PROJECT_PATH || !PLUGINS_PATH) {
   console.error('Error: config must include projectPath and pluginsPath');
@@ -399,6 +400,48 @@ function autoCommitIfDirty(message) {
   } catch (err) {
     log(`Warning: autoCommitIfDirty failed: ${err.message}`);
     return false;
+  }
+}
+
+function shellEscape(str) {
+  return "'" + str.replace(/'/g, "'\\''") + "'";
+}
+
+// ---------------------------------------------------------------------------
+// Process cleanup
+// ---------------------------------------------------------------------------
+
+function cleanupProcesses() {
+  if (CLEANUP_PATTERNS.length === 0) return;
+
+  for (const pattern of CLEANUP_PATTERNS) {
+    try {
+      const escaped = shellEscape(pattern);
+      // Find matching PIDs, excluding our own process
+      let pids;
+      try {
+        pids = execSync(`pgrep -f ${escaped}`, { encoding: 'utf8', timeout: 5_000 }).trim();
+      } catch {
+        // Exit code 1 means no matches — that's fine
+        continue;
+      }
+
+      if (!pids) continue;
+
+      // Filter out our own PID
+      const pidList = pids.split('\n').filter(p => parseInt(p, 10) !== process.pid);
+      if (pidList.length === 0) continue;
+
+      try {
+        execSync(`pkill -f ${escaped}`, { encoding: 'utf8', timeout: 5_000 });
+      } catch {
+        // pkill exit code 1 means no matches (race with pgrep); ignore
+      }
+
+      log(`[CLEANUP] Killed ${pidList.length} process(es) matching "${pattern}"`);
+    } catch (err) {
+      log(`[CLEANUP] Warning: error cleaning up pattern "${pattern}": ${err.message}`);
+    }
   }
 }
 
@@ -734,6 +777,7 @@ async function handleFailure(step, result, state) {
 async function escalate(step, reason, output = '') {
   const state = readState();
   const truncated = (output || '').slice(-500);
+  cleanupProcesses();
 
   log(`ESCALATION: Step ${step.number} — ${reason}`);
 
@@ -919,6 +963,8 @@ async function handleSignal(signal) {
     currentProcess.kill('SIGTERM');
   }
 
+  cleanupProcesses();
+
   // Commit/push any work
   try {
     const status = git('status --porcelain');
@@ -980,6 +1026,7 @@ async function runStep(step, state) {
   // Run claude
   const result = await runClaude(step, state);
   log(`Step ${step.number} exited with code ${result.exitCode} in ${result.duration}s`);
+  cleanupProcesses();
 
   if (result.exitCode === 0) {
     // Extract state updates

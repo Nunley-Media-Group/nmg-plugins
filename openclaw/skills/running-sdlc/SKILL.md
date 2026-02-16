@@ -87,6 +87,23 @@ The runner supports additional flags that can be passed after `start`:
 
 Example: `start --config /path/to/config.json --discord-channel 1234567890 --resume`
 
+## Process Cleanup
+
+The runner can automatically kill orphaned processes (e.g., headed Chrome) that `claude -p` subprocesses may spawn but fail to clean up. This is configured via the optional `cleanup.processPatterns` field in `sdlc-config.json`:
+
+```json
+{
+  "cleanup": {
+    "processPatterns": ["--remote-debugging-port"]
+  }
+}
+```
+
+- **Format**: An array of strings. Each string is passed to `pgrep -f` / `pkill -f` to match processes by their command line.
+- **When it runs**: After every step completes (success or failure), on escalation, and on graceful shutdown (SIGTERM/SIGINT).
+- **Safety**: The runner's own PID is always excluded from kills.
+- **Backward-compatible**: If `cleanup` is omitted or `processPatterns` is empty, no cleanup occurs.
+
 ## Integration with SDLC Workflow
 
 This skill is the entry point for fully automated SDLC execution. It replaces the prompt-engineered heartbeat loop with a deterministic Node.js script. All SDLC work still executes inside Claude Code via `claude -p` — the script only handles orchestration:
