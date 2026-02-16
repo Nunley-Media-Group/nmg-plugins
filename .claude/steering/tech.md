@@ -198,35 +198,24 @@ gh pr merge <number> --merge
 
 ---
 
-## Database Standards
-
-<!-- Pre-fill if database conventions are discoverable -->
-
-### Naming
-
-| Element | Convention | Example |
-|---------|------------|---------|
-| Tables | [convention] | [example] |
-| Columns | [convention] | [example] |
-| Primary keys | [convention] | [example] |
-
----
-
 ## Testing Standards
 
-### BDD Testing (Required for nmg-sdlc)
+### Core Principle: Exercise-Based Verification
+
+**This project is a Claude Code plugin. Skills are Markdown instructions, not executable code. The only way to verify a skill change is to exercise it in Claude Code.**
+
+Traditional test frameworks (Jest, pytest, etc.) apply only to the OpenClaw runner script. For everything else — skills, agents, templates — verification means loading the plugin and running the skill against a real or test project.
+
+### BDD Testing
 
 **Every acceptance criterion MUST have a Gherkin test.**
 
 | Layer | Framework | Location |
 |-------|-----------|----------|
 | BDD specs | Gherkin feature files | `.claude/specs/{feature-name}/feature.gherkin` |
+| Runner tests | Jest (ESM) | `openclaw/scripts/__tests__/` |
 
-<!-- TODO: If this project had runtime code to test, specify the BDD framework here.
-     Since nmg-plugins is a plugin/template repository, Gherkin specs serve as
-     design artifacts rather than executable tests. -->
-
-### Gherkin Feature Files
+Gherkin specs serve as **design artifacts and verification criteria** — they define the expected behavior that exercise-based testing validates.
 
 ```gherkin
 # .claude/specs/{feature-name}/feature.gherkin
@@ -241,21 +230,134 @@ Feature: [Feature name from issue title]
     Then [expected outcome]
 ```
 
-### Validation Approach
+### Plugin Exercise Testing
 
-Since nmg-plugins is a template/plugin repository (not a runtime application), verification is done through:
+#### Loading the Plugin for Development
 
-| Type | Method | Location |
-|------|--------|----------|
-| Spec verification | `/verifying-specs` skill | Manual or automated |
-| Architecture review | `architecture-reviewer` agent | 5 checklists scored 1–5 |
-| Manual testing | Install plugin locally, run skills | `/installing-locally` |
+```bash
+claude --plugin-dir ./plugins/nmg-sdlc
+```
+
+Then invoke each changed skill directly (e.g., `/nmg-sdlc:writing-specs #42`) and verify:
+- The skill loads without errors
+- Workflow steps execute in the expected order
+- Output artifacts (files, GitHub comments, PR bodies) match downstream skill expectations
+- Interactive gates appear in manual mode (or are skipped when `.claude/auto-mode` exists)
+
+#### Test Project Pattern
+
+When verifying SDLC skill changes, exercise them against a **disposable test project** — not the nmg-plugins repo itself:
+
+1. **Scaffold** a temporary project directory with minimal structure:
+   - `README.md`, a basic source file, and `.gitignore`
+   - `.claude/steering/` with minimal `product.md`, `tech.md`, `structure.md`
+   - Initialized git repo (`git init`) for branch/commit operations
+   - A GitHub repo if the skill under test needs issue/PR operations (or use dry-run evaluation — see below)
+2. **Load** the modified plugin: `claude --plugin-dir ./plugins/nmg-sdlc --project-dir /path/to/test-project`
+3. **Exercise** the changed skill against the test project
+4. **Evaluate** the output against the spec's acceptance criteria
+5. **Clean up** the test project after verification
+
+#### Dry-Run Evaluation for GitHub-Integrated Skills
+
+For skills that create GitHub resources (`/creating-issues`, `/creating-prs`, `/starting-issues`):
+
+| Instead of... | Do this... |
+|---------------|------------|
+| Creating a real GitHub issue | Generate the issue title, body, and labels; evaluate the content against ACs |
+| Creating a real PR | Generate the PR title, body, and branch diff; evaluate completeness |
+| Setting issue status | Verify the `gh` commands that WOULD be invoked are correctly formed |
+
+This avoids polluting real repositories during verification while still validating that the skill produces correct output. **The content and structure of what the skill would create is the testable artifact.**
+
+#### Automated Exercise Testing via Agent SDK
+
+Skills that use `AskUserQuestion` cannot be tested via raw `claude -p` — there's no TTY to respond to interactive prompts. The **Claude Agent SDK** solves this with the `canUseTool` callback, which intercepts `AskUserQuestion` and provides programmatic answers:
+
+```typescript
+import { query } from "@anthropic-ai/claude-agent-sdk";
+
+for await (const message of query({
+  prompt: "/nmg-sdlc:skill-name arguments",
+  options: {
+    plugins: [{ type: "local", path: "./plugins/nmg-sdlc" }],
+    workingDirectory: "/path/to/test-project",
+    canUseTool: async (toolName, input) => {
+      if (toolName === "AskUserQuestion") {
+        // Auto-select first option for each question (deterministic)
+        const answers = {};
+        for (const q of input.questions) {
+          answers[q.question] = q.options[0].label;
+        }
+        return { behavior: "allow", updatedInput: { ...input, answers } };
+      }
+      return { behavior: "allow", updatedInput: input };
+    }
+  }
+})) {
+  // Capture and evaluate output
+}
+```
+
+**Promptfoo** wraps this into a declarative eval framework with built-in `AskUserQuestion` handling:
+
+```yaml
+providers:
+  - id: anthropic:claude-agent-sdk
+    config:
+      plugins:
+        - type: local
+          path: ./plugins/nmg-sdlc
+      ask_user_question:
+        behavior: first_option  # deterministic: always picks first option
+      max_budget_usd: 1.00
+```
+
+Three `ask_user_question` behaviors: `first_option` (deterministic), `random` (diversity testing), `deny` (test fallback paths).
+
+#### Simpler Fallback: `claude -p` with Denied Questions
+
+For quick smoke tests where `AskUserQuestion` handling isn't needed, deny the tool entirely and provide context upfront:
+
+```bash
+claude -p "Exercise the skill: /nmg-sdlc:skill-name args" \
+  --plugin-dir ./plugins/nmg-sdlc \
+  --project-dir /path/to/test-project \
+  --disallowedTools AskUserQuestion \
+  --append-system-prompt "Make reasonable default choices. Do not ask questions."
+```
+
+This tests the "no-questions" execution path only. Use the Agent SDK approach for full interactive path testing.
+
+### Validation Approach Summary
+
+| Type | Method | Applies To | AskUserQuestion |
+|------|--------|------------|-----------------|
+| Agent SDK exercise testing | `canUseTool` callback with programmatic answers | Skills with interactive gates | Full support — answers provided programmatically |
+| Promptfoo eval suite | Declarative YAML test cases with `ask_user_question` config | Skills, agents, templates | `first_option`, `random`, or `deny` modes |
+| Smoke test (`claude -p`) | `--disallowedTools AskUserQuestion` | Quick verification | Denied — tests fallback path only |
+| Spec verification | `/verifying-specs` skill — behavioral contract checking | All changes | N/A |
+| Architecture review | `architecture-reviewer` agent — 5 checklists scored 1–5 | Code structure, scripts | N/A |
+| Runner unit tests | Jest (`npm test` in `openclaw/scripts/`) | `sdlc-runner.mjs` | N/A |
+| Structural validation | Verify `plugin.json`/`marketplace.json` schema, file existence | Plugin manifests | N/A |
+| Prompt quality review | Unambiguous instructions, complete workflow paths, correct tool references | SKILL.md files | N/A |
 
 ---
 
 ## Verification Strategy — Behavioral Contracts
 
 This project is prompt-based: skills are Markdown instructions that Claude Code executes. Traditional code quality metrics (test coverage, cyclomatic complexity) don't apply to most of the codebase. Instead, verification uses **Design by Contract** — each skill and component has preconditions, postconditions, invariants, and behavioral boundaries that `/verifying-specs` checks.
+
+### Self-Verification (Dogfooding)
+
+This project develops the SDLC toolkit itself. When `/verifying-specs` runs for changes to SDLC skills, it MUST go beyond static analysis:
+
+1. **Read the changed skill** — verify prompt quality (unambiguous, complete, correct tool refs)
+2. **Check behavioral contracts** — preconditions, postconditions, invariants per the tables below
+3. **Exercise the skill** — if feasible within the verification session, load the plugin and invoke the changed skill against a test project (see Testing Standards → Test Project Pattern)
+4. **Evaluate output** — for GitHub-integrated skills, evaluate what WOULD be created rather than creating real artifacts (see Testing Standards → Dry-Run Evaluation)
+
+If exercise testing is not feasible during automated verification (time or tool constraints), `/verifying-specs` should explicitly note this in the verification report and recommend manual exercise testing as a follow-up.
 
 ### Contract Framework
 

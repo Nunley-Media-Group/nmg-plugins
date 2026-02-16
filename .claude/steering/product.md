@@ -9,8 +9,6 @@ All feature development should align with these guidelines.
 
 **nmg-plugins provides a BDD spec-driven development toolkit for Claude Code that transforms GitHub issues into verified, production-ready implementations through a structured SDLC workflow.**
 
-<!-- TODO: Refine this mission statement to match your vision -->
-
 ---
 
 ## Target Users
@@ -32,8 +30,6 @@ All feature development should align with these guidelines.
 | Deterministic orchestration | Runner script drives steps sequentially with preconditions |
 | Discord reporting | Status updates flow to Discord channels |
 
-<!-- TODO: Refine these personas to match your actual user base -->
-
 ---
 
 ## Core Value Proposition
@@ -53,8 +49,7 @@ All feature development should align with these guidelines.
 | Process over tooling | Provide the workflow structure; project steering provides the technical details |
 | Human gates by default | Interactive review at each phase; auto-mode is opt-in for automation |
 | Spec as source of truth | All implementation and verification traces back to spec documents |
-
-<!-- TODO: Adjust principles to match your decision-making priorities -->
+| Dogfooding | The SDLC develops itself — changes to skills are verified by exercising them in Claude Code |
 
 ---
 
@@ -65,6 +60,7 @@ All feature development should align with these guidelines.
 | Spec-to-implementation fidelity | Zero drift findings on first verify | Validates the spec-driven approach works |
 | Skill adoption | All SDLC steps used end-to-end | Proves the workflow is complete and practical |
 | Automation reliability | OpenClaw completes full cycles without manual intervention | Validates headless operation |
+| Exercise verification | Changed skills verified by invocation against a test project | Validates that skill changes produce correct behavior, not just correct text |
 
 ---
 
@@ -92,8 +88,6 @@ All feature development should align with these guidelines.
 - Non-GitHub issue trackers
 - Visual dashboard for spec status
 
-<!-- TODO: Adjust priorities based on your roadmap -->
-
 ---
 
 ## Key User Journeys
@@ -120,7 +114,24 @@ All feature development should align with these guidelines.
 6. Loops to next issue
 ```
 
-<!-- TODO: Add additional journeys relevant to your workflow -->
+### Journey 3: Dogfooding — Developing the SDLC with the SDLC
+
+This project uses its own SDLC toolkit to develop itself. The verification step is unique because skills are Markdown instructions, not executable code:
+
+```
+1. Developer creates issue for a skill enhancement
+2. Runs /writing-specs — spec defines expected skill behavior as ACs
+3. Runs /implementing-specs — modifies SKILL.md files and templates
+4. Runs /verifying-specs — must exercise the changed skill:
+   a. Scaffold a disposable test project
+   b. Load the modified plugin: claude --plugin-dir ./plugins/nmg-sdlc
+   c. Invoke the changed skill against the test project
+   d. For GitHub-integrated skills: evaluate what WOULD be created (dry-run)
+   e. Confirm output matches spec ACs
+5. Runs /creating-prs — PR includes verification evidence
+```
+
+The key difference from Journey 1: traditional "run tests" is replaced by "exercise the skill in Claude Code and evaluate the output."
 
 ---
 
@@ -137,6 +148,7 @@ Each product principle translates to a verifiable behavioral contract. `/verifyi
 | **Spec as source of truth** | Every implementation change traces to a requirement in the spec | Each modified file must map to a task in `tasks.md` or an AC in `requirements.md` |
 | **Human gates by default** | Interactive approval exists at every decision point | Skills contain `AskUserQuestion` at gates, guarded by auto-mode check |
 | **Process over tooling** | Skills define workflow structure; project details live in steering docs | Skills reference steering docs for conventions, not hardcode them |
+| **Dogfooding** | Skill changes are verified by exercise, not just by reading | Changed skills must be loaded via `claude --plugin-dir` and invoked against a test project |
 
 ### Skill Pipeline Contracts
 

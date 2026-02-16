@@ -193,16 +193,6 @@ import { parseArgs } from 'node:util';
 
 ---
 
-## Design Tokens / UI Standards (if applicable)
-
-<!-- Pre-fill if design token files are found -->
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| [token] | [value] | [when to use] |
-
----
-
 ## Architectural Invariants
 
 These are hard contracts that must never be violated. `/verifying-specs` should flag any change that breaks one.
@@ -240,6 +230,36 @@ These are hard contracts that must never be violated. `/verifying-specs` should 
 | No hardcoded path separators in scripts | macOS/Linux use `/`, Windows uses `\` | Scripts use `node:path` or `path.join()`; shell scripts use POSIX syntax |
 | No symlink dependencies | Windows requires elevated privileges for symlinks | Core functionality works without symlinks |
 | POSIX-compatible shell commands in skills | Skills run on any OS | No Bash-specific syntax (`[[ ]]`, `<<<`, associative arrays) |
+
+---
+
+## Test Project Scaffolding
+
+When verifying skill changes, a disposable test project is used as the exercise target. The test project is NOT committed to the repo — it is created on-the-fly during verification.
+
+### Minimal Test Project Layout
+
+```
+/tmp/nmg-sdlc-test-{timestamp}/
+├── .claude/
+│   └── steering/
+│       ├── product.md     — Minimal: project name, one user persona
+│       ├── tech.md        — Minimal: one language, one test framework
+│       └── structure.md   — Minimal: flat src/ + tests/ layout
+├── src/
+│   └── index.js           — Trivial source file (or equivalent for target language)
+├── README.md              — One-line description
+├── .gitignore
+└── package.json           — (or equivalent project manifest)
+```
+
+The test project should be:
+- **Minimal** — just enough to exercise the skill under test
+- **Disposable** — created in `/tmp/` or OS-equivalent temp dir, deleted after verification
+- **Language-appropriate** — match whatever the skill's test scenario requires
+- **Git-initialized** — `git init` + initial commit so branch operations work
+
+For skills that need GitHub resources (issues, PRs), either use a dedicated test repo or use dry-run evaluation (see `tech.md` → Dry-Run Evaluation).
 
 ---
 
