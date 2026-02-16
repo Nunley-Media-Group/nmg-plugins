@@ -2,7 +2,7 @@
 name: migrating-projects
 description: "Update project specs, steering docs, and configs to latest template standards."
 disable-model-invocation: true
-allowed-tools: Read, Glob, Grep, Edit, Bash(gh:*), AskUserQuestion
+allowed-tools: Read, Glob, Grep, Edit, Write, Bash(gh:*), Bash(git:*), AskUserQuestion
 ---
 
 # Migrating Projects
@@ -26,6 +26,8 @@ Update existing project files (steering docs, specs, OpenClaw configs) to the la
 .claude/specs/*/tasks.md       — Spec task breakdowns (feature + defect variants)
 sdlc-config.json               — OpenClaw runner config (JSON key merge)
 ~/.openclaw/skills/running-sdlc/ — OpenClaw skill version check
+CHANGELOG.md                   — Changelog format and completeness (Keep a Changelog)
+VERSION                        — Single source of truth for project version (plain text semver)
 ```
 
 **NOT analyzed:** `feature.gherkin` files (generated, not templated).
@@ -131,7 +133,52 @@ If the installed skill is outdated or missing, suggest running `/installing-open
 
 If `~/.openclaw/skills/running-sdlc/` does not exist, note that OpenClaw is not installed and skip this check.
 
-### Step 7: Present Findings
+### Step 7: Analyze CHANGELOG.md
+
+Check whether the project has a `CHANGELOG.md` and ensure it follows the [Keep a Changelog](https://keepachangelog.com/) format.
+
+#### If no CHANGELOG.md exists
+
+Generate one from git history:
+
+1. **Parse git tags**: Run `git tag --sort=-v:refname` to list version tags (e.g., `v1.0.0`, `v1.1.0`).
+2. **Parse commits between tags**: For each pair of consecutive tags, run `git log {older_tag}..{newer_tag} --pretty=format:"%s"` to get commit messages.
+3. **Classify by conventional commit type**:
+   - `feat:` → `### Added`
+   - `fix:` → `### Fixed`
+   - `refactor:`, `chore:`, `docs:`, `style:`, `perf:`, `test:` → `### Changed`
+   - Commits without a conventional prefix → `### Changed`
+4. **Build the CHANGELOG**: Use Keep a Changelog format with version headings from git tags and an `[Unreleased]` section for commits after the latest tag.
+5. **If no git tags exist**: Group all commits under a `## [0.1.0]` version heading (with today's date) and leave the `[Unreleased]` section empty.
+
+#### If CHANGELOG.md exists
+
+Reconcile it with the Keep a Changelog format:
+
+1. **Check for `[Unreleased]` section**: If missing, add one after the preamble.
+2. **Check version headings**: Compare git tags against CHANGELOG version headings. Identify any tagged versions missing from the CHANGELOG.
+3. **Check categories**: Ensure entries are grouped under standard categories (`### Added`, `### Changed`, `### Fixed`, `### Removed`, etc.). Flag any non-standard categories.
+4. **Check preamble**: Ensure the file starts with a title (`# Changelog`) and a brief description.
+5. **Preserve manual entries**: Any entries that do not correspond to conventional commits must be preserved exactly as-is.
+
+Record findings (missing sections, malformed headings, reconciliation needed) for the summary in Step 10.
+
+### Step 8: Analyze VERSION File
+
+Ensure the project has a `VERSION` file that reflects the current version.
+
+1. **Determine expected version**:
+   - If CHANGELOG.md has versioned headings (from Step 7 or pre-existing), use the latest version heading as the expected version.
+   - If no CHANGELOG.md versions exist but git tags are present, use the latest semver git tag.
+   - If neither exists, default to `0.1.0`.
+2. **Check for VERSION file**:
+   - If `VERSION` does not exist: Record a finding to create it with the expected version.
+   - If `VERSION` exists: Read it and compare to the expected version. If they differ, record a finding to update it.
+   - If they match: No action needed.
+
+Record findings for the summary in Step 10.
+
+### Step 9: Present Findings
 
 Display a per-file summary of all proposed changes. Group by category:
 
@@ -174,7 +221,7 @@ options:
 
 **This skill does not support auto-mode.** Always present findings and wait for user approval.
 
-### Step 8: Apply Changes
+### Step 10: Apply Changes
 
 If the user approves:
 
@@ -226,7 +273,7 @@ After applying changes, output a summary:
 ## Key Rules
 
 1. **Never modify existing content** — Only insert new sections or add new keys
-2. **Never create files** — Only update files that already exist
+2. **Never create files** — Only update files that already exist (exception: `CHANGELOG.md` and `VERSION` may be created by Steps 7–8 if missing)
 3. **Never overwrite values** — For JSON, only add keys that are absent
 4. **Skip `feature.gherkin`** — These are generated, not templated
 5. **Always interactive** — Present findings and wait for approval before applying

@@ -18,8 +18,9 @@ Interview the user to understand their need, then create a well-groomed GitHub i
 ## Automation Mode
 
 If the file `.claude/auto-mode` exists in the project directory:
-- Skip Steps 2, 3, and 4 (classification, investigation, and interview) — use the provided argument as the feature description. Read `.claude/steering/product.md` for product context. Generate 3–5 Given/When/Then acceptance criteria covering the happy path, one alternative path, and one error case.
-- Skip the review (Step 6) — do not call `AskUserQuestion`. Proceed directly to creating the issue.
+- Skip Steps 2, 4, and 5 (classification, investigation, and interview) — use the provided argument as the feature description. Read `.claude/steering/product.md` for product context. Generate 3–5 Given/When/Then acceptance criteria covering the happy path, one alternative path, and one error case.
+- **Run Step 3 (Assign Milestone)** non-interactively — read VERSION, default to `v{major}`, do not call `AskUserQuestion`.
+- Skip the review (Step 7) — do not call `AskUserQuestion`. Proceed directly to creating the issue.
 
 ## Workflow
 
@@ -43,7 +44,28 @@ Options:
 
 > **Auto-mode**: This step is skipped. Classification is not needed when the interview is skipped.
 
-### Step 3: Investigate Codebase
+### Step 3: Assign Milestone
+
+Assign the issue to a version milestone so work is grouped by release.
+
+1. **Read the current version**: If a `VERSION` file exists in the project root, read it and verify it contains a valid semver string (X.Y.Z). Extract the major version number (e.g., `2.11.0` → `2`). If no `VERSION` file exists or the content is not valid semver, skip this step entirely (omit the `--milestone` flag from `gh issue create` in Step 8).
+2. **Ask the user** (via `AskUserQuestion`):
+   ```
+   question: "Which milestone should this issue be assigned to?"
+   options:
+     - "v{major} (current major version)" — e.g., "v2 (current major version)"
+     - "v{major+1} (next major version)" — e.g., "v3 (next major version)"
+   ```
+3. **Ensure the milestone exists**: Run `gh api repos/{owner}/{repo}/milestones --jq '.[].title'` to list existing milestones. If the chosen milestone does not exist, create it:
+   ```
+   gh api repos/{owner}/{repo}/milestones --method POST --field title="v{N}"
+   ```
+   If milestone creation fails (e.g., permission denied, API error), proceed without milestone assignment and note the failure in the output.
+4. **Record the milestone** for use in Step 8 (Create the Issue).
+
+> **Auto-mode**: Read VERSION and default to `v{major}` without prompting. Create the milestone if it does not exist.
+
+### Step 4: Investigate Codebase
 
 Based on the classification from Step 2, perform a targeted codebase investigation before the interview.
 
@@ -80,9 +102,9 @@ If investigation is inconclusive, note what is known and proceed with the user's
 
 > **Auto-mode**: This step is skipped.
 
-### Step 4: Interview the User
+### Step 5: Interview the User
 
-Ask type-specific questions to refine the need. Skip any topics already answered by the user's initial description or the Step 3 investigation. Group related questions when natural — aim for 2–3 rounds, not 6 sequential questions.
+Ask type-specific questions to refine the need. Skip any topics already answered by the user's initial description or the Step 4 investigation. Group related questions when natural — aim for 2–3 rounds, not 6 sequential questions.
 
 #### If Enhancement / Feature
 
@@ -104,7 +126,7 @@ Ask type-specific questions to refine the need. Skip any topics already answered
 5. **Any error output?** Error messages, stack traces, or log output?
 6. **When did this start?** Was there a recent change that might have caused it?
 
-### Step 5: Synthesize into Issue Body
+### Step 6: Synthesize into Issue Body
 
 Choose the appropriate template based on the issue type classified in Step 2.
 
@@ -125,7 +147,7 @@ Draft the issue using this structure:
 
 ## Current State
 
-[Summary from Step 3 investigation — what exists today, relevant code patterns,
+[Summary from Step 4 investigation — what exists today, relevant code patterns,
 existing specs, and how the current implementation works. If no relevant code
 was found, state that this is a greenfield addition.]
 
@@ -180,7 +202,7 @@ For bug fixes, use this structure instead:
 
 ## Root Cause Analysis
 
-[Hypothesis from Step 3 investigation — affected code paths, the incorrect
+[Hypothesis from Step 4 investigation — affected code paths, the incorrect
 assumption or logic, and triggering conditions. If investigation was
 inconclusive, state what is known and what needs further investigation.]
 
@@ -233,7 +255,7 @@ inconclusive, state what is known and what needs further investigation.]
 - [Related improvements not part of this fix]
 ```
 
-### Step 6: Present Draft for Review
+### Step 7: Present Draft for Review
 
 Show the complete issue draft to the user. Ask:
 - "Does this capture what you're looking for?"
@@ -242,7 +264,7 @@ Show the complete issue draft to the user. Ask:
 
 Iterate until the user approves.
 
-### Step 7: Create the Issue
+### Step 8: Create the Issue
 
 1. **Check labels**: Run `gh label list` to see existing labels
 2. **Create missing labels** if needed:
@@ -253,12 +275,12 @@ Iterate until the user approves.
    - Feature → `enhancement`
    - Bug → `bug`
    - Other project-specific labels as appropriate
-4. **Create the issue**:
+4. **Create the issue** (include `--milestone` if Step 3 assigned one):
    ```
-   gh issue create --title "[concise, action-oriented title]" --body "[issue body]" --label "label1,label2"
+   gh issue create --title "[concise, action-oriented title]" --body "[issue body]" --label "label1,label2" --milestone "v{N}"
    ```
 
-### Step 8: Output
+### Step 9: Output
 
 After creation, output:
 

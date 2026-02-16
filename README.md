@@ -78,7 +78,7 @@ Selects an issue (or presents a picker if no number is given), creates a linked 
 /creating-issues "add user authentication"
 ```
 
-Classifies the issue type (Bug or Enhancement/Feature), investigates the codebase for relevant context, then interviews you with type-specific questions. Produces a groomed issue with Given/When/Then acceptance criteria — enhancements include a "Current State" section from the investigation, bugs include a "Root Cause Analysis" section.
+Classifies the issue type (Bug or Enhancement/Feature), investigates the codebase for relevant context, then interviews you with type-specific questions. Assigns the issue to a version milestone (derived from the `VERSION` file). Produces a groomed issue with Given/When/Then acceptance criteria — enhancements include a "Current State" section from the investigation, bugs include a "Root Cause Analysis" section.
 
 ### Step 2: Write Specs
 
@@ -132,10 +132,11 @@ Verifies the implementation against the spec:
 /creating-prs #42
 ```
 
-Creates a pull request with:
+Determines the version bump (patch for bugs, minor for enhancements, major on milestone completion), updates the `VERSION` file, rolls `CHANGELOG.md` entries from `[Unreleased]` to a versioned heading, and updates any stack-specific version files declared in `tech.md`. Then creates a pull request with:
 - Summary from the spec
 - Acceptance criteria checklist
 - Test plan
+- Version bump details
 - `Closes #42` to auto-close the issue on merge
 
 ## Automation Mode
@@ -239,6 +240,23 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | Target users | `product.md` | User personas and constraints |
 | API conventions | `tech.md` | REST, GraphQL, gRPC |
 
+### Versioning
+
+The plugin includes an integrated versioning system built on a `VERSION` file (plain text semver at the project root). When `VERSION` exists, skills automatically:
+
+- **`/creating-issues`** — Assigns issues to a milestone derived from the major version (e.g., `v2`), creating the milestone if needed
+- **`/creating-prs`** — Classifies the version bump from issue labels, updates `VERSION`, rolls `CHANGELOG.md` entries to a versioned heading, and updates stack-specific files
+
+The **classification matrix**:
+
+| Issue Label | Bump Type | Example |
+|-------------|-----------|---------|
+| `bug` | Patch | 2.3.1 → 2.3.2 |
+| `enhancement` | Minor | 2.3.1 → 2.4.0 |
+| (milestone completion) | Major | 2.9.1 → 3.0.0 |
+
+**Stack-specific files** (e.g., `package.json`, `Cargo.toml`) are declared in `tech.md`'s `## Versioning` section. The `/creating-prs` skill reads this mapping to update all version files in a single commit. Run `/migrating-projects` to bootstrap `CHANGELOG.md` and `VERSION` from git history if they don't exist yet.
+
 ## Skills Reference
 
 ### SDLC Skills
@@ -246,14 +264,14 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 | Skill | Description |
 |-------|-------------|
 | `/starting-issues [#N]` | Select a GitHub issue, create a linked feature branch, and set the issue to In Progress |
-| `/creating-issues [description]` | Interview user about a feature need, create groomed GitHub issue with BDD acceptance criteria |
+| `/creating-issues [description]` | Interview user about a feature need, assign to version milestone, create groomed GitHub issue with BDD acceptance criteria |
 | `/writing-specs #N` | Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown |
 | `/implementing-specs #N` | Read specs for current branch, enter plan mode, then execute implementation tasks sequentially |
 | `/verifying-specs #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
-| `/creating-prs #N` | Create a pull request with spec-driven summary, linking GitHub issue and spec documents |
+| `/creating-prs #N` | Determine version bump, update VERSION/CHANGELOG/stack files, create PR with spec-driven summary |
 | `/running-retrospectives` | Batch-analyze defect specs to identify spec-writing gaps and produce `.claude/steering/retrospective.md` with actionable learnings |
 | `/setting-up-steering` | Set up or enhance project steering documents (product, tech, structure) — bootstraps on first run, enhances existing docs on subsequent runs |
-| `/migrating-projects` | Update project specs, steering docs, and configs to latest template standards |
+| `/migrating-projects` | Update project specs, steering docs, configs, CHANGELOG, and VERSION to latest standards |
 | `/installing-openclaw-skill` | Copy the OpenClaw running-sdlc skill from the marketplace clone to `~/.openclaw/skills/` and restart the gateway |
 | `/generating-openclaw-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path auto-detected and written to the project root |
 
