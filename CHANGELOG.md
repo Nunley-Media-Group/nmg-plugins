@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.11.0] - 2026-02-16
+
+### Added
+
+- **Persistent per-step logging** — SDLC runner writes full stdout/stderr from each `claude -p` subprocess to individual log files in an OS-agnostic temp directory (`<os.tmpdir()>/sdlc-logs/<project>/`)
+- **Configurable log directory and disk usage threshold** via `logDir` and `maxLogDiskUsageMB` config fields (defaults: `os.tmpdir()/sdlc-logs/<project>/`, 500 MB)
+
+### Changed
+
+- **Runner orchestration log** moved from hardcoded `/tmp/sdlc-runner.log` (via nohup redirect) to `<logDir>/sdlc-runner.log` via dual-write in `log()` function
+- **`running-sdlc` SKILL.md** updated: removed nohup stdout redirect, added Logging section documenting log location, naming convention, disk limits, and config options
+
 ## [2.10.0] - 2026-02-16
 
 ### Added
