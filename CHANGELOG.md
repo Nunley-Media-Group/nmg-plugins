@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.5] - 2026-02-16
+
+### Fixed
+
+- **`openclaw/scripts/sdlc-runner.mjs`** — Process cleanup rewritten to use PID tree killing instead of `pkill -f`: kills entire process trees (all descendants) for each matched PID, uses filtered PID list directly instead of re-matching with `pkill`, tracks `lastClaudePid` to scope cleanup to runner-spawned processes, falls back to pattern-based matching for orphaned processes (PPID=1), and always emits `[CLEANUP]` log entries
+
 ## [2.12.4] - 2026-02-16
 
 ### Fixed

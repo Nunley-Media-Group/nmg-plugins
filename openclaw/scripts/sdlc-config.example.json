@@ -5,6 +5,7 @@
   "discordChannelId": "",
   "logDir": "",
   "maxLogDiskUsageMB": 500,
+  "_cleanup_note": "processPatterns is a Phase 2 fallback; Phase 1 uses the Claude subprocess PID tree",
   "cleanup": {
     "processPatterns": ["--remote-debugging-port"]
   },
