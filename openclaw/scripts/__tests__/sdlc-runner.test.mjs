@@ -387,6 +387,14 @@ describe('Precondition validation', () => {
     expect(result.ok).toBe(false);
     expect(result.reason).toContain('failing');
   });
+
+  it('step 9 (merge) passes when no CI checks are reported (#54)', () => {
+    const err = new Error('Command failed: gh pr checks\nno checks reported on the \'54-fix\' branch');
+    err.stderr = "no checks reported on the '54-fix' branch";
+    mockExecSync.mockImplementation(() => { throw err; });
+    const result = validatePreconditions(STEPS[8], defaultState());
+    expect(result.ok).toBe(true);
+  });
 });
 
 describe('State extraction', () => {
@@ -860,6 +868,56 @@ describe('Soft failure integration', () => {
     expect(['retry', 'retry-previous', 'escalated']).toContain(handleResult);
 
     mockExit.mockRestore();
+  });
+});
+
+// ===========================================================================
+// Issue #54: No CI checks handling
+// ===========================================================================
+
+describe('No CI checks handling (#54)', () => {
+  it('validateCI passes when gh pr checks reports no checks', () => {
+    const err = new Error('Command failed: gh pr checks\nno checks reported on the \'main\' branch');
+    err.stderr = "no checks reported on the 'main' branch";
+    mockExecSync.mockImplementation(() => { throw err; });
+    const result = validateCI();
+    expect(result.ok).toBe(true);
+  });
+
+  it('validateCI still fails on genuine errors', () => {
+    const err = new Error('Command failed: gh pr checks\nHTTP 404');
+    err.stderr = 'HTTP 404';
+    mockExecSync.mockImplementation(() => { throw err; });
+    const result = validateCI();
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain('Could not check CI status');
+  });
+
+  it('detectAndHydrateState advances to step 8 when no checks reported', () => {
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('rev-parse --abbrev-ref HEAD')) return '42-my-feature';
+      if (cmd.includes('pr view --json state')) throw new Error('no PR');
+      if (cmd.includes('log main..HEAD --oneline')) return 'abc123 feat: implement';
+      if (cmd.includes('log origin/42-my-feature..HEAD --oneline')) return '';
+      if (cmd.includes('pr view --json number')) return '{"number": 10}';
+      if (cmd.includes('pr checks')) {
+        const err = new Error("no checks reported on the '42-my-feature' branch");
+        err.stderr = "no checks reported on the '42-my-feature' branch";
+        throw err;
+      }
+      return '';
+    });
+
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.includes('.claude/specs')) return true;
+      if (p.includes('42-my-feature')) return true;
+      return false;
+    });
+    mockFs.readdirSync.mockReturnValue(['42-my-feature']);
+    mockFs.statSync.mockReturnValue({ isDirectory: () => true, size: 200 });
+
+    const result = detectAndHydrateState();
+    expect(result.lastCompletedStep).toBe(8);
   });
 });
 
