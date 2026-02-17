@@ -17,6 +17,14 @@ Update existing project files (steering docs, specs, OpenClaw configs) to the la
 - When steering docs or specs were created with an older plugin version
 - To check whether project files are up to date with current standards
 
+## Automation Mode
+
+**This skill is ALWAYS interactive — `.claude/auto-mode` does NOT apply.**
+
+Even if `.claude/auto-mode` exists in the project directory, this skill MUST present proposed changes via `AskUserQuestion` and wait for user approval before modifying any files. Migration is a sensitive operation that requires human review.
+
+Do NOT skip the review gate in Step 9. Do NOT apply changes without explicit user approval.
+
 ## What Gets Analyzed
 
 ```
