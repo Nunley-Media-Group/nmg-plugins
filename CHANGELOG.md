@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.7] - 2026-02-16
+
+### Fixed
+
+- **`/running-retrospectives`** — Severity grep pattern updated from plain `Severity:` to regex `\*{0,2}Severity\*{0,2}:` to match both bold-formatted (`**Severity**: High`) and plain (`Severity: High`) fields in defect specs; also fixed Related Spec field reference to use bold-formatted variant from defect template
+
 ## [2.12.6] - 2026-02-16
 
 ### Fixed

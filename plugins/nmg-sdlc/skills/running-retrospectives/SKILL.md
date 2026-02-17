@@ -31,11 +31,11 @@ Use Glob to find all spec files:
 .claude/specs/*/requirements.md
 ```
 
-Then use Grep to identify defect specs by scanning for the `Severity:` field — this field is unique to the defect requirements template and does not appear in feature specs.
+Then use Grep to identify defect specs by scanning for `\*{0,2}Severity\*{0,2}:` (matches both `**Severity**:` and `Severity:`) — this field is unique to the defect requirements template and does not appear in feature specs.
 
 ### Step 2: Filter to Eligible Defect Specs
 
-Read each candidate defect spec and extract the `Related Spec:` field.
+Read each candidate defect spec and extract the `**Related Spec**:` field (bold-formatted in the defect template).
 
 - **Skip** defect specs that do not have a `Related Spec` field — there is no feature spec to correlate against
 - **Warn** if a `Related Spec` link points to a nonexistent spec directory — log a warning and skip that defect
