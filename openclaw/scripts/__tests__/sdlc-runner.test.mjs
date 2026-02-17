@@ -1370,15 +1370,59 @@ describe('cleanupProcesses (#55 rewrite)', () => {
     killSpy.mockRestore();
   });
 
-  it('logs when no patterns and no lastClaudePid', () => {
+  it('logs "No matching processes found" when no patterns and no lastClaudePid', () => {
     __test__.lastClaudePid = null;
     __test__.setConfig({
       cleanup: { processPatterns: [] },
     });
 
-    // Should just log and return without error
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     cleanupProcesses();
-    // Verify it didn't throw
+
+    const logMessages = logSpy.mock.calls.map(c => c[0]);
+    expect(logMessages.some(m => m.includes('[CLEANUP] No matching processes found'))).toBe(true);
+
+    logSpy.mockRestore();
+  });
+
+  it('logs "No matching processes found" when patterns configured but no matches', () => {
+    __test__.lastClaudePid = null;
+    __test__.setConfig({
+      cleanup: { processPatterns: ['--nonexistent-pattern'] },
+    });
+
+    mockExecSync.mockImplementation(() => { throw new Error('exit code 1'); });
+    const killSpy = jest.spyOn(process, 'kill').mockImplementation(() => {});
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    cleanupProcesses();
+
+    expect(killSpy).not.toHaveBeenCalled();
+    const logMessages = logSpy.mock.calls.map(c => c[0]);
+    expect(logMessages.some(m => m.includes('[CLEANUP] No matching processes found'))).toBe(true);
+
+    killSpy.mockRestore();
+    logSpy.mockRestore();
+  });
+
+  it('does not log "No matching processes found" when Phase 1 ran', () => {
+    __test__.lastClaudePid = 12345;
+    __test__.setConfig({
+      cleanup: { processPatterns: [] },
+    });
+
+    mockExecSync.mockImplementation(() => { throw new Error('no match'); });
+    const killSpy = jest.spyOn(process, 'kill').mockImplementation(() => {});
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    cleanupProcesses();
+
+    const logMessages = logSpy.mock.calls.map(c => c[0]);
+    expect(logMessages.some(m => m.includes('No matching processes found'))).toBe(false);
+    expect(logMessages.some(m => m.includes('[CLEANUP] Phase 1'))).toBe(true);
+
+    killSpy.mockRestore();
+    logSpy.mockRestore();
   });
 });
 

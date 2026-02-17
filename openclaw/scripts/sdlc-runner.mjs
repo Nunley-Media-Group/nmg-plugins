@@ -594,6 +594,8 @@ function findProcessesByPattern(pattern) {
 // ---------------------------------------------------------------------------
 
 function cleanupProcesses() {
+  const phase1Ran = !!lastClaudePid;
+
   // Phase 1: tree-based cleanup via lastClaudePid
   if (lastClaudePid) {
     const killed = killProcessTree(lastClaudePid);
@@ -603,15 +605,17 @@ function cleanupProcesses() {
 
   // Phase 2: pattern-based fallback
   if (CLEANUP_PATTERNS.length === 0) {
-    if (!lastClaudePid) log('[CLEANUP] Phase 2: no cleanup patterns configured');
+    if (!phase1Ran) log('[CLEANUP] No matching processes found');
     return;
   }
 
+  let phase2Killed = false;
   for (const pattern of CLEANUP_PATTERNS) {
     try {
       const pids = findProcessesByPattern(pattern).filter(p => p !== process.pid);
       if (pids.length === 0) continue;
 
+      phase2Killed = true;
       for (const pid of pids) {
         try {
           process.kill(pid, 'SIGTERM');
@@ -623,6 +627,10 @@ function cleanupProcesses() {
     } catch (err) {
       log(`[CLEANUP] Warning: error cleaning up pattern "${pattern}": ${err.message}`);
     }
+  }
+
+  if (!phase2Killed && !phase1Ran) {
+    log('[CLEANUP] No matching processes found');
   }
 }
 
