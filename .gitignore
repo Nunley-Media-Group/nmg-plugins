@@ -3,7 +3,8 @@
 .env.*
 *.pem
 *.key
-.claude/
+.claude/settings.local.json
 
 # SDLC runner config
 sdlc-config.json
+.claude/sdlc-state.json
