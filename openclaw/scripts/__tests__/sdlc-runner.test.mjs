@@ -65,12 +65,18 @@ const {
   updateState,
   removeAutoMode,
   runClaude,
+  cleanupProcesses,
+  getChildPids,
+  getProcessTree,
+  killProcessTree,
+  findProcessesByPattern,
   log,
   writeStepLog,
   extractSessionId,
   enforceMaxDisk,
   resolveLogDir,
   sleep,
+  IS_WINDOWS,
   STEPS,
   STEP_KEYS,
   RUNNER_ARTIFACTS,
@@ -1114,5 +1120,321 @@ describe('Edge case fixes (#51)', () => {
       const spawnOptions = mockSpawn.mock.calls[0][2];
       expect(spawnOptions).not.toHaveProperty('signal');
     });
+  });
+});
+
+// ===========================================================================
+// Issue #55: Process tree cleanup
+// ===========================================================================
+
+describe('IS_WINDOWS constant', () => {
+  it('is a boolean', () => {
+    expect(typeof IS_WINDOWS).toBe('boolean');
+  });
+
+  it('is false on non-Windows platforms', () => {
+    // Test environment is macOS/Linux
+    expect(IS_WINDOWS).toBe(false);
+  });
+});
+
+describe('getChildPids', () => {
+  it('returns child PIDs from pgrep -P output', () => {
+    mockExecSync.mockReturnValue('1234\n5678\n');
+    const result = getChildPids(100);
+    expect(result).toEqual([1234, 5678]);
+  });
+
+  it('returns empty array when no children (exit code 1)', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('exit code 1'); });
+    const result = getChildPids(100);
+    expect(result).toEqual([]);
+  });
+
+  it('returns empty array on timeout or error', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('timeout'); });
+    const result = getChildPids(999);
+    expect(result).toEqual([]);
+  });
+
+  it('filters out non-numeric values', () => {
+    mockExecSync.mockReturnValue('1234\nProcessId\n5678\n');
+    const result = getChildPids(100);
+    expect(result).toEqual([1234, 5678]);
+  });
+});
+
+describe('getProcessTree', () => {
+  it('returns single PID when no children', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('no match'); });
+    const result = getProcessTree(100);
+    expect(result).toEqual([100]);
+  });
+
+  it('returns tree in bottom-up order (children before parent)', () => {
+    // PID 100 has children 200, 300
+    // PID 200 has child 201
+    // PID 300 has no children
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('-P 100')) return '200\n300\n';
+      if (cmd.includes('-P 200')) return '201\n';
+      throw new Error('no match');
+    });
+    const result = getProcessTree(100);
+    // Bottom-up: 201, 200, 300, 100
+    expect(result).toEqual([201, 200, 300, 100]);
+  });
+
+  it('handles deep nesting', () => {
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('-P 1')) return '2\n';
+      if (cmd.includes('-P 2')) return '3\n';
+      if (cmd.includes('-P 3')) return '4\n';
+      throw new Error('no match');
+    });
+    const result = getProcessTree(1);
+    expect(result).toEqual([4, 3, 2, 1]);
+  });
+});
+
+describe('killProcessTree', () => {
+  it('kills all PIDs in tree bottom-up and returns count', () => {
+    // PID 100 has children 200, 300
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('-P 100')) return '200\n300\n';
+      throw new Error('no match');
+    });
+
+    const killSpy = jest.spyOn(process, 'kill').mockImplementation(() => {});
+    const killed = killProcessTree(100);
+
+    expect(killed).toBe(3); // 200, 300, 100
+    expect(killSpy).toHaveBeenCalledWith(200, 'SIGTERM');
+    expect(killSpy).toHaveBeenCalledWith(300, 'SIGTERM');
+    expect(killSpy).toHaveBeenCalledWith(100, 'SIGTERM');
+
+    // Verify bottom-up order
+    const calls = killSpy.mock.calls.map(c => c[0]);
+    expect(calls.indexOf(200)).toBeLessThan(calls.indexOf(100));
+    expect(calls.indexOf(300)).toBeLessThan(calls.indexOf(100));
+
+    killSpy.mockRestore();
+  });
+
+  it('ignores ESRCH (process already exited)', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('no match'); });
+
+    const killSpy = jest.spyOn(process, 'kill').mockImplementation(() => {
+      const err = new Error('No such process');
+      err.code = 'ESRCH';
+      throw err;
+    });
+
+    const killed = killProcessTree(100);
+    expect(killed).toBe(0);
+
+    killSpy.mockRestore();
+  });
+
+  it('re-throws non-ESRCH errors', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('no match'); });
+
+    const killSpy = jest.spyOn(process, 'kill').mockImplementation(() => {
+      const err = new Error('Operation not permitted');
+      err.code = 'EPERM';
+      throw err;
+    });
+
+    expect(() => killProcessTree(100)).toThrow('Operation not permitted');
+
+    killSpy.mockRestore();
+  });
+});
+
+describe('findProcessesByPattern', () => {
+  it('returns PIDs matching a pattern', () => {
+    mockExecSync.mockReturnValue('1234\n5678\n');
+    const result = findProcessesByPattern('--some-flag');
+    expect(result).toEqual([1234, 5678]);
+  });
+
+  it('returns empty array when no matches', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('exit code 1'); });
+    const result = findProcessesByPattern('nonexistent-pattern');
+    expect(result).toEqual([]);
+  });
+
+  it('uses shellEscape for the pattern', () => {
+    mockExecSync.mockReturnValue('');
+    findProcessesByPattern("pattern'with'quotes");
+    const cmd = mockExecSync.mock.calls[0][0];
+    // shellEscape wraps in single quotes and escapes internal quotes
+    expect(cmd).toContain('pgrep -f');
+    expect(cmd).toContain("'");
+  });
+});
+
+describe('cleanupProcesses (#55 rewrite)', () => {
+  it('Phase 1: kills process tree when lastClaudePid is set', () => {
+    __test__.lastClaudePid = 12345;
+
+    // getProcessTree will call pgrep -P 12345 → no children
+    mockExecSync.mockImplementation(() => { throw new Error('no match'); });
+
+    const killSpy = jest.spyOn(process, 'kill').mockImplementation(() => {});
+
+    cleanupProcesses();
+
+    expect(killSpy).toHaveBeenCalledWith(12345, 'SIGTERM');
+    expect(__test__.lastClaudePid).toBeNull();
+
+    killSpy.mockRestore();
+  });
+
+  it('Phase 1: clears lastClaudePid after tree kill', () => {
+    __test__.lastClaudePid = 99999;
+    mockExecSync.mockImplementation(() => { throw new Error('no match'); });
+    const killSpy = jest.spyOn(process, 'kill').mockImplementation(() => {});
+
+    cleanupProcesses();
+    expect(__test__.lastClaudePid).toBeNull();
+
+    killSpy.mockRestore();
+  });
+
+  it('Phase 2: kills processes matching patterns, filtering self PID', () => {
+    __test__.lastClaudePid = null;
+    __test__.setConfig({
+      cleanup: { processPatterns: ['--test-pattern'] },
+    });
+
+    // findProcessesByPattern returns PIDs including process.pid
+    mockExecSync.mockReturnValue(`${process.pid}\n7777\n8888\n`);
+
+    const killSpy = jest.spyOn(process, 'kill').mockImplementation(() => {});
+
+    cleanupProcesses();
+
+    // Should NOT kill self
+    expect(killSpy).not.toHaveBeenCalledWith(process.pid, 'SIGTERM');
+    // Should kill the others
+    expect(killSpy).toHaveBeenCalledWith(7777, 'SIGTERM');
+    expect(killSpy).toHaveBeenCalledWith(8888, 'SIGTERM');
+
+    killSpy.mockRestore();
+  });
+
+  it('Phase 2: skips pattern with no matches', () => {
+    __test__.lastClaudePid = null;
+    __test__.setConfig({
+      cleanup: { processPatterns: ['--no-match'] },
+    });
+
+    mockExecSync.mockImplementation(() => { throw new Error('exit code 1'); });
+    const killSpy = jest.spyOn(process, 'kill').mockImplementation(() => {});
+
+    cleanupProcesses();
+    expect(killSpy).not.toHaveBeenCalled();
+
+    killSpy.mockRestore();
+  });
+
+  it('runs both phases when lastClaudePid and patterns are set', () => {
+    __test__.lastClaudePid = 11111;
+    __test__.setConfig({
+      cleanup: { processPatterns: ['--fallback-pattern'] },
+    });
+
+    let pgrepCalls = 0;
+    mockExecSync.mockImplementation((cmd) => {
+      // Phase 1: getProcessTree calls pgrep -P 11111
+      if (cmd.includes('-P 11111')) throw new Error('no match');
+      // Phase 2: findProcessesByPattern calls pgrep -f
+      if (cmd.includes('pgrep -f')) {
+        pgrepCalls++;
+        return '22222\n';
+      }
+      throw new Error('unexpected cmd');
+    });
+
+    const killSpy = jest.spyOn(process, 'kill').mockImplementation(() => {});
+
+    cleanupProcesses();
+
+    // Phase 1 killed the root PID
+    expect(killSpy).toHaveBeenCalledWith(11111, 'SIGTERM');
+    // Phase 2 killed the pattern match
+    expect(killSpy).toHaveBeenCalledWith(22222, 'SIGTERM');
+    expect(pgrepCalls).toBe(1);
+
+    killSpy.mockRestore();
+  });
+
+  it('logs when no patterns and no lastClaudePid', () => {
+    __test__.lastClaudePid = null;
+    __test__.setConfig({
+      cleanup: { processPatterns: [] },
+    });
+
+    // Should just log and return without error
+    cleanupProcesses();
+    // Verify it didn't throw
+  });
+});
+
+describe('lastClaudePid tracking', () => {
+  it('__test__ exposes lastClaudePid getter/setter', () => {
+    __test__.lastClaudePid = 42;
+    expect(__test__.lastClaudePid).toBe(42);
+    __test__.lastClaudePid = null;
+    expect(__test__.lastClaudePid).toBeNull();
+  });
+
+  it('runClaude sets lastClaudePid from spawned process', async () => {
+    const mockProc = {
+      pid: 55555,
+      stdout: { on: jest.fn() },
+      stderr: { on: jest.fn() },
+      on: jest.fn((event, handler) => {
+        if (event === 'close') handler(0);
+      }),
+      kill: jest.fn(),
+      killed: false,
+    };
+    mockSpawn.mockReturnValue(mockProc);
+    mockFs.existsSync.mockReturnValue(false);
+
+    const step = { ...STEPS[0], timeoutMin: 1 };
+    const state = defaultState();
+
+    await runClaude(step, state);
+
+    // lastClaudePid should persist after process closes (unlike currentProcess)
+    expect(__test__.lastClaudePid).toBe(55555);
+    // currentProcess should be cleared
+    expect(__test__.currentProcess).toBeNull();
+  });
+
+  it('lastClaudePid persists after process close (not cleared like currentProcess)', async () => {
+    __test__.lastClaudePid = 77777;
+
+    const mockProc = {
+      pid: 88888,
+      stdout: { on: jest.fn() },
+      stderr: { on: jest.fn() },
+      on: jest.fn((event, handler) => {
+        if (event === 'close') handler(0);
+      }),
+      kill: jest.fn(),
+      killed: false,
+    };
+    mockSpawn.mockReturnValue(mockProc);
+    mockFs.existsSync.mockReturnValue(false);
+
+    const step = { ...STEPS[0], timeoutMin: 1 };
+    await runClaude(step, defaultState());
+
+    // Should be updated to the new PID, not cleared
+    expect(__test__.lastClaudePid).toBe(88888);
   });
 });

@@ -22,6 +22,8 @@ import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
+const IS_WINDOWS = process.platform === 'win32';
+
 // ---------------------------------------------------------------------------
 // CLI argument parsing & configuration (guarded for testability)
 // ---------------------------------------------------------------------------
@@ -523,37 +525,101 @@ function shellEscape(str) {
 }
 
 // ---------------------------------------------------------------------------
+// Process cleanup — helpers
+// ---------------------------------------------------------------------------
+
+function getChildPids(pid) {
+  try {
+    let stdout;
+    if (IS_WINDOWS) {
+      stdout = execSync(`wmic process where (ParentProcessId=${pid}) get ProcessId`, { encoding: 'utf8', timeout: 5_000 });
+    } else {
+      stdout = execSync(`pgrep -P ${pid}`, { encoding: 'utf8', timeout: 5_000 });
+    }
+    return stdout.trim().split(/\s+/).map(Number).filter(n => n > 0 && Number.isInteger(n));
+  } catch {
+    return [];
+  }
+}
+
+function getProcessTree(pid) {
+  const children = getChildPids(pid);
+  const result = [];
+  for (const child of children) {
+    result.push(...getProcessTree(child));
+  }
+  result.push(pid);
+  return result;
+}
+
+function killProcessTree(pid) {
+  if (IS_WINDOWS) {
+    try {
+      execSync(`taskkill /T /F /PID ${pid}`, { encoding: 'utf8', timeout: 5_000 });
+      return 1;
+    } catch {
+      return 0;
+    }
+  }
+  const pids = getProcessTree(pid);
+  let killed = 0;
+  for (const p of pids) {
+    try {
+      process.kill(p, 'SIGTERM');
+      killed++;
+    } catch (err) {
+      if (err.code !== 'ESRCH') throw err;
+    }
+  }
+  return killed;
+}
+
+function findProcessesByPattern(pattern) {
+  try {
+    let stdout;
+    if (IS_WINDOWS) {
+      const escaped = pattern.replace(/'/g, "''");
+      stdout = execSync(`wmic process where "CommandLine like '%${escaped}%'" get ProcessId`, { encoding: 'utf8', timeout: 5_000 });
+    } else {
+      stdout = execSync(`pgrep -f ${shellEscape(pattern)}`, { encoding: 'utf8', timeout: 5_000 });
+    }
+    return stdout.trim().split(/\s+/).map(Number).filter(n => n > 0 && Number.isInteger(n));
+  } catch {
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Process cleanup
 // ---------------------------------------------------------------------------
 
 function cleanupProcesses() {
-  if (CLEANUP_PATTERNS.length === 0) return;
+  // Phase 1: tree-based cleanup via lastClaudePid
+  if (lastClaudePid) {
+    const killed = killProcessTree(lastClaudePid);
+    log(`[CLEANUP] Phase 1: killed ${killed} process(es) in tree rooted at PID ${lastClaudePid}`);
+    lastClaudePid = null;
+  }
+
+  // Phase 2: pattern-based fallback
+  if (CLEANUP_PATTERNS.length === 0) {
+    if (!lastClaudePid) log('[CLEANUP] Phase 2: no cleanup patterns configured');
+    return;
+  }
 
   for (const pattern of CLEANUP_PATTERNS) {
     try {
-      const escaped = shellEscape(pattern);
-      // Find matching PIDs, excluding our own process
-      let pids;
-      try {
-        pids = execSync(`pgrep -f ${escaped}`, { encoding: 'utf8', timeout: 5_000 }).trim();
-      } catch {
-        // Exit code 1 means no matches — that's fine
-        continue;
+      const pids = findProcessesByPattern(pattern).filter(p => p !== process.pid);
+      if (pids.length === 0) continue;
+
+      for (const pid of pids) {
+        try {
+          process.kill(pid, 'SIGTERM');
+        } catch (err) {
+          if (err.code !== 'ESRCH') throw err;
+        }
       }
-
-      if (!pids) continue;
-
-      // Filter out our own PID
-      const pidList = pids.split('\n').filter(p => parseInt(p, 10) !== process.pid);
-      if (pidList.length === 0) continue;
-
-      try {
-        execSync(`pkill -f ${escaped}`, { encoding: 'utf8', timeout: 5_000 });
-      } catch {
-        // pkill exit code 1 means no matches (race with pgrep); ignore
-      }
-
-      log(`[CLEANUP] Killed ${pidList.length} process(es) matching "${pattern}"`);
+      log(`[CLEANUP] Phase 2: killed ${pids.length} process(es) matching "${pattern}"`);
     } catch (err) {
       log(`[CLEANUP] Warning: error cleaning up pattern "${pattern}": ${err.message}`);
     }
@@ -761,6 +827,7 @@ function runClaude(step, state) {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     currentProcess = proc;
+    lastClaudePid = proc.pid;
 
     let stdout = '';
     let stderr = '';
@@ -1176,6 +1243,7 @@ function sleep(ms) {
 // ---------------------------------------------------------------------------
 
 let currentProcess = null;
+let lastClaudePid = null;
 let shuttingDown = false;
 
 async function handleSignal(signal) {
@@ -1549,6 +1617,8 @@ const __test__ = {
   set consecutiveEscalations(v) { consecutiveEscalations = v; },
   get escalatedIssues() { return escalatedIssues; },
   get currentProcess() { return currentProcess; },
+  get lastClaudePid() { return lastClaudePid; },
+  set lastClaudePid(v) { lastClaudePid = v; },
 };
 
 // ---------------------------------------------------------------------------
@@ -1581,6 +1651,10 @@ export {
   runClaude,
   removeAutoMode,
   cleanupProcesses,
+  getChildPids,
+  getProcessTree,
+  killProcessTree,
+  findProcessesByPattern,
   hasOpenIssues,
   hasNonEscalatedIssues,
   writeStepLog,
@@ -1589,6 +1663,7 @@ export {
   resolveLogDir,
   sleep,
   main,
+  IS_WINDOWS,
   STEPS,
   STEP_KEYS,
   RUNNER_ARTIFACTS,
