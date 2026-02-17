@@ -1,0 +1,41 @@
+# File: .claude/specs/54-fix-sdlc-runner-infinite-retry-no-ci/feature.gherkin
+#
+# Generated from: .claude/specs/54-fix-sdlc-runner-infinite-retry-no-ci/requirements.md
+# Issue: #54
+# Type: Defect regression
+
+@regression
+Feature: SDLC runner handles repos with no CI checks
+  The monitorCI (Step 8) and merge (Step 9) steps previously entered an
+  infinite retry loop when the target repository had no CI checks configured.
+  This was fixed by adding explicit "no checks reported" detection to both
+  step prompts, treating it as a passing condition.
+
+  # --- Bug Is Fixed (monitorCI) ---
+
+  @regression
+  Scenario: No-checks treated as pass in monitorCI
+    Given a PR exists on a branch in a repo with no CI checks configured
+    When Step 8 (monitorCI) runs "gh pr checks" and receives "no checks reported on the branch"
+    Then the step treats "no checks reported" as a passing condition
+    And the step exits with code 0 without entering the poll loop
+
+  # --- Bug Is Fixed (merge) ---
+
+  @regression
+  Scenario: No-checks treated as pass in merge
+    Given a PR exists on a branch in a repo with no CI checks configured
+    When Step 9 (merge) verifies CI status with "gh pr checks" and receives "no checks reported"
+    Then the merge precondition is satisfied
+    And the PR is merged to main and the remote branch is deleted
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Existing CI behavior preserved when checks exist
+    Given a PR exists on a branch in a repo with CI checks configured
+    When Steps 8 and 9 run "gh pr checks" and checks are reported
+    Then Step 8 polls until checks are no longer pending
+    And Step 8 handles passing checks by exiting with code 0
+    And Step 8 handles failing checks by diagnosing, fixing, and re-polling
+    And Step 9 verifies checks pass before merging

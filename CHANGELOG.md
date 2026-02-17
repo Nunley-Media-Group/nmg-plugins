@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.4] - 2026-02-16
+
+### Fixed
+
+- **`openclaw/scripts/sdlc-runner.mjs`** — SDLC runner infinite retry when repo has no CI checks: `gh pr checks` exits code 1 with "no checks reported" on repos without CI workflows; Steps 8 (monitorCI) and 9 (merge) now detect this and treat it as a passing condition instead of retrying indefinitely
+
 ## [2.12.3] - 2026-02-16
 
 ### Fixed

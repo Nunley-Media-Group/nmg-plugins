@@ -316,7 +316,11 @@ function detectAndHydrateState() {
       if (!/fail|pending/i.test(checks)) {
         lastCompletedStep = 8;
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      if (/no checks reported/i.test(err.stderr || err.message || '')) {
+        lastCompletedStep = 8;
+      }
+    }
   }
 
   log(`detectAndHydrateState: detected lastCompletedStep=${lastCompletedStep}, featureName=${featureName || '<unknown>'}`);
@@ -653,7 +657,10 @@ function validatePreconditions(step, state) {
         const checks = gh('pr checks');
         if (/fail/i.test(checks)) return { ok: false, reason: 'CI checks failing' };
         return { ok: true };
-      } catch {
+      } catch (err) {
+        if (/no checks reported/i.test(err.stderr || err.message || '')) {
+          return { ok: true };
+        }
         return { ok: false, reason: 'Could not check PR status' };
       }
     }
@@ -699,21 +706,22 @@ function buildClaudeArgs(step, state) {
 
     8: [
       `Monitor CI for the PR on branch ${branch}. Follow these steps exactly:`,
-      `1. Run \`gh pr checks\` and poll every 30 seconds until no checks are "pending".`,
-      `2. If all checks pass, report success and exit with code 0.`,
-      `3. If any check fails:`,
+      `1. Run \`gh pr checks\`. If the output contains "no checks reported", the repository has no CI configured — treat this as success and exit with code 0 immediately.`,
+      `2. Poll \`gh pr checks\` every 30 seconds until no checks are "pending".`,
+      `3. If all checks pass, report success and exit with code 0.`,
+      `4. If any check fails:`,
       `   a. Read the CI logs for the failing check(s) to diagnose the root cause.`,
       `   b. Before applying any fix, review the spec files in .claude/specs/ to ensure`,
       `      the fix does not deviate from specified behavior. If the only correct fix`,
       `      would change specified behavior, exit with a non-zero status explaining why.`,
       `   c. Apply the minimal fix, commit with a "fix:" conventional-commit message, and push.`,
-      `   d. Return to step 1 to re-poll CI after the push.`,
-      `4. If you cannot fix the failure after 3 attempts, exit with a non-zero status`,
+      `   d. Return to step 2 to re-poll CI after the push.`,
+      `5. If you cannot fix the failure after 3 attempts, exit with a non-zero status`,
       `   explaining what failed and why you could not fix it.`,
-      `5. Only exit with code 0 when ALL CI checks show as passing.`,
+      `6. Only exit with code 0 when ALL CI checks show as passing.`,
     ].join('\n'),
 
-    9: `First verify CI is passing with gh pr checks. If any check is failing, do NOT merge — report the failure and exit with a non-zero status. If all checks pass, merge the current PR to main and delete the remote branch ${branch}.`,
+    9: `First verify CI is passing with gh pr checks. If the output contains "no checks reported", treat this as passing (the repository has no CI configured). If any check is failing, do NOT merge — report the failure and exit with a non-zero status. If all checks pass, merge the current PR to main and delete the remote branch ${branch}.`,
   };
 
   const claudeArgs = [
@@ -1130,6 +1138,9 @@ function validateCI() {
     }
     return { ok: true };
   } catch (err) {
+    if (/no checks reported/i.test(err.stderr || err.message || '')) {
+      return { ok: true };
+    }
     return { ok: false, reason: `Could not check CI status: ${err.message}` };
   }
 }
