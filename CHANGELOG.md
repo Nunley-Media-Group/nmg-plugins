@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.3] - 2026-02-16
+
+### Fixed
+
+- **`/migrating-projects`** — Skill now explicitly ignores `.claude/auto-mode` and always presents proposed changes for interactive review via `AskUserQuestion`, matching the original spec's out-of-scope declaration that migration is always interactive
+
 ## [2.12.2] - 2026-02-16
 
 ### Fixed
