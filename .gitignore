@@ -8,3 +8,4 @@
 # SDLC runner config
 sdlc-config.json
 .claude/sdlc-state.json
+.claude/auto-mode
