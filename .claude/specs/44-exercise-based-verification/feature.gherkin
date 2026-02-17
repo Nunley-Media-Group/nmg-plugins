@@ -1,0 +1,126 @@
+# File: .claude/specs/44-exercise-based-verification/feature.gherkin
+#
+# Generated from: .claude/specs/44-exercise-based-verification/requirements.md
+# Issue: #44
+
+Feature: Exercise-Based Verification for Plugin Projects
+  As a developer working on the nmg-sdlc plugin
+  I want /verifying-specs to exercise changed skills against a test project
+  So that skill changes are verified by actual invocation, not just static analysis
+
+  # --- Plugin Change Detection ---
+
+  Scenario: Detect plugin changes in diff
+    Given /verifying-specs is running and has loaded the spec and diff
+    When the changed files include SKILL.md or agent definition .md files
+    Then the skill flags the change as a plugin change requiring exercise-based verification
+
+  Scenario: Detect plugin changes from SKILL.md files
+    Given the diff includes "plugins/nmg-sdlc/skills/verifying-specs/SKILL.md"
+    When Step 5 runs plugin change detection
+    Then exercise-based verification is triggered
+
+  Scenario: Detect plugin changes from agent definition files
+    Given the diff includes "plugins/nmg-sdlc/agents/architecture-reviewer.md"
+    When Step 5 runs plugin change detection
+    Then exercise-based verification is triggered
+
+  # --- Test Project Scaffolding ---
+
+  Scenario: Scaffold disposable test project
+    Given a plugin change has been detected
+    When Step 5 executes test project scaffolding
+    Then a minimal test project is created in the OS temp directory
+    And it contains .claude/steering/ with product.md, tech.md, and structure.md
+    And it contains src/index.js, README.md, and .gitignore
+    And it has an initialized git repo with at least one commit
+
+  # --- Exercise Invocation ---
+
+  Scenario: Exercise changed skill via Agent SDK
+    Given a test project has been scaffolded
+    And the Claude Agent SDK is available
+    When the changed skill is exercised
+    Then it is invoked via the Agent SDK with canUseTool callback
+    And the plugin is loaded from the local plugins directory
+    And the working directory is set to the test project path
+    And AskUserQuestion calls receive programmatic first-option answers
+    And output is captured for evaluation
+
+  Scenario: Fallback to claude -p when Agent SDK unavailable
+    Given a test project has been scaffolded
+    And the Claude Agent SDK is not available
+    When exercise testing attempts to run
+    Then claude -p is used with --disallowedTools AskUserQuestion
+    And --append-system-prompt instructs reasonable default choices
+    And the verification report notes that only the non-interactive path was tested
+
+  # --- Dry-Run for GitHub Skills ---
+
+  Scenario: Dry-run evaluation for GitHub-integrated skills
+    Given the changed skill creates GitHub resources
+    When exercise testing runs
+    Then the exercise prompt instructs dry-run mode
+    And the skill generates content without creating real GitHub artifacts
+    And the generated content is evaluated against acceptance criteria
+
+  # --- Output Evaluation ---
+
+  Scenario: Evaluate exercise output against acceptance criteria
+    Given exercise output has been captured from a skill invocation
+    When evaluation runs
+    Then each AC from requirements.md is checked against the output
+    And each AC is marked as Pass, Fail, or Partial
+    And evidence is recorded for each AC verdict
+
+  # --- Reporting ---
+
+  Scenario: Report includes exercise test results
+    Given exercise-based verification was performed
+    When the verification report is generated in Step 7
+    Then it includes an Exercise Test Results section
+    And the section documents which skill was exercised
+    And the section documents the exercise method used
+    And the section documents AskUserQuestion handling
+    And the section includes captured output summary
+    And the section includes AC evaluation results with verdicts
+
+  # --- Cleanup ---
+
+  Scenario: Cleanup after verification
+    Given exercise testing has completed
+    When Step 5 cleanup runs
+    Then the disposable test project directory is deleted
+    And no test project artifacts remain in the temp directory
+
+  # --- Error Handling ---
+
+  Scenario: Graceful degradation when claude CLI not available
+    Given neither the Agent SDK nor the claude CLI is available
+    When the exercise step attempts to run
+    Then exercise testing is skipped
+    And the verification report notes the skip reason
+    And manual exercise testing is recommended as follow-up
+
+  Scenario: Graceful degradation on exercise timeout
+    Given exercise testing is running
+    When the exercise subprocess exceeds the 5-minute timeout
+    Then the subprocess is terminated
+    And the verification report notes the timeout
+    And the remaining verification workflow continues
+
+  Scenario: Graceful degradation on exercise error
+    Given exercise testing encounters an unexpected error
+    When the error is caught
+    Then the error is captured and reported as a finding
+    And exercise testing is marked as failed in the report
+    And the remaining verification workflow continues
+
+  # --- Non-Plugin Projects ---
+
+  Scenario: Non-plugin projects use existing BDD verification
+    Given no SKILL.md or agent definition files are in the diff
+    When Step 5 executes
+    Then the existing BDD test coverage verification runs unchanged
+    And exercise-based verification is not triggered
+    And feature file existence and scenario coverage checks proceed normally

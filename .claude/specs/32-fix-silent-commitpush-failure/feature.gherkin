@@ -1,0 +1,50 @@
+# File: .claude/specs/32-fix-silent-commitpush-failure/feature.gherkin
+#
+# Generated from: .claude/specs/32-fix-silent-commitpush-failure/requirements.md
+# Issue: #32
+# Type: Defect regression
+
+@regression
+Feature: Silent commitPush failure causing retry loop
+  The SDLC runner's step 6 (commitPush) previously trusted exit code 0
+  unconditionally, causing a retry loop between steps 6 and 7 when git push
+  failed silently. This was fixed by adding a post-step push validation gate
+  after step 6 and updating the step 6 prompt to instruct explicit failure exits.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Push validation gate detects unpushed commits after step 6
+    Given step 6 (commitPush) completes with exit code 0
+    And unpushed commits exist on the branch (git log origin/branch..HEAD returns output)
+    When the post-step push validation gate runs
+    Then the step is marked as failed
+    And the runner logs "Push validation failed after Step 6"
+    And the runner posts a Discord message identifying the push validation failure
+    And the runner retries step 6
+
+  @regression
+  Scenario: Step 6 prompt instructs explicit failure exit
+    Given Claude Code is running the commitPush step
+    When git push fails for any reason
+    Then the step 6 prompt instructs Claude to verify push success via git log
+    And the prompt instructs Claude to exit with a non-zero status code on failure
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Successful push passes validation gate
+    Given step 6 (commitPush) completes with exit code 0
+    And no unpushed commits exist on the branch (git log origin/branch..HEAD returns empty)
+    When the post-step push validation gate runs
+    Then the validation passes
+    And the runner advances to step 7 normally
+
+  # --- Retry Boundary ---
+
+  @regression
+  Scenario: Push validation exhausts retries and escalates
+    Given step 6 fails push validation on every attempt
+    When the runner has retried step 6 maxRetriesPerStep times
+    Then the runner escalates with a diagnostic message identifying the push failure
+    And the runner does not loop between steps 6 and 7

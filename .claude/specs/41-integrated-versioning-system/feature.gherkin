@@ -1,0 +1,123 @@
+# File: .claude/specs/41-integrated-versioning-system/feature.gherkin
+#
+# Generated from: .claude/specs/41-integrated-versioning-system/requirements.md
+# Issue: #41
+
+Feature: Integrated Versioning System
+  As a developer using nmg-sdlc
+  I want an integrated versioning system that tracks versions, manages milestones, and maintains a changelog
+  So that every project using nmg-sdlc gets consistent, stack-agnostic versioning without additional tooling
+
+  # --- Milestone Assignment (Issue Creation) ---
+
+  Scenario: AC1 - Milestone assignment during issue creation (happy path)
+    Given a developer is creating an issue via /creating-issues
+    And the project VERSION file contains "2.3.1"
+    When the interview reaches the milestone question
+    Then the skill presents milestone "v2" as the default option
+    And allows the developer to specify a different milestone number
+    And assigns the created issue to the chosen milestone
+
+  Scenario: AC2 - Milestone auto-creation when milestone does not exist
+    Given a developer specifies milestone "3" during /creating-issues
+    And no "v3" milestone exists on the GitHub repository
+    When the issue is created
+    Then the skill creates the "v3" milestone via gh CLI
+    And assigns the issue to the newly created milestone
+
+  # --- Version Bump Classification (PR Creation) ---
+
+  Scenario: AC3 - Patch bump for bug fixes
+    Given a developer runs /creating-prs for an issue with the "bug" label
+    And the current VERSION is "2.3.1"
+    When the skill determines the version impact
+    Then it classifies the change as a patch bump
+    And proposes version "2.3.2"
+    And presents the classification to the developer for confirmation or override
+
+  Scenario: AC4 - Minor bump for enhancements
+    Given a developer runs /creating-prs for an issue with the "enhancement" label
+    And the current VERSION is "2.3.1"
+    When the skill determines the version impact
+    Then it classifies the change as a minor bump
+    And proposes version "2.4.0"
+
+  Scenario: AC5 - Major bump on milestone completion
+    Given a PR that closes the last open issue in milestone "v2"
+    And the current VERSION is "2.9.1"
+    When /creating-prs detects the milestone will be fully completed
+    Then it proposes a major version bump to "3.0.0"
+    And asks the developer to confirm before applying
+
+  # --- Version Artifact Updates ---
+
+  Scenario: AC6 - VERSION file and CHANGELOG update in PR
+    Given /creating-prs has determined a minor bump from "2.3.1" to "2.4.0"
+    And CHANGELOG.md has entries under [Unreleased]
+    When the PR is being assembled
+    Then the VERSION file is updated to "2.4.0"
+    And CHANGELOG.md [Unreleased] entries are moved under a new "[2.4.0] - 2026-02-16" heading
+    And the [Unreleased] section is left empty for future changes
+
+  Scenario: AC7 - Steering doc bridge for stack-specific version files
+    Given the project's tech.md contains a Versioning section
+    And the section lists "package.json" with path "version"
+    And the version bump is to "2.4.0"
+    When /creating-prs updates version files
+    Then the VERSION file is updated to "2.4.0"
+    And package.json "version" field is updated to "2.4.0"
+
+  # --- Migration ---
+
+  Scenario: AC8a - Migration creates CHANGELOG from git history
+    Given a project has no CHANGELOG.md
+    And has conventional commit history with git tags "v1.0.0" and "v1.1.0"
+    When a developer runs /migrating-projects
+    Then it generates CHANGELOG.md in Keep a Changelog format
+    And groups entries by conventional commit type under version headings
+    And includes an [Unreleased] section for commits after the latest tag
+
+  Scenario: AC8b - Migration updates existing CHANGELOG to match template
+    Given a project has a CHANGELOG.md that does not conform to Keep a Changelog format
+    And has conventional commit history with git tags
+    When a developer runs /migrating-projects
+    Then it restructures entries into proper categories (Added, Changed, Fixed)
+    And adds missing version headings from git tags
+    And ensures an [Unreleased] section exists
+    And preserves manually-written entries that do not correspond to commits
+
+  Scenario: AC9 - Migration creates or updates VERSION file
+    Given a project where /migrating-projects has generated or updated CHANGELOG.md
+    And the latest versioned CHANGELOG heading is "[1.1.0]"
+    When /migrating-projects analyzes the VERSION file
+    Then it creates or updates the VERSION file to contain "1.1.0"
+
+  # --- Auto-Mode ---
+
+  Scenario: AC10 - Auto-mode compatibility
+    Given .claude/auto-mode exists in the project
+    And the VERSION file contains "2.3.1"
+    When /creating-issues runs in auto-mode
+    Then the milestone defaults to "v2" without prompting
+    When /creating-prs runs in auto-mode for an enhancement issue
+    Then the version bump to "2.4.0" is applied without confirmation
+
+  # --- Edge Cases ---
+
+  Scenario: No VERSION file - versioning is skipped gracefully
+    Given a project has no VERSION file
+    When /creating-prs runs
+    Then version bumping is skipped entirely
+    And the PR is created without version changes
+
+  Scenario Outline: Version bump classification by label
+    Given an issue with the "<label>" label
+    And the current VERSION is "1.2.3"
+    When /creating-prs determines the version impact
+    Then it classifies the change as a <bump_type> bump
+    And proposes version "<new_version>"
+
+    Examples:
+      | label       | bump_type | new_version |
+      | bug         | patch     | 1.2.4       |
+      | enhancement | minor     | 1.3.0       |

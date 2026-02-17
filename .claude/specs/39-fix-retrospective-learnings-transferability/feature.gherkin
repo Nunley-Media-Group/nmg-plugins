@@ -1,0 +1,55 @@
+# File: .claude/specs/39-fix-retrospective-learnings-transferability/feature.gherkin
+#
+# Generated from: .claude/specs/39-fix-retrospective-learnings-transferability/requirements.md
+# Issue: #39
+# Type: Defect regression
+
+@regression
+Feature: Retrospective learnings are transferable cross-cutting patterns
+  The /running-retrospectives skill previously produced project-specific
+  regression notes tied to individual defect scenarios rather than
+  transferable spec-writing patterns.
+  This was fixed by rewriting the extraction instructions to require
+  generalization, adding a cross-defect aggregation step, and
+  restructuring the template for cross-cutting learnings with evidence.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Learnings are generalized and transferable
+    Given a project with defect specs linked to feature specs
+    When /running-retrospectives is run
+    Then each learning is framed as a transferable spec-writing pattern
+    And no learning contains project-specific terminology or implementation details
+
+  @regression
+  Scenario: Cross-cutting patterns are aggregated
+    Given multiple defect specs that share a common root pattern
+    When /running-retrospectives analyzes them
+    Then they are merged into a single cross-cutting learning
+    And the individual defects are listed as supporting evidence
+
+  # --- Evidence Traceability ---
+
+  @regression
+  Scenario: Existing defect details preserved as evidence
+    Given a cross-cutting learning aggregated from multiple defects
+    When the retrospective document is written
+    Then each learning references its source defect specs for traceability
+    And the learning text itself is domain-agnostic
+
+  # --- Downstream Consumers ---
+
+  @regression
+  Scenario: Writing-specs consumes generalized learnings effectively
+    Given a retrospective.md containing generalized cross-cutting learnings
+    When /writing-specs reads it during Phase 1
+    Then the learnings are interpreted as transferable principles
+    And they are adapted to the current feature's context rather than applied literally
+
+  @regression
+  Scenario: Migrating-projects detects retrospective template drift
+    Given a project with an existing retrospective.md from an older template
+    When /migrating-projects is run after a plugin update
+    Then the retrospective template is included in the heading diff
+    And missing sections are offered for migration alongside other steering docs
