@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.6] - 2026-02-16
+
+### Fixed
+
+- **`/writing-specs`** — Defect variant now actively searches `.claude/specs/*/requirements.md` for related feature specs by keyword matching (file paths, function names, component names) instead of relying on passive agent intuition; populates the **Related Spec** field with any match or N/A if none found
+
 ## [2.12.5] - 2026-02-16
 
 ### Fixed
