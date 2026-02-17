@@ -116,7 +116,11 @@ Extract from the issue:
 6. Bootstrap acceptance criteria from the issue body
 7. Fill in requirements per the appropriate variant:
    - **Feature**: Full template — user story, ACs, functional/non-functional requirements, UI/UX, data requirements, dependencies, success metrics
-   - **Defect**: Defect variant — reproduction steps, expected vs actual, severity, 2–3 acceptance criteria (bug fixed + no regression), lightweight functional requirements. Omit NFRs table, UI/UX table, data requirements, success metrics. If the bug relates to an existing feature spec, populate the optional **Related Spec** field.
+   - **Defect**: Defect variant — reproduction steps, expected vs actual, severity, 2–3 acceptance criteria (bug fixed + no regression), lightweight functional requirements. Omit NFRs table, UI/UX table, data requirements, success metrics. To populate the **Related Spec** field, actively search for a related feature spec:
+     1. Extract keywords from the issue — file paths, function/method names, component names, module names
+     2. Run `Glob` for `.claude/specs/*/requirements.md` to list all existing specs
+     3. Run `Grep` over those spec files using the extracted keywords
+     4. If a spec matches, set **Related Spec** to its directory (e.g., `.claude/specs/24-configurable-post-step-process-cleanup/`). If no match, set it to **N/A**.
 8. Consult steering docs for project-specific requirements (e.g., accessibility, platform support)
 
 ### Output
