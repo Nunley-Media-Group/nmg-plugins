@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.9] - 2026-02-19
+
+### Fixed
+
+- **`/starting-issues`** — Milestone selection no longer iterates through random milestones; now fetches milestones with `open_issues` metadata, filters to viable milestones, and applies deterministic 3-way selection (zero → fallback to all issues, one → auto-select, multiple → present to user or pick first alphabetically in auto-mode)
+
 ## [2.12.8] - 2026-02-19
 
 ### Fixed
