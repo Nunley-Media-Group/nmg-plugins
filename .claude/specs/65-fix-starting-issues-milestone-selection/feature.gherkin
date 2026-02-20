@@ -1,0 +1,52 @@
+# File: .claude/specs/65-fix-starting-issues-milestone-selection/feature.gherkin
+#
+# Generated from: .claude/specs/65-fix-starting-issues-milestone-selection/requirements.md
+# Issue: #65
+# Type: Defect regression
+
+@regression
+Feature: Starting-issues milestone selection no longer iterates through random milestones
+  The /starting-issues skill previously fetched only milestone titles with no metadata,
+  causing the agent to guess which milestone had open issues by iterating through them
+  one-by-one. This was fixed by fetching milestones with open_issues count, filtering
+  to viable milestones, and applying deterministic selection logic.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Milestones fetched with metadata and filtered to viable ones
+    Given a repo with 8 milestones where only "v1" has 4 open issues
+    When /starting-issues is invoked without an issue number
+    Then the skill fetches milestones with open_issues count
+    And only milestones with open_issues > 0 are considered
+    And no iteration through empty milestones occurs
+
+  @regression
+  Scenario: Single viable milestone is auto-selected
+    Given a repo with multiple milestones where only "v1" has open issues
+    When the filtered milestone list contains exactly one entry
+    Then "v1" is auto-selected without user intervention or guessing
+    And issues from "v1" are fetched for selection
+
+  # --- Multiple Viable Milestones ---
+
+  @regression
+  Scenario: Multiple viable milestones presented to user
+    Given a repo with milestones "v1" (3 open issues) and "v2" (5 open issues)
+    When /starting-issues is invoked without an issue number in interactive mode
+    Then the user is presented with "v1" and "v2" to choose from
+
+  @regression
+  Scenario: Multiple viable milestones in auto-mode selects first alphabetically
+    Given a repo with milestones "v1" (3 open issues) and "v2" (5 open issues)
+    And auto-mode is enabled
+    When /starting-issues is invoked without an issue number
+    Then "v1" is auto-selected as the first milestone alphabetically
+
+  # --- Graceful Fallback ---
+
+  @regression
+  Scenario: No milestones with open issues falls back to all open issues
+    Given a repo where no milestones have open issues
+    When /starting-issues is invoked without an issue number
+    Then the skill falls back to listing all open issues without milestone filtering

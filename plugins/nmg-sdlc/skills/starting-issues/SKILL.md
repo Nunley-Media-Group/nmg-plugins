@@ -21,7 +21,7 @@ Select a GitHub issue to work on, create a linked feature branch, and set the is
 
 If the file `.claude/auto-mode` exists in the project directory:
 - If an issue number was provided as an argument, **skip Steps 2–3** (selection and confirmation) — go directly to Step 4.
-- If no issue number was provided, **select the first available issue** (sorted by issue number ascending — oldest first) from the current milestone (or all open issues if no milestone exists) **without calling `AskUserQuestion`**. **Skip Step 3 confirmation.**
+- If no issue number was provided, **select the first available issue** (sorted by issue number ascending — oldest first) from the first viable milestone (sorted alphabetically) (or all open issues if no viable milestone exists) **without calling `AskUserQuestion`**. **Skip Step 3 confirmation.**
 
 ## Workflow Overview
 
@@ -42,25 +42,33 @@ If an argument was provided (e.g., `/starting-issues #42`), skip to Step 3 using
 
 Otherwise, discover available issues:
 
-### Fetch Milestones
+### Fetch Viable Milestones
+
+Fetch milestones that have at least one open issue, sorted alphabetically:
 
 ```bash
-gh api repos/{owner}/{repo}/milestones --jq '.[].title'
+gh api repos/{owner}/{repo}/milestones --jq '[.[] | select(.open_issues > 0) | {title: .title, open_issues: .open_issues}] | sort_by(.title)'
 ```
 
-### Fetch Issues by Milestone
+If this call fails (network error, auth failure, or no milestones endpoint), treat as zero viable milestones and fall back to all open issues.
 
-If milestones exist, fetch open issues from the current/next milestone:
+### Select Milestone and Fetch Issues
 
-```bash
-gh issue list -s open -m "<milestone>" -L 10 --json number,title,labels
-```
+Apply deterministic selection based on the number of viable milestones:
 
-If no milestones are found or no issues exist in any milestone, fall back to all open issues:
+- **Zero viable milestones:** Fall back to all open issues:
+  ```bash
+  gh issue list -s open -L 10 --json number,title,labels
+  ```
 
-```bash
-gh issue list -s open -L 10 --json number,title,labels
-```
+- **One viable milestone:** Auto-select it and fetch its issues:
+  ```bash
+  gh issue list -s open -m "<milestone>" -L 10 --json number,title,labels
+  ```
+
+- **Multiple viable milestones:**
+  - **Interactive mode:** Present the filtered milestone list via `AskUserQuestion` (label: milestone title, description: "N open issues"), then fetch issues from the selected milestone.
+  - **Auto-mode:** Select the first milestone alphabetically and fetch its issues.
 
 ## Step 2: Present Issue Selection
 
