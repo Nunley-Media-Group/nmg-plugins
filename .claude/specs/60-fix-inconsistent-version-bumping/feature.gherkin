@@ -1,0 +1,64 @@
+# File: .claude/specs/60-fix-inconsistent-version-bumping/feature.gherkin
+#
+# Generated from: .claude/specs/60-fix-inconsistent-version-bumping/requirements.md
+# Issue: #60
+# Type: Defect regression
+
+@regression
+Feature: Consistent version bumping in automated SDLC runs
+  The SDLC runner previously skipped version bumps ~50% of the time during
+  automated PR creation because the version bump logic was LLM-discretionary
+  (in the /creating-prs skill Steps 2-3) with no postcondition enforcement.
+  This was fixed by adding a deterministic version bump postcondition gate
+  to the runner, reinforcing the Step 7 prompt, and adding postcondition
+  verification after PR creation.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Deterministic version bump when LLM skips skill steps
+    Given the SDLC runner is processing an issue for a project with a VERSION file containing "0.1.5"
+    And the issue has the "bug" label
+    And .claude/steering/tech.md lists "Cargo.toml:package.version" in the Versioning section
+    When the runner completes Step 7 (createPR) but the LLM did not bump the version
+    Then the runner detects that VERSION has not changed relative to main
+    And the runner performs a deterministic patch bump to "0.1.6"
+    And the runner updates VERSION, CHANGELOG.md, and Cargo.toml
+    And the runner commits with "chore: bump version to 0.1.6"
+    And the runner pushes the commit and retries Step 7
+
+  @regression
+  Scenario: Reinforced Step 7 prompt includes version bump mandate
+    Given the SDLC runner constructs the Step 7 prompt for claude -p
+    When the prompt text is assembled
+    Then the prompt explicitly states that version bumping is mandatory
+
+  # --- Postcondition Verification ---
+
+  @regression
+  Scenario: Postcondition detects missing version bump and triggers recovery
+    Given the SDLC runner completed Step 7 with exit code 0
+    And a VERSION file exists in the project root
+    And git diff main -- VERSION shows no changes
+    When the runner evaluates the Step 7 postcondition
+    Then the postcondition reports failure
+    And the runner performs the deterministic version bump
+    And the runner retries Step 7
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Manual workflow preserves interactive version bump confirmation
+    Given a developer runs /creating-prs interactively without auto-mode
+    And a VERSION file exists with "2.3.1"
+    And the issue has the "enhancement" label
+    When the skill reaches Step 2 (version bump determination)
+    Then the skill presents AskUserQuestion with bump options
+    And the developer can accept "2.4.0" or override to a different bump type
+
+  @regression
+  Scenario: Projects without VERSION file skip version bump postcondition
+    Given the SDLC runner is processing an issue for a project without a VERSION file
+    When the runner completes Step 7 (createPR)
+    Then the version bump postcondition is skipped
+    And the step completes successfully without version-related checks
