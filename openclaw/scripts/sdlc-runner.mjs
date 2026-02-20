@@ -807,7 +807,7 @@ function buildClaudeArgs(step, state) {
 
     6: `Stage all changes, commit with a meaningful conventional-commit message summarizing the work for issue #${issue}, and push to the remote branch ${branch}. After pushing, verify the push succeeded by running git log origin/${branch}..HEAD --oneline — if any unpushed commits remain, or if git push reported an error, exit with a non-zero status code.`,
 
-    7: `Create a pull request for branch ${branch} targeting main for issue #${issue}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
+    7: `Create a pull request for branch ${branch} targeting main for issue #${issue}. You MUST bump the version (Steps 2-3 of the skill) before creating the PR — this is mandatory and must not be skipped. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
     8: [
       `Monitor CI for the PR on branch ${branch}. Follow these steps exactly:`,
@@ -1260,6 +1260,195 @@ function validatePush() {
 }
 
 // ---------------------------------------------------------------------------
+// Version bump validation gate (post-step-7)
+// ---------------------------------------------------------------------------
+
+function validateVersionBump() {
+  const versionPath = path.join(PROJECT_PATH, 'VERSION');
+  if (!fs.existsSync(versionPath)) return { ok: true }; // no VERSION file → skip
+
+  // Check if VERSION contains valid semver
+  const version = fs.readFileSync(versionPath, 'utf8').trim();
+  if (!/^\d+\.\d+\.\d+$/.test(version)) {
+    log('Warning: VERSION file does not contain valid semver, skipping version bump check');
+    return { ok: true };
+  }
+
+  // Check if VERSION changed vs main
+  try {
+    const diff = git('diff main -- VERSION');
+    if (diff) return { ok: true }; // VERSION changed — bump was done
+    return { ok: false, reason: 'VERSION file unchanged relative to main' };
+  } catch (err) {
+    log(`Warning: could not diff VERSION against main: ${err.message}`);
+    return { ok: true }; // can't verify → skip
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Deterministic version bump (recovery when LLM skips the bump)
+// ---------------------------------------------------------------------------
+
+function performDeterministicVersionBump(state) {
+  const versionPath = path.join(PROJECT_PATH, 'VERSION');
+
+  // Guard: VERSION file must exist and contain valid semver
+  if (!fs.existsSync(versionPath)) {
+    log('performDeterministicVersionBump: no VERSION file, skipping');
+    return false;
+  }
+
+  const currentVersion = fs.readFileSync(versionPath, 'utf8').trim();
+  if (!/^\d+\.\d+\.\d+$/.test(currentVersion)) {
+    log(`performDeterministicVersionBump: invalid semver "${currentVersion}", skipping`);
+    return false;
+  }
+
+  const [major, minor, patch] = currentVersion.split('.').map(Number);
+  const issue = state.currentIssue;
+
+  if (!issue) {
+    log('performDeterministicVersionBump: no current issue, skipping');
+    return false;
+  }
+
+  try {
+    // Get issue labels
+    let labels = [];
+    try {
+      const labelOutput = gh(`issue view ${issue} --json labels --jq '.labels[].name'`);
+      labels = labelOutput.split('\n').map(l => l.trim()).filter(Boolean);
+    } catch (err) {
+      log(`Warning: could not read issue labels: ${err.message}`);
+    }
+
+    // Check milestone completion — is this the last open issue in its milestone?
+    let isLastInMilestone = false;
+    try {
+      const milestoneJson = gh(`issue view ${issue} --json milestone`);
+      const parsed = JSON.parse(milestoneJson);
+      if (parsed.milestone && parsed.milestone.title) {
+        const milestoneTitle = parsed.milestone.title;
+        const milestonesJson = gh('api repos/{owner}/{repo}/milestones');
+        const milestones = JSON.parse(milestonesJson);
+        const ms = milestones.find(m => m.title === milestoneTitle);
+        if (ms && ms.open_issues === 1) {
+          isLastInMilestone = true;
+        }
+      }
+    } catch (err) {
+      log(`Warning: could not check milestone completion: ${err.message}`);
+    }
+
+    // Apply classification matrix
+    let newVersion;
+    if (isLastInMilestone) {
+      newVersion = `${major + 1}.0.0`;
+    } else if (labels.includes('bug')) {
+      newVersion = `${major}.${minor}.${patch + 1}`;
+    } else {
+      // enhancement or no matching label → minor
+      newVersion = `${major}.${minor + 1}.0`;
+    }
+
+    log(`Deterministic version bump: ${currentVersion} → ${newVersion}`);
+
+    if (DRY_RUN) {
+      log(`[DRY-RUN] Would bump version to ${newVersion}`);
+      return true;
+    }
+
+    // 1. Update VERSION file
+    fs.writeFileSync(versionPath, newVersion + '\n');
+
+    // 2. Update CHANGELOG.md if it exists
+    const changelogPath = path.join(PROJECT_PATH, 'CHANGELOG.md');
+    if (fs.existsSync(changelogPath)) {
+      try {
+        let changelog = fs.readFileSync(changelogPath, 'utf8');
+        const today = new Date().toISOString().slice(0, 10);
+        changelog = changelog.replace(
+          /## \[Unreleased\]/,
+          `## [Unreleased]\n\n## [${newVersion}] - ${today}`
+        );
+        fs.writeFileSync(changelogPath, changelog);
+      } catch (err) {
+        log(`Warning: could not update CHANGELOG.md: ${err.message}`);
+      }
+    }
+
+    // 3. Update stack-specific files from .claude/steering/tech.md
+    const techMdPath = path.join(PROJECT_PATH, '.claude', 'steering', 'tech.md');
+    if (fs.existsSync(techMdPath)) {
+      try {
+        const techMd = fs.readFileSync(techMdPath, 'utf8');
+        const versioningMatch = techMd.match(/## Versioning\s*\n([\s\S]*?)(?=\n## |\n$|$)/);
+        if (versioningMatch) {
+          // Parse table rows: | file | dot.path |
+          const tableRows = versioningMatch[1].match(/\|[^|]+\|[^|]+\|/g) || [];
+          for (const row of tableRows) {
+            const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+            if (cells.length < 2 || cells[0] === 'File' || cells[0].startsWith('-')) continue;
+
+            const filePath = path.join(PROJECT_PATH, cells[0]);
+            const dotPath = cells[1];
+
+            if (!fs.existsSync(filePath)) {
+              log(`Warning: versioned file not found: ${cells[0]}`);
+              continue;
+            }
+
+            try {
+              if (filePath.endsWith('.json')) {
+                // JSON: parse, update dot-path, write back
+                const json = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                const keys = dotPath.split('.');
+                let obj = json;
+                for (let i = 0; i < keys.length - 1; i++) {
+                  obj = obj[keys[i]];
+                  if (!obj) break;
+                }
+                if (obj) {
+                  obj[keys[keys.length - 1]] = newVersion;
+                  fs.writeFileSync(filePath, JSON.stringify(json, null, 2) + '\n');
+                }
+              } else if (filePath.endsWith('.toml')) {
+                // TOML: regex replace the version value at the dot-path
+                let content = fs.readFileSync(filePath, 'utf8');
+                const lastKey = dotPath.split('.').pop();
+                const pattern = new RegExp(`(${lastKey}\\s*=\\s*")([^"]*)(")`, 'g');
+                content = content.replace(pattern, `$1${newVersion}$3`);
+                fs.writeFileSync(filePath, content);
+              } else {
+                // Plain text: replace version string
+                let content = fs.readFileSync(filePath, 'utf8');
+                content = content.replace(currentVersion, newVersion);
+                fs.writeFileSync(filePath, content);
+              }
+            } catch (err) {
+              log(`Warning: could not update ${cells[0]}: ${err.message}`);
+            }
+          }
+        }
+      } catch (err) {
+        log(`Warning: could not parse tech.md versioning section: ${err.message}`);
+      }
+    }
+
+    // 4. Commit and push
+    git('add -A');
+    git(`commit -m ${shellEscape(`chore: bump version to ${newVersion}`)}`);
+    git('push');
+
+    log(`Deterministic version bump committed and pushed: ${newVersion}`);
+    return true;
+  } catch (err) {
+    log(`Warning: performDeterministicVersionBump failed: ${err.message}`);
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Utility
 // ---------------------------------------------------------------------------
 
@@ -1397,6 +1586,24 @@ async function runStep(step, state) {
         }
         updateState({ retries: { ...retries, 6: count } });
         return 'retry';
+      }
+    }
+
+    // Special: version bump postcondition gate after step 7
+    if (step.number === 7) {
+      const versionCheck = validateVersionBump();
+      if (!versionCheck.ok) {
+        log(`Version bump missing: ${versionCheck.reason}`);
+        await postDiscord(`Version bump missing after Step 7 — ${versionCheck.reason}. Performing deterministic bump...`);
+        const bumped = performDeterministicVersionBump(state);
+        if (bumped) {
+          await postDiscord('Deterministic version bump succeeded. Retrying Step 7...');
+          return 'retry';
+        } else {
+          // Could not bump — warn but don't block PR creation
+          log('Warning: deterministic version bump failed, continuing without version bump');
+          await postDiscord('Warning: could not perform deterministic version bump. Continuing.');
+        }
       }
     }
 
@@ -1674,6 +1881,8 @@ export {
   validateSpecs,
   validateCI,
   validatePush,
+  validateVersionBump,
+  performDeterministicVersionBump,
   autoCommitIfDirty,
   buildClaudeArgs,
   readSkill,
