@@ -1,0 +1,35 @@
+# File: .claude/specs/58-fix-writing-specs-defect-related-spec-search/feature.gherkin
+#
+# Generated from: .claude/specs/58-fix-writing-specs-defect-related-spec-search/requirements.md
+# Issue: #58
+# Type: Defect regression
+
+@regression
+Feature: Writing-specs defect variant does not search for related feature specs
+  The writing-specs skill's Phase 1 defect process previously used a passive instruction
+  for the Related Spec field, providing no search mechanism. The agent defaulted to N/A
+  even when a related spec existed. This was fixed by adding an active search step that
+  extracts keywords from the issue and greps existing specs.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Agent actively searches for related feature specs
+    Given the writing-specs skill is processing a defect issue with the bug label
+    And the issue mentions file paths, function names, or components that relate to an existing feature spec
+    When it reaches the Phase 1 defect variant process
+    Then it searches .claude/specs/*/requirements.md for specs matching keywords from the issue
+
+  @regression
+  Scenario: Related Spec field is populated when a match is found
+    Given an existing feature spec in .claude/specs/ relates to the bug being specified
+    When the agent finds a matching spec via the keyword search
+    Then it populates the Related Spec field with the path to the matching spec directory
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: No false linkage when no related spec exists
+    Given no existing feature spec in .claude/specs/ relates to the bug
+    When the agent searches and finds no keyword matches
+    Then it sets the Related Spec field to N/A

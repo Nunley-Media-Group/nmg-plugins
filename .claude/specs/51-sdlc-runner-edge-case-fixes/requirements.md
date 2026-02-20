@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Mixed (Critical x1, High x1, Medium x3, Low x1)
-**Related Spec**: N/A (runtime script, not a skill)
+**Related Spec**: `.claude/specs/12-openclaw-sdlc-orchestration/`
 
 ---
 

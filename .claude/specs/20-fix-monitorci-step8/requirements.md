@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: N/A (affects `openclaw/scripts/sdlc-runner.mjs` infrastructure)
+**Related Spec**: `.claude/specs/12-openclaw-sdlc-orchestration/`
 
 ---
 

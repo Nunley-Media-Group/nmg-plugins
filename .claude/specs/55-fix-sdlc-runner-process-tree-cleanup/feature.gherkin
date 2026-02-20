@@ -1,0 +1,91 @@
+# File: .claude/specs/55-fix-sdlc-runner-process-tree-cleanup/feature.gherkin
+#
+# Generated from: .claude/specs/55-fix-sdlc-runner-process-tree-cleanup/requirements.md
+# Issue: #55
+# Type: Defect regression
+
+@regression
+Feature: SDLC runner process cleanup kills entire process trees
+  The cleanupProcesses() function previously failed to kill child processes
+  spawned by claude -p subprocesses. It used pkill -f which discarded the
+  filtered PID list, only killed pattern-matched parents (not descendants),
+  and matched unrelated user processes. This was fixed by implementing
+  platform-aware PID-based tree killing with a pattern-based fallback for orphans.
+
+  # --- Bug Is Fixed: Tree-based cleanup ---
+
+  @regression
+  Scenario: AC1 — Process tree cleanup kills all descendants
+    Given a claude -p subprocess with PID 1000 has spawned a process tree
+      | PID  | PPID | Command                          |
+      | 1001 | 1000 | chrome --remote-debugging-port   |
+      | 1002 | 1001 | chrome --type=gpu-process        |
+      | 1003 | 1001 | chrome --type=renderer           |
+      | 1004 | 1003 | chrome --type=utility            |
+    And the claude -p subprocess has exited
+    When cleanupProcesses runs
+    Then all PIDs in the process tree are terminated: 1004, 1003, 1002, 1001
+    And descendants are terminated before their parents
+
+  @regression
+  Scenario: AC2 — Filtered PID list is used for actual kill operations
+    Given cleanupProcesses has found PIDs matching pattern "--remote-debugging-port"
+      | PID  | Command                          |
+      | 2000 | chrome --remote-debugging-port   |
+      | 9999 | sdlc-runner.mjs (own process)    |
+    When it filters out the runner's own PID 9999
+    Then it terminates PID 2000 directly using process.kill
+    And it does not use a separate pattern-based bulk kill command
+    And PID 9999 is not terminated
+
+  # --- Related Behavior Still Works: Scoping ---
+
+  @regression
+  Scenario: AC3 — Cleanup only targets runner-spawned processes
+    Given the user has a normal Chrome browser running with PID 3000
+    And the SDLC runner spawned a claude -p subprocess with PID 4000
+    And PID 4000 spawned chrome with PID 4001
+    When cleanupProcesses runs with lastClaudePid set to 4000
+    Then PID 4001 is terminated (descendant of runner subprocess)
+    And PID 3000 is not terminated (unrelated user process)
+
+  # --- Edge Case: Orphaned processes ---
+
+  @regression
+  Scenario: AC4 — Cleanup handles orphaned processes via pattern fallback
+    Given a claude -p subprocess has exited and lastClaudePid is cleared
+    And orphaned chrome processes exist that are no longer in the runner's process tree
+      | PID  | Command                          |
+      | 5001 | chrome --remote-debugging-port   |
+      | 5002 | chrome --type=gpu-process        |
+    And cleanup.processPatterns includes "--remote-debugging-port"
+    When cleanupProcesses runs
+    Then PID 5001 is terminated via pattern-based fallback
+    And PID 5002 is terminated as a descendant of PID 5001
+    And the runner's own PID is excluded from the kill list
+
+  # --- Logging ---
+
+  @regression
+  Scenario: AC5 — Cleanup always emits log entries when processes found
+    Given cleanupProcesses is called
+    When it finds 2 processes to clean up
+    Then it logs a CLEANUP message indicating the PIDs and count of processes terminated
+
+  @regression
+  Scenario: AC5 — Cleanup logs when no processes found
+    Given cleanupProcesses is called
+    And no matching processes exist
+    And lastClaudePid is not set
+    When cleanup completes
+    Then it logs "[CLEANUP] No matching processes found"
+
+  # --- Cross-platform ---
+
+  @regression
+  Scenario: Platform helpers degrade gracefully when commands are unavailable
+    Given the platform's process discovery command is not available
+    When cleanupProcesses runs
+    Then it logs a warning about the unavailable command
+    And it does not crash
+    And it continues to the next cleanup phase
