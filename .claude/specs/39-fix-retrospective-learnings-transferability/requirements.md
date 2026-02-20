@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: N/A *(this affects the `/running-retrospectives` skill itself, not a feature spec)*
+**Related Spec**: `.claude/specs/1-spec-retrospective-skill/`
 
 ---
 

@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: N/A (auto-mode is a runner infrastructure concern, not tied to a feature spec)
+**Related Spec**: `.claude/specs/11-automation-mode-support/`
 
 ---
 

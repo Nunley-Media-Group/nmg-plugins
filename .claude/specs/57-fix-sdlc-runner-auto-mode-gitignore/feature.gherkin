@@ -1,0 +1,39 @@
+# File: .claude/specs/57-fix-sdlc-runner-auto-mode-gitignore/feature.gherkin
+#
+# Generated from: .claude/specs/57-fix-sdlc-runner-auto-mode-gitignore/requirements.md
+# Issue: #57
+# Type: Defect regression
+
+@regression
+Feature: SDLC runner does not commit auto-mode file to target projects
+  The SDLC runner previously committed .claude/auto-mode and .claude/sdlc-state.json
+  to target projects when their .gitignore did not exclude these files.
+  This was fixed by adding ensureRunnerArtifactsGitignored() which appends
+  runner artifact patterns to the target project's .gitignore at startup.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Runner ensures artifacts are gitignored at startup
+    Given the SDLC runner starts with a target project whose .gitignore does not include ".claude/auto-mode" or ".claude/sdlc-state.json"
+    When the runner creates .claude/auto-mode
+    Then the target project's .gitignore contains ".claude/auto-mode"
+    And the target project's .gitignore contains ".claude/sdlc-state.json"
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Existing gitignore entries are preserved
+    Given the target project already has a .gitignore with entries "node_modules/" and "*.log"
+    When the runner appends runner artifact patterns
+    Then the .gitignore still contains "node_modules/"
+    And the .gitignore still contains "*.log"
+    And the .gitignore contains ".claude/auto-mode"
+    And duplicate entries are not added if the patterns are already present
+
+  @regression
+  Scenario: Runner cleanup still works after gitignore update
+    Given the runner is operating normally with artifacts gitignored
+    When the runner completes a cycle or receives a shutdown signal
+    Then .claude/auto-mode is removed from the filesystem
+    And the cleanup behavior is identical to before the fix

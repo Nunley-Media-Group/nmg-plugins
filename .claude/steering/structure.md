@@ -193,6 +193,16 @@ import { parseArgs } from 'node:util';
 
 ---
 
+## Design Tokens / UI Standards (if applicable)
+
+<!-- Pre-fill if design token files are found -->
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| [token] | [value] | [when to use] |
+
+---
+
 ## Architectural Invariants
 
 These are hard contracts that must never be violated. `/verifying-specs` should flag any change that breaks one.
