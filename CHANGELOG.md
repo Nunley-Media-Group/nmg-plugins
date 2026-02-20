@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.10] - 2026-02-20
+
+### Fixed
+
+- **`openclaw/scripts/sdlc-runner.mjs`** — Version bumping during automated SDLC runs is now deterministic: added `validateVersionBump()` postcondition that detects missing version bumps after PR creation (Step 7), and `performDeterministicVersionBump()` recovery function that reads `VERSION`, issue labels, milestone, and `.claude/steering/tech.md` to compute and commit the correct bump; Step 7 prompt reinforced with explicit version bump mandate as defense-in-depth
+
 ## [2.12.9] - 2026-02-19
 
 ### Fixed
