@@ -53,6 +53,8 @@ const {
   validateSpecs,
   validateCI,
   validatePush,
+  validateVersionBump,
+  performDeterministicVersionBump,
   autoCommitIfDirty,
   buildClaudeArgs,
   readSkill,
@@ -1801,5 +1803,206 @@ describe('Startup validation', () => {
   it('main() source validates PROJECT_PATH is a git repo', () => {
     const src = runner.main.toString();
     expect(src).toContain('not a git repository');
+  });
+});
+
+// ===========================================================================
+// Issue #60: Version bump postcondition and deterministic recovery
+// ===========================================================================
+
+describe('validateVersionBump (#60)', () => {
+  it('returns ok:true when no VERSION file exists', () => {
+    mockFs.existsSync.mockReturnValue(false);
+    const result = validateVersionBump();
+    expect(result.ok).toBe(true);
+  });
+
+  it('returns ok:true when VERSION contains invalid semver', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue('not-semver\n');
+    const result = validateVersionBump();
+    expect(result.ok).toBe(true);
+  });
+
+  it('returns ok:true when VERSION has changed vs main', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue('1.2.3\n');
+    mockExecSync.mockReturnValue('diff --git a/VERSION b/VERSION\n-1.2.2\n+1.2.3\n');
+    const result = validateVersionBump();
+    expect(result.ok).toBe(true);
+  });
+
+  it('returns ok:false when VERSION is unchanged vs main', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue('1.2.3\n');
+    mockExecSync.mockReturnValue(''); // empty diff = no change
+    const result = validateVersionBump();
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain('unchanged');
+  });
+
+  it('returns ok:true when git diff fails (cannot verify)', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue('1.2.3\n');
+    mockExecSync.mockImplementation(() => { throw new Error('git error'); });
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const result = validateVersionBump();
+    expect(result.ok).toBe(true);
+    logSpy.mockRestore();
+  });
+});
+
+describe('performDeterministicVersionBump (#60)', () => {
+  it('returns false when no VERSION file exists', () => {
+    mockFs.existsSync.mockReturnValue(false);
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(false);
+  });
+
+  it('returns false when VERSION contains invalid semver', () => {
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockReturnValue('bad-version\n');
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(false);
+  });
+
+  it('returns false when no current issue in state', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue('1.0.0\n');
+    const result = performDeterministicVersionBump({ currentIssue: null });
+    expect(result).toBe(false);
+  });
+
+  it('performs patch bump for bug label', () => {
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockReturnValue('1.2.3\n');
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'bug';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":null}';
+      return '';
+    });
+
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(true);
+
+    // Verify VERSION was written with patch bump
+    const writeCall = mockFs.writeFileSync.mock.calls.find(c => c[0].endsWith('VERSION'));
+    expect(writeCall).toBeDefined();
+    expect(writeCall[1]).toBe('1.2.4\n');
+  });
+
+  it('performs minor bump for non-bug label', () => {
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockReturnValue('1.2.3\n');
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'enhancement';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":null}';
+      return '';
+    });
+
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(true);
+
+    const writeCall = mockFs.writeFileSync.mock.calls.find(c => c[0].endsWith('VERSION'));
+    expect(writeCall).toBeDefined();
+    expect(writeCall[1]).toBe('1.3.0\n');
+  });
+
+  it('performs major bump when last issue in milestone', () => {
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockReturnValue('1.2.3\n');
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'enhancement';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":{"title":"v2"}}';
+      if (cmd.includes('api repos')) return '[{"title":"v2","open_issues":1}]';
+      return '';
+    });
+
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(true);
+
+    const writeCall = mockFs.writeFileSync.mock.calls.find(c => c[0].endsWith('VERSION'));
+    expect(writeCall).toBeDefined();
+    expect(writeCall[1]).toBe('2.0.0\n');
+  });
+
+  it('commits with correct message format', () => {
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockReturnValue('1.0.0\n');
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'bug';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":null}';
+      return '';
+    });
+
+    performDeterministicVersionBump({ currentIssue: 42 });
+
+    const commitCall = mockExecSync.mock.calls.find(c => c[0].includes('commit'));
+    expect(commitCall).toBeDefined();
+    expect(commitCall[0]).toContain('chore: bump version to 1.0.1');
+  });
+
+  it('returns true in DRY_RUN mode without writing files', () => {
+    __test__.setConfig({ dryRun: true });
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockReturnValue('1.0.0\n');
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'bug';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":null}';
+      return '';
+    });
+
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(true);
+
+    // Should NOT write VERSION file in dry-run
+    const writeCall = mockFs.writeFileSync.mock.calls.find(c => c[0].endsWith('VERSION'));
+    expect(writeCall).toBeUndefined();
+  });
+
+  it('returns false when overall operation throws', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue('1.0.0\n');
+    // gh command throws on every call
+    mockExecSync.mockImplementation(() => { throw new Error('gh not found'); });
+
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(false);
+    logSpy.mockRestore();
+  });
+});
+
+describe('Step 7 prompt includes version bump mandate (#60)', () => {
+  it('Step 7 prompt text mentions mandatory version bumping', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue('skill content');
+
+    const step = { ...STEPS[6], skill: 'creating-prs' };
+    const state = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature' };
+    const args = buildClaudeArgs(step, state);
+
+    const promptIdx = args.indexOf('-p') + 1;
+    const prompt = args[promptIdx];
+    expect(prompt).toContain('MUST bump the version');
+    expect(prompt).toContain('mandatory');
   });
 });
