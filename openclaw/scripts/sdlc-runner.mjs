@@ -178,7 +178,12 @@ function defaultState() {
 
 function readState() {
   if (fs.existsSync(STATE_PATH)) {
-    return JSON.parse(fs.readFileSync(STATE_PATH, 'utf8'));
+    try {
+      return JSON.parse(fs.readFileSync(STATE_PATH, 'utf8'));
+    } catch (err) {
+      log(`Warning: state file corrupted (${err.message}), resetting to defaults`);
+      return defaultState();
+    }
   }
   return defaultState();
 }
@@ -475,6 +480,32 @@ function gh(args, cwd = PROJECT_PATH) {
 
 // Runner-managed files that should not count as "dirty" working tree
 const RUNNER_ARTIFACTS = ['.claude/sdlc-state.json', '.claude/auto-mode'];
+
+/**
+ * Ensure each RUNNER_ARTIFACTS entry is listed in the target project's .gitignore.
+ * Append-only — never removes existing content. Idempotent on repeated calls.
+ */
+function ensureRunnerArtifactsGitignored() {
+  const gitignorePath = path.join(PROJECT_PATH, '.gitignore');
+  let content = '';
+  try {
+    content = fs.readFileSync(gitignorePath, 'utf8');
+  } catch (err) { if (err.code !== 'ENOENT') throw err; }
+
+  const existingLines = new Set(content.split('\n').map(l => l.trim()));
+  const missing = RUNNER_ARTIFACTS.filter(entry => !existingLines.has(entry));
+  if (missing.length === 0) return;
+
+  let append = '';
+  if (content.length > 0 && !content.endsWith('\n')) {
+    append += '\n';
+  }
+  append += '\n# SDLC runner artifacts\n';
+  append += missing.join('\n') + '\n';
+
+  fs.appendFileSync(gitignorePath, append);
+  log(`Appended to .gitignore: ${missing.join(', ')}`);
+}
 
 function removeAutoMode() {
   try {
@@ -975,19 +1006,7 @@ async function handleFailure(step, result, state) {
   }
 
   // 3. Commit dirty working tree
-  try {
-    const status = git('status --porcelain');
-    if (status) {
-      log('Committing dirty working tree before retry...');
-      if (!DRY_RUN) {
-        git('add -A');
-        git('commit -m "chore: save work before retry (step ' + step.number + ')"');
-        git('push');
-      }
-    }
-  } catch {
-    // Non-fatal
-  }
+  autoCommitIfDirty(`chore: save work before retry (step ${step.number})`);
 
   // 4. Check retry count
   const retries = state.retries || {};
@@ -1031,14 +1050,7 @@ async function escalate(step, reason, output = '') {
   log(`ESCALATION: Step ${step.number} — ${reason}`);
 
   // Commit/push partial work
-  try {
-    const status = git('status --porcelain');
-    if (status && !DRY_RUN) {
-      git('add -A');
-      git('commit -m "chore: save partial work before escalation"');
-      git('push');
-    }
-  } catch { /* non-fatal */ }
+  autoCommitIfDirty('chore: save partial work before escalation');
 
   // Return to main
   try {
@@ -1078,6 +1090,7 @@ async function haltFailureLoop(loopType, details) {
   ].filter(Boolean).join('\n');
 
   log(diagnostic);
+  cleanupProcesses();
   await postDiscord(diagnostic);
   process.exit(1);
 }
@@ -1099,14 +1112,22 @@ function extractStateFromStep(step, result, state) {
   }
 
   if (step.number === 2) {
-    // Try to extract issue number and branch from output
-    const issueMatch = output.match(/#(\d+)/);
-    if (issueMatch) patch.currentIssue = parseInt(issueMatch[1], 10);
-
+    // Detect branch first — more reliable than parsing Claude output
     try {
       const branch = git('rev-parse --abbrev-ref HEAD');
-      if (branch !== 'main') patch.currentBranch = branch;
+      if (branch !== 'main') {
+        patch.currentBranch = branch;
+        // Extract issue number from branch name (e.g. "42-feature-slug")
+        const branchIssue = branch.match(/^(\d+)-/);
+        if (branchIssue) patch.currentIssue = parseInt(branchIssue[1], 10);
+      }
     } catch { /* ignore */ }
+
+    // Fall back to parsing output if branch didn't provide issue number
+    if (!patch.currentIssue) {
+      const issueMatch = output.match(/#(\d+)/);
+      if (issueMatch) patch.currentIssue = parseInt(issueMatch[1], 10);
+    }
   }
 
   if (step.number === 3) {
@@ -1158,7 +1179,7 @@ function hasOpenIssues() {
 
 function hasNonEscalatedIssues() {
   try {
-    const issues = gh('issue list --state open --json number');
+    const issues = gh('issue list --state open --limit 200 --json number');
     const parsed = JSON.parse(issues);
     return parsed.some(i => !escalatedIssues.has(i.number));
   } catch {
@@ -1267,18 +1288,12 @@ async function handleSignal(signal) {
   cleanupProcesses();
 
   // Commit/push any work
-  try {
-    const status = git('status --porcelain');
-    if (status) {
-      git('add -A');
-      git('commit -m "chore: save work on signal ' + signal + '"');
-      git('push');
-    }
-  } catch { /* best effort */ }
+  autoCommitIfDirty(`chore: save work on signal ${signal}`);
 
   const savedState = readState();
   const nextStep = (savedState.lastCompletedStep || 0) + 1;
-  await postDiscord(`SDLC runner stopped (${signal}). Work saved. Resume with --resume to continue from Step ${nextStep}.`);
+  // Fire-and-forget Discord — don't block shutdown waiting for delivery
+  postDiscord(`SDLC runner stopped (${signal}). Work saved. Resume with --resume to continue from Step ${nextStep}.`).catch(() => {});
   // Preserve lastCompletedStep for resume — don't reset step tracking
   updateState({ runnerPid: null });
   removeAutoMode();
@@ -1429,6 +1444,21 @@ async function main() {
   if (DRY_RUN) log('DRY-RUN MODE — no actions will be executed');
   if (SINGLE_STEP) log(`Single step mode: running only step ${SINGLE_STEP}`);
   if (RESUME) log('Resume mode: continuing from existing state');
+
+  // Validate project path exists and is a git repo
+  if (!fs.existsSync(PROJECT_PATH)) {
+    log(`Error: projectPath does not exist: ${PROJECT_PATH}`);
+    process.exit(1);
+  }
+  try {
+    git('rev-parse --is-inside-work-tree');
+  } catch {
+    log(`Error: projectPath is not a git repository: ${PROJECT_PATH}`);
+    process.exit(1);
+  }
+
+  // Ensure runner artifacts are gitignored before creating any
+  ensureRunnerArtifactsGitignored();
 
   // Ensure auto-mode flag exists
   const autoModePath = path.join(PROJECT_PATH, '.claude', 'auto-mode');
@@ -1658,11 +1688,13 @@ export {
   updateState,
   runClaude,
   removeAutoMode,
+  ensureRunnerArtifactsGitignored,
   cleanupProcesses,
   getChildPids,
   getProcessTree,
   killProcessTree,
   findProcessesByPattern,
+  handleSignal,
   hasOpenIssues,
   hasNonEscalatedIssues,
   writeStepLog,

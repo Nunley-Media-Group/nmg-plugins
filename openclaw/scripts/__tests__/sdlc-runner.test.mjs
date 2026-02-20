@@ -59,17 +59,21 @@ const {
   handleFailure,
   escalate,
   haltFailureLoop,
+  handleSignal,
   runStep,
   readState,
   writeState,
   updateState,
   removeAutoMode,
+  ensureRunnerArtifactsGitignored,
   runClaude,
   cleanupProcesses,
   getChildPids,
   getProcessTree,
   killProcessTree,
   findProcessesByPattern,
+  hasOpenIssues,
+  hasNonEscalatedIssues,
   log,
   writeStepLog,
   extractSessionId,
@@ -809,6 +813,100 @@ describe('Auto-mode lifecycle', () => {
   });
 });
 
+// ===========================================================================
+// Issue #57: ensureRunnerArtifactsGitignored
+// ===========================================================================
+
+describe('ensureRunnerArtifactsGitignored (#57)', () => {
+  // Helper: find the appendFileSync call that wrote to .gitignore
+  function gitignoreAppend() {
+    return mockFs.appendFileSync.mock.calls.find(c => c[0].endsWith('.gitignore'));
+  }
+
+  it('appends missing artifact patterns to .gitignore', () => {
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('.gitignore')) return 'node_modules/\n';
+      return '{}';
+    });
+
+    ensureRunnerArtifactsGitignored();
+
+    const call = gitignoreAppend();
+    expect(call).toBeDefined();
+    expect(call[1]).toContain('.claude/auto-mode');
+    expect(call[1]).toContain('.claude/sdlc-state.json');
+    expect(call[1]).toContain('# SDLC runner artifacts');
+  });
+
+  it('does not duplicate entries already in .gitignore', () => {
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('.gitignore')) return 'node_modules/\n.claude/auto-mode\n.claude/sdlc-state.json\n';
+      return '{}';
+    });
+
+    ensureRunnerArtifactsGitignored();
+
+    expect(gitignoreAppend()).toBeUndefined();
+  });
+
+  it('creates .gitignore when file does not exist', () => {
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('.gitignore')) {
+        const err = new Error('ENOENT');
+        err.code = 'ENOENT';
+        throw err;
+      }
+      return '{}';
+    });
+
+    ensureRunnerArtifactsGitignored();
+
+    const call = gitignoreAppend();
+    expect(call).toBeDefined();
+    expect(call[1]).toContain('.claude/auto-mode');
+    expect(call[1]).toContain('.claude/sdlc-state.json');
+  });
+
+  it('adds trailing newline before appending when file lacks one', () => {
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('.gitignore')) return 'node_modules/';  // no trailing newline
+      return '{}';
+    });
+
+    ensureRunnerArtifactsGitignored();
+
+    const call = gitignoreAppend();
+    expect(call[1].startsWith('\n')).toBe(true);
+  });
+
+  it('only appends entries that are missing (partial match)', () => {
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('.gitignore')) return '.claude/auto-mode\n';
+      return '{}';
+    });
+
+    ensureRunnerArtifactsGitignored();
+
+    const call = gitignoreAppend();
+    expect(call).toBeDefined();
+    expect(call[1]).toContain('.claude/sdlc-state.json');
+    expect(call[1]).not.toContain('.claude/auto-mode');
+  });
+
+  it('re-throws non-ENOENT read errors', () => {
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('.gitignore')) {
+        const err = new Error('EACCES');
+        err.code = 'EACCES';
+        throw err;
+      }
+      return '{}';
+    });
+
+    expect(() => ensureRunnerArtifactsGitignored()).toThrow('EACCES');
+  });
+});
+
 describe('Soft failure integration', () => {
   // End-to-end: runStep() routes soft failures to handleFailure
 
@@ -1480,5 +1578,228 @@ describe('lastClaudePid tracking', () => {
 
     // Should be updated to the new PID, not cleared
     expect(__test__.lastClaudePid).toBe(88888);
+  });
+});
+
+// ===========================================================================
+// Edge case fixes — additional coverage
+// ===========================================================================
+
+describe('readState resilience (corrupted state file)', () => {
+  it('returns defaultState when state file contains invalid JSON', () => {
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return '{invalid json!!!';
+      return '{}';
+    });
+
+    const state = readState();
+    expect(state.currentStep).toBe(0);
+    expect(state.currentBranch).toBe('main');
+    expect(state.retries).toEqual({});
+  });
+
+  it('returns defaultState when state file is empty', () => {
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return '';
+      return '{}';
+    });
+
+    const state = readState();
+    expect(state.currentStep).toBe(0);
+  });
+
+  it('logs a warning when state file is corrupted', () => {
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return 'not-json';
+      return '{}';
+    });
+
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    readState();
+    const logMessages = logSpy.mock.calls.map(c => c[0]);
+    expect(logMessages.some(m => m.includes('state file corrupted'))).toBe(true);
+    logSpy.mockRestore();
+  });
+
+  it('still reads valid state files correctly', () => {
+    const validState = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature' };
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return JSON.stringify(validState);
+      return '{}';
+    });
+
+    const state = readState();
+    expect(state.currentIssue).toBe(42);
+    expect(state.currentBranch).toBe('42-feature');
+  });
+});
+
+describe('haltFailureLoop calls cleanupProcesses', () => {
+  it('calls cleanupProcesses before process.exit', async () => {
+    const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {});
+    __test__.lastClaudePid = 99999;
+
+    // Track whether cleanup ran
+    mockExecSync.mockImplementation(() => { throw new Error('no match'); });
+    const killSpy = jest.spyOn(process, 'kill').mockImplementation(() => {});
+
+    await haltFailureLoop('test loop', ['detail 1']);
+
+    // cleanupProcesses should have been called (evidenced by lastClaudePid being cleared)
+    expect(__test__.lastClaudePid).toBeNull();
+    expect(mockExit).toHaveBeenCalledWith(1);
+
+    killSpy.mockRestore();
+    mockExit.mockRestore();
+  });
+});
+
+describe('Consolidated commit paths use autoCommitIfDirty', () => {
+  it('handleFailure commit path filters runner artifacts', async () => {
+    const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {});
+
+    // Set up state for handleFailure
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) {
+        return JSON.stringify({ ...defaultState(), currentIssue: 42, retries: {} });
+      }
+      return '{}';
+    });
+
+    // Only runner artifacts dirty — autoCommitIfDirty should skip
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('status --porcelain')) return '?? .claude/sdlc-state.json\n?? .claude/auto-mode';
+      return '';
+    });
+
+    const step = STEPS[0]; // step 1
+    const result = { exitCode: 1, stdout: 'error', stderr: '', duration: 5 };
+    const state = { ...defaultState(), retries: {} };
+
+    await handleFailure(step, result, state);
+
+    // No git add/commit should have been called
+    const addCalls = mockExecSync.mock.calls.filter(c => c[0].includes('add -A'));
+    expect(addCalls).toHaveLength(0);
+
+    mockExit.mockRestore();
+  });
+
+  it('escalate commit path uses autoCommitIfDirty (filters artifacts)', async () => {
+    const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {});
+    __test__.resetState();
+
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue(JSON.stringify({ ...defaultState(), currentIssue: 42 }));
+
+    // Only runner artifacts dirty
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('status --porcelain')) return '?? .claude/auto-mode';
+      return '';
+    });
+
+    await escalate(STEPS[0], 'test reason');
+
+    // No git commit should have been made (only runner artifacts)
+    const commitCalls = mockExecSync.mock.calls.filter(c => c[0].includes('commit'));
+    expect(commitCalls).toHaveLength(0);
+
+    mockExit.mockRestore();
+  });
+});
+
+describe('Step 2 issue extraction from branch name', () => {
+  it('extracts issue number from branch name (preferred over output)', () => {
+    mockExecSync.mockReturnValue('42-feature-branch');
+    // Output mentions a different issue first
+    const result = { stdout: 'Looking at #10 before starting #42', stderr: '', exitCode: 0 };
+    const state = defaultState();
+    const patch = extractStateFromStep(STEPS[1], result, state);
+    // Should get 42 from branch, not 10 from output
+    expect(patch.currentIssue).toBe(42);
+    expect(patch.currentBranch).toBe('42-feature-branch');
+  });
+
+  it('falls back to output when branch has no issue number prefix', () => {
+    mockExecSync.mockReturnValue('feature-no-number');
+    const result = { stdout: 'Started issue #99', stderr: '', exitCode: 0 };
+    const state = defaultState();
+    const patch = extractStateFromStep(STEPS[1], result, state);
+    expect(patch.currentIssue).toBe(99);
+    expect(patch.currentBranch).toBe('feature-no-number');
+  });
+
+  it('falls back to output when git command fails', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('git error'); });
+    const result = { stdout: 'Created branch for issue #55', stderr: '', exitCode: 0 };
+    const state = defaultState();
+    const patch = extractStateFromStep(STEPS[1], result, state);
+    expect(patch.currentIssue).toBe(55);
+  });
+
+  it('does not set currentBranch when still on main', () => {
+    mockExecSync.mockReturnValue('main');
+    const result = { stdout: 'issue #42', stderr: '', exitCode: 0 };
+    const state = defaultState();
+    const patch = extractStateFromStep(STEPS[1], result, state);
+    expect(patch.currentBranch).toBeUndefined();
+    // Falls back to output for issue
+    expect(patch.currentIssue).toBe(42);
+  });
+});
+
+describe('hasNonEscalatedIssues uses --limit 200', () => {
+  it('passes --limit 200 to gh issue list', () => {
+    mockExecSync.mockReturnValue('[{"number": 1}]');
+    hasNonEscalatedIssues();
+    const ghCall = mockExecSync.mock.calls.find(c => c[0].includes('issue list'));
+    expect(ghCall[0]).toContain('--limit 200');
+  });
+});
+
+describe('handleSignal uses fire-and-forget Discord', () => {
+  it('handleSignal source does not await postDiscord', () => {
+    // Verify the function source uses .catch(() => {}) pattern (fire-and-forget)
+    const src = handleSignal.toString();
+    expect(src).toContain('.catch(');
+    expect(src).not.toMatch(/await\s+postDiscord/);
+  });
+
+  it('handleSignal uses autoCommitIfDirty instead of inline git commands', () => {
+    const src = handleSignal.toString();
+    expect(src).toContain('autoCommitIfDirty');
+    expect(src).not.toContain("git('add -A')");
+  });
+});
+
+describe('Startup validation', () => {
+  it('main() source validates PROJECT_PATH exists', () => {
+    const src = runner.main.toString();
+    expect(src).toContain('projectPath does not exist');
+  });
+
+  it('main() source validates PROJECT_PATH is a git repo', () => {
+    const src = runner.main.toString();
+    expect(src).toContain('not a git repository');
   });
 });
