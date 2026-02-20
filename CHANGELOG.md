@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.8] - 2026-02-19
+
+### Fixed
+
+- **`openclaw/scripts/sdlc-runner.mjs`** — Runner now ensures `.claude/auto-mode` and `.claude/sdlc-state.json` are listed in the target project's `.gitignore` before creating runner artifacts, preventing `git add -A` from staging and committing them to the target project
+
 ## [2.12.7] - 2026-02-16
 
 ### Fixed
