@@ -795,7 +795,7 @@ function buildClaudeArgs(step, state) {
     : null;
 
   const prompts = {
-    1: 'Check out main and pull latest. Run: git checkout main && git pull. Report the current branch and latest commit.',
+    1: 'Check out main, clean the working tree, and pull latest. Run: git checkout main && git clean -fd && git checkout -- . && git pull. Report the current branch and latest commit.',
 
     2: `Select and start the next GitHub issue from the current milestone. Create a linked feature branch and set the issue to In Progress.${escalatedIssues.size > 0 ? ` Do NOT select any of these previously-escalated issues: ${[...escalatedIssues].map(i => `#${i}`).join(', ')}.` : ''} Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
@@ -1123,10 +1123,10 @@ function extractStateFromStep(step, result, state) {
       }
     } catch { /* ignore */ }
 
-    // Fall back to parsing output if branch didn't provide issue number
+    // If branch-based extraction failed, log a warning — do NOT fall back to
+    // regex on conversation output, which can match stale issue numbers (#62)
     if (!patch.currentIssue) {
-      const issueMatch = output.match(/#(\d+)/);
-      if (issueMatch) patch.currentIssue = parseInt(issueMatch[1], 10);
+      log('Warning: branch-based issue extraction failed after step 2 — currentIssue will be null');
     }
   }
 
