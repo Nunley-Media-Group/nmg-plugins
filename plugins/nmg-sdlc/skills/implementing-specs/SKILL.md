@@ -1,6 +1,6 @@
 ---
 name: implementing-specs
-description: "Read specs for current branch, enter plan mode, then execute implementation tasks sequentially."
+description: "Read specs for current branch, enter plan mode, then execute implementation tasks sequentially. Use when user says 'implement the spec', 'start coding', 'build the feature', 'implement issue #N', or 'resume implementation'. Reads requirements, design, and tasks from .claude/specs/ and executes them in order."
 argument-hint: "[#issue-number]"
 allowed-tools: Read, Glob, Grep, Task, Write, Edit, WebFetch, WebSearch, EnterPlanMode, Bash(gh:*), Bash(git:*)
 ---
@@ -153,6 +153,20 @@ If implementation was started but not finished:
 2. Check git log for commits related to this feature
 3. Resume from the first incomplete task
 4. Continue the workflow from Step 5
+
+---
+
+## Examples
+
+### Example 1: Implement by issue number
+User says: "/implementing-specs #42"
+Actions: Reads specs from `.claude/specs/42-add-auth/`, loads steering docs, enters plan mode, executes tasks sequentially
+Result: All tasks complete; user prompted to run `/verifying-specs #42`
+
+### Example 2: Resume partial implementation
+User says: "Resume implementing the current feature"
+Actions: Detects branch `42-add-auth`, reads `tasks.md`, finds first incomplete task, resumes from there
+Result: Remaining tasks completed from where the previous session left off
 
 ---
 

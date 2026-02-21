@@ -1,6 +1,6 @@
 ---
 name: writing-specs
-description: "Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown."
+description: "Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown. Use when user says 'write specs', 'create specifications', 'spec this issue', 'spec #N', or 'formalize requirements'. Produces requirements.md, design.md, tasks.md, and feature.gherkin with human review gates."
 argument-hint: "[#issue-number]"
 allowed-tools: Read, Glob, Grep, Task, Write, Edit, WebFetch, WebSearch, Bash(gh:*)
 ---

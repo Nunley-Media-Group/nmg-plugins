@@ -1,6 +1,6 @@
 ---
 name: running-retrospectives
-description: "Analyze defect specs to identify spec-writing gaps and produce actionable learnings."
+description: "Analyze defect specs to identify spec-writing gaps and produce actionable learnings. Use when user says 'run retrospective', 'analyze defects', 'review past bugs', 'what can we learn from bugs', or 'update retrospective'. Produces .claude/steering/retrospective.md that /writing-specs reads to avoid repeating past failures."
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash(gh:*)
 ---
 

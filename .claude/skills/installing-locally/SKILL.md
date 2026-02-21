@@ -1,6 +1,6 @@
 ---
 name: installing-locally
-description: "Install or update all nmg-plugins marketplace plugins locally for the current user."
+description: "Install or update all nmg-plugins marketplace plugins locally for the current user. Use when user says 'install plugins', 'update plugins', 'install locally', 'sync plugins', or 'refresh plugins'. Pulls latest repo, syncs to cache, updates registry, and restarts OpenClaw gateway."
 argument-hint: ""
 allowed-tools: Read, Bash(git:*), Bash(cp:*), Bash(mkdir:*), Bash(date:*), Bash(jq:*), Bash(chmod:*), Bash(rsync:*), Bash(source:*)
 ---
@@ -188,3 +188,15 @@ If the OpenClaw gateway restart failed, include:
 ```
 ⚠ OpenClaw gateway restart failed — run `openclaw gateway restart` manually.
 ```
+
+## Examples
+
+### Example 1: Routine update
+User says: "Install plugins locally"
+Actions: Pulls latest repo, discovers nmg-sdlc plugin, syncs to cache, updates registry, syncs OpenClaw skill, restarts gateway
+Result: All plugins at latest version; user told to restart Claude Code
+
+### Example 2: Version mismatch detected
+User says: "Update plugins"
+Actions: Same workflow, but marketplace.json says v2.12.0 while plugin.json says v2.11.0
+Result: Plugins installed successfully with warning about version mismatch

@@ -1,6 +1,6 @@
 ---
 name: generating-openclaw-config
-description: "Generate an SDLC runner config for the current project."
+description: "Generate an SDLC runner config for the current project. Use when user says 'generate config', 'set up SDLC runner', 'configure openclaw', or asks about sdlc-config.json. Creates a ready-to-use sdlc-config.json from the template with project-specific paths."
 allowed-tools: Read, Write, Edit, Bash(basename:*), Bash(realpath:*), Bash(pwd:*), Bash(git:*), Bash(test:*), Bash(grep:*)
 ---
 
@@ -54,6 +54,18 @@ Generate a ready-to-use `sdlc-config.json` for the SDLC runner by substituting t
      node openclaw/scripts/sdlc-runner.mjs --config sdlc-config.json
    Or install the OpenClaw skill and launch via Discord.
    ```
+
+## Examples
+
+### Example 1: First-time setup
+User says: "Set up the SDLC runner for this project"
+Actions: Resolves project root, reads template, substitutes paths, writes `sdlc-config.json`, adds to `.gitignore`
+Result: Config file ready at project root; user told to run the runner or install OpenClaw skill
+
+### Example 2: Project without .claude/
+User says: "Generate an openclaw config"
+Actions: Resolves project root, checks for `.claude/` directory
+Result: Stops with error — "This must be run from within a Claude Code project"
 
 ## Integration with SDLC Workflow
 

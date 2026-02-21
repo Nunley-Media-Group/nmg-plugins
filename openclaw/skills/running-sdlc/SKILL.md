@@ -1,6 +1,6 @@
 ---
 name: running-sdlc
-description: "Launch, monitor, or stop the deterministic SDLC runner for a project."
+description: "Launch, monitor, or stop the deterministic SDLC runner for a project. Use when user says 'run SDLC', 'start the runner', 'check runner status', 'stop the runner', or 'launch sdlc-runner'. Orchestrates the full dev cycle via claude -p subprocesses with Discord status updates."
 argument-hint: "start|status|stop [--config <path>]"
 allowed-tools: Bash(node:*), Bash(kill:*), Bash(cat:*), Bash(ps:*), Read
 ---

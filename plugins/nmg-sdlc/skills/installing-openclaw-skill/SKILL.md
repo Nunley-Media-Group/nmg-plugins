@@ -1,6 +1,6 @@
 ---
 name: installing-openclaw-skill
-description: "Install or update the OpenClaw running-sdlc skill and restart the gateway."
+description: "Install or update the OpenClaw running-sdlc skill and restart the gateway. Use when user says 'install openclaw', 'update openclaw skill', 'sync openclaw', or 'reinstall the runner skill'. Copies skill files from marketplace clone, patches known CLI bugs, and restarts the gateway."
 argument-hint: ""
 allowed-tools: Read, Bash(cp:*), Bash(mkdir:*), Bash(source:*), Bash(ls:*), Bash(node:*)
 ---
@@ -99,6 +99,18 @@ If the gateway restart failed, include:
 ```
 ⚠ OpenClaw gateway restart failed — run `openclaw gateway restart` manually.
 ```
+
+## Examples
+
+### Example 1: Update after repo changes
+User says: "Sync the openclaw skill"
+Actions: Creates destination directory, copies SKILL.md + sdlc-runner.mjs + config template, patches CLI bug, restarts gateway
+Result: OpenClaw skill updated; gateway restarted
+
+### Example 2: OpenClaw not installed
+User says: "Install openclaw"
+Actions: Copies skill files successfully, patch script finds no openclaw CLI
+Result: Skill files copied; warning that gateway restart was skipped
 
 ## Integration with SDLC Workflow
 
