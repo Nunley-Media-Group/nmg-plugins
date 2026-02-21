@@ -1,0 +1,61 @@
+# File: .claude/specs/62-fix-sdlc-runner-cross-cycle-state-contamination/feature.gherkin
+#
+# Generated from: .claude/specs/62-fix-sdlc-runner-cross-cycle-state-contamination/requirements.md
+# Issue: #62
+# Type: Defect regression
+
+@regression
+Feature: SDLC runner cross-cycle state contamination fix
+  The extractStateFromStep function previously used a regex on Claude's
+  JSON output to extract the selected issue number, which matched stale
+  issue references from prior cycles. The working tree was also not cleaned
+  between cycles, allowing file carryover. This was fixed by extracting
+  the issue number from the git branch name (deterministic ground truth)
+  and adding working tree cleanup to step 1.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Issue number is extracted from branch name, not conversation output
+    Given the SDLC runner completes step 2 and the Claude session selected issue #122
+    And the step 2 JSON output contains references to previously-completed issue #121
+    And the current git branch is "122-fix-tabs-activate-list-sync"
+    When extractStateFromStep parses the step 2 result
+    Then state.currentIssue is set to 122
+    And the issue number is derived from the branch name, not regex-matched from conversation text
+
+  @regression
+  Scenario: Branch name is used as ground truth for issue number
+    Given step 2 creates a feature branch named "42-add-precipitation-overlay"
+    When the runner extracts state after step 2
+    Then state.currentIssue is set to 42
+    And state.currentBranch is set to "42-add-precipitation-overlay"
+
+  # --- Working Tree Cleanup ---
+
+  @regression
+  Scenario: Working tree is clean at cycle start
+    Given the runner just completed a full 9-step cycle for issue #121
+    And uncommitted files exist in the working tree from the previous cycle
+    When the runner starts a new cycle at step 1
+    Then git clean -fd removes untracked files
+    And git checkout -- . discards unstaged changes
+    And the working tree is clean before git pull
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Normal single-cycle operation is unaffected
+    Given a clean repository with open issues
+    When the runner processes an issue through all 9 steps
+    Then the correct issue number is used in all commit messages and prompts
+    And state.currentIssue matches the branch name throughout the cycle
+    And the cycle completes successfully
+
+  @regression
+  Scenario: Branch extraction failure is handled gracefully
+    Given step 2 completed but the runner is still on the main branch
+    When extractStateFromStep attempts branch-based issue extraction
+    Then a warning is logged that branch-based extraction failed
+    And state.currentIssue remains null
+    And no fallback to regex-based extraction occurs
