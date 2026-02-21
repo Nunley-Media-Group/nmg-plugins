@@ -1742,31 +1742,67 @@ describe('Step 2 issue extraction from branch name', () => {
     expect(patch.currentBranch).toBe('42-feature-branch');
   });
 
-  it('falls back to output when branch has no issue number prefix', () => {
+  it('does not fall back to output when branch has no issue number prefix', () => {
     mockExecSync.mockReturnValue('feature-no-number');
     const result = { stdout: 'Started issue #99', stderr: '', exitCode: 0 };
     const state = defaultState();
     const patch = extractStateFromStep(STEPS[1], result, state);
-    expect(patch.currentIssue).toBe(99);
+    // No regex fallback — currentIssue stays undefined (#62)
+    expect(patch.currentIssue).toBeUndefined();
     expect(patch.currentBranch).toBe('feature-no-number');
   });
 
-  it('falls back to output when git command fails', () => {
+  it('does not fall back to output when git command fails', () => {
     mockExecSync.mockImplementation(() => { throw new Error('git error'); });
     const result = { stdout: 'Created branch for issue #55', stderr: '', exitCode: 0 };
     const state = defaultState();
     const patch = extractStateFromStep(STEPS[1], result, state);
-    expect(patch.currentIssue).toBe(55);
+    // No regex fallback — currentIssue stays undefined (#62)
+    expect(patch.currentIssue).toBeUndefined();
   });
 
-  it('does not set currentBranch when still on main', () => {
+  it('does not set currentBranch or currentIssue when still on main', () => {
     mockExecSync.mockReturnValue('main');
     const result = { stdout: 'issue #42', stderr: '', exitCode: 0 };
     const state = defaultState();
     const patch = extractStateFromStep(STEPS[1], result, state);
     expect(patch.currentBranch).toBeUndefined();
-    // Falls back to output for issue
-    expect(patch.currentIssue).toBe(42);
+    // No regex fallback — currentIssue stays undefined (#62)
+    expect(patch.currentIssue).toBeUndefined();
+  });
+});
+
+describe('Cross-cycle state contamination (#62)', () => {
+  it('branch-based extraction sets correct issue even when output contains stale #N', () => {
+    // Simulate output containing a stale issue number from a previous cycle
+    mockExecSync.mockReturnValue('78-new-feature');
+    const result = { stdout: 'Looked at #42 and decided to work on #78', stderr: '', exitCode: 0 };
+    const state = defaultState();
+    const patch = extractStateFromStep(STEPS[1], result, state);
+    // Should extract 78 from branch name, ignoring stale #42 in output
+    expect(patch.currentIssue).toBe(78);
+    expect(patch.currentBranch).toBe('78-new-feature');
+  });
+
+  it('branch detection failure results in null issue (no regex fallback)', () => {
+    // Git command fails entirely — no branch info available
+    mockExecSync.mockImplementation(() => { throw new Error('git not available'); });
+    const result = { stdout: 'Created branch for issue #42 and started #55', stderr: '', exitCode: 0 };
+    const state = defaultState();
+    const patch = extractStateFromStep(STEPS[1], result, state);
+    // Must NOT fall back to regex — output could contain stale issue numbers
+    expect(patch.currentIssue).toBeUndefined();
+    expect(patch.currentBranch).toBeUndefined();
+  });
+
+  it('step 1 prompt includes git clean -fd and git checkout -- .', () => {
+    const state = defaultState();
+    const args = buildClaudeArgs(STEPS[0], state);
+    // buildClaudeArgs returns an array: ['--model', model, '-p', prompt, ...]
+    const promptIdx = args.indexOf('-p');
+    const prompt = args[promptIdx + 1];
+    expect(prompt).toContain('git clean -fd');
+    expect(prompt).toContain('git checkout -- .');
   });
 });
 
