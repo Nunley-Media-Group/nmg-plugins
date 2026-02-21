@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.11] - 2026-02-20
+
+### Fixed
+
+- **`openclaw/scripts/sdlc-runner.mjs`** — Removed fragile `#N` regex fallback in `extractStateFromStep` that could match stale issue numbers from previous cycles in conversation transcripts; issue number is now derived exclusively from the branch name (ground truth); added `git clean -fd && git checkout -- .` working tree cleanup to step 1 prompt to prevent cross-cycle file contamination
+
 ## [2.12.10] - 2026-02-20
 
 ### Fixed
