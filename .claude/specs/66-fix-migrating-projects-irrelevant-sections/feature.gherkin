@@ -1,0 +1,64 @@
+# File: .claude/specs/66-fix-migrating-projects-irrelevant-sections/feature.gherkin
+#
+# Generated from: .claude/specs/66-fix-migrating-projects-irrelevant-sections/requirements.md
+# Issue: #66
+# Type: Defect regression
+
+@regression
+Feature: /migrating-projects relevance filtering for steering doc sections
+  The migrating-projects skill previously proposed all missing template sections
+  regardless of relevance, adding noise like "Database Standards" to projects
+  with no database. This was fixed by adding codebase-aware relevance filtering,
+  per-section user approval, and exclusion persistence.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Irrelevant template sections are excluded via codebase analysis
+    Given a project with steering docs that omit "Database Standards" in tech.md
+    And the project has no database config files, migration directories, or schema files
+    When /migrating-projects analyzes the steering docs
+    Then "Database Standards" is not included in the migration proposal
+    And sections without codebase evidence of relevance are excluded
+
+  @regression
+  Scenario: Relevant missing sections are still proposed
+    Given a project with steering docs that omit "Testing Standards" in tech.md
+    And the project has test directories and test framework config files
+    When /migrating-projects analyzes the steering docs
+    Then "Testing Standards" is included in the migration proposal
+
+  @regression
+  Scenario: Unknown sections default to being proposed
+    Given a template has a new section heading that does not match any relevance heuristic keyword
+    When /migrating-projects analyzes the steering docs
+    Then the unknown section is conservatively included in the migration proposal
+
+  # --- Per-Section Approval ---
+
+  @regression
+  Scenario: User can approve or decline individual sections
+    Given the migration proposal includes two relevant missing sections
+    When /migrating-projects presents the migration summary
+    Then each section is listed as an individually selectable option via multiSelect
+    And the user can approve one section and decline the other
+
+  # --- Declined Sections Are Persisted ---
+
+  @regression
+  Scenario: Declined sections are not re-proposed on future runs
+    Given the user previously declined "Brand Voice" for product.md
+    And the decline is stored in .claude/migration-exclusions.json
+    When /migrating-projects runs again
+    Then "Brand Voice" is not included in the migration proposal for product.md
+
+  # --- New Template Sections Still Detected ---
+
+  @regression
+  Scenario: New template sections are not suppressed by prior exclusions
+    Given the user previously declined "Brand Voice" for product.md
+    And a plugin update added a new "Compliance Standards" section to the tech.md template
+    And the project has compliance-related files in the codebase
+    When /migrating-projects runs after the update
+    Then "Compliance Standards" is proposed for tech.md
+    And "Brand Voice" remains excluded for product.md

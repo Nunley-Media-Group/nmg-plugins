@@ -32,6 +32,7 @@ Do NOT skip the review gate in Step 9. Do NOT apply changes without explicit use
 .claude/specs/*/requirements.md — Spec requirements (feature + defect variants)
 .claude/specs/*/design.md      — Spec designs (feature + defect variants)
 .claude/specs/*/tasks.md       — Spec task breakdowns (feature + defect variants)
+.claude/migration-exclusions.json — Declined sections (read to skip, written after user declines)
 sdlc-config.json               — OpenClaw runner config (JSON key merge)
 ~/.openclaw/skills/running-sdlc/ — OpenClaw skill version check
 CHANGELOG.md                   — Changelog format and completeness (Keep a Changelog)
@@ -82,8 +83,10 @@ For each existing steering doc (e.g., `.claude/steering/product.md`):
 2. **Extract template content** — steering templates from `setting-up-steering/` wrap their content in a ` ```markdown ... ``` ` code block; parse only the content between the opening ` ```markdown ` and the closing ` ``` `. The retrospective template (`running-retrospectives/templates/retrospective.md`) is direct markdown — use the file content as-is.
 3. **Parse headings** — Extract all `## ` headings from both the template content and the existing project file.
 4. **Diff headings** — Identify headings present in the template but absent from the project file.
-5. **Extract missing sections** — For each missing heading, extract the full section content from the template (from the `## ` heading to the next `## ` heading or end of content).
-6. **Determine insertion point** — Insert after the predecessor heading in template order. For example, if the template order is `## A`, `## B`, `## C` and `## B` is missing, insert it after the `## A` section's content.
+5. **Filter by relevance** — For each missing heading, check whether it matches a keyword in the **Relevance Heuristic Table** below. If it matches, use `Glob` to check the project codebase for the associated evidence patterns. If **no evidence is found**, exclude the section from the proposal. If the heading does **not match any keyword** in the table (unknown section), **conservatively include it** — let the user decide.
+6. **Filter by exclusions** — Read `.claude/migration-exclusions.json` from the project root (if it exists). If the file exists but contains invalid JSON, treat it as empty (log a warning and proceed as if no exclusions are set). If the current file's name (e.g., `tech.md`) appears in `excludedSections` and the missing heading text appears in that array, skip the section — it was previously declined by the user.
+7. **Extract missing sections** — For each remaining missing heading (after filtering), extract the full section content from the template (from the `## ` heading to the next `## ` heading or end of content).
+8. **Determine insertion point** — Insert after the predecessor heading in template order. For example, if the template order is `## A`, `## B`, `## C` and `## B` is missing, insert it after the `## A` section's content.
 
 **Example:**
 
@@ -93,6 +96,36 @@ Existing headings:    ## Mission, ## Target Users, ## Core Value Proposition, ##
 Missing:              ## Product Principles
 Insert after:         ## Core Value Proposition (its predecessor in template order)
 ```
+
+#### Relevance Heuristic Table
+
+Use this table to determine whether a missing template section is relevant to the project. For each missing heading, check if it matches a keyword (case-insensitive substring match against the heading text). If it matches, run `Glob` with the associated patterns **one at a time, stopping at the first match** — if any pattern returns results, the section is relevant (include it) and skip remaining patterns. If **none** return results, the section is irrelevant — exclude it.
+
+| Heading Keyword | Codebase Evidence (Glob Patterns) |
+|----------------|----------------------------------|
+| `Database` | `**/migrations/**`, `**/schema.*`, `**/*database*`, `**/*prisma*`, `**/*knexfile*`, `**/sequelize*`, `**/typeorm*`, `**/drizzle*`, `**/*.sql`, `**/models/**` |
+| `API / Interface Standards` | `**/routes/**`, `**/controllers/**`, `**/api/**`, `**/endpoints/**`, `**/*router*`, `**/swagger*`, `**/openapi*` |
+| `Design Tokens` or `UI Standards` | `**/components/**`, `**/*.css`, `**/*.scss`, `**/*.styled.*`, `**/theme*`, `**/tokens*`, `**/*.tsx`, `**/*.vue`, `**/*.svelte` |
+
+**Conservative default:** If a missing heading does not match any keyword in this table, include it in the proposal. The table is a filter for known-irrelevant sections, not a whitelist.
+
+#### Exclusion File Schema
+
+The `.claude/migration-exclusions.json` file stores section headings the user has previously declined:
+
+```json
+{
+  "excludedSections": {
+    "tech.md": ["Database Standards", "API / Interface Standards"],
+    "structure.md": ["Design Tokens / UI Standards (if applicable)"]
+  }
+}
+```
+
+- Keys are steering doc filenames (not full paths)
+- Values are arrays of exact heading text (without the `## ` prefix)
+- Only sections explicitly declined by the user are stored
+- Stale entries (for headings removed from templates) are harmless
 
 ### Step 4: Analyze Spec Files
 
@@ -218,14 +251,39 @@ Everything is up to date — no migration needed.
 
 And stop here.
 
-Otherwise, use `AskUserQuestion` to ask the user whether to proceed with the migration:
+Otherwise, proceed to approval. The approval flow has two parts:
+
+#### Part A: Steering doc sections (per-section approval)
+
+If there are proposed steering doc sections, present them via `AskUserQuestion` with `multiSelect: true`. Each option represents one section for one file:
 
 ```
-question: "Apply the migration changes listed above?"
+question: "Select which steering doc sections to add (unselected sections will be remembered and skipped in future runs):"
+multiSelect: true
 options:
-  - "Yes, apply all changes"
-  - "No, cancel migration"
+  - label: "tech.md: Testing Standards"
+    description: "BDD testing framework, Gherkin conventions, test pyramid"
+  - label: "product.md: Product Principles"
+    description: "Decision-making guidelines when requirements conflict"
+  - ...one option per proposed section
 ```
+
+Sections the user does **not** select are treated as declined and will be persisted in Step 10.
+
+If there are **no** proposed steering doc sections (all were filtered by relevance or exclusions), skip Part A.
+
+#### Part B: Other changes (all-or-nothing)
+
+If there are proposed spec file sections, OpenClaw config keys, CHANGELOG fixes, or VERSION changes, ask separately:
+
+```
+question: "Apply the remaining migration changes (spec files, config, changelog)?"
+options:
+  - "Yes, apply all"
+  - "No, cancel"
+```
+
+If there are no non-steering changes, skip Part B.
 
 **This skill does not support auto-mode.** Always present findings and wait for user approval.
 
@@ -257,6 +315,16 @@ For the `sdlc-config.json`:
 5. Write the updated JSON (preserve existing values, only add missing keys)
 6. Use `Edit` to add the missing keys — do not overwrite the entire file
 
+#### Persist declined sections
+
+After applying approved changes, persist any newly declined steering doc sections:
+
+1. Read `.claude/migration-exclusions.json` from the project root (or start with `{ "excludedSections": {} }` if it doesn't exist)
+2. For each steering doc section that was **proposed but not selected** by the user in Step 9 Part A, add the heading text to the `excludedSections` array for that file
+3. Write the updated JSON to `.claude/migration-exclusions.json` using `Write`
+
+**Important:** Only add newly declined sections. Do not remove existing entries — they represent prior user decisions.
+
 #### Output summary
 
 After applying changes, output a summary:
@@ -265,15 +333,22 @@ After applying changes, output a summary:
 ## Migration Complete
 
 ### Changes Applied
-- **product.md** — Added sections: "Product Principles", "Brand Voice"
+- **product.md** — Added sections: "Product Principles"
 - **sdlc-config.json** — Added keys: "cleanup", "steps.merge"
+
+### Declined (will be skipped in future runs)
+- **product.md** — "Brand Voice" (saved to .claude/migration-exclusions.json)
 
 ### Skipped (already up to date)
 - tech.md, structure.md, 42-add-auth/design.md
 
+### Filtered by relevance (no codebase evidence)
+- **tech.md** — "Database Standards", "API / Interface Standards"
+
 ### Recommendations
 - Review added sections and customize placeholder content
 - Run /installing-openclaw-skill to update the OpenClaw skill
+- To re-propose a declined section, remove it from .claude/migration-exclusions.json
 ```
 
 ---
@@ -281,11 +356,13 @@ After applying changes, output a summary:
 ## Key Rules
 
 1. **Never modify existing content** — Only insert new sections or add new keys
-2. **Never create files** — Only update files that already exist (exception: `CHANGELOG.md` and `VERSION` may be created by Steps 7–8 if missing)
+2. **Never create files** — Only update files that already exist (exceptions: `CHANGELOG.md`, `VERSION`, and `.claude/migration-exclusions.json` may be created if missing)
 3. **Never overwrite values** — For JSON, only add keys that are absent
 4. **Skip `feature.gherkin`** — These are generated, not templated
-5. **Always interactive** — Present findings and wait for approval before applying
+5. **Always interactive** — Present findings with per-section approval for steering docs and wait for user selection before applying
 6. **Self-updating** — Read templates at runtime; never hardcode template content
+7. **Filter irrelevant sections** — Use codebase analysis (Relevance Heuristic Table) to exclude steering doc sections with no evidence of relevance; persist user declines in `.claude/migration-exclusions.json`
+8. **Conservative defaults** — When a missing section's heading does not match any keyword in the heuristic table, include it in the proposal and let the user decide
 
 ---
 
