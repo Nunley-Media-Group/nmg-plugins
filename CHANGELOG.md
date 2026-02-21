@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.12] - 2026-02-20
+
+### Fixed
+
+- **`/migrating-projects`** — Missing template sections are now filtered by codebase evidence (glob-based relevance heuristics) before being proposed; users can approve or decline individual sections via `multiSelect`; declined sections are persisted in `.claude/migration-exclusions.json` and skipped on future runs
+
 ## [2.12.11] - 2026-02-20
 
 ### Fixed
