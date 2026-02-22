@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.14.0] - 2026-02-22
+
 ### Added
 
 - **Per-step model and effort configuration** — SDLC runner now supports per-step `model` and `effort` overrides in `sdlc-config.json`, with a three-level fallback chain: phase-level → step-level → global → default; the implement step splits into separate plan (Opus) and code (Sonnet) phases with independent model/effort/maxTurns/timeout settings
