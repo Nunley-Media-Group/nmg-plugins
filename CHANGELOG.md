@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.12.13] - 2026-02-22
+
+### Fixed
+
+- **`/running-retrospectives`** — Defect spec discovery rewritten from unreliable Grep-glob (`*/requirements.md` misses two-level paths) to deterministic Glob + Read-heading approach; added chain resolution that follows defect-to-defect `Related Spec` links to the root feature spec, with cycle detection and orphan handling
+- **`/writing-specs`** — Phase 1 Step 7 Related Spec search now filters out defect specs (checks first heading for `# Defect Report:`) and follows defect chains to find the root feature spec when no feature spec directly matches keywords
+- **`/migrating-projects`** — New Step 4a validates `Related Spec` links in defect specs: checks target existence, verifies target is a feature spec, follows chains through defect specs, detects circular references, and presents corrections for user approval
+
 ## [2.12.12] - 2026-02-20
 
 ### Fixed
