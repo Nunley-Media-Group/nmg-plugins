@@ -1,6 +1,6 @@
 ---
 name: implementing-specs
-description: "Read specs for current branch, enter plan mode, then execute implementation tasks sequentially. Use when user says 'implement the spec', 'start coding', 'build the feature', 'implement issue #N', or 'resume implementation'. Reads requirements, design, and tasks from .claude/specs/ and executes them in order."
+description: "Read specs for current branch, enter plan mode, then execute implementation tasks sequentially. Use when user says 'implement the spec', 'start coding', 'build the feature', 'implement issue #N', or 'resume implementation'. Do NOT use for writing specs, verifying implementations, or creating PRs. Reads requirements, design, and tasks from .claude/specs/ and executes them in order."
 argument-hint: "[#issue-number]"
 model: opus
 allowed-tools: Read, Glob, Grep, Task, Write, Edit, WebFetch, WebSearch, EnterPlanMode, Bash(gh:*), Bash(git:*)
