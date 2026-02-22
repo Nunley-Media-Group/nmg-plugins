@@ -1,0 +1,84 @@
+# File: .claude/specs/68-fix-retrospective-defect-spec-discovery/feature.gherkin
+#
+# Generated from: .claude/specs/68-fix-retrospective-defect-spec-discovery/requirements.md
+# Issue: #68
+# Type: Defect regression
+
+@regression
+Feature: Retrospective defect-spec discovery and Related Spec link validation
+  The running-retrospectives skill previously failed to reliably discover defect
+  specs due to Grep glob parameter interpretation, and cross-defect Related Spec
+  links caused invalid feature-vs-defect comparisons. writing-specs created these
+  invalid links because its Related Spec search didn't filter out defect specs.
+  migrating-projects did not validate or correct the linkage.
+
+  This was fixed by rewriting discovery to use Glob+Read instead of Grep-with-glob,
+  adding chain resolution for cross-defect links, filtering defect specs from
+  writing-specs' Related Spec search, and adding link validation to migrating-projects.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: AC1 - Deterministic defect spec discovery
+    Given a project with defect specs containing "**Severity**: High" in ".claude/specs/*/requirements.md"
+    And the defect specs have headings starting with "# Defect Report:"
+    When "/running-retrospectives" executes Step 1
+    Then all defect specs are found on the first attempt
+    And no fallback patterns are needed
+    And the discovery does not depend on Grep glob parameter interpretation
+
+  @regression
+  Scenario: AC2 - Cross-defect Related Spec chain resolution
+    Given a defect spec at ".claude/specs/57-fix-auto-mode-gitignore/" whose Related Spec points to ".claude/specs/17-fix-auto-mode-cleanup-on-exit/"
+    And ".claude/specs/17-fix-auto-mode-cleanup-on-exit/" is also a defect spec with Related Spec pointing to ".claude/specs/11-automation-mode-support/"
+    And ".claude/specs/11-automation-mode-support/" is a feature spec with heading "# Requirements:"
+    When "/running-retrospectives" resolves the Related Spec chain in Step 2
+    Then the skill follows the chain from spec 57 to spec 17 to spec 11
+    And the comparison in Step 3 is performed against the resolved feature spec at ".claude/specs/11-automation-mode-support/"
+
+  @regression
+  Scenario: AC3 - Orphan defect spec handling with circular reference
+    Given a defect spec at ".claude/specs/A/" whose Related Spec points to ".claude/specs/B/"
+    And ".claude/specs/B/" is a defect spec whose Related Spec points back to ".claude/specs/A/"
+    When "/running-retrospectives" processes the defect in Step 2
+    Then the skill detects the circular reference
+    And a warning is logged about the broken chain
+    And the defect is skipped from analysis
+
+  # --- Migration Validation ---
+
+  @regression
+  Scenario: AC4 - Migration validates Related Spec links
+    Given a project with a defect spec whose Related Spec points to another defect spec
+    And a defect spec whose Related Spec points to a nonexistent directory
+    When "/migrating-projects" runs its analysis phase
+    Then the defect-to-defect link is flagged as invalid
+    And the nonexistent directory link is flagged as invalid
+    And valid feature spec links are not flagged
+
+  @regression
+  Scenario: AC5 - Migration reports and corrects invalid links
+    Given "/migrating-projects" detects a defect spec with Related Spec pointing to another defect spec
+    And the defect chain resolves to a root feature spec at ".claude/specs/11-automation-mode-support/"
+    When findings are presented in the summary
+    Then the finding includes the current invalid link
+    And the finding includes the suggested correction to ".claude/specs/11-automation-mode-support/"
+    And if the user approves the Related Spec line is updated in the defect spec
+
+  # --- writing-specs Filtering ---
+
+  @regression
+  Scenario: AC6 - writing-specs filters defect specs from Related Spec search
+    Given "/writing-specs" is processing a defect issue about "auto-mode cleanup"
+    And the keyword search returns both defect spec ".claude/specs/17-fix-auto-mode-cleanup-on-exit/" and feature spec ".claude/specs/11-automation-mode-support/"
+    When Phase 1 Step 7 filters the results
+    Then only the feature spec ".claude/specs/11-automation-mode-support/" is considered as a candidate
+    And the defect spec is excluded because its heading starts with "# Defect Report:"
+
+  @regression
+  Scenario: AC7 - writing-specs finds root feature spec through defect chains
+    Given "/writing-specs" is processing a defect issue about "auto-mode"
+    And the keyword search only matches defect specs with no direct feature spec match
+    And the matched defect spec has a Related Spec pointing to feature spec ".claude/specs/11-automation-mode-support/"
+    When Phase 1 Step 7 follows the defect spec's Related Spec link
+    Then the Related Spec is set to ".claude/specs/11-automation-mode-support/"
