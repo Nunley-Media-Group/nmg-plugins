@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.15.0] - 2026-02-22
+
+### Added
+
+- **Feature-centric spec management** — `/writing-specs` now searches existing `feature-`-prefixed spec directories for related features before creating a new spec; when a match is found, the user is asked to confirm amendment vs. new spec creation (auto-mode auto-approves the amendment)
+- **Spec directory naming convention** — New specs are created as `feature-{slug}/` (enhancements) or `bug-{slug}/` (bugs) instead of `{issue#}-{slug}/`; issue numbers are tracked in spec frontmatter only
+- **Multi-issue frontmatter** — Spec templates use `**Issues**: #N` (plural) with a `## Change History` table; amended specs accumulate all contributing issue numbers and change summaries
+- **Spec discovery pipeline** — Keyword extraction from issue title (stop-word filtered) → Glob `feature-*/requirements.md` → Grep scoring → ranked candidate presentation
+- **Amendment content preservation** — New ACs, FRs, design sections, tasks, and Gherkin scenarios are appended to existing spec content; nothing is removed or replaced
+- **`/migrating-projects` consolidation** — Detects legacy `{issue#}-{slug}` spec directories, clusters related specs by keyword overlap, presents consolidation candidates per group for explicit user confirmation, merges into `feature-`-prefixed directories with combined frontmatter and Change History
+- **Defect cross-reference resolution** — During consolidation, all defect spec `**Related Spec**` fields pointing to legacy directories are updated to new `feature-`-prefixed paths; chain resolution with cycle detection handles multi-hop references
+- **Legacy frontmatter migration** — `/migrating-projects` detects feature specs with singular `**Issue**` frontmatter and proposes updating to plural `**Issues**` with a `## Change History` section
+- **Downstream compatibility** — `/implementing-specs` and `/verifying-specs` spec resolution searches both new `feature-`/`bug-` naming and legacy `{issue#}-{slug}` patterns; multi-issue frontmatter (`**Issues**`) searched first with fallback to singular `**Issue**`
+
 ## [2.14.0] - 2026-02-22
 
 ### Added
