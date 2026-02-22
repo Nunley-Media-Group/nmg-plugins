@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `.claude/specs/17-fix-auto-mode-cleanup-on-exit/`
+**Related Spec**: `.claude/specs/11-automation-mode-support/`
 
 ---
 

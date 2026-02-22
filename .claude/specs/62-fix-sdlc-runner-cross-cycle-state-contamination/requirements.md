@@ -5,7 +5,7 @@
 **Status**: Approved
 **Author**: Claude (regenerated)
 **Severity**: Critical
-**Related Spec**: `.claude/specs/51-sdlc-runner-edge-case-fixes/`
+**Related Spec**: `.claude/specs/12-openclaw-sdlc-orchestration/`
 
 ---
 
