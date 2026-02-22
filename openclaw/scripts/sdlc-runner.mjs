@@ -879,7 +879,7 @@ function buildClaudeArgs(step, state, overrides = {}) {
   const issue = state.currentIssue || '<unknown>';
   const branch = state.currentBranch || '<unknown>';
   const skillRoot = step.skill
-    ? `${PLUGINS_PATH}/plugins/nmg-sdlc/skills/${step.skill}`
+    ? path.join(PLUGINS_PATH, 'plugins', 'nmg-sdlc', 'skills', step.skill)
     : null;
 
   const prompts = {
@@ -1598,7 +1598,7 @@ async function runImplementStep(step, state) {
   const issue = state.currentIssue || '<unknown>';
   const branch = state.currentBranch || '<unknown>';
   const skillRoot = step.skill
-    ? `${PLUGINS_PATH}/plugins/nmg-sdlc/skills/${step.skill}`
+    ? path.join(PLUGINS_PATH, 'plugins', 'nmg-sdlc', 'skills', step.skill)
     : null;
 
   // --- Plan phase ---
