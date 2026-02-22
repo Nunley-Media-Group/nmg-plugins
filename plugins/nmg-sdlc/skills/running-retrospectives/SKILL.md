@@ -31,16 +31,24 @@ Use Glob to find all spec files:
 .claude/specs/*/requirements.md
 ```
 
-Then use Grep to identify defect specs by scanning for `\*{0,2}Severity\*{0,2}:` (matches both `**Severity**:` and `Severity:`) — this field is unique to the defect requirements template and does not appear in feature specs.
+Then Read the **first line** of each file and collect those whose heading starts with `# Defect Report:`. This reliably distinguishes defect specs from feature specs (which start with `# Requirements:`) without depending on Grep glob parameter interpretation.
 
-### Step 2: Filter to Eligible Defect Specs
+### Step 2: Filter to Eligible Defect Specs and Resolve Feature Spec Links
 
 Read each candidate defect spec and extract the `**Related Spec**:` field (bold-formatted in the defect template).
 
 - **Skip** defect specs that do not have a `Related Spec` field — there is no feature spec to correlate against
 - **Warn** if a `Related Spec` link points to a nonexistent spec directory — log a warning and skip that defect
 
-After filtering, if **zero eligible defect specs** remain:
+**Chain resolution:** After extracting the `Related Spec` path from a defect spec, Read the target's `requirements.md` first heading:
+
+- If the target starts with `# Requirements:` — it is a feature spec. Use it directly.
+- If the target starts with `# Defect Report:` — it is another defect spec. Follow **its** `Related Spec` link recursively.
+- Maintain a **visited set** of paths to detect cycles. If a path is visited twice, the chain is circular.
+- If the chain is circular or reaches a dead end (missing `Related Spec`, nonexistent directory) → warn: "Related Spec chain from [defect] is circular or broken — skipping" and exclude the defect from analysis.
+- Replace the raw `Related Spec` value with the **resolved feature spec path** for use in Step 3.
+
+After filtering and chain resolution, if **zero eligible defect specs** remain:
 
 ```
 No defect specs with Related Spec links found. No retrospective generated.
@@ -50,10 +58,10 @@ Stop here — do not create or modify `retrospective.md`.
 
 ### Step 3: Analyze Each Eligible Defect
 
-For each defect spec with a valid `Related Spec` link:
+For each defect spec with a resolved feature spec from Step 2:
 
 1. **Read the defect spec** (`requirements.md`) — extract reproduction steps, acceptance criteria, severity, and root cause context
-2. **Read the related feature spec** (`requirements.md`) — extract the original acceptance criteria, functional requirements, and scope
+2. **Read the resolved feature spec** (the `requirements.md` at the path resolved through chain resolution in Step 2) — extract the original acceptance criteria, functional requirements, and scope
 3. **Compare**: What did the feature spec cover? What scenario caused the defect? What was the gap?
 4. **Identify the transferable spec-writing pattern** — strip project-specific details and frame as a principle applicable to any domain
 5. **Formulate a recommendation**: Actionable guidance for writing future specs
@@ -162,6 +170,7 @@ Written to .claude/steering/retrospective.md
 | No defect specs found | Report "No defect specs with Related Spec links found." — do not create/modify retrospective.md |
 | Defect spec missing `Related Spec` field | Skip that defect spec silently (this is expected for defects unrelated to existing features) |
 | `Related Spec` link points to nonexistent spec | Warn: "Related Spec link in [defect] points to [path] which does not exist — skipping" |
+| `Related Spec` points to another defect spec | Follow chain to root feature spec; if circular or dead end, warn and skip |
 | All learnings filtered out | Report "N defect specs analyzed, but no spec-quality learnings identified." — do not create/modify retrospective.md |
 | `.claude/steering/` directory doesn't exist | Create it before writing retrospective.md |
 

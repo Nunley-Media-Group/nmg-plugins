@@ -149,6 +149,19 @@ For each spec file (`requirements.md`, `design.md`, `tasks.md`) in each spec dir
 
 **Skip `feature.gherkin` files entirely** — these are generated from acceptance criteria, not templated.
 
+### Step 4a: Validate Related Spec Links
+
+For each **defect spec** found in Step 2's scan (identified by a `# Defect Report:` first heading), read the `**Related Spec**:` field and validate it:
+
+1. **Check target exists** — Verify the target directory exists and contains a `requirements.md`
+2. **Check target is a feature spec** — Read the target's first heading:
+   - `# Requirements:` → valid feature spec link. No action needed.
+   - `# Defect Report:` → target is another defect spec. Follow its `Related Spec` link recursively (maintaining a visited set to detect cycles) until reaching a `# Requirements:` heading or a dead end.
+3. **Record findings** for each invalid link:
+   - **Current link**: the path in the defect spec's `Related Spec` field
+   - **Suggested correction**: the resolved root feature spec path, or "N/A — no feature spec found" if the chain is circular or broken
+4. **Skip** defect specs that have no `Related Spec` field or whose `Related Spec` is already `N/A`
+
 ### Step 5: Analyze OpenClaw Config
 
 If `sdlc-config.json` exists in the project root:
@@ -239,6 +252,10 @@ Display a per-file summary of all proposed changes. Group by category:
 ### OpenClaw Config
 - **sdlc-config.json** — Add 2 missing keys: "cleanup", "steps.merge"
 
+### Related Spec Links
+- **17-fix-auto-mode-cleanup-on-exit/requirements.md** — Related Spec points to defect spec; suggested correction: `.claude/specs/11-automation-mode-support/`
+- **42-fix-session-bug/requirements.md** — Related Spec points to nonexistent directory; suggested correction: N/A
+
 ### OpenClaw Skill
 - ⚠ Installed skill is outdated — run /installing-openclaw-skill to update
 ```
@@ -274,10 +291,10 @@ If there are **no** proposed steering doc sections (all were filtered by relevan
 
 #### Part B: Other changes (all-or-nothing)
 
-If there are proposed spec file sections, OpenClaw config keys, CHANGELOG fixes, or VERSION changes, ask separately:
+If there are proposed spec file sections, Related Spec corrections, OpenClaw config keys, CHANGELOG fixes, or VERSION changes, ask separately:
 
 ```
-question: "Apply the remaining migration changes (spec files, config, changelog)?"
+question: "Apply the remaining migration changes (spec files, Related Spec corrections, config, changelog)?"
 options:
   - "Yes, apply all"
   - "No, cancel"
@@ -303,6 +320,13 @@ For each file with missing sections:
 3. After all insertions, re-read the file to verify the new headings are present
 
 **Insertion format:** Insert a blank line, then `---`, then a blank line, then the full section content from the template (heading + body). Match the separator style used in the rest of the file.
+
+#### Related Spec corrections
+
+For each defect spec with an approved Related Spec correction (from Step 4a findings):
+
+1. Read the defect spec's `requirements.md`
+2. Use `Edit` to replace the `**Related Spec**:` line with the corrected value (the resolved feature spec path, or `N/A`)
 
 #### JSON config
 
