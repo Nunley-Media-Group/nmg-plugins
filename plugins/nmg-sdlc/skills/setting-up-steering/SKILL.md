@@ -1,6 +1,7 @@
 ---
 name: setting-up-steering
-description: "Set up or enhance project steering documents (product, tech, structure). Use when user says 'set up steering', 'initialize project', 'create steering docs', or 'update steering'. Bootstraps from templates on first run, enhances existing files in-place on subsequent runs."
+description: "Set up or enhance project steering documents (product, tech, structure). Use when user says 'set up steering', 'initialize project', 'bootstrap project', 'create steering docs', or 'update steering'. Do NOT use for writing specs or migrating existing projects to new templates. Bootstraps from templates on first run, enhances existing files in-place on subsequent runs."
+model: opus
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Task, Write, Edit, Bash(ls:*), Bash(git:*), Bash(wc:*), AskUserQuestion
 ---

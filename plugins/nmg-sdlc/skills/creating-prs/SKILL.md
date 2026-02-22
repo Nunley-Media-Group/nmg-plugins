@@ -1,7 +1,8 @@
 ---
 name: creating-prs
-description: "Create a pull request with spec-driven summary, linking GitHub issue and spec documents. Use when user says 'create PR', 'open pull request', 'submit for review', or 'make a PR for issue #N'. Handles version bumping, changelog updates, and links specs and acceptance criteria."
+description: "Create a pull request with spec-driven summary, linking GitHub issue and spec documents. Use when user says 'create PR', 'open pull request', 'submit for review', 'push for review', 'ready to merge', or 'make a PR for issue #N'. Do NOT use for implementing code, verifying specs, or creating issues. Handles version bumping, changelog updates, and links specs and acceptance criteria."
 argument-hint: "[#issue-number]"
+model: sonnet
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash(gh:*), Bash(git:*), AskUserQuestion
 ---

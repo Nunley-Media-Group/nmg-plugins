@@ -1,0 +1,177 @@
+# File: .claude/specs/77-per-step-model-effort-config/feature.gherkin
+#
+# Generated from: .claude/specs/77-per-step-model-effort-config/requirements.md
+# Issue: #77
+
+Feature: Per-step model and effort level configuration
+  As a developer or OpenClaw automation agent running the SDLC workflow
+  I want per-step model and effort level configuration
+  So that each SDLC phase uses the optimal model for its task
+
+  # --- Runner Per-Step Model ---
+
+  Scenario: Per-step model override in runner config
+    Given a sdlc-config.json with global model "sonnet"
+    And the writeSpecs step has model "opus"
+    When the runner executes the writeSpecs step
+    Then the claude subprocess is invoked with "--model opus"
+
+  Scenario: Global model used as fallback when step has no model override
+    Given a sdlc-config.json with global model "sonnet"
+    And the startIssue step has no model field
+    When the runner executes the startIssue step
+    Then the claude subprocess is invoked with "--model sonnet"
+
+  Scenario: Default model used when neither step nor global specifies model
+    Given a sdlc-config.json with no global model field
+    And no step has a model field
+    When the runner executes any step
+    Then the claude subprocess is invoked with "--model opus"
+
+  # --- Runner Per-Step Effort ---
+
+  Scenario: Per-step effort override in runner config
+    Given a sdlc-config.json with global effort "high"
+    And the startIssue step has effort "medium"
+    When the runner executes the startIssue step
+    Then the subprocess environment includes CLAUDE_CODE_EFFORT_LEVEL set to "medium"
+
+  Scenario: Global effort used as fallback when step has no effort override
+    Given a sdlc-config.json with global effort "high"
+    And the writeSpecs step has no effort field
+    When the runner executes the writeSpecs step
+    Then the subprocess environment includes CLAUDE_CODE_EFFORT_LEVEL set to "high"
+
+  Scenario: No effort env var set when neither step nor global specifies effort
+    Given a sdlc-config.json with no global effort field
+    And no step has an effort field
+    When the runner executes any step
+    Then the subprocess environment does not include CLAUDE_CODE_EFFORT_LEVEL
+
+  # --- Implement Step Split ---
+
+  Scenario: Implement step always splits into plan and code phases
+    Given a sdlc-config.json with implement step configured
+    When the runner executes the implement step
+    Then two sequential claude subprocesses are spawned
+    And the plan phase completes before the code phase starts
+
+  Scenario: Implement plan phase uses plan-specific model and effort
+    Given a sdlc-config.json with implement.plan model "opus" and effort "high"
+    And implement.code model "sonnet" and effort "high"
+    When the runner executes the implement step
+    Then the plan subprocess uses "--model opus"
+    And the plan subprocess environment includes CLAUDE_CODE_EFFORT_LEVEL set to "high"
+    And the code subprocess uses "--model sonnet"
+    And the code subprocess environment includes CLAUDE_CODE_EFFORT_LEVEL set to "high"
+
+  Scenario: Implement sub-step config falls back to step-level then global
+    Given a sdlc-config.json with global model "sonnet" and global effort "medium"
+    And implement step has model "opus" but no plan or code sub-config
+    When the runner executes the implement step
+    Then both plan and code subprocesses use "--model opus"
+    And both subprocess environments include CLAUDE_CODE_EFFORT_LEVEL set to "medium"
+
+  Scenario: Plan phase failure prevents code phase execution
+    Given a sdlc-config.json with implement step configured
+    When the runner executes the implement step
+    And the plan phase subprocess exits with a non-zero code
+    Then the code phase is not executed
+    And the implement step returns the plan phase failure result
+
+  # --- Backward Compatibility ---
+
+  Scenario: Backward compatibility with config lacking per-step overrides
+    Given a sdlc-config.json with only global model "opus" and no per-step model or effort fields
+    When the runner executes the writeSpecs step
+    Then the claude subprocess is invoked with "--model opus"
+    And the subprocess environment does not include CLAUDE_CODE_EFFORT_LEVEL
+
+  Scenario: Implement step splits even without sub-step config
+    Given a sdlc-config.json with only global model "opus" and no implement.plan or implement.code config
+    When the runner executes the implement step
+    Then two sequential subprocesses are still spawned
+    And both use "--model opus"
+
+  # --- Config Template ---
+
+  Scenario: Config template includes per-step model and effort examples
+    Given a user reads sdlc-config.example.json
+    When they review the step configuration
+    Then each step includes a model field with a recommended default
+    And each step includes an effort field with a recommended default
+    And the implement step includes plan and code sub-step configuration
+
+  # --- Skill Frontmatter ---
+
+  Scenario: Skill frontmatter includes model field
+    Given any nmg-sdlc SKILL.md file
+    When Claude Code loads it for manual invocation
+    Then the YAML frontmatter contains a model field
+    And the model matches the recommended default for that skill
+
+  Scenario Outline: Each skill has the correct model in frontmatter
+    Given the SKILL.md for <skill>
+    When the frontmatter is parsed
+    Then the model field is <model>
+
+    Examples:
+      | skill                    | model  |
+      | creating-issues          | sonnet |
+      | creating-prs             | sonnet |
+      | generating-openclaw-config | sonnet |
+      | implementing-specs       | opus   |
+      | installing-openclaw-skill | sonnet |
+      | migrating-projects       | opus   |
+      | running-retrospectives   | opus   |
+      | setting-up-steering      | opus   |
+      | starting-issues          | sonnet |
+      | verifying-specs          | sonnet |
+      | writing-specs            | opus   |
+
+  # --- Implementing-Specs Skill Split ---
+
+  Scenario: Implementing-specs delegates code phase to spec-implementer agent
+    Given a user runs /implementing-specs manually
+    When the plan phase completes (Steps 1-4)
+    Then Step 5 delegates task execution to the spec-implementer agent via the Task tool
+    And the spec-implementer agent runs on sonnet
+    And the user sees both the plan output and the agent's code execution output
+
+  # --- README Documentation ---
+
+  Scenario: README documents model and effort recommendations
+    Given a user reads the README
+    When they look for model and effort guidance
+    Then they find a table of recommended model and effort settings per skill
+    And instructions for overriding defaults via runner config
+
+  # --- Config Validation ---
+
+  Scenario: Invalid effort value is rejected at startup
+    Given a sdlc-config.json with effort value "maximum"
+    When the runner starts
+    Then it exits with a non-zero exit code
+    And the error message identifies the invalid effort value
+    And the error message lists valid options: "low", "medium", "high"
+
+  Scenario: Empty model value is rejected at startup
+    Given a sdlc-config.json with model value ""
+    When the runner starts
+    Then it exits with a non-zero exit code
+    And the error message identifies the invalid model value
+
+  Scenario: Invalid effort in implement.plan sub-config is rejected
+    Given a sdlc-config.json with implement.plan.effort value "extreme"
+    When the runner starts
+    Then it exits with a non-zero exit code
+    And the error message identifies the invalid field as "steps.implement.plan.effort"
+
+  # --- Migrating Projects ---
+
+  Scenario: Migration detects new config keys after plugin upgrade
+    Given a project with an old-format sdlc-config.json lacking model and effort fields
+    When the user runs /migrating-projects after upgrading the plugin
+    Then the migration proposes adding the missing model and effort keys
+    And the migration proposes adding implement.plan and implement.code sub-config
+    And existing config values are preserved

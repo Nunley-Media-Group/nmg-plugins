@@ -1,7 +1,8 @@
 ---
 name: implementing-specs
-description: "Read specs for current branch, enter plan mode, then execute implementation tasks sequentially. Use when user says 'implement the spec', 'start coding', 'build the feature', 'implement issue #N', or 'resume implementation'. Reads requirements, design, and tasks from .claude/specs/ and executes them in order."
+description: "Read specs for current branch, enter plan mode, then execute implementation tasks sequentially. Use when user says 'implement the spec', 'start coding', 'build the feature', 'implement issue #N', or 'resume implementation'. Do NOT use for writing specs, verifying implementations, or creating PRs. Reads requirements, design, and tasks from .claude/specs/ and executes them in order."
 argument-hint: "[#issue-number]"
+model: opus
 allowed-tools: Read, Glob, Grep, Task, Write, Edit, WebFetch, WebSearch, EnterPlanMode, Bash(gh:*), Bash(git:*)
 ---
 
@@ -89,7 +90,20 @@ The implementation approach (whether internal or in plan mode) should:
 
 ### Step 5: Execute Tasks
 
-After the user approves the plan, implement tasks sequentially:
+**If `.claude/auto-mode` exists:** The runner handles implementation directly via its code phase — proceed to execute tasks inline using the approach designed in your thinking.
+
+**If `.claude/auto-mode` does NOT exist:** After the user approves the plan, delegate implementation to the `spec-implementer` agent via the Task tool:
+
+```
+Task(subagent_type="nmg-sdlc:spec-implementer",
+     prompt="Implement the specs for issue #N in .claude/specs/{feature-name}/. Read requirements.md, design.md, tasks.md, and steering docs in .claude/steering/, then execute all tasks sequentially.")
+```
+
+The agent will read all spec and steering documents, execute tasks from `tasks.md` sequentially, and return a completion summary with files created/modified.
+
+If the agent reports partial completion or deviations, review its output and decide whether to re-invoke it for remaining tasks or handle them directly.
+
+**Fallback (inline execution):** If the Task tool is unavailable or the agent fails, implement tasks directly:
 
 For each task in `tasks.md`:
 

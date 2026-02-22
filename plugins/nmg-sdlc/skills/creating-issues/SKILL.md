@@ -1,7 +1,8 @@
 ---
 name: creating-issues
-description: "Interview user about a feature need, create groomed GitHub issue with BDD acceptance criteria. Use when user says 'create issue', 'new feature', 'report a bug', 'I need a...', or 'file an issue'. Supports feature and bug templates with codebase investigation and milestone assignment."
+description: "Interview user about a feature need, create groomed GitHub issue with BDD acceptance criteria. Use when user says 'create issue', 'new feature', 'report a bug', 'log a bug', 'request a feature', 'I need a...', or 'file an issue'. Do NOT use for writing specs, implementing code, or creating PRs. Supports feature and bug templates with codebase investigation and milestone assignment."
 argument-hint: "[brief description of the need]"
+model: sonnet
 allowed-tools: Read, Glob, Grep, Bash(gh:*), WebSearch, WebFetch
 ---
 
