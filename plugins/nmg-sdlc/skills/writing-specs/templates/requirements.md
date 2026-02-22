@@ -7,7 +7,7 @@ Use this template to create feature specifications in the **SPECIFY** phase.
 ```markdown
 # Requirements: [Feature Name]
 
-**Issue**: #[number]
+**Issues**: #[number]
 **Date**: [YYYY-MM-DD]
 **Status**: Draft | In Review | Approved
 **Author**: [name]
@@ -177,6 +177,14 @@ Explicitly list what this feature does NOT include:
 - [ ] [Question needing stakeholder input]
 - [ ] [Technical question to research]
 - [ ] [UX question to validate]
+
+---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #[number] | [YYYY-MM-DD] | Initial feature spec |
 
 ---
 

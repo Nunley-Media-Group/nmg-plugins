@@ -33,6 +33,8 @@ Do NOT skip the review gate in Step 9. Do NOT apply changes without explicit use
 .claude/specs/*/requirements.md — Spec requirements (feature + defect variants)
 .claude/specs/*/design.md      — Spec designs (feature + defect variants)
 .claude/specs/*/tasks.md       — Spec task breakdowns (feature + defect variants)
+.claude/specs/*/                — Spec directory naming (legacy {issue#}-{slug} vs feature-/bug- convention)
+.claude/specs/feature-*/*.md   — Spec frontmatter format (singular **Issue** vs plural **Issues**, Change History)
 .claude/migration-exclusions.json — Declined sections (read to skip, written after user declines)
 sdlc-config.json               — OpenClaw runner config (JSON key merge)
 ~/.openclaw/skills/running-sdlc/ — OpenClaw skill version check
@@ -135,6 +137,87 @@ For each **defect spec** found in Step 2's scan (identified by a `# Defect Repor
    - **Suggested correction**: the resolved root feature spec path, or "N/A — no feature spec found" if the chain is circular or broken
 4. **Skip** defect specs that have no `Related Spec` field or whose `Related Spec` is already `N/A`
 
+### Step 4b: Detect Legacy Spec Directories
+
+Identify spec directories that use the legacy `{issue#}-{slug}` naming convention and need migration to `feature-{slug}` or `bug-{slug}`.
+
+1. Run `Glob` for `.claude/specs/*/requirements.md` to list all spec directories
+2. For each spec directory, classify by naming pattern:
+   - **Legacy**: directory name matches `{digits}-{slug}` pattern (e.g., `42-add-dark-mode`, `71-dark-mode-toggle`)
+   - **New**: directory name starts with `feature-` or `bug-` prefix
+3. Collect all legacy directories into a candidate list
+4. If no legacy directories found, skip Steps 4c–4e and proceed to Step 4f
+
+### Step 4c: Cluster Legacy Specs by Feature
+
+Group related legacy specs that should be consolidated into a single feature spec.
+
+1. For each legacy spec, extract keywords from:
+   - Directory name (strip the issue number prefix)
+   - First `# ` heading of `requirements.md` (feature name)
+   - User story content
+2. **Exclude bug specs from consolidation grouping** — read the first heading of each `requirements.md`:
+   - `# Defect Report:` → this is a bug spec. Do not group it with other specs. It becomes a solo `bug-{slug}` rename candidate.
+   - `# Requirements:` → this is a feature spec. Include in keyword comparison.
+3. Compare keyword sets between all pairs of feature legacy specs. Group specs with significant keyword overlap (>50% shared keywords after stop word filtering).
+4. For each group, determine the proposed feature name:
+   - Use the most descriptive slug from the group (longest directory slug after stripping the issue number prefix)
+   - Prefix with `feature-`
+5. Solo feature specs (no group match) are also migration candidates: simple rename from `{issue#}-{slug}` to `feature-{slug}`
+6. Solo bug specs: rename from `{issue#}-{slug}` to `bug-{slug}`
+
+### Step 4d: Present Consolidation Candidates
+
+For each group (and solo migration candidates):
+
+1. Show the source directories and proposed target name
+2. Show a brief summary of each source spec's content (first heading, issue number, status)
+3. Use `AskUserQuestion` for each group:
+   - Option 1: "Consolidate into `feature-{slug}/`" (or "Rename to `feature-{slug}/`" / "Rename to `bug-{slug}/`" for solo specs)
+   - Option 2: "Skip — leave as-is"
+
+**This skill is always interactive** — `.claude/auto-mode` does NOT apply. Every consolidation requires explicit user confirmation.
+
+### Step 4e: Apply Consolidation
+
+For each approved group or solo rename:
+
+**Multi-spec consolidation** (groups of related feature specs):
+
+1. **Create new directory**: `.claude/specs/feature-{slug}/`
+2. **Merge `requirements.md`**: Start with the oldest spec's content as the base. Change `**Issue**` to `**Issues**` and collect all issue numbers (e.g., `**Issues**: #42, #71`). Append ACs and FRs from other specs with sequential numbering (find highest existing AC/FR number, continue from there). Create a Change History section from all contributing specs.
+3. **Merge `design.md`**: Start with the oldest spec's design as base. Append unique sections from other specs. Update `**Issues**` frontmatter.
+4. **Merge `tasks.md`**: Start with the oldest spec's tasks as base. Append tasks from other specs with renumbered IDs. Mark tasks from already-implemented specs as completed. Update Summary table.
+5. **Merge `feature.gherkin`**: Concatenate all scenarios. Tag appended scenarios with `# From issue #N` comments.
+6. **Update defect spec cross-references** (per AC12): Run `Grep` across all spec directories (both already-renamed `bug-*/` and not-yet-renamed `{issue#}-*/`) for `**Related Spec**` fields pointing to any consolidated or renamed legacy directory. Filter to defect specs by checking for `# Defect Report:` heading. Update those fields to point to the new `feature-{slug}/` directory. Follow chain resolution through intermediate defect specs (maintaining a visited set for cycle detection).
+7. **Remove legacy directories** after successful merge.
+
+**Solo feature rename** (single legacy spec → `feature-{slug}`):
+1. Rename the directory from `{issue#}-{slug}/` to `feature-{slug}/`
+2. Update frontmatter: `**Issue**: #N` → `**Issues**: #N`
+3. Update defect spec cross-references that pointed to the old directory name
+
+**Solo bug rename** (single legacy bug spec → `bug-{slug}`):
+1. Rename the directory from `{issue#}-{slug}/` to `bug-{slug}/`
+2. Keep the singular `**Issue**: #N` field (bugs are per-issue)
+3. Update any defect spec cross-references that pointed to the old directory name
+
+### Step 4f: Migrate Legacy Frontmatter in Feature Specs
+
+After consolidation (or independently, for feature specs that already use `feature-` naming but retain old frontmatter):
+
+1. Run `Glob` for `.claude/specs/feature-*/requirements.md`, `.claude/specs/feature-*/design.md`, `.claude/specs/feature-*/tasks.md`
+2. For each file, read the first 15 lines and check:
+   - Is the first `# ` heading a **feature variant** (`# Requirements:`, `# Design:`, `# Tasks:`)? If `# Defect Report:` or `# Root Cause Analysis:`, skip — defect specs keep singular `**Issue**`.
+   - Does the file contain `**Issue**: #` (singular) instead of `**Issues**: #` (plural)?
+   - Is the `## Change History` section missing?
+3. For files with singular `**Issue**`: propose replacing `**Issue**: #N` with `**Issues**: #N`
+4. For files missing `## Change History`: propose adding the section before `## Validation Checklist` with a single entry: `| #N | [original date from **Date** field] | Initial feature spec |`
+5. Present findings alongside other migration proposals in Step 9
+6. Apply on user confirmation using `Edit`
+
+This step runs on ALL feature-variant specs in `feature-*/` directories, catching specs that were created by newer `/writing-specs` but somehow have stale frontmatter, renamed from legacy directories but not yet updated, or already in the new naming convention from a prior partial migration.
+
 ### Step 5: Analyze OpenClaw Config
 
 If `sdlc-config.json` exists in the project root:
@@ -218,16 +301,25 @@ Display a per-file summary of all proposed changes. Group by category:
 - **structure.md** — Not found (run /setting-up-steering to create)
 
 ### Spec Files
-- **42-add-auth/requirements.md** — Add 1 missing section: "UI/UX Requirements"
-- **42-add-auth/design.md** — Up to date
-- **15-fix-login/requirements.md** (defect) — Up to date
+- **feature-add-auth/requirements.md** — Add 1 missing section: "UI/UX Requirements"
+- **feature-add-auth/design.md** — Up to date
+- **bug-login-crash/requirements.md** (defect) — Up to date
+
+### Spec Directory Consolidation
+- **42-add-dark-mode/** + **71-dark-mode-toggle/** → Consolidate into **feature-dark-mode/**
+- **55-add-weather-alerts/** → Rename to **feature-weather-alerts/**
+- **15-fix-login/** → Rename to **bug-fix-login/**
+
+### Spec Frontmatter Migration
+- **feature-dark-mode/requirements.md** — Update `**Issue**` → `**Issues**`, add Change History section
+- **feature-dark-mode/design.md** — Update `**Issue**` → `**Issues**`, add Change History section
 
 ### OpenClaw Config
 - **sdlc-config.json** — Add 2 missing keys: "cleanup", "steps.merge"
 
 ### Related Spec Links
-- **17-fix-auto-mode-cleanup-on-exit/requirements.md** — Related Spec points to defect spec; suggested correction: `.claude/specs/11-automation-mode-support/`
-- **42-fix-session-bug/requirements.md** — Related Spec points to nonexistent directory; suggested correction: N/A
+- **bug-auto-mode-cleanup/requirements.md** — Related Spec points to defect spec; suggested correction: `.claude/specs/feature-automation-mode-support/`
+- **bug-session-crash/requirements.md** — Related Spec points to nonexistent directory; suggested correction: N/A
 
 ### OpenClaw Skill
 - ⚠ Installed skill is outdated — run /installing-openclaw-skill to update
@@ -262,12 +354,21 @@ Sections the user does **not** select are treated as declined and will be persis
 
 If there are **no** proposed steering doc sections (all were filtered by relevance or exclusions), skip Part A.
 
-#### Part B: Other changes (all-or-nothing)
+#### Part B: Other changes (per-group for consolidation, all-or-nothing for the rest)
 
-If there are proposed spec file sections, Related Spec corrections, OpenClaw config keys, CHANGELOG fixes, or VERSION changes, ask separately:
+If there are proposed spec directory consolidations or renames (from Steps 4b–4e), present each group individually via `AskUserQuestion`:
 
 ```
-question: "Apply the remaining migration changes (spec files, Related Spec corrections, config, changelog)?"
+question: "Consolidate 42-add-dark-mode/ + 71-dark-mode-toggle/ into feature-dark-mode/?"
+options:
+  - "Yes, consolidate"
+  - "Skip — leave as-is"
+```
+
+For spec frontmatter migrations, spec file sections, Related Spec corrections, OpenClaw config keys, CHANGELOG fixes, or VERSION changes, ask as a batch:
+
+```
+question: "Apply the remaining migration changes (spec sections, frontmatter updates, Related Spec corrections, config, changelog)?"
 options:
   - "Yes, apply all"
   - "No, cancel"
@@ -281,11 +382,13 @@ If there are no non-steering changes, skip Part B.
 
 Follow the detailed apply procedures in [references/migration-procedures.md](references/migration-procedures.md). In summary:
 
-1. **Markdown files** — Insert missing sections after their predecessor heading using `Edit`. Add `---` separator matching file style. Re-read to verify.
-2. **Related Spec corrections** — Replace `**Related Spec**:` lines with resolved feature spec paths.
-3. **JSON config** — Add missing keys only; never overwrite existing values.
-4. **Persist declined sections** — Save unselected steering doc sections to `.claude/migration-exclusions.json`.
-5. **Output summary** — Report changes applied, declined, skipped, and filtered sections with recommendations.
+1. **Spec directory consolidation** — Apply merges from Step 4e (create directories, merge files, update cross-references, remove legacy directories).
+2. **Spec frontmatter migration** — Apply updates from Step 4f (replace `**Issue**:` → `**Issues**:`, insert Change History sections).
+3. **Markdown files** — Insert missing sections after their predecessor heading using `Edit`. Add `---` separator matching file style. Re-read to verify.
+4. **Related Spec corrections** — Replace `**Related Spec**:` lines with resolved feature spec paths.
+5. **JSON config** — Add missing keys only; never overwrite existing values.
+6. **Persist declined sections** — Save unselected steering doc sections to `.claude/migration-exclusions.json`.
+7. **Output summary** — Report changes applied, declined, skipped, and filtered sections with recommendations.
 
 ---
 

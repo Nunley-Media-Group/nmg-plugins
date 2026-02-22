@@ -7,7 +7,7 @@ Use this template to create technical designs in the **PLAN** phase.
 ```markdown
 # Design: [Feature Name]
 
-**Issue**: #[number]
+**Issues**: #[number]
 **Date**: [YYYY-MM-DD]
 **Status**: Draft | In Review | Approved
 **Author**: [name]
@@ -228,6 +228,14 @@ FeatureScreen
 - [ ] [Technical question]
 - [ ] [Architecture question]
 - [ ] [Integration question]
+
+---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #[number] | [YYYY-MM-DD] | Initial feature spec |
 
 ---
 

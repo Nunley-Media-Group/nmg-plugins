@@ -9,7 +9,7 @@ Reference `.claude/steering/structure.md` to map task file paths to the project'
 ```markdown
 # Tasks: [Feature Name]
 
-**Issue**: #[number]
+**Issues**: #[number]
 **Date**: [YYYY-MM-DD]
 **Status**: Planning | In Progress | Complete
 **Author**: [name]
@@ -263,6 +263,14 @@ T001 ──┬──▶ T002 ──┬──▶ T003 ──▶ T004 ──▶ T0
        │
        └──▶ T015 ──▶ T016, T017
 ```
+
+---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #[number] | [YYYY-MM-DD] | Initial feature spec |
 
 ---
 

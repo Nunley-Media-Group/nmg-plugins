@@ -120,9 +120,11 @@ Claude Code sessions via `claude -p`
 
 | Element | Convention | Example |
 |---------|------------|---------|
-| Spec directories | `{issue#}-{kebab-case-title}` | `42-add-precipitation-overlay/` |
+| Feature spec directories | `feature-{kebab-case-slug}` | `feature-dark-mode/` |
+| Bug spec directories | `bug-{kebab-case-slug}` | `bug-login-crash-on-timeout/` |
+| Legacy spec directories | `{issue#}-{kebab-case-title}` (still supported) | `42-add-precipitation-overlay/` |
 | Spec files | Fixed names | `requirements.md`, `design.md`, `tasks.md`, `feature.gherkin` |
-| Location | `.claude/specs/{feature-name}/` | `.claude/specs/42-add-precipitation-overlay/` |
+| Location | `.claude/specs/{feature-name}/` | `.claude/specs/feature-dark-mode/` |
 
 ### Version Strings
 

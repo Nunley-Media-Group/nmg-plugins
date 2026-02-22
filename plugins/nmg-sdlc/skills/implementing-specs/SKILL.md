@@ -24,7 +24,7 @@ If the file `.claude/auto-mode` exists in the project directory:
 
 ## Prerequisites
 
-1. Specs exist at `.claude/specs/{feature-name}/` (created by `/writing-specs`). The `{feature-name}` is the issue number + kebab-case slug of the title (e.g., `42-add-precipitation-overlay`), matching the branch name. If unsure, use `Glob` to find `.claude/specs/*/requirements.md` and match against the current issue number or branch name.
+1. Specs exist at `.claude/specs/{feature-name}/` (created by `/writing-specs`). The `{feature-name}` is the spec directory name. For specs created with v2.15+, this follows the `feature-{slug}` or `bug-{slug}` convention (e.g., `feature-dark-mode`). Legacy specs use `{issue#}-{slug}` (e.g., `42-add-precipitation-overlay`). **Fallback:** Use `Glob` to find `.claude/specs/*/requirements.md`. For each result, read the `**Issues**` (or legacy `**Issue**`) frontmatter field and match against the current issue number. If no frontmatter match, try matching the issue number or branch name keywords against the directory name.
 2. A feature branch exists for this issue (or will be created)
 3. Steering documents exist at `.claude/steering/`
 
@@ -174,7 +174,7 @@ If implementation was started but not finished:
 
 ### Example 1: Implement by issue number
 User says: "/implementing-specs #42"
-Actions: Reads specs from `.claude/specs/42-add-auth/`, loads steering docs, enters plan mode, executes tasks sequentially
+Actions: Reads specs from `.claude/specs/feature-add-auth/` (or legacy `42-add-auth/`), loads steering docs, enters plan mode, executes tasks sequentially
 Result: All tasks complete; user prompted to run `/verifying-specs #42`
 
 ### Example 2: Resume partial implementation
