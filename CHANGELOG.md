@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.13.0] - 2026-02-22
+
+### Added
+
+- **`/running-retrospectives`** — SHA-256 content hashing and state tracking (`retrospective-state.json`) so unchanged defect specs are skipped on subsequent runs; carried-forward learnings extracted from existing `retrospective.md` tables; output summary now shows spec partition breakdown (new/modified/skipped/removed) and learning source breakdown (new vs. carried forward)
+
 ## [2.12.13] - 2026-02-22
 
 ### Fixed
