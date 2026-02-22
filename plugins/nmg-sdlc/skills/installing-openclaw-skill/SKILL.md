@@ -2,6 +2,7 @@
 name: installing-openclaw-skill
 description: "Install or update the OpenClaw running-sdlc skill and restart the gateway. Use when user says 'install openclaw', 'update openclaw skill', 'sync openclaw', or 'reinstall the runner skill'. Copies skill files from marketplace clone, patches known CLI bugs, and restarts the gateway."
 argument-hint: ""
+model: sonnet
 allowed-tools: Read, Bash(cp:*), Bash(mkdir:*), Bash(source:*), Bash(ls:*), Bash(node:*)
 ---
 

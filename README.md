@@ -196,6 +196,36 @@ The `--discord-channel` flag is optional. When launched via OpenClaw, the channe
 
 See [`openclaw/README.md`](openclaw/README.md) for all commands (`start`, `status`, `stop`), flags (`--resume`, `--dry-run`, `--step N`), state files, and error handling details.
 
+### Model & Effort Configuration
+
+The runner supports per-step model and effort level configuration. Each step can use a different model (e.g., Opus for spec writing, Sonnet for mechanical tasks) and effort level (`low`, `medium`, `high`).
+
+**Recommended model assignments:**
+
+| Step | Model | Effort | Rationale |
+|------|-------|--------|-----------|
+| startCycle | (global) | — | Simple git operations |
+| startIssue | sonnet | — | Mechanical: select issue, create branch |
+| writeSpecs | opus | high | Creative: requires deep reasoning for spec quality |
+| implement (plan) | opus | high | Architectural: designs the implementation approach |
+| implement (code) | sonnet | high | Mechanical: executes tasks from the plan |
+| verify | sonnet | high | Checklist-driven: validates against spec criteria |
+| commitPush | sonnet | — | Mechanical: git add/commit/push |
+| createPR | sonnet | — | Template-driven: version bump + PR body |
+| monitorCI | sonnet | — | Mechanical: poll + minimal fix |
+| merge | sonnet | — | Mechanical: gh pr merge |
+
+**Configuration layers (highest to lowest priority):**
+
+1. **Phase-level** — `steps.implement.plan.model` / `steps.implement.code.model`
+2. **Step-level** — `steps.writeSpecs.model`
+3. **Global** — top-level `model` / `effort`
+4. **Default** — `opus` for model, unset for effort
+
+The implement step is special: it runs in two phases (plan + code) with independent model/effort/maxTurns/timeout settings. See `sdlc-config.example.json` for the full schema.
+
+**Skill frontmatter:** Each SKILL.md includes a `model` field declaring its recommended model. This is informational for interactive use — the runner's config takes precedence for automated runs.
+
 ### Auto-mode flag
 
 The runner creates `.claude/auto-mode` automatically. When this file exists, skills skip interactive prompts. You can also toggle it manually:

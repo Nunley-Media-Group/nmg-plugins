@@ -48,6 +48,10 @@ const {
   matchErrorPattern,
   incrementBounceCount,
   defaultState,
+  validateConfig,
+  getConfigObject,
+  resolveStepConfig,
+  resolveImplementPhaseConfig,
   validatePreconditions,
   extractStateFromStep,
   validateSpecs,
@@ -62,6 +66,7 @@ const {
   escalate,
   haltFailureLoop,
   handleSignal,
+  runImplementStep,
   runStep,
   readState,
   writeState,
@@ -88,6 +93,7 @@ const {
   RUNNER_ARTIFACTS,
   IMMEDIATE_ESCALATION_PATTERNS,
   RATE_LIMIT_PATTERN,
+  VALID_EFFORTS,
   MAX_CONSECUTIVE_ESCALATIONS,
   __test__,
 } = runner;
@@ -106,6 +112,7 @@ function setupTestConfig() {
     pluginsPath: TEST_PLUGINS,
     maxRetriesPerStep: 3,
     model: 'opus',
+    effort: undefined,
     discordChannelId: null,
     statePath: TEST_STATE_PATH,
     dryRun: false,
@@ -2040,5 +2047,542 @@ describe('Step 7 prompt includes version bump mandate (#60)', () => {
     const prompt = args[promptIdx];
     expect(prompt).toContain('MUST bump the version');
     expect(prompt).toContain('mandatory');
+  });
+});
+
+// ===========================================================================
+// Issue #77: Per-step model and effort level configuration
+// ===========================================================================
+
+describe('VALID_EFFORTS constant (#77)', () => {
+  it('contains low, medium, high', () => {
+    expect(VALID_EFFORTS).toEqual(['low', 'medium', 'high']);
+  });
+});
+
+describe('validateConfig (#77)', () => {
+  it('returns empty array for valid config with no effort/model', () => {
+    const errors = validateConfig({ projectPath: '/p', pluginsPath: '/q' });
+    expect(errors).toEqual([]);
+  });
+
+  it('returns empty array for valid global effort', () => {
+    const errors = validateConfig({ effort: 'high', model: 'opus' });
+    expect(errors).toEqual([]);
+  });
+
+  it('rejects invalid global effort', () => {
+    const errors = validateConfig({ effort: 'turbo' });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('turbo');
+    expect(errors[0]).toContain('low, medium, high');
+  });
+
+  it('rejects empty string model', () => {
+    const errors = validateConfig({ model: '' });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('non-empty string');
+  });
+
+  it('rejects whitespace-only model', () => {
+    const errors = validateConfig({ model: '  ' });
+    expect(errors).toHaveLength(1);
+  });
+
+  it('accepts undefined model and effort (not set)', () => {
+    const errors = validateConfig({});
+    expect(errors).toEqual([]);
+  });
+
+  it('validates per-step effort', () => {
+    const errors = validateConfig({
+      steps: { writeSpecs: { effort: 'invalid' } },
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('steps.writeSpecs.effort');
+  });
+
+  it('validates per-step model', () => {
+    const errors = validateConfig({
+      steps: { startIssue: { model: '' } },
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('steps.startIssue.model');
+  });
+
+  it('validates implement plan sub-object effort', () => {
+    const errors = validateConfig({
+      steps: { implement: { plan: { effort: 'max' } } },
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('steps.implement.plan.effort');
+  });
+
+  it('validates implement code sub-object model', () => {
+    const errors = validateConfig({
+      steps: { implement: { code: { model: '' } } },
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('steps.implement.code.model');
+  });
+
+  it('validates implement plan sub-object model', () => {
+    const errors = validateConfig({
+      steps: { implement: { plan: { model: '   ' } } },
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('steps.implement.plan.model');
+  });
+
+  it('validates implement code sub-object effort', () => {
+    const errors = validateConfig({
+      steps: { implement: { code: { effort: 'ultra' } } },
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('steps.implement.code.effort');
+  });
+
+  it('collects multiple errors', () => {
+    const errors = validateConfig({
+      effort: 'bad',
+      model: '',
+      steps: { writeSpecs: { effort: 'wrong' } },
+    });
+    expect(errors.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('accepts valid per-step config', () => {
+    const errors = validateConfig({
+      effort: 'high',
+      model: 'opus',
+      steps: {
+        writeSpecs: { model: 'opus', effort: 'high' },
+        implement: {
+          model: 'opus',
+          effort: 'high',
+          plan: { model: 'opus', effort: 'high' },
+          code: { model: 'sonnet', effort: 'medium' },
+        },
+      },
+    });
+    expect(errors).toEqual([]);
+  });
+});
+
+describe('resolveStepConfig (#77)', () => {
+  it('returns step-level model and effort when present', () => {
+    const result = resolveStepConfig(
+      { model: 'sonnet', effort: 'low' },
+      { model: 'opus', effort: 'high' }
+    );
+    expect(result.model).toBe('sonnet');
+    expect(result.effort).toBe('low');
+  });
+
+  it('falls back to config-level when step has no overrides', () => {
+    const result = resolveStepConfig(
+      { maxTurns: 10 },
+      { model: 'opus', effort: 'high' }
+    );
+    expect(result.model).toBe('opus');
+    expect(result.effort).toBe('high');
+  });
+
+  it('falls back to defaults when neither step nor config set', () => {
+    const result = resolveStepConfig({}, {});
+    expect(result.model).toBe('opus');
+    expect(result.effort).toBeUndefined();
+  });
+
+  it('step model overrides config model', () => {
+    const result = resolveStepConfig(
+      { model: 'haiku' },
+      { model: 'opus' }
+    );
+    expect(result.model).toBe('haiku');
+  });
+
+  it('step effort overrides config effort', () => {
+    const result = resolveStepConfig(
+      { effort: 'low' },
+      { effort: 'high' }
+    );
+    expect(result.effort).toBe('low');
+  });
+});
+
+describe('resolveImplementPhaseConfig (#77)', () => {
+  it('returns phase-level overrides when present', () => {
+    const step = {
+      model: 'opus', effort: 'high', maxTurns: 100, timeoutMin: 30,
+      plan: { model: 'opus', effort: 'high', maxTurns: 40, timeoutMin: 15 },
+      code: { model: 'sonnet', effort: 'medium', maxTurns: 80, timeoutMin: 25 },
+    };
+    const config = { model: 'opus', effort: 'high' };
+
+    const plan = resolveImplementPhaseConfig(step, config, 'plan');
+    expect(plan.model).toBe('opus');
+    expect(plan.effort).toBe('high');
+    expect(plan.maxTurns).toBe(40);
+    expect(plan.timeoutMin).toBe(15);
+
+    const code = resolveImplementPhaseConfig(step, config, 'code');
+    expect(code.model).toBe('sonnet');
+    expect(code.effort).toBe('medium');
+    expect(code.maxTurns).toBe(80);
+    expect(code.timeoutMin).toBe(25);
+  });
+
+  it('falls back to step-level when phase has no overrides', () => {
+    const step = { model: 'opus', effort: 'high', maxTurns: 100, timeoutMin: 30 };
+    const config = { model: 'sonnet', effort: 'low' };
+
+    const plan = resolveImplementPhaseConfig(step, config, 'plan');
+    expect(plan.model).toBe('opus');
+    expect(plan.effort).toBe('high');
+    expect(plan.maxTurns).toBe(100);
+    expect(plan.timeoutMin).toBe(30);
+  });
+
+  it('falls back to config-level when step has no overrides', () => {
+    const step = { maxTurns: 50 };
+    const config = { model: 'opus', effort: 'high' };
+
+    const code = resolveImplementPhaseConfig(step, config, 'code');
+    expect(code.model).toBe('opus');
+    expect(code.effort).toBe('high');
+    expect(code.maxTurns).toBe(50);
+  });
+
+  it('falls back to defaults when nothing set', () => {
+    const result = resolveImplementPhaseConfig({}, {}, 'plan');
+    expect(result.model).toBe('opus');
+    expect(result.effort).toBeUndefined();
+    expect(result.maxTurns).toBe(20);
+    expect(result.timeoutMin).toBe(10);
+  });
+
+  it('phase model overrides step model which overrides config model', () => {
+    const step = {
+      model: 'opus',
+      plan: { model: 'haiku' },
+    };
+    const config = { model: 'sonnet' };
+
+    const plan = resolveImplementPhaseConfig(step, config, 'plan');
+    expect(plan.model).toBe('haiku');
+
+    // Code phase has no override → falls back to step → opus
+    const code = resolveImplementPhaseConfig(step, config, 'code');
+    expect(code.model).toBe('opus');
+  });
+});
+
+describe('getConfigObject (#77)', () => {
+  it('returns object with current MODEL and EFFORT', () => {
+    __test__.setConfig({ model: 'test-model', effort: 'low' });
+    const obj = getConfigObject();
+    expect(obj.model).toBe('test-model');
+    expect(obj.effort).toBe('low');
+  });
+});
+
+describe('buildClaudeArgs overrides (#77)', () => {
+  it('uses override model instead of global MODEL', () => {
+    const step = STEPS[0];
+    const state = defaultState();
+    const args = buildClaudeArgs(step, state, { model: 'sonnet' });
+    const modelIdx = args.indexOf('--model') + 1;
+    expect(args[modelIdx]).toBe('sonnet');
+  });
+
+  it('uses override prompt instead of default prompt', () => {
+    const step = STEPS[0];
+    const state = defaultState();
+    const customPrompt = 'Custom plan phase prompt';
+    const args = buildClaudeArgs(step, state, { prompt: customPrompt });
+    const promptIdx = args.indexOf('-p') + 1;
+    expect(args[promptIdx]).toBe(customPrompt);
+  });
+
+  it('falls back to global MODEL when no override', () => {
+    __test__.setConfig({ model: 'opus' });
+    const step = STEPS[0];
+    const state = defaultState();
+    const args = buildClaudeArgs(step, state);
+    const modelIdx = args.indexOf('--model') + 1;
+    expect(args[modelIdx]).toBe('opus');
+  });
+
+  it('falls back to default prompt when no override', () => {
+    const step = STEPS[0];
+    const state = defaultState();
+    const args = buildClaudeArgs(step, state);
+    const promptIdx = args.indexOf('-p') + 1;
+    expect(args[promptIdx]).toContain('Check out main');
+  });
+});
+
+describe('runClaude effort env var (#77)', () => {
+  it('sets CLAUDE_CODE_EFFORT_LEVEL in spawn env when effort is configured', async () => {
+    __test__.setConfig({ effort: 'high' });
+
+    const mockProc = {
+      pid: 77001,
+      stdout: { on: jest.fn() },
+      stderr: { on: jest.fn() },
+      on: jest.fn((event, handler) => {
+        if (event === 'close') handler(0);
+      }),
+      kill: jest.fn(),
+      killed: false,
+    };
+    mockSpawn.mockReturnValue(mockProc);
+    mockFs.existsSync.mockReturnValue(false);
+
+    const step = { ...STEPS[0], effort: 'high', timeoutMin: 1 };
+    await runClaude(step, defaultState());
+
+    const spawnOpts = mockSpawn.mock.calls[0][2];
+    expect(spawnOpts.env).toBeDefined();
+    expect(spawnOpts.env.CLAUDE_CODE_EFFORT_LEVEL).toBe('high');
+  });
+
+  it('does not set env when effort is undefined', async () => {
+    __test__.setConfig({ effort: undefined });
+
+    const mockProc = {
+      pid: 77002,
+      stdout: { on: jest.fn() },
+      stderr: { on: jest.fn() },
+      on: jest.fn((event, handler) => {
+        if (event === 'close') handler(0);
+      }),
+      kill: jest.fn(),
+      killed: false,
+    };
+    mockSpawn.mockReturnValue(mockProc);
+    mockFs.existsSync.mockReturnValue(false);
+
+    const step = { ...STEPS[0], timeoutMin: 1 };
+    await runClaude(step, defaultState());
+
+    const spawnOpts = mockSpawn.mock.calls[0][2];
+    expect(spawnOpts.env).toBeUndefined();
+  });
+
+  it('uses override effort over resolved effort', async () => {
+    __test__.setConfig({ effort: 'low' });
+
+    const mockProc = {
+      pid: 77003,
+      stdout: { on: jest.fn() },
+      stderr: { on: jest.fn() },
+      on: jest.fn((event, handler) => {
+        if (event === 'close') handler(0);
+      }),
+      kill: jest.fn(),
+      killed: false,
+    };
+    mockSpawn.mockReturnValue(mockProc);
+    mockFs.existsSync.mockReturnValue(false);
+
+    const step = { ...STEPS[0], timeoutMin: 1 };
+    await runClaude(step, defaultState(), { effort: 'high' });
+
+    const spawnOpts = mockSpawn.mock.calls[0][2];
+    expect(spawnOpts.env.CLAUDE_CODE_EFFORT_LEVEL).toBe('high');
+  });
+
+  it('uses override model in claude args', async () => {
+    __test__.setConfig({ model: 'opus' });
+
+    const mockProc = {
+      pid: 77004,
+      stdout: { on: jest.fn() },
+      stderr: { on: jest.fn() },
+      on: jest.fn((event, handler) => {
+        if (event === 'close') handler(0);
+      }),
+      kill: jest.fn(),
+      killed: false,
+    };
+    mockSpawn.mockReturnValue(mockProc);
+    mockFs.existsSync.mockReturnValue(false);
+
+    const step = { ...STEPS[0], timeoutMin: 1 };
+    await runClaude(step, defaultState(), { model: 'sonnet' });
+
+    const claudeArgs = mockSpawn.mock.calls[0][1];
+    const modelIdx = claudeArgs.indexOf('--model') + 1;
+    expect(claudeArgs[modelIdx]).toBe('sonnet');
+  });
+});
+
+describe('runImplementStep (#77)', () => {
+  it('runs two phases (plan then code) in DRY_RUN mode', async () => {
+    __test__.setConfig({ dryRun: true, model: 'opus', effort: 'high' });
+
+    const step = {
+      ...STEPS[3],
+      plan: { model: 'opus', effort: 'high', maxTurns: 40, timeoutMin: 15 },
+      code: { model: 'sonnet', effort: 'high', maxTurns: 80, timeoutMin: 25 },
+    };
+    const state = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature' };
+
+    const { result, phase } = await runImplementStep(step, state);
+    expect(result.exitCode).toBe(0);
+    expect(phase).toBe('code');
+  });
+
+  it('returns plan phase result on plan failure', async () => {
+    // First call (plan phase) returns non-zero, second call should not happen
+    let callCount = 0;
+    const mockProc = () => {
+      callCount++;
+      return {
+        pid: 77100 + callCount,
+        stdout: { on: jest.fn((_, cb) => cb('{"result":"error"}')) },
+        stderr: { on: jest.fn() },
+        on: jest.fn((event, handler) => {
+          if (event === 'close') handler(callCount === 1 ? 1 : 0);
+        }),
+        kill: jest.fn(),
+        killed: false,
+      };
+    };
+    mockSpawn.mockImplementation(() => mockProc());
+    mockFs.existsSync.mockReturnValue(false);
+
+    const step = { ...STEPS[3], timeoutMin: 1 };
+    const state = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature' };
+
+    const { result, phase } = await runImplementStep(step, state);
+    expect(phase).toBe('plan');
+    expect(result.exitCode).toBe(1);
+    // Should only have spawned once (plan phase)
+    expect(callCount).toBe(1);
+  });
+
+  it('returns plan phase result on plan soft failure', async () => {
+    let callCount = 0;
+    const mockProc = () => {
+      callCount++;
+      return {
+        pid: 77200 + callCount,
+        stdout: {
+          on: jest.fn((_, cb) => cb(JSON.stringify({ subtype: 'error_max_turns' }))),
+        },
+        stderr: { on: jest.fn() },
+        on: jest.fn((event, handler) => {
+          if (event === 'close') handler(0); // exit 0 but soft failure
+        }),
+        kill: jest.fn(),
+        killed: false,
+      };
+    };
+    mockSpawn.mockImplementation(() => mockProc());
+    mockFs.existsSync.mockReturnValue(false);
+
+    const step = { ...STEPS[3], timeoutMin: 1 };
+    const state = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature' };
+
+    const { result, phase } = await runImplementStep(step, state);
+    expect(phase).toBe('plan');
+    expect(callCount).toBe(1);
+  });
+
+  it('runs code phase after successful plan phase', async () => {
+    let callCount = 0;
+    const mockProc = () => {
+      callCount++;
+      return {
+        pid: 77300 + callCount,
+        stdout: {
+          on: jest.fn((_, cb) => cb(JSON.stringify({ subtype: 'success' }))),
+        },
+        stderr: { on: jest.fn() },
+        on: jest.fn((event, handler) => {
+          if (event === 'close') handler(0);
+        }),
+        kill: jest.fn(),
+        killed: false,
+      };
+    };
+    mockSpawn.mockImplementation(() => mockProc());
+    mockFs.existsSync.mockReturnValue(false);
+
+    const step = { ...STEPS[3], timeoutMin: 1 };
+    const state = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature' };
+
+    const { result, phase } = await runImplementStep(step, state);
+    expect(phase).toBe('code');
+    expect(result.exitCode).toBe(0);
+    expect(callCount).toBe(2);
+  });
+
+  it('resolves plan/code phase configs independently', async () => {
+    __test__.setConfig({ model: 'opus', effort: 'low' });
+
+    let spawnCalls = [];
+    const mockProc = () => {
+      const proc = {
+        pid: 77400 + spawnCalls.length,
+        stdout: {
+          on: jest.fn((_, cb) => cb(JSON.stringify({ subtype: 'success' }))),
+        },
+        stderr: { on: jest.fn() },
+        on: jest.fn((event, handler) => {
+          if (event === 'close') handler(0);
+        }),
+        kill: jest.fn(),
+        killed: false,
+      };
+      return proc;
+    };
+    mockSpawn.mockImplementation((...args) => {
+      spawnCalls.push(args);
+      return mockProc();
+    });
+    mockFs.existsSync.mockReturnValue(false);
+
+    const step = {
+      ...STEPS[3], timeoutMin: 1,
+      plan: { model: 'opus', effort: 'high' },
+      code: { model: 'sonnet', effort: 'medium' },
+    };
+    const state = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature' };
+
+    await runImplementStep(step, state);
+
+    // Plan phase (first spawn call)
+    const planArgs = spawnCalls[0][1];
+    const planModelIdx = planArgs.indexOf('--model') + 1;
+    expect(planArgs[planModelIdx]).toBe('opus');
+    const planOpts = spawnCalls[0][2];
+    expect(planOpts.env?.CLAUDE_CODE_EFFORT_LEVEL).toBe('high');
+
+    // Code phase (second spawn call)
+    const codeArgs = spawnCalls[1][1];
+    const codeModelIdx = codeArgs.indexOf('--model') + 1;
+    expect(codeArgs[codeModelIdx]).toBe('sonnet');
+    const codeOpts = spawnCalls[1][2];
+    expect(codeOpts.env?.CLAUDE_CODE_EFFORT_LEVEL).toBe('medium');
+  });
+});
+
+describe('__test__.setConfig supports effort and configSteps (#77)', () => {
+  it('setConfig sets EFFORT', () => {
+    __test__.setConfig({ effort: 'medium' });
+    const obj = getConfigObject();
+    expect(obj.effort).toBe('medium');
+  });
+
+  it('setConfig sets configSteps', () => {
+    __test__.setConfig({ configSteps: { implement: { model: 'sonnet' } } });
+    // STEPS won't change (built at module load time), but configSteps module var is set
+    // Verify through getConfigObject and step resolution
+    const obj = getConfigObject();
+    expect(obj).toBeDefined();
   });
 });

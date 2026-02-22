@@ -36,6 +36,7 @@ let RESUME = false;
 let PROJECT_PATH = '';
 let PLUGINS_PATH = '';
 let MODEL = 'opus';
+let EFFORT = undefined;
 let MAX_RETRIES = 3;
 let DISCORD_CHANNEL = null;
 let CLEANUP_PATTERNS = [];
@@ -91,11 +92,19 @@ Options:
   PROJECT_PATH = config.projectPath;
   PLUGINS_PATH = config.pluginsPath;
   MODEL = config.model || 'opus';
+  EFFORT = config.effort || undefined;
   MAX_RETRIES = config.maxRetriesPerStep || 3;
 
   DISCORD_CHANNEL = args['discord-channel'] || config.discordChannelId || null;
   CLEANUP_PATTERNS = config.cleanup?.processPatterns || [];
   configSteps = config.steps || {};
+
+  // Validate configuration
+  const configErrors = validateConfig(config);
+  if (configErrors.length > 0) {
+    for (const err of configErrors) console.error(`Config error: ${err}`);
+    process.exit(1);
+  }
 
   if (!PROJECT_PATH || !PLUGINS_PATH) {
     console.error('Error: config must include projectPath and pluginsPath');
@@ -158,6 +167,85 @@ const STEPS = STEP_KEYS.map((key, i) => ({
   key,
   ...(configSteps[key] || {}),
 }));
+
+// ---------------------------------------------------------------------------
+// Configuration validation and resolution
+// ---------------------------------------------------------------------------
+
+const VALID_EFFORTS = ['low', 'medium', 'high'];
+
+/**
+ * Validate model and effort fields throughout a config object.
+ * Returns an array of error messages (empty = valid).
+ */
+function validateConfig(config) {
+  const errors = [];
+
+  if (config.effort !== undefined && !VALID_EFFORTS.includes(config.effort)) {
+    errors.push(`Invalid global effort "${config.effort}" — must be one of: ${VALID_EFFORTS.join(', ')}`);
+  }
+  if (config.model !== undefined && (typeof config.model !== 'string' || config.model.trim() === '')) {
+    errors.push('Global model must be a non-empty string');
+  }
+
+  if (config.steps) {
+    for (const [key, step] of Object.entries(config.steps)) {
+      if (step.model !== undefined && (typeof step.model !== 'string' || step.model.trim() === '')) {
+        errors.push(`steps.${key}.model must be a non-empty string`);
+      }
+      if (step.effort !== undefined && !VALID_EFFORTS.includes(step.effort)) {
+        errors.push(`steps.${key}.effort "${step.effort}" — must be one of: ${VALID_EFFORTS.join(', ')}`);
+      }
+      for (const phase of ['plan', 'code']) {
+        if (step[phase]) {
+          if (step[phase].model !== undefined && (typeof step[phase].model !== 'string' || step[phase].model.trim() === '')) {
+            errors.push(`steps.${key}.${phase}.model must be a non-empty string`);
+          }
+          if (step[phase].effort !== undefined && !VALID_EFFORTS.includes(step[phase].effort)) {
+            errors.push(`steps.${key}.${phase}.effort "${step[phase].effort}" — must be one of: ${VALID_EFFORTS.join(', ')}`);
+          }
+        }
+      }
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Return a config object packaging module-level globals for the resolution functions.
+ */
+function getConfigObject() {
+  return { model: MODEL, effort: EFFORT };
+}
+
+/**
+ * Resolve model and effort for a step using the fallback chain:
+ *   step.field → config.field → default
+ * Model default: 'opus'; effort default: undefined.
+ */
+function resolveStepConfig(step, config) {
+  return {
+    model: step.model || config.model || 'opus',
+    effort: step.effort || config.effort || undefined,
+  };
+}
+
+/**
+ * Resolve model, effort, maxTurns, and timeoutMin for an implement phase
+ * using the fallback chain:
+ *   step[phase].field → step.field → config.field → default
+ * Phase must be 'plan' or 'code'.
+ */
+function resolveImplementPhaseConfig(step, config, phase) {
+  const phaseConfig = step[phase] || {};
+  return {
+    model: phaseConfig.model || step.model || config.model || 'opus',
+    effort: phaseConfig.effort || step.effort || config.effort || undefined,
+    maxTurns: phaseConfig.maxTurns || step.maxTurns || 20,
+    timeoutMin: phaseConfig.timeoutMin || step.timeoutMin || 10,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // State management
@@ -787,7 +875,7 @@ function readSkill(skillName) {
   return fs.readFileSync(skillPath, 'utf8');
 }
 
-function buildClaudeArgs(step, state) {
+function buildClaudeArgs(step, state, overrides = {}) {
   const issue = state.currentIssue || '<unknown>';
   const branch = state.currentBranch || '<unknown>';
   const skillRoot = step.skill
@@ -830,8 +918,8 @@ function buildClaudeArgs(step, state) {
   };
 
   const claudeArgs = [
-    '--model', MODEL,
-    '-p', prompts[step.number],
+    '--model', overrides.model || MODEL,
+    '-p', overrides.prompt || prompts[step.number],
     '--dangerously-skip-permissions',
     '--output-format', 'json',
     '--max-turns', String(step.maxTurns || 20),
@@ -849,8 +937,12 @@ function buildClaudeArgs(step, state) {
 // Claude subprocess execution
 // ---------------------------------------------------------------------------
 
-function runClaude(step, state) {
-  const claudeArgs = buildClaudeArgs(step, state);
+function runClaude(step, state, overrides = {}) {
+  const resolved = resolveStepConfig(step, getConfigObject());
+  const model = overrides.model || resolved.model;
+  const effort = overrides.effort ?? resolved.effort;
+
+  const claudeArgs = buildClaudeArgs(step, state, { model, prompt: overrides.prompt });
   const timeoutMs = (step.timeoutMin || 10) * 60 * 1000;
 
   if (DRY_RUN) {
@@ -861,10 +953,15 @@ function runClaude(step, state) {
   return new Promise((resolve) => {
     const startTime = Date.now();
 
-    const proc = spawn('claude', claudeArgs, {
+    const spawnOpts = {
       cwd: PROJECT_PATH,
       stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    };
+    if (effort) {
+      spawnOpts.env = { ...process.env, CLAUDE_CODE_EFFORT_LEVEL: effort };
+    }
+
+    const proc = spawn('claude', claudeArgs, spawnOpts);
     currentProcess = proc;
     lastClaudePid = proc.pid;
 
@@ -1493,6 +1590,95 @@ process.on('SIGTERM', () => handleSignal('SIGTERM'));
 process.on('SIGINT', () => handleSignal('SIGINT'));
 
 // ---------------------------------------------------------------------------
+// Implement step: plan + code phases
+// ---------------------------------------------------------------------------
+
+async function runImplementStep(step, state) {
+  const configObj = getConfigObject();
+  const issue = state.currentIssue || '<unknown>';
+  const branch = state.currentBranch || '<unknown>';
+  const skillRoot = step.skill
+    ? `${PLUGINS_PATH}/plugins/nmg-sdlc/skills/${step.skill}`
+    : null;
+
+  // --- Plan phase ---
+  const planConfig = resolveImplementPhaseConfig(step, configObj, 'plan');
+
+  log('=== Step 4 (implement): Plan phase ===');
+  await postDiscord(`Step 4 plan phase: designing implementation for issue #${issue}...`);
+
+  const planPrompt = [
+    `You are in the PLAN PHASE for issue #${issue} on branch ${branch}.`,
+    'Read the specifications in .claude/specs/ for this issue.',
+    'Read the steering documents in .claude/steering/.',
+    'Design the implementation approach: map tasks to files, identify code to reuse, determine implementation order.',
+    'Save your implementation plan as a summary in your output.',
+    'Do NOT write any implementation code — only produce the plan.',
+    'Do NOT call EnterPlanMode — this is a headless session with no user to approve plans.',
+    skillRoot ? `Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.` : '',
+  ].filter(Boolean).join(' ');
+
+  const planStepObj = {
+    ...step,
+    maxTurns: planConfig.maxTurns,
+    timeoutMin: planConfig.timeoutMin,
+  };
+
+  const planResult = await runClaude(planStepObj, state, {
+    model: planConfig.model,
+    effort: planConfig.effort,
+    prompt: planPrompt,
+  });
+
+  log(`Plan phase exited with code ${planResult.exitCode} in ${planResult.duration}s`);
+  writeStepLog('implement-plan', planResult);
+  cleanupProcesses();
+
+  if (planResult.exitCode !== 0) {
+    return { result: planResult, phase: 'plan' };
+  }
+
+  const planSoftFailure = detectSoftFailure(planResult.stdout);
+  if (planSoftFailure.isSoftFailure) {
+    log(`Plan phase soft failure: ${planSoftFailure.reason}`);
+    return { result: planResult, phase: 'plan' };
+  }
+
+  // --- Code phase ---
+  const codeConfig = resolveImplementPhaseConfig(step, configObj, 'code');
+
+  log('=== Step 4 (implement): Code phase ===');
+  await postDiscord(`Step 4 code phase: executing implementation for issue #${issue}...`);
+
+  const codePrompt = [
+    `You are in the CODE PHASE for issue #${issue} on branch ${branch}.`,
+    'Read the specifications and tasks in .claude/specs/ for this issue.',
+    'Read the steering documents in .claude/steering/.',
+    'Execute the implementation tasks from tasks.md sequentially.',
+    'Do NOT call EnterPlanMode — this is a headless session with no user to approve plans.',
+    skillRoot ? `Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.` : '',
+  ].filter(Boolean).join(' ');
+
+  const codeStepObj = {
+    ...step,
+    maxTurns: codeConfig.maxTurns,
+    timeoutMin: codeConfig.timeoutMin,
+  };
+
+  const codeResult = await runClaude(codeStepObj, state, {
+    model: codeConfig.model,
+    effort: codeConfig.effort,
+    prompt: codePrompt,
+  });
+
+  log(`Code phase exited with code ${codeResult.exitCode} in ${codeResult.duration}s`);
+  writeStepLog('implement-code', codeResult);
+  cleanupProcesses();
+
+  return { result: codeResult, phase: 'code' };
+}
+
+// ---------------------------------------------------------------------------
 // Main loop
 // ---------------------------------------------------------------------------
 
@@ -1533,10 +1719,16 @@ async function runStep(step, state) {
   await postDiscord(`Starting Step ${step.number}: ${step.key}${state.currentIssue ? ` (issue #${state.currentIssue})` : ''}...`);
 
   // Run claude
-  const result = await runClaude(step, state);
-  log(`Step ${step.number} exited with code ${result.exitCode} in ${result.duration}s`);
-  writeStepLog(step.key, result);
-  cleanupProcesses();
+  let result;
+  if (step.number === 4) {
+    const implResult = await runImplementStep(step, state);
+    result = implResult.result;
+  } else {
+    result = await runClaude(step, state);
+    log(`Step ${step.number} exited with code ${result.exitCode} in ${result.duration}s`);
+    writeStepLog(step.key, result);
+    cleanupProcesses();
+  }
 
   if (result.exitCode === 0) {
     // Check for soft failures (exit code 0 but step did not succeed)
@@ -1647,6 +1839,7 @@ async function main() {
   log(`Project: ${PROJECT_PATH}`);
   log(`Plugins: ${PLUGINS_PATH}`);
   log(`Model: ${MODEL}`);
+  if (EFFORT) log(`Effort: ${EFFORT}`);
   log(`Discord channel: ${DISCORD_CHANNEL || 'none (updates will be skipped)'}`);
   if (DRY_RUN) log('DRY-RUN MODE — no actions will be executed');
   if (SINGLE_STEP) log(`Single step mode: running only step ${SINGLE_STEP}`);
@@ -1847,6 +2040,7 @@ const __test__ = {
     PROJECT_PATH = cfg.projectPath ?? PROJECT_PATH;
     PLUGINS_PATH = cfg.pluginsPath ?? PLUGINS_PATH;
     MODEL = cfg.model ?? MODEL;
+    if ('effort' in cfg) EFFORT = cfg.effort;
     MAX_RETRIES = cfg.maxRetriesPerStep ?? MAX_RETRIES;
     DISCORD_CHANNEL = cfg.discordChannelId ?? DISCORD_CHANNEL;
     CLEANUP_PATTERNS = cfg.cleanup?.processPatterns ?? CLEANUP_PATTERNS;
@@ -1855,6 +2049,7 @@ const __test__ = {
     RESUME = cfg.resume ?? RESUME;
     LOG_DIR = cfg.logDir ?? LOG_DIR;
     ORCHESTRATION_LOG = cfg.orchestrationLog ?? ORCHESTRATION_LOG;
+    if (cfg.configSteps !== undefined) configSteps = cfg.configSteps;
   },
   get bounceCount() { return bounceCount; },
   set bounceCount(v) { bounceCount = v; },
@@ -1878,6 +2073,10 @@ export {
   matchErrorPattern,
   incrementBounceCount,
   defaultState,
+  validateConfig,
+  getConfigObject,
+  resolveStepConfig,
+  resolveImplementPhaseConfig,
   validateSpecs,
   validateCI,
   validatePush,
@@ -1889,6 +2088,7 @@ export {
   handleFailure,
   escalate,
   haltFailureLoop,
+  runImplementStep,
   runStep,
   postDiscord,
   log,
@@ -1918,6 +2118,7 @@ export {
   RUNNER_ARTIFACTS,
   IMMEDIATE_ESCALATION_PATTERNS,
   RATE_LIMIT_PATTERN,
+  VALID_EFFORTS,
   MAX_CONSECUTIVE_ESCALATIONS,
   __test__,
 };

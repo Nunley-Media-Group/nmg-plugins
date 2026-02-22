@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Per-step model and effort configuration** — SDLC runner now supports per-step `model` and `effort` overrides in `sdlc-config.json`, with a three-level fallback chain: phase-level → step-level → global → default; the implement step splits into separate plan (Opus) and code (Sonnet) phases with independent model/effort/maxTurns/timeout settings
+- **`validateConfig(config)`** — Config validation function that rejects invalid effort values and empty model strings at startup, preventing runtime failures from misconfigured steps
+- **`resolveStepConfig(step, config)`** — Resolution helper implementing the model/effort fallback chain for generic steps
+- **`resolveImplementPhaseConfig(step, config, phase)`** — Resolution helper for the implement step's plan/code phases, including maxTurns and timeout fallback
+- **`runImplementStep(step, state)`** — Two-phase implement execution: plan phase (read specs, design approach) followed by code phase (execute tasks), with separate logging (`implement-plan`, `implement-code`), soft failure detection, and Discord status for each phase
+- **`spec-implementer` agent** — New agent (`plugins/nmg-sdlc/agents/spec-implementer.md`) for executing implementation tasks from specs; runs on Sonnet, auto-invoked by `/implementing-specs` during Step 5
+- **Skill `model` frontmatter** — All 11 SKILL.md files now declare a recommended `model` field: `opus` for writing-specs, implementing-specs, migrating-projects, running-retrospectives, setting-up-steering; `sonnet` for creating-issues, creating-prs, generating-openclaw-config, installing-openclaw-skill, starting-issues, verifying-specs
+- **`CLAUDE_CODE_EFFORT_LEVEL` env var** — `runClaude()` sets this in the subprocess environment when effort is configured, enabling per-step effort control
+
+### Changed
+
+- **`buildClaudeArgs()`** — Now accepts an `overrides` object for model and prompt, allowing callers to override the global model and default prompt per invocation
+- **`runClaude()`** — Now accepts an `overrides` object for model, effort, and prompt; resolves config via `resolveStepConfig()` with fallback to globals
+- **`runStep()`** — Step 4 (implement) now delegates to `runImplementStep()` for two-phase execution instead of a single `runClaude()` call
+- **`sdlc-config.example.json`** — Added global `effort`, per-step `model`/`effort`, and `plan`/`code` sub-objects for the implement step
+- **`/implementing-specs`** — Step 5 now delegates to `spec-implementer` agent via Task tool in interactive mode; auto-mode continues to work inline
+- **README.md** — Added "Model & Effort Configuration" section with recommendations table and configuration layer documentation
+
 ## [2.13.0] - 2026-02-22
 
 ### Added

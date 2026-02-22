@@ -2,6 +2,7 @@
   "projectPath": "/path/to/your/project",
   "pluginsPath": "/path/to/nmg-plugins",
   "model": "opus",
+  "effort": "high",
   "discordChannelId": "",
   "logDir": "",
   "maxLogDiskUsageMB": 500,
@@ -11,14 +12,18 @@
   },
   "steps": {
     "startCycle":   { "maxTurns": 5,   "timeoutMin": 5  },
-    "startIssue":   { "maxTurns": 15,  "timeoutMin": 5,  "skill": "starting-issues" },
-    "writeSpecs":   { "maxTurns": 40,  "timeoutMin": 15, "skill": "writing-specs" },
-    "implement":    { "maxTurns": 100, "timeoutMin": 30, "skill": "implementing-specs" },
-    "verify":       { "maxTurns": 60,  "timeoutMin": 20, "skill": "verifying-specs" },
-    "commitPush":   { "maxTurns": 10,  "timeoutMin": 5  },
-    "createPR":     { "maxTurns": 15,  "timeoutMin": 5,  "skill": "creating-prs" },
-    "monitorCI":    { "maxTurns": 40,  "timeoutMin": 20 },
-    "merge":        { "maxTurns": 5,   "timeoutMin": 5  }
+    "startIssue":   { "maxTurns": 15,  "timeoutMin": 5,  "skill": "starting-issues",        "model": "sonnet" },
+    "writeSpecs":   { "maxTurns": 40,  "timeoutMin": 15, "skill": "writing-specs",           "model": "opus",   "effort": "high" },
+    "implement":    {
+      "maxTurns": 100, "timeoutMin": 30, "skill": "implementing-specs", "model": "opus", "effort": "high",
+      "plan": { "model": "opus",   "effort": "high", "maxTurns": 40,  "timeoutMin": 15 },
+      "code": { "model": "sonnet", "effort": "high", "maxTurns": 80,  "timeoutMin": 25 }
+    },
+    "verify":       { "maxTurns": 60,  "timeoutMin": 20, "skill": "verifying-specs",         "model": "sonnet", "effort": "high" },
+    "commitPush":   { "maxTurns": 10,  "timeoutMin": 5,                                      "model": "sonnet" },
+    "createPR":     { "maxTurns": 15,  "timeoutMin": 5,  "skill": "creating-prs",            "model": "sonnet" },
+    "monitorCI":    { "maxTurns": 40,  "timeoutMin": 20,                                     "model": "sonnet" },
+    "merge":        { "maxTurns": 5,   "timeoutMin": 5,                                      "model": "sonnet" }
   },
   "maxRetriesPerStep": 3
 }

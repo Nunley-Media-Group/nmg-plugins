@@ -1,6 +1,7 @@
 ---
 name: migrating-projects
 description: "Update project specs, steering docs, and configs to latest template standards. Use when user says 'migrate project', 'update templates', 'check for outdated docs', or 'sync with latest plugin'. Diffs headings against current templates and merges missing sections while preserving all user content."
+model: opus
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Edit, Write, Bash(gh:*), Bash(git:*), AskUserQuestion
 ---

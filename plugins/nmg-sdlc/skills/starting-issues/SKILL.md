@@ -2,6 +2,7 @@
 name: starting-issues
 description: "Select a GitHub issue, create a linked feature branch, and set the issue to In Progress. Use when user says 'start issue', 'pick up issue', 'begin working on #N', 'start #N', or 'what should I work on'. Fetches milestones, presents issue selection, creates branch via gh issue develop, and updates project board status."
 argument-hint: "[#issue-number]"
+model: sonnet
 allowed-tools: Read, Glob, Grep, Bash(gh:*), Bash(git:*)
 ---
 
