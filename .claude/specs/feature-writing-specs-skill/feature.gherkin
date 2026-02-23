@@ -1,0 +1,91 @@
+# File: .claude/specs/feature-writing-specs-skill/feature.gherkin
+#
+# Consolidated from:
+#   .claude/specs/5-writing-specs-skill/feature.gherkin (Issue #5)
+#   .claude/specs/16-defect-spec-handling/feature.gherkin (Issue #16)
+
+Feature: Writing Specs Skill
+  As a developer working on a GitHub issue
+  I want an automated 3-phase specification process
+  So that implementation is guided by well-structured BDD specs
+
+  # --- Happy Path ---
+
+  Scenario: Requirements spec captures issue intent
+    Given I invoke "/writing-specs" with a GitHub issue reference
+    When Phase 1 completes
+    Then a requirements spec is created in ".claude/specs/{feature-name}/"
+    And it contains acceptance criteria from the issue
+
+  Scenario: Design spec defines technical approach
+    Given the requirements spec has been reviewed and approved
+    When Phase 2 completes
+    Then a design spec is created with architecture decisions and component design
+
+  Scenario: Tasks spec provides implementation plan
+    Given the design spec has been reviewed and approved
+    When Phase 3 completes
+    Then a tasks spec is created with ordered implementation tasks
+    And a Gherkin feature file is created with BDD scenarios
+
+  # --- Review Gates ---
+
+  Scenario: Human review gates pause between phases
+    Given I am not in automation mode
+    When a phase completes
+    Then the skill pauses for human review before proceeding
+
+  # --- Naming ---
+
+  Scenario: Feature name follows naming convention
+    Given a GitHub issue with number 42 and title "Add user auth"
+    When the feature name is derived
+    Then it uses the format "42-add-user-auth"
+
+  # --- Defect Handling ---
+
+  Scenario: Bug issues use defect templates
+    Given the GitHub issue has a "bug" label
+    When the spec phases execute
+    Then defect-focused templates are used
+    And they include reproduction steps, root cause analysis, and flat task lists
+
+Feature: Defect-Specific Spec Handling
+  As a developer fixing a bug
+  I want the spec workflow to use lightweight, defect-focused templates
+  So that bug fixes get appropriate documentation without feature-level overhead
+
+  Scenario: Bug label triggers defect templates
+    Given a GitHub issue has the "bug" label
+    When any SDLC skill processes the issue
+    Then defect-focused template variants are used instead of feature templates
+
+  Scenario: Bug report captures reproduction steps
+    Given I'm creating an issue for a bug via "/creating-issues"
+    When the bug report template is used
+    Then it includes reproduction steps, expected/actual behavior, environment table, and defect-focused acceptance criteria
+
+  Scenario: Defect specs use root cause analysis
+    Given "/writing-specs" runs for a bug issue
+    When the design phase executes
+    Then it uses the defect design variant with root cause analysis, fix strategy, blast radius assessment, and regression risk
+
+  Scenario: Defect tasks are flat and minimal
+    Given "/writing-specs" runs for a bug issue
+    When the tasks phase executes
+    Then it produces a flat T001-T003 task list instead of a full task hierarchy
+
+  Scenario: Implementation minimizes change scope
+    Given "/implementing-specs" runs for a bug fix
+    When implementation begins
+    Then it follows the fix strategy precisely, minimizes change scope, and requires a regression test
+
+  Scenario: Verification checks regression scenarios
+    Given "/verifying-specs" runs for a bug fix
+    When verification executes
+    Then it checks reproduction, validates "@regression" Gherkin scenarios, audits blast radius, and confirms minimal change
+
+  Scenario: Related Spec field links to original feature
+    Given a defect spec is for a bug in a previously-specified feature
+    When the requirements spec is written
+    Then it can include an optional "Related Spec" field referencing the original feature spec

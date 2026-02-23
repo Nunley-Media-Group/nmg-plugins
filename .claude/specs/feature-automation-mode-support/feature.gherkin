@@ -1,0 +1,101 @@
+# File: .claude/specs/11-automation-mode-support/feature.gherkin
+#
+# Generated from: .claude/specs/11-automation-mode-support/requirements.md
+# Issue: #11
+
+Feature: Automation Mode Support
+  As an automation platform operator
+  I want all SDLC skills to detect a headless mode flag
+  So that the full workflow can be driven by external agents without human intervention
+
+  Scenario: Auto-mode flag enables headless operation
+    Given ".claude/auto-mode" exists in the project
+    When any SDLC skill is invoked
+    Then it operates without interactive prompts or human review gates
+
+  Scenario: Writing-specs skips human review gates
+    Given automation mode is active
+    When "/writing-specs" runs
+    Then all 3 human review gates between phases are skipped automatically
+
+  Scenario: Implementing-specs skips plan mode
+    Given automation mode is active
+    When "/implementing-specs" runs
+    Then plan mode is skipped and implementation proceeds without approval
+
+  Scenario: Creating-issues infers criteria
+    Given automation mode is active
+    When "/creating-issues" is invoked with a feature description
+    Then it skips the interview and generates acceptance criteria from steering docs
+
+  Scenario: Starting-issues auto-selects oldest
+    Given automation mode is active
+    When "/starting-issues" runs without an issue number argument
+    Then it selects the oldest open issue automatically
+
+  Scenario: Skills suppress next-step suggestions
+    Given automation mode is active
+    When any skill completes
+    Then it outputs "Done. Awaiting orchestrator." instead of next-step suggestions
+
+  # Added by issue #71
+  Scenario: Creating-issues asks automatable question in interactive mode
+    Given a user is running "/creating-issues" in interactive mode
+    And ".claude/auto-mode" does not exist
+    When the issue draft is being prepared during the interview phase
+    Then the user is asked "Is this issue suitable for automation?" with Yes and No options
+
+  # Added by issue #71
+  Scenario: Automatable label applied when user answers yes
+    Given the user answers "Yes" to the automatable question
+    When the issue is created in GitHub
+    Then the "automatable" label is added alongside the type label
+
+  # Added by issue #71
+  Scenario: No automatable label when user answers no
+    Given the user answers "No" to the automatable question
+    When the issue is created
+    Then the issue has only the type label and no "automatable" label
+
+  # Added by issue #71
+  Scenario: Auto-mode defaults to automatable label
+    Given "/creating-issues" is running in auto-mode
+    When the issue is created
+    Then the "automatable" label is added automatically without prompting
+
+  # Added by issue #71
+  Scenario: Starting-issues filters by automatable label in auto-mode
+    Given "/starting-issues" is running in auto-mode
+    When it fetches issues from the milestone
+    Then only issues with the "automatable" label are eligible for selection
+
+  # Added by issue #71
+  Scenario: Non-automatable issues invisible to runner
+    Given an open issue exists in the milestone without the "automatable" label
+    When "/starting-issues" runs in auto-mode
+    Then the issue is not presented as a candidate and is skipped entirely
+
+  # Added by issue #71
+  Scenario: Auto-mode exits gracefully when no automatable issues exist
+    Given "/starting-issues" is running in auto-mode
+    And open issues exist in the milestone but none have the "automatable" label
+    When the filtered issue list is retrieved
+    Then the skill reports "No automatable issues found" and exits gracefully
+
+  # Added by issue #71
+  Scenario: Starting-issues shows automatable indicator in interactive mode
+    Given "/starting-issues" is running in interactive mode
+    When issues are presented for selection
+    Then each issue's description includes whether it has the "automatable" label
+
+  # Added by issue #71
+  Scenario: Automatable label auto-created if missing
+    Given the "automatable" label does not exist in the GitHub repository
+    When "/creating-issues" attempts to apply it
+    Then the label is created with description "Suitable for automated SDLC processing" and color "0E8A16"
+
+  # Added by issue #71
+  Scenario: Automatable label creation verified post-issue-creation
+    Given "/creating-issues" has created an issue with the "automatable" label intended
+    When the issue creation completes
+    Then the skill verifies the "automatable" label is present on the created issue

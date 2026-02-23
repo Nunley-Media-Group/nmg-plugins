@@ -23,6 +23,7 @@ Select a GitHub issue to work on, create a linked feature branch, and set the is
 If the file `.claude/auto-mode` exists in the project directory:
 - If an issue number was provided as an argument, **skip Steps 2–3** (selection and confirmation) — go directly to Step 4.
 - If no issue number was provided, **select the first available issue** (sorted by issue number ascending — oldest first) from the first viable milestone (sorted alphabetically) (or all open issues if no viable milestone exists) **without calling `AskUserQuestion`**. **Skip Step 3 confirmation.**
+- **Only issues with the `automatable` label are eligible.** Add `--label automatable` to all `gh issue list` commands in auto-mode. If no automatable issues are found, output `No automatable issues found. Done. Awaiting orchestrator.` and exit without creating a branch.
 
 ## Workflow Overview
 
@@ -59,17 +60,30 @@ Apply deterministic selection based on the number of viable milestones:
 
 - **Zero viable milestones:** Fall back to all open issues:
   ```bash
+  # Interactive mode:
   gh issue list -s open -L 10 --json number,title,labels
+  # Auto-mode:
+  gh issue list -s open --label automatable -L 10 --json number,title,labels
   ```
 
 - **One viable milestone:** Auto-select it and fetch its issues:
   ```bash
+  # Interactive mode:
   gh issue list -s open -m "<milestone>" -L 10 --json number,title,labels
+  # Auto-mode:
+  gh issue list -s open -m "<milestone>" --label automatable -L 10 --json number,title,labels
   ```
 
 - **Multiple viable milestones:**
   - **Interactive mode:** Present the filtered milestone list via `AskUserQuestion` (label: milestone title, description: "N open issues"), then fetch issues from the selected milestone.
-  - **Auto-mode:** Select the first milestone alphabetically and fetch its issues.
+  - **Auto-mode:** Select the first milestone alphabetically and fetch its issues (with `--label automatable`).
+
+#### Auto-Mode: Empty Result Handling
+
+After fetching issues in auto-mode, if the result is an empty array (`[]`):
+
+1. Output: `No automatable issues found. Done. Awaiting orchestrator.`
+2. Exit immediately — do **not** create a branch, do **not** fall back to non-automatable issues.
 
 ## Step 2: Present Issue Selection
 
@@ -78,7 +92,7 @@ Apply deterministic selection based on the number of viable milestones:
 Use `AskUserQuestion` to present up to 4 issues as options.
 
 - Each option label: `#N: Title`
-- Each option description: labels (comma-separated), or "No labels" if none
+- Each option description: labels (comma-separated), or "No labels" if none. If the issue has the `automatable` label, append `(automatable)` to the description.
 - Include a final option: **"Enter issue number manually"** with description "Type a specific issue number"
 - If more than 4 issues exist in the milestone, show the first 4
 
