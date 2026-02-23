@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.16.0] - 2026-02-23
+
+### Added
+
+- **Automatable label gate** — `/creating-issues` now asks (Step 5b) whether the issue is suitable for hands-off automation; if "Yes", an `automatable` label is created (if needed) and applied; auto-mode applies the label automatically
+- **Automation-eligible issue filtering** — `/starting-issues` in auto-mode now filters `gh issue list` with `--label automatable`; if no automatable issues are found, it exits cleanly instead of picking a non-automatable issue
+- **Spec directory cleanup** — Remaining numbered spec directories (`{issue#}-{slug}/`) renamed to feature-centric format (`feature-{slug}/`, `bug-{slug}/`) and retrospective path references updated accordingly
+
 ## [2.15.0] - 2026-02-22
 
 ### Added
