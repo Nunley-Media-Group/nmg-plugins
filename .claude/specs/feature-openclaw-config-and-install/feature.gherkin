@@ -1,0 +1,57 @@
+# File: .claude/specs/feature-openclaw-config-and-install/feature.gherkin
+#
+# Consolidated from:
+#   .claude/specs/13-generating-openclaw-config-skill/feature.gherkin (issue #13)
+#   .claude/specs/14-installing-openclaw-skill/feature.gherkin (issue #14)
+
+# From issue #13
+Feature: Generating OpenClaw Config Skill
+  As a developer setting up OpenClaw automation
+  I want a skill that generates a project-specific SDLC runner config
+  So that I can configure per-step settings without manually writing JSON
+
+  Scenario: Config file is generated for the project
+    Given I invoke "/generating-openclaw-config" in a project
+    When the skill completes
+    Then an "sdlc-config.json" file is written to the project root
+
+  Scenario: Config includes per-step settings
+    Given the config is generated
+    When I inspect "sdlc-config.json"
+    Then each SDLC step has maxTurns, timeout, and skill reference fields
+
+  Scenario: Gitignore is updated
+    Given the config is generated
+    When I inspect ".gitignore"
+    Then "sdlc-config.json" and ".claude/sdlc-state.json" are listed
+
+  Scenario: Skill is available in all nmg-sdlc projects
+    Given nmg-sdlc is installed in a project
+    When I list available skills
+    Then "/generating-openclaw-config" appears as available
+
+# From issue #14
+Feature: Installing OpenClaw Skill
+  As a developer using OpenClaw for SDLC automation
+  I want a skill that installs the OpenClaw running-sdlc skill
+  So that I can deploy the latest orchestration skill without manual file copying
+
+  Scenario: Skill files are installed locally
+    Given I invoke "/installing-openclaw-skill"
+    When the skill completes
+    Then the running-sdlc skill is copied to "~/.openclaw/skills/running-sdlc/"
+
+  Scenario: Gateway is restarted
+    Given skill files are installed
+    When installation completes
+    Then the OpenClaw gateway is restarted
+
+  Scenario: CLI hang patch is applied
+    Given the openclaw CLI has the message send hang bug
+    When the skill runs
+    Then it automatically runs the patch script to fix the hang issue
+
+  Scenario: Standalone installer supports link mode
+    Given I run "install-openclaw-skill.sh --link"
+    When the script completes
+    Then the skill directory is symlinked instead of copied

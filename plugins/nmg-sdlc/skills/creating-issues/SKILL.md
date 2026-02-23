@@ -19,8 +19,9 @@ Interview the user to understand their need, then create a well-groomed GitHub i
 ## Automation Mode
 
 If the file `.claude/auto-mode` exists in the project directory:
-- Skip Steps 2, 4, and 5 (classification, investigation, and interview) — use the provided argument as the feature description. Read `.claude/steering/product.md` for product context. Generate 3–5 Given/When/Then acceptance criteria covering the happy path, one alternative path, and one error case.
+- Skip Steps 2, 4, 5, and 5b (classification, investigation, interview, and automatable question) — use the provided argument as the feature description. Read `.claude/steering/product.md` for product context. Generate 3–5 Given/When/Then acceptance criteria covering the happy path, one alternative path, and one error case.
 - **Run Step 3 (Assign Milestone)** non-interactively — read VERSION, default to `v{major}`, do not call `AskUserQuestion`.
+- Apply the `automatable` label automatically (skip the automatable question).
 - Skip the review (Step 7) — do not call `AskUserQuestion`. Proceed directly to creating the issue.
 
 ## Workflow
@@ -126,6 +127,25 @@ Ask type-specific questions to refine the need. Skip any topics already answered
 4. **How often?** Always, intermittent, one-time?
 5. **Any error output?** Error messages, stack traces, or log output?
 6. **When did this start?** Was there a recent change that might have caused it?
+
+### Step 5b: Automation Eligibility
+
+Ask whether this issue is suitable for fully automated processing (i.e., an OpenClaw agent can handle the full SDLC cycle without human judgment).
+
+Use `AskUserQuestion`:
+
+```
+question: "Is this issue suitable for hands-off automation?"
+options:
+  - "Yes — suitable for hands-off automation"
+    description: "An AI agent can handle spec writing, implementation, verification, and PR creation without human intervention"
+  - "No — requires human judgment"
+    description: "This issue needs human decision-making during implementation (e.g., UX choices, ambiguous requirements, complex trade-offs)"
+```
+
+Record the answer for use in Step 8 — if "Yes", the `automatable` label will be applied.
+
+> **Auto-mode**: This step is skipped. The `automatable` label is applied automatically.
 
 ### Step 6: Synthesize into Issue Body
 
@@ -272,14 +292,23 @@ Iterate until the user approves.
    ```
    gh label create "label-name" --description "Description" --color "hex-color"
    ```
-3. **Determine labels** based on issue type:
+3. **Ensure the `automatable` label exists** (if Step 5b answered "Yes" or in auto-mode):
+   - Check: `gh label list --search automatable --json name --jq '.[].name'`
+   - If not found, create it: `gh label create "automatable" --description "Suitable for automated SDLC processing" --color "0E8A16"`
+4. **Determine labels** based on issue type and automation eligibility:
    - Feature → `enhancement`
    - Bug → `bug`
+   - If Step 5b answered "Yes" (or auto-mode) → also include `automatable`
    - Other project-specific labels as appropriate
-4. **Create the issue** (include `--milestone` if Step 3 assigned one):
+5. **Create the issue** (include `--milestone` if Step 3 assigned one):
    ```
    gh issue create --title "[concise, action-oriented title]" --body "[issue body]" --label "label1,label2" --milestone "v{N}"
    ```
+6. **Verify automatable label** (if the `automatable` label was intended):
+   ```
+   gh issue view #N --json labels --jq '.labels[].name'
+   ```
+   If `automatable` is not present in the output, warn in Step 9 output: "Warning: automatable label was not applied — verify manually."
 
 ### Step 9: Output
 
@@ -288,6 +317,8 @@ After creation, output:
 ```
 Issue #N created: [title]
 URL: [issue URL]
+Labels: [labels applied]
+[If automatable label verification failed]: Warning: automatable label was not applied — verify manually.
 
 [If `.claude/auto-mode` does NOT exist]: Next step: Run `/writing-specs #N` to create specifications for this issue.
 [If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.

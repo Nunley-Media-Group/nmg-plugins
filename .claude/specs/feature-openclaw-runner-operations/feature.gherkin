@@ -1,0 +1,282 @@
+# File: .claude/specs/feature-openclaw-runner-operations/feature.gherkin
+#
+# Consolidated from:
+#   .claude/specs/12-openclaw-sdlc-orchestration/feature.gherkin (issue #12)
+#   .claude/specs/24-configurable-post-step-process-cleanup/feature.gherkin (issue #24)
+#   .claude/specs/33-failure-loop-detection/feature.gherkin (issue #33)
+# Issues: #12, #24, #33, #34
+
+Feature: OpenClaw Runner Operations
+  As an OpenClaw agent operator and developer
+  I want a deterministic SDLC orchestrator with process cleanup, failure loop detection, and persistent logging
+  So that the workflow runs reliably, orphaned processes are cleaned up, infinite loops are detected, and sessions are debuggable
+
+  # ===================================================================
+  # From issue #12 — OpenClaw SDLC Orchestration
+  # ===================================================================
+
+  Scenario: Full SDLC cycle runs end-to-end
+    Given the runner is started with a valid config
+    When it runs to completion
+    Then it executes all SDLC steps from issue selection through merge
+
+  Scenario: Steps have precondition validation
+    Given the runner advances to a new step
+    When preconditions for that step are checked
+    Then the step only proceeds if all preconditions pass
+
+  Scenario: Failed steps retry with escalation
+    Given a step fails
+    When retries are attempted
+    Then the step retries up to its configured cap
+    And escalation occurs if all retries are exhausted
+
+  Scenario: Discord status updates at each step
+    Given a Discord channel is configured
+    When each step starts, completes, or fails
+    Then a status message is posted to Discord
+
+  Scenario: Resume detects in-progress work
+    Given the runner starts on a feature branch with existing work
+    When it inspects git state
+    Then it hydrates state from reality and resumes from the correct step
+
+  Scenario: Auto-commit after implementation
+    Given implementation completes with uncommitted changes
+    When the step finishes
+    Then the runner auto-commits and pushes
+
+  # ===================================================================
+  # From issue #24 — Configurable Post-Step Process Cleanup
+  # ===================================================================
+
+  # --- Configuration ---
+
+  Scenario: Configurable process cleanup patterns
+    Given a config file with a "cleanup" object containing "processPatterns" set to ["--remote-debugging-port", "chromium"]
+    When the runner loads the config
+    Then it stores the patterns ["--remote-debugging-port", "chromium"] in CLEANUP_PATTERNS for use in post-step cleanup
+
+  # --- Post-Step Cleanup ---
+
+  Scenario: Post-step cleanup runs after a successful step
+    Given process patterns ["--remote-debugging-port"] are configured
+    And a process matching "--remote-debugging-port" is running
+    And step 3 completes successfully
+    When the runner transitions to step 4
+    Then the process matching "--remote-debugging-port" is killed before step 4 begins
+
+  Scenario: Post-step cleanup runs after a failed step
+    Given process patterns ["--remote-debugging-port"] are configured
+    And a process matching "--remote-debugging-port" is running
+    And step 4 fails with a non-zero exit code
+    When the runner handles the failure
+    Then the process matching "--remote-debugging-port" is killed before retry or escalation
+
+  # --- Escalation ---
+
+  Scenario: Cleanup runs on escalation
+    Given process patterns ["--remote-debugging-port"] are configured
+    And a process matching "--remote-debugging-port" is running
+    When a step fails and triggers escalation
+    Then the process matching "--remote-debugging-port" is killed before the runner commits partial work and returns to main
+
+  # --- Graceful Shutdown ---
+
+  Scenario: Cleanup runs on graceful shutdown
+    Given process patterns ["--remote-debugging-port"] are configured
+    And a process matching "--remote-debugging-port" is running
+    When the runner receives SIGTERM
+    Then the process matching "--remote-debugging-port" is killed before the runner exits
+
+  # --- Backward Compatibility ---
+
+  Scenario: Cleanup is optional and backward-compatible
+    Given a config file without a "cleanup" field
+    When the runner loads the config and runs steps normally
+    Then no process cleanup is performed
+    And behavior is identical to the version without cleanup support
+
+  # --- Logging ---
+
+  Scenario: Cleanup logs actions when processes are killed
+    Given process patterns ["--remote-debugging-port"] are configured
+    And 3 processes matching "--remote-debugging-port" are running
+    When post-step cleanup runs
+    Then the runner logs "[CLEANUP] Killed 3 process(es) matching \"--remote-debugging-port\""
+
+  Scenario: Cleanup does not log when no processes match
+    Given process patterns ["--remote-debugging-port"] are configured
+    And no processes matching "--remote-debugging-port" are running
+    When post-step cleanup runs
+    Then no cleanup log message is emitted
+
+  # ===================================================================
+  # From issue #33 — Failure Loop Detection and Halt
+  # ===================================================================
+
+  # --- Happy Path ---
+
+  Scenario: Successful cycle resets consecutive escalation counter
+    Given the runner has completed 1 escalation on issue #10
+    And the consecutiveEscalations counter is 1
+    When the runner completes a full cycle successfully through step 9 (merge)
+    Then the consecutiveEscalations counter is reset to 0
+    And the runner continues to the next cycle normally
+
+  # --- Consecutive Escalation Detection ---
+
+  Scenario: Runner halts after 2 consecutive escalations
+    Given the runner is in continuous loop mode processing open issues
+    And the first cycle escalates on issue #10 at step 5
+    When the second consecutive cycle escalates on issue #11 at step 3
+    Then the runner posts a failure-loop diagnostic to Discord containing "FAILURE LOOP DETECTED: consecutive escalations"
+    And the diagnostic includes issue numbers #10 and #11
+    And the diagnostic includes the step number and escalation count
+    And the diagnostic includes the last 500 characters of subprocess output
+    And the runner exits with a non-zero exit code
+
+  Scenario: Single escalation does not halt the runner
+    Given the runner is in continuous loop mode processing open issues
+    When a cycle escalates on issue #10 at step 4
+    Then the runner performs normal escalation cleanup
+    And the runner continues to the next cycle
+
+  # --- Same-Issue Loop Detection ---
+
+  Scenario: Runner skips previously-escalated issue
+    Given issue #10 caused an escalation in the current runner session
+    And the escalatedIssues set contains issue #10
+    When the runner begins step 2 to select the next issue
+    Then the step 2 prompt includes "Do NOT select any of these previously-escalated issues: #10"
+    And the runner selects a different open issue
+
+  Scenario: Runner halts when all open issues have been escalated
+    Given issues #10, #11, and #12 have all been escalated in this session
+    And no other open issues exist in the repository
+    When the runner checks for non-escalated issues before the next cycle
+    Then the runner posts a failure-loop diagnostic containing "FAILURE LOOP DETECTED: all issues escalated"
+    And the diagnostic lists all escalated issue numbers
+    And the runner exits with a non-zero exit code
+
+  Scenario: Runner halts when Claude selects an escalated issue despite exclusion prompt
+    Given issue #10 has been escalated in this session
+    And issue #10 is the only open issue remaining
+    When step 2 completes and the extracted issue number is #10
+    Then the runner posts a failure-loop diagnostic containing "all issues escalated"
+    And the runner exits with a non-zero exit code
+
+  # --- Step Bounce Loop Detection ---
+
+  Scenario: Runner halts on excessive step-back transitions
+    Given a cycle is in progress for issue #10 on step 5
+    And maxRetriesPerStep is configured as 3
+    When step 5 fails preconditions and bounces back to step 4 a total of 4 times
+    Then the runner escalates the current cycle with reason "Bounce loop"
+    And the runner posts a diagnostic containing "FAILURE LOOP DETECTED"
+    And the diagnostic includes the bounce count and threshold
+    And the runner exits with a non-zero exit code
+
+  Scenario: Step bounces within threshold proceed normally
+    Given a cycle is in progress for issue #10
+    And maxRetriesPerStep is configured as 3
+    When step 5 bounces back to step 4 twice (bounceCount = 2)
+    Then the runner retries step 4 normally
+    And the runner does not halt
+
+  Scenario: Bounce counter resets at the start of each cycle
+    Given the previous cycle had 2 step-back transitions
+    When a new cycle begins
+    Then the bounceCount is reset to 0
+
+  # --- Discord Diagnostics ---
+
+  Scenario: Consecutive escalation diagnostic contains all required fields
+    Given a consecutive escalation failure loop is detected
+    When the runner posts the halt notification to Discord
+    Then the message includes the text "FAILURE LOOP DETECTED: consecutive escalations"
+    And the message includes the affected issue numbers
+    And the message includes the last step number and key
+    And the message includes the consecutive escalation count
+    And the message includes the last 500 characters of subprocess output
+    And the message includes "State preserved for manual inspection"
+
+  Scenario: Bounce loop diagnostic contains all required fields
+    Given a bounce loop failure is detected
+    When the runner posts the halt notification to Discord
+    Then the message includes the text "FAILURE LOOP DETECTED"
+    And the message includes the bounce count and threshold
+    And the message includes the affected issue number
+    And the message includes "State preserved for manual inspection"
+
+  # --- State Preservation ---
+
+  Scenario: State preserved on consecutive escalation halt
+    Given a consecutive escalation failure loop is detected
+    When the runner exits with non-zero exit code
+    Then sdlc-state.json is NOT reset to default values
+    And .claude/auto-mode file is NOT removed
+    And the working tree is left as-is with no git checkout
+    And the current branch is NOT changed to main
+
+  Scenario: State preserved on bounce loop halt
+    Given a bounce loop failure is detected on branch "10-add-feature"
+    When the runner exits with non-zero exit code
+    Then sdlc-state.json retains the last step and retry information
+    And .claude/auto-mode file is NOT removed
+    And the git branch remains "10-add-feature"
+
+  Scenario: State preserved on all-issues-escalated halt
+    Given all open issues have been escalated
+    When the runner halts with non-zero exit code
+    Then sdlc-state.json is NOT reset
+    And .claude/auto-mode file is NOT removed
+
+  # ===================================================================
+  # From issue #34 — Persistent Logging for Headless Sessions
+  # (No feature.gherkin existed; scenarios derived from requirements.md ACs)
+  # ===================================================================
+
+  Scenario: Per-step logs are written to OS-agnostic temp directory
+    Given the SDLC runner is executing the "writeSpecs" step for project "my-app"
+    When the claude -p subprocess completes with exit code 0
+    Then a log file is created at "<os.tmpdir()>/sdlc-logs/my-app/" containing the full stdout and stderr
+
+  Scenario: Log files follow naming convention
+    Given step "implementSpecs" completed at 2026-02-16T14:22:33Z with session ID "abc123"
+    When the log file is written
+    Then the filename is "implementSpecs-abc123-2026-02-16T14-22-33.log"
+
+  Scenario: Runner orchestration log moves to same OS-agnostic directory
+    Given the runner starts for project "my-app"
+    When it initializes logging
+    Then the orchestration log is at "<os.tmpdir()>/sdlc-logs/my-app/sdlc-runner.log"
+    And the hardcoded "/tmp/sdlc-runner.log" path is no longer used
+
+  Scenario: Log directory respects max disk usage threshold
+    Given the log directory contains 520 MB of logs with a 500 MB threshold configured
+    When a new 5 MB log file is about to be written
+    Then the oldest log files are deleted until total usage is under 500 MB
+    And then the new file is written
+
+  Scenario: Config supports custom log directory
+    Given the config has "logDir" set to "/var/log/sdlc" and "maxLogDiskUsageMB" set to 200
+    When the runner reads the config
+    Then logs are written to "/var/log/sdlc/" with a 200 MB cleanup threshold
+
+  Scenario: Config falls back to sensible defaults when logging fields are absent
+    Given the config has no "logDir" or "maxLogDiskUsageMB" fields
+    When the runner initializes
+    Then the log directory defaults to "<os.tmpdir()>/sdlc-logs/<project-name>/"
+    And the disk threshold defaults to 500 MB
+
+  Scenario: Log writing failure does not fail the step
+    Given the log directory is not writable (e.g., permissions error)
+    When the claude -p subprocess completes
+    Then the runner logs a warning about the failed log write
+    And the SDLC step result is unaffected
+
+  Scenario: Cross-platform log directory resolution
+    Given the runner is executing on Windows
+    When it resolves the log directory with default config
+    Then the log directory is under "C:\Users\<user>\AppData\Local\Temp\sdlc-logs\<project-name>\"
