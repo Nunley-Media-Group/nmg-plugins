@@ -23,6 +23,7 @@ import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 const IS_WINDOWS = process.platform === 'win32';
+const VALID_EFFORTS = ['low', 'medium', 'high'];
 
 // ---------------------------------------------------------------------------
 // CLI argument parsing & configuration (guarded for testability)
@@ -171,8 +172,6 @@ const STEPS = STEP_KEYS.map((key, i) => ({
 // ---------------------------------------------------------------------------
 // Configuration validation and resolution
 // ---------------------------------------------------------------------------
-
-const VALID_EFFORTS = ['low', 'medium', 'high'];
 
 /**
  * Validate model and effort fields throughout a config object.
