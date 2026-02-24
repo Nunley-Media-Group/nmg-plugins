@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.16.1] - 2026-02-23
+
+### Fixed
+
+- **`/migrating-projects` auto-mode support** — Skill now applies non-destructive changes automatically and skips destructive operations (consolidation, renames, deletes) with a machine-readable summary when `.claude/auto-mode` is present, instead of hanging on `AskUserQuestion` in headless sessions
+
 ## [2.16.0] - 2026-02-23
 
 ### Added
