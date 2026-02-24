@@ -184,7 +184,8 @@ Title: [title]
 Base: main ← [branch-name]
 Issue: Closes #N
 
-The PR links to specs at .claude/specs/{feature}/ and will close issue #N when merged.
+[If specs-found]: The PR links to specs at .claude/specs/{feature}/ and will close issue #N when merged.
+[If specs-not-found]: The PR extracts acceptance criteria from the issue body and will close issue #N when merged.
 
 [If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
 ```
@@ -195,8 +196,8 @@ The PR links to specs at .claude/specs/{feature}/ and will close issue #N when m
 
 - **Title**: Under 70 chars, uses conventional commit prefix, references issue
 - **Summary**: Focus on *what* and *why*, not implementation details
-- **Acceptance criteria**: Copied from requirements.md as a checklist
-- **Test plan**: From the testing phase of tasks.md
+- **Acceptance criteria**: Copied from requirements.md as a checklist (specs-found), or extracted from the issue body (specs-not-found)
+- **Test plan**: From the testing phase of tasks.md (specs-found), or manually composed from the issue (specs-not-found)
 - **Closes**: Always include `Closes #N` to auto-close the issue on merge
 
 ---
