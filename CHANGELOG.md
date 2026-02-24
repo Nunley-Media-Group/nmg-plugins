@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.17.1] - 2026-02-24
+
+### Fixed
+
+- **`/migrating-projects`** — Skill now detects legacy `{issue#}-{slug}/` spec directories and proposes renaming them to `feature-{slug}/` or `bug-{slug}` using `git mv`; auto-mode applies solo renames as non-destructive operations; cross-reference updates use `Grep`/`Edit` with chain resolution
+
 ## [2.17.0] - 2026-02-23
 
 ### Changed
