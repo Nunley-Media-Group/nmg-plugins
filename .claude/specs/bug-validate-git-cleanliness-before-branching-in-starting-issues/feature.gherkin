@@ -1,0 +1,54 @@
+# File: .claude/specs/bug-validate-git-cleanliness-before-branching-in-starting-issues/feature.gherkin
+#
+# Generated from: .claude/specs/bug-validate-git-cleanliness-before-branching-in-starting-issues/requirements.md
+# Issue: #84
+# Type: Defect regression
+
+@regression
+Feature: Git working tree cleanliness check in /starting-issues
+  The /starting-issues skill previously created feature branches without
+  checking git working tree cleanliness, allowing staged or unstaged changes
+  to leak into new feature branches. This was fixed by adding a
+  `git status --porcelain` precondition check at the beginning of Step 4.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Dirty working tree blocks branch creation
+    Given the working tree has uncommitted changes from a failed commit
+    And the user invokes /starting-issues #42
+    When the skill reaches Step 4 (Create Feature Branch)
+    Then the skill runs git status --porcelain before any branch operation
+    And the skill aborts with an error before calling gh issue develop
+    And no new branch is created
+
+  @regression
+  Scenario: Auto-mode escalation for dirty working tree
+    Given the working tree has staged changes
+    And .claude/auto-mode exists in the project directory
+    When /starting-issues is invoked in auto-mode
+    Then the dirty working tree is reported as an escalation reason
+    And no new branch is created
+    And the output is parseable by the sdlc-runner as an escalation
+
+  @regression
+  Scenario: Diagnostic error message lists dirty files
+    Given the working tree has the following dirty files:
+      | file              | status  |
+      | src/index.js      | modified |
+      | src/utils.js      | staged   |
+    When the skill aborts due to the dirty tree check
+    Then the error message includes "src/index.js"
+    And the error message includes "src/utils.js"
+    And the error message indicates the user should resolve changes before retrying
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Clean working tree proceeds to branch creation normally
+    Given the working tree is clean with no staged or unstaged changes
+    And the user invokes /starting-issues #42
+    When the skill reaches Step 4 (Create Feature Branch)
+    Then the skill proceeds to check the current branch
+    And the skill creates the feature branch via gh issue develop
+    And no abort or error occurs

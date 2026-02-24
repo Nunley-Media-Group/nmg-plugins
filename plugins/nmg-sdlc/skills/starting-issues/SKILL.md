@@ -34,6 +34,8 @@ If the file `.claude/auto-mode` exists in the project directory:
     ├─ 2. Present issue selection (AskUserQuestion)
     ├─ 3. Confirm selected issue
     └─ 4. Create linked feature branch & set issue to In Progress
+         ├─ Precondition: working tree must be clean
+         └─ Create branch, update status
 ```
 
 ---
@@ -117,6 +119,43 @@ Ask: "Ready to start working on this issue?"
 If the user says no, return to Step 2.
 
 ## Step 4: Create Feature Branch & Link to Issue
+
+### Precondition: Working Tree Check
+
+Before any branch operation, verify the working tree is clean:
+
+```bash
+git status --porcelain
+```
+
+- **If the output is empty** (clean tree): proceed to branch creation below.
+- **If the output is non-empty** (dirty tree): abort immediately. Do **not** call `gh issue develop`.
+
+**Interactive mode** — output an error and stop:
+
+```
+ERROR: Working tree is not clean. Cannot create feature branch.
+
+Dirty files:
+[paste the git status --porcelain output here]
+
+Please resolve these changes (commit, stash, or discard) before running /starting-issues again.
+```
+
+**Auto-mode** (`.claude/auto-mode` exists) — report as an escalation reason for the runner:
+
+```
+Working tree is not clean. Cannot create feature branch.
+
+Dirty files:
+[paste the git status --porcelain output here]
+
+Resolve these changes before retrying. Done. Awaiting orchestrator.
+```
+
+Then exit — do **not** proceed to branch creation or any subsequent steps.
+
+### Create Branch
 
 Check if already on a feature branch for this issue:
 

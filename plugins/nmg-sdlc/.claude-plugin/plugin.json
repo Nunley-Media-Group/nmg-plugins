@@ -1,6 +1,6 @@
 {
   "name": "nmg-sdlc",
-  "version": "2.17.1",
+  "version": "2.17.2",
   "description": "Stack-agnostic BDD spec-driven development toolkit",
   "author": {
     "name": "Nunley Media Group"
