@@ -939,6 +939,7 @@ function buildClaudeArgs(step, state, overrides = {}) {
     '--model', overrides.model || MODEL,
     '-p', overrides.prompt || prompts[step.number],
     '--dangerously-skip-permissions',
+    '--verbose',
     '--output-format', 'stream-json',
     '--max-turns', String(step.maxTurns || 20),
   ];
