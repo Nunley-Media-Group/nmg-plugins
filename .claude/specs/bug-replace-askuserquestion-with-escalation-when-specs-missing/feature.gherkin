@@ -1,0 +1,47 @@
+# File: .claude/specs/bug-replace-askuserquestion-with-escalation-when-specs-missing/feature.gherkin
+#
+# Generated from: .claude/specs/bug-replace-askuserquestion-with-escalation-when-specs-missing/requirements.md
+# Issue: #85
+# Type: Defect regression
+
+@regression
+Feature: Escalation instead of AskUserQuestion when specs missing in auto-mode
+  The /implementing-specs skill previously called AskUserQuestion when spec
+  files were not found, regardless of whether auto-mode was active. In headless
+  sessions (OpenClaw runner), this caused the session to hang indefinitely.
+  This was fixed by adding an auto-mode conditional to the missing-specs error
+  path: output an escalation message in auto-mode, preserve AskUserQuestion
+  in interactive mode.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Escalation message output in auto-mode when specs are missing
+    Given a project with `.claude/auto-mode` present
+    And no spec files exist at `.claude/specs/` for the target issue
+    When `/implementing-specs #42` is invoked
+    Then the skill outputs a message containing "No specs found"
+    And the message references `/writing-specs` as the prerequisite step
+    And the message ends with "Done. Awaiting orchestrator."
+    And `AskUserQuestion` is not called
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Interactive prompt preserved when auto-mode is absent
+    Given a project without `.claude/auto-mode`
+    And no spec files exist at `.claude/specs/` for the target issue
+    When `/implementing-specs #42` is invoked
+    Then the skill calls `AskUserQuestion` to prompt the user
+    And the prompt suggests running `/writing-specs #42` first
+    And no "Done. Awaiting orchestrator." message is output
+
+  # --- Edge Case: Escalation message contains diagnostic context ---
+
+  @regression
+  Scenario: Escalation message identifies missing spec details
+    Given a project with `.claude/auto-mode` present
+    And no spec files exist at `.claude/specs/` for the target issue
+    When `/implementing-specs #42` is invoked
+    Then the escalation message identifies what is missing (spec directory or specific files)
+    And the message includes the issue number being implemented
