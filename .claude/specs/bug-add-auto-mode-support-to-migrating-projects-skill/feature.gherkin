@@ -1,0 +1,83 @@
+# File: .claude/specs/bug-add-auto-mode-support-to-migrating-projects-skill/feature.gherkin
+#
+# Generated from: .claude/specs/bug-add-auto-mode-support-to-migrating-projects-skill/requirements.md
+# Issue: #81
+# Type: Defect regression
+
+@regression
+Feature: /migrating-projects auto-mode support
+  The /migrating-projects skill previously lacked any auto-mode awareness,
+  causing headless OpenClaw sessions to hang indefinitely when the skill
+  called AskUserQuestion with no user present.
+  This was fixed by adding auto-mode guards that auto-apply non-destructive
+  changes and skip destructive operations with a summary.
+
+  # --- Bug Is Fixed: Non-Destructive Changes Auto-Apply ---
+
+  @regression
+  Scenario: Non-destructive changes apply automatically in auto-mode
+    Given ".claude/auto-mode" exists in the project directory
+    And the project has a "tech.md" steering doc missing a "Testing Standards" section
+    And a feature spec has singular "**Issue**: #42" frontmatter instead of plural "**Issues**: #42"
+    And "sdlc-config.json" is missing a "steps.merge" key present in the template
+    When "/migrating-projects" is invoked
+    Then the "Testing Standards" section is added to "tech.md" without calling AskUserQuestion
+    And the frontmatter is updated from "**Issue**: #42" to "**Issues**: #42" without calling AskUserQuestion
+    And the missing "steps.merge" key is added to "sdlc-config.json" without calling AskUserQuestion
+    And all proposed steering doc sections are applied (none are declined)
+
+  # --- Bug Is Fixed: Destructive Operations Skipped ---
+
+  @regression
+  Scenario: Destructive operations are skipped in auto-mode
+    Given ".claude/auto-mode" exists in the project directory
+    And legacy spec directories "42-add-dark-mode/" and "71-dark-mode-toggle/" exist
+    And these directories are consolidation candidates sharing keyword overlap
+    When "/migrating-projects" is invoked
+    Then the consolidation is skipped without calling AskUserQuestion
+    And the skill outputs a human-readable summary stating "Skipped consolidation of 42-add-dark-mode/ + 71-dark-mode-toggle/ — destructive operations require interactive approval"
+    And the legacy directories remain unchanged
+
+  @regression
+  Scenario: Solo legacy feature spec rename is skipped in auto-mode
+    Given ".claude/auto-mode" exists in the project directory
+    And a legacy spec directory "55-add-weather-alerts/" exists with no consolidation candidates
+    When "/migrating-projects" is invoked
+    Then the solo feature rename to "feature-weather-alerts/" is skipped without calling AskUserQuestion
+    And the skill outputs a skipped operation entry with type "rename" and path "55-add-weather-alerts/"
+    And the legacy directory remains unchanged
+
+  @regression
+  Scenario: Solo legacy bug spec rename is skipped in auto-mode
+    Given ".claude/auto-mode" exists in the project directory
+    And a legacy spec directory "15-fix-login/" exists containing a defect spec (Defect Report heading)
+    When "/migrating-projects" is invoked
+    Then the solo bug rename to "bug-fix-login/" is skipped without calling AskUserQuestion
+    And the skill outputs a skipped operation entry with type "rename-bug" and path "15-fix-login/"
+    And the legacy directory remains unchanged
+
+  # --- Machine-Readable Skipped Operations ---
+
+  @regression
+  Scenario: Machine-readable skipped operations list is emitted in auto-mode
+    Given "/migrating-projects" runs in auto-mode
+    And destructive operations were detected and skipped
+    When the skill completes
+    Then the output includes a "Skipped Operations (Auto-Mode)" section
+    And the section contains a structured table with columns "Operation Type", "Affected Paths", and "Reason"
+    And each skipped operation has an entry in the table
+    And the runner can parse this output to report skipped operations to Discord
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Interactive mode behavior is unchanged when auto-mode is absent
+    Given ".claude/auto-mode" does NOT exist in the project directory
+    And the project has a "tech.md" steering doc missing a "Testing Standards" section
+    And legacy spec directories exist that are consolidation candidates
+    When "/migrating-projects" is invoked
+    Then AskUserQuestion is called for steering doc section approval (Step 9 Part A)
+    And AskUserQuestion is called for each consolidation group (Step 4d)
+    And AskUserQuestion is called for batch approval of remaining changes (Step 9 Part B)
+    And no auto-approval logic is triggered
+    And declined sections are persisted to ".claude/migration-exclusions.json"
