@@ -503,11 +503,30 @@ function log(msg) {
 // Per-step log persistence
 // ---------------------------------------------------------------------------
 
-function extractSessionId(jsonOutput) {
+/**
+ * Extract the final result JSON object from stream-json output.
+ * stream-json emits newline-delimited JSON events; the result event has type "result".
+ * Falls back to parsing the entire output as a single JSON object (legacy json format).
+ */
+function extractResultFromStream(streamOutput) {
+  // Try stream-json: scan lines in reverse for the result event
+  const lines = streamOutput.trim().split('\n');
+  for (let i = lines.length - 1; i >= 0; i--) {
+    try {
+      const parsed = JSON.parse(lines[i]);
+      if (parsed.type === 'result') return parsed;
+    } catch { /* skip non-JSON lines */ }
+  }
+  // Fallback: try parsing as single JSON (legacy --output-format json)
   try {
-    const parsed = JSON.parse(jsonOutput);
-    if (parsed.session_id) return String(parsed.session_id).slice(0, 12);
-  } catch { /* not valid JSON or no session_id */ }
+    return JSON.parse(streamOutput);
+  } catch { /* not valid JSON */ }
+  return null;
+}
+
+function extractSessionId(jsonOutput) {
+  const result = extractResultFromStream(jsonOutput);
+  if (result?.session_id) return String(result.session_id).slice(0, 12);
   return randomUUID().slice(0, 12);
 }
 
@@ -699,7 +718,7 @@ function findProcessesByPattern(pattern) {
       const escaped = pattern.replace(/'/g, "''");
       stdout = execSync(`wmic process where "CommandLine like '%${escaped}%'" get ProcessId`, { encoding: 'utf8', timeout: 5_000 });
     } else {
-      stdout = execSync(`pgrep -f ${shellEscape(pattern)}`, { encoding: 'utf8', timeout: 5_000 });
+      stdout = execSync(`pgrep -f -- ${shellEscape(pattern)}`, { encoding: 'utf8', timeout: 5_000 });
     }
     return stdout.trim().split(/\s+/).map(Number).filter(n => n > 0 && Number.isInteger(n));
   } catch {
@@ -920,7 +939,7 @@ function buildClaudeArgs(step, state, overrides = {}) {
     '--model', overrides.model || MODEL,
     '-p', overrides.prompt || prompts[step.number],
     '--dangerously-skip-permissions',
-    '--output-format', 'json',
+    '--output-format', 'stream-json',
     '--max-turns', String(step.maxTurns || 20),
   ];
 
@@ -946,7 +965,18 @@ function runClaude(step, state, overrides = {}) {
 
   if (DRY_RUN) {
     log(`[DRY-RUN] Would run: claude ${claudeArgs.slice(0, 6).join(' ')} ... (timeout: ${step.timeoutMin || 10}min)`);
-    return Promise.resolve({ exitCode: 0, stdout: '{"result":"dry-run"}', stderr: '', duration: 0 });
+    return Promise.resolve({ exitCode: 0, stdout: '{"type":"result","result":"dry-run"}', stderr: '', duration: 0 });
+  }
+
+  // Create live log file for real-time streaming
+  const liveLogName = `${overrides.liveLogLabel || step.key || 'step' + step.number}-live.log`;
+  const liveLogPath = path.join(LOG_DIR, liveLogName);
+  let liveLogFd;
+  try {
+    liveLogFd = fs.openSync(liveLogPath, 'w');
+    log(`Live log: ${liveLogPath}`);
+  } catch (err) {
+    log(`Warning: could not create live log: ${err.message}`);
   }
 
   return new Promise((resolve) => {
@@ -967,8 +997,18 @@ function runClaude(step, state, overrides = {}) {
     let stdout = '';
     let stderr = '';
 
-    proc.stdout.on('data', (chunk) => { stdout += chunk; });
-    proc.stderr.on('data', (chunk) => { stderr += chunk; });
+    proc.stdout.on('data', (chunk) => {
+      stdout += chunk;
+      if (liveLogFd !== undefined) {
+        try { fs.writeSync(liveLogFd, chunk); } catch { /* ignore write errors */ }
+      }
+    });
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk;
+      if (liveLogFd !== undefined) {
+        try { fs.writeSync(liveLogFd, '[STDERR] ' + chunk); } catch { /* ignore write errors */ }
+      }
+    });
 
     // Stall timeout
     const timer = setTimeout(() => {
@@ -986,6 +1026,9 @@ function runClaude(step, state, overrides = {}) {
     proc.on('close', (code) => {
       currentProcess = null;
       clearTimeout(timer);
+      if (liveLogFd !== undefined) {
+        try { fs.closeSync(liveLogFd); } catch { /* ignore */ }
+      }
       resolve({
         exitCode: code ?? 1,
         stdout,
@@ -997,6 +1040,9 @@ function runClaude(step, state, overrides = {}) {
     proc.on('error', (err) => {
       currentProcess = null;
       clearTimeout(timer);
+      if (liveLogFd !== undefined) {
+        try { fs.closeSync(liveLogFd); } catch { /* ignore */ }
+      }
       resolve({
         exitCode: 1,
         stdout,
@@ -1034,16 +1080,14 @@ function matchErrorPattern(output) {
 // ---------------------------------------------------------------------------
 
 function detectSoftFailure(stdout) {
-  try {
-    const parsed = JSON.parse(stdout);
+  const parsed = extractResultFromStream(stdout);
+  if (parsed) {
     if (parsed.subtype === 'error_max_turns') {
       return { isSoftFailure: true, reason: 'error_max_turns' };
     }
     if (Array.isArray(parsed.permission_denials) && parsed.permission_denials.length > 0) {
       return { isSoftFailure: true, reason: `permission_denials: ${parsed.permission_denials.join(', ')}` };
     }
-  } catch {
-    // Not valid JSON — treat as non-soft-failure (graceful fallback)
   }
   return { isSoftFailure: false };
 }
@@ -1627,6 +1671,7 @@ async function runImplementStep(step, state) {
     model: planConfig.model,
     effort: planConfig.effort,
     prompt: planPrompt,
+    liveLogLabel: 'implement-plan',
   });
 
   log(`Plan phase exited with code ${planResult.exitCode} in ${planResult.duration}s`);
@@ -1668,6 +1713,7 @@ async function runImplementStep(step, state) {
     model: codeConfig.model,
     effort: codeConfig.effort,
     prompt: codePrompt,
+    liveLogLabel: 'implement-code',
   });
 
   log(`Code phase exited with code ${codeResult.exitCode} in ${codeResult.duration}s`);
@@ -2106,6 +2152,7 @@ export {
   hasOpenIssues,
   hasNonEscalatedIssues,
   writeStepLog,
+  extractResultFromStream,
   extractSessionId,
   enforceMaxDisk,
   resolveLogDir,
