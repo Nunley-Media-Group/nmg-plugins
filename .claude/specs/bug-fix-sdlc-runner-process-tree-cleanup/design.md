@@ -55,7 +55,7 @@ All process discovery is behind two platform-aware primitives:
 | Primitive | POSIX (macOS/Linux) | Windows |
 |-----------|-------------------|---------|
 | **Get child PIDs of a parent** | `pgrep -P <pid>` | `wmic process where (ParentProcessId=<pid>) get ProcessId` |
-| **Find PIDs by command-line pattern** | `pgrep -f <pattern>` | `wmic process where "CommandLine like '%pattern%'" get ProcessId` |
+| **Find PIDs by command-line pattern** | `pgrep -f -- <pattern>` (`--` prevents patterns starting with dashes being interpreted as flags on macOS) | `wmic process where "CommandLine like '%pattern%'" get ProcessId` |
 | **Kill a process tree** | Recursive `getChildPids` + bottom-up `process.kill(pid, 'SIGTERM')` | `taskkill /T /F /PID <pid>` (native tree kill) |
 | **Kill a single PID** | `process.kill(pid, 'SIGTERM')` | `process.kill(pid, 'SIGTERM')` (calls `TerminateProcess`) |
 

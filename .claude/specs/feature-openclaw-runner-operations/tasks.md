@@ -413,7 +413,8 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T024
 **Status**: Complete
 **Acceptance**:
-- [x] `extractSessionId(jsonOutput)` parses `session_id` from Claude JSON output, truncated to 12 chars; falls back to UUID slice on parse failure
+- [x] `extractResultFromStream(streamOutput)` parses final result from `--output-format stream-json` output (scans for `type: "result"` event), with fallback for single-JSON format
+- [x] `extractSessionId(jsonOutput)` uses `extractResultFromStream()` to extract `session_id`, truncated to 12 chars; falls back to UUID slice on parse failure
 - [x] `writeStepLog(stepKey, result)` writes log file with header metadata (step, exit code, duration, session, timestamp) followed by `---STDOUT---` and `---STDERR---` sections
 - [x] Filename format: `<stepKey>-<sessionId>-<timestamp>.log` with `:` replaced by `-` in timestamp for Windows compatibility
 - [x] Entire `writeStepLog()` is wrapped in try/catch — log write failures never crash the runner

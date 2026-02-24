@@ -143,7 +143,7 @@ Additional capabilities were added iteratively: configurable post-step process c
 
 **Given** a step subprocess has completed
 **When** the log file is created
-**Then** the filename includes the step name, Claude Code session identifier, and ISO 8601 timestamp (e.g., `writeSpecs-<session-id>-2026-02-16T10-30-00.log`)
+**Then** the filename includes the step name, Claude Code session identifier, and ISO 8601 timestamp (e.g., `writeSpecs-<session-id>-2026-02-16T10-30-00.log`). Additionally, a `{step}-live.log` file is written in real-time during execution for `tail -f` observability.
 
 ### AC20: Runner Orchestration Log Moves to Same Directory
 
@@ -257,7 +257,7 @@ Additional capabilities were added iteratively: configurable post-step process c
 - Windows support for process cleanup (OpenClaw currently targets macOS/Linux for cleanup)
 - Configurable failure loop thresholds (hardcode sensible defaults for now)
 - Auto-recovery strategies (e.g., automatically closing problematic issues)
-- Log streaming or real-time tailing UI
+- ~~Log streaming or real-time tailing UI~~ (implemented: `{step}-live.log` files with real-time streaming via `--output-format stream-json`)
 - Structured/JSON log format (plain text is sufficient)
 - Log aggregation to external services (Datadog, ELK, etc.)
 - Compression of old log files

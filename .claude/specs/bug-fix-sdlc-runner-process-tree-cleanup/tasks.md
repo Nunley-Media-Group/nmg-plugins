@@ -34,7 +34,7 @@
   - Windows: calls `execSync('taskkill /T /F /PID <pid>')` — native tree kill in one command
   - Both: handles "no such process" errors gracefully (ESRCH on POSIX, exit code on Windows)
 - [ ] New `findProcessesByPattern(pattern)` function: returns PIDs matching a command-line pattern
-  - POSIX: `pgrep -f <pattern>` (using existing `shellEscape`)
+  - POSIX: `pgrep -f -- <pattern>` (using existing `shellEscape`; `--` prevents patterns starting with dashes being interpreted as flags on macOS)
   - Windows: `wmic process where "CommandLine like '%<pattern>%'" get ProcessId` — parse output to extract integer PIDs
 - [ ] Rewritten `cleanupProcesses()` implements two-phase strategy:
   - Phase 1 (tree-based): if `lastClaudePid` is set, call `killProcessTree(lastClaudePid)`, then clear `lastClaudePid`

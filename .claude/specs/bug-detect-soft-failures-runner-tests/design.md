@@ -11,7 +11,7 @@
 
 The SDLC runner's success check (`sdlc-runner.mjs` line 1201) evaluates only `result.exitCode === 0` and never inspects the JSON output produced by `claude -p --output-format json`. When Claude hits its maximum turn limit without completing the goal, it exits with code 0 but sets `subtype: "error_max_turns"` in its JSON output. Similarly, when tool calls are denied (e.g., `AskUserQuestion` in pipe mode), Claude records them in `permission_denials` but still exits 0.
 
-The runner already passes `--output-format json` and already parses the JSON output in `extractSessionId()` (line 379–385) to extract the `session_id` field. However, it never checks the `subtype` or `permission_denials` fields that indicate the step did not actually succeed.
+The runner now uses `--output-format stream-json` (newline-delimited JSON events) and parses the final result via `extractResultFromStream()`, which `extractSessionId()` also uses to extract the `session_id` field. The `detectSoftFailure()` function uses `extractResultFromStream()` to check the `subtype` and `permission_denials` fields that indicate the step did not actually succeed.
 
 A contributing factor is that the `starting-issues` SKILL.md positions the Automation Mode instruction (lines 18–22) as a mid-page section. While the instruction is correct ("skip `AskUserQuestion` when `.claude/auto-mode` exists"), it's not prominent enough for reliable model compliance in headless pipe mode. Claude ignored the instruction and called `AskUserQuestion` repeatedly, each call denied, consuming all turns.
 
@@ -38,7 +38,7 @@ A contributing factor is that the `starting-issues` SKILL.md positions the Autom
 
 ### Approach
 
-Add a `detectSoftFailure(stdout)` function that parses the JSON output and checks for two soft failure indicators: `subtype: "error_max_turns"` and non-empty `permission_denials`. Insert this check immediately after the `exitCode === 0` check in `runStep()`, before state extraction. If a soft failure is detected, route to `handleFailure()` as if the step had returned a non-zero exit code.
+Add a `detectSoftFailure(stdout)` function that uses `extractResultFromStream()` to parse the stream-json output and checks for two soft failure indicators: `subtype: "error_max_turns"` and non-empty `permission_denials`. Insert this check immediately after the `exitCode === 0` check in `runStep()`, before state extraction. If a soft failure is detected, route to `handleFailure()` as if the step had returned a non-zero exit code.
 
 To make the runner testable, refactor the module to guard the CLI bootstrap behind an `isMainModule` check and export all internal functions. Create a comprehensive Jest test suite under `openclaw/scripts/__tests__/` with mocked `node:child_process` and `node:fs` dependencies.
 

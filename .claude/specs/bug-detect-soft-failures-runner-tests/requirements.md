@@ -103,7 +103,7 @@ Always — any step that burns all turns without completing its goal will be mis
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR1 | Parse JSON output from `claude -p --output-format json` for `subtype` and `permission_denials` after each step | Must |
+| FR1 | Parse JSON output from `claude -p --output-format stream-json` for `subtype` and `permission_denials` after each step (using `extractResultFromStream()` to extract the final result event) | Must |
 | FR2 | Treat `error_max_turns` subtype as step failure regardless of exit code | Must |
 | FR3 | Treat non-empty `permission_denials` as step failure regardless of exit code | Must |
 | FR4 | Comprehensive Jest BDD test suite for all runner functionality | Must |

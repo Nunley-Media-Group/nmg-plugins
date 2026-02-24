@@ -66,7 +66,8 @@ Additional capabilities built onto this foundation:
 │ <os.tmpdir()>/sdlc-logs/<proj>/  │
 │ ├── sdlc-runner.log              │
 │ ├── writeSpecs-abc123-*.log      │
-│ └── implementSpecs-def456-*.log  │
+│ ├── implementSpecs-def456-*.log  │
+│ └── verify-live.log (real-time)  │
 └──────────────────────────────────┘
 ```
 
@@ -113,7 +114,7 @@ This section describes the configurable post-step process cleanup mechanism adde
 
 When enabled via a `cleanup.processPatterns` config field, the runner will kill processes matching the configured patterns at key transition points: after every step completes, during escalation, and on graceful shutdown.
 
-The implementation is minimal — a single `cleanupProcesses()` function called from three existing code paths. It uses `pgrep`/`pkill` with `-f` (full command-line matching) to find and kill processes, enabling operators to target specific process configurations (e.g., Chrome launched with `--remote-debugging-port`) rather than all instances of a binary.
+The implementation is minimal — a single `cleanupProcesses()` function called from three existing code paths. It uses `pgrep`/`pkill` with `-f` (full command-line matching) to find and kill processes, enabling operators to target specific process configurations (e.g., Chrome launched with `--remote-debugging-port`) rather than all instances of a binary. On macOS, `pgrep -f` requires a `--` end-of-options separator before patterns that start with dashes (e.g., `--remote-debugging-port`) to prevent them being interpreted as flags.
 
 #### Config Schema Addition
 
@@ -134,7 +135,7 @@ The `cleanup` field is a new optional top-level key in `sdlc-config.json`:
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | `cleanup` | object | No | `undefined` | Cleanup configuration block |
-| `cleanup.processPatterns` | string[] | No | `[]` | Array of patterns matched against full process command line via `pgrep -f` / `pkill -f` |
+| `cleanup.processPatterns` | string[] | No | `[]` | Array of patterns matched against full process command line via `pgrep -f --` / `pkill -f` |
 
 #### New Function: `cleanupProcesses()`
 
@@ -165,7 +166,7 @@ function cleanupProcesses() {
 
   for (const pattern of CLEANUP_PATTERNS) {
     try {
-      const pids = execSync(`pgrep -f ${shellEscape(pattern)}`, { encoding: 'utf8', timeout: 5000 })
+      const pids = execSync(`pgrep -f -- ${shellEscape(pattern)}`, { encoding: 'utf8', timeout: 5000 })
         .trim()
         .split('\n')
         .filter(pid => pid && parseInt(pid, 10) !== process.pid);
@@ -357,7 +358,9 @@ This section describes the persistent per-step logging system added to the SDLC 
 
 This design adds persistent per-step logging to the SDLC runner (`sdlc-runner.mjs`). Currently, the `runClaude()` function captures stdout/stderr in memory for error pattern matching but discards it after each step. The orchestration log is hardcoded to `/tmp/sdlc-runner.log` via a `nohup` redirect in the `running-sdlc` SKILL.md.
 
-The change introduces a logging module within `sdlc-runner.mjs` that: (1) resolves an OS-agnostic log directory using `os.tmpdir()`, (2) writes per-step log files with a standardized naming convention after each `runClaude()` call, (3) moves the orchestration log into the same directory, and (4) enforces a configurable max disk usage threshold by pruning the oldest log files before each write.
+The change introduces a logging module within `sdlc-runner.mjs` that: (1) resolves an OS-agnostic log directory using `os.tmpdir()`, (2) writes per-step log files with a standardized naming convention after each `runClaude()` call, (3) moves the orchestration log into the same directory, (4) enforces a configurable max disk usage threshold by pruning the oldest log files before each write, and (5) streams subprocess output to live log files in real-time via file descriptors for `tail -f` observability.
+
+The runner uses `--output-format stream-json` (newline-delimited JSON events) instead of `--output-format json` (single blob at completion). This enables real-time streaming: each `runClaude()` call opens a `{step}-live.log` file and writes stdout/stderr chunks as they arrive. The final result is extracted from the stream using `extractResultFromStream()`, which scans for the `type: "result"` event.
 
 All changes are confined to three files: `sdlc-runner.mjs` (logging logic), `running-sdlc/SKILL.md` (nohup redirect path and documentation), and `sdlc-config.example.json` (new config fields). No external dependencies — only `node:os`, `node:fs`, and `node:path`.
 
@@ -397,7 +400,8 @@ All changes are confined to three files: `sdlc-runner.mjs` (logging logic), `run
 | `resolveLogDir(config, projectPath)` | config object, project path string | `string` (absolute path) | Compute log directory from config `logDir` or default to `os.tmpdir()/sdlc-logs/<project-name>/` |
 | `writeStepLog(stepKey, result)` | step key string, `runClaude` result object | `void` | Write per-step log file; non-fatal on error |
 | `enforceMaxDisk(logDir, maxBytes)` | directory path, max bytes number | `void` | Delete oldest `.log` files until total under threshold |
-| `extractSessionId(jsonOutput)` | stdout string from `claude --output-format json` | `string` | Extract session ID from Claude JSON response, fallback to UUID |
+| `extractResultFromStream(streamOutput)` | stdout string from `claude --output-format stream-json` | `object\|null` | Extract final result JSON from stream-json output (scans for `type: "result"` event), with fallback for single-JSON format |
+| `extractSessionId(jsonOutput)` | stdout string from `claude --output-format stream-json` | `string` | Extract session ID via `extractResultFromStream()`, fallback to UUID |
 
 #### Config Schema Additions
 
@@ -548,7 +552,7 @@ The skill also gains a **Logging** section documenting the log directory locatio
 | Option | Description | Decision |
 |--------|-------------|----------|
 | **A: Separate log module file** | Extract logging into a new `sdlc-logger.mjs` file | Rejected — single file aligns with existing pattern |
-| **B: Stream-based writing** | Pipe subprocess stdout/stderr directly to log files during execution | Rejected — post-execution write is simpler and sufficient |
+| **B: Stream-based writing** | Pipe subprocess stdout/stderr directly to log files during execution | **Now implemented** — `runClaude()` streams to `{step}-live.log` via file descriptors for real-time `tail -f` observability. Post-execution `writeStepLog()` still writes the final archived log. |
 | **C: Write logs in `runClaude()`** | Move log writing into `runClaude()` itself | Rejected — caller (`runStep()`) has context (step key) |
 | **D: Keep nohup redirect for orchestration log** | Continue using shell redirect, only add per-step logs | Rejected — unified approach is cleaner |
 
