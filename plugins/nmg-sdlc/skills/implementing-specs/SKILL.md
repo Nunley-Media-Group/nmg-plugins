@@ -56,7 +56,21 @@ Load all specification documents:
 └── feature.gherkin    — BDD test scenarios
 ```
 
-If specs don't exist, prompt: "No specs found. Run `/writing-specs #N` first."
+If specs don't exist:
+
+**If `.claude/auto-mode` exists:** Output:
+
+```
+No specs found for issue #N. The `/writing-specs` step must run first.
+
+[Missing: no spec directory found for this issue, or required files (requirements.md, design.md, tasks.md, feature.gherkin) are absent]
+
+Done. Awaiting orchestrator.
+```
+
+Then stop — do not proceed to subsequent steps.
+
+**If `.claude/auto-mode` does NOT exist:** Use `AskUserQuestion` to prompt: "No specs found. Run `/writing-specs #N` first."
 
 ### Step 3: Read Steering Documents
 
