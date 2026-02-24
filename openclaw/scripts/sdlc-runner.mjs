@@ -1038,7 +1038,6 @@ const IMMEDIATE_ESCALATION_PATTERNS = [
   /signal:\s*9/i,
   /signal:\s*SIGKILL/i,
   /permission denied/i,
-  /EnterPlanMode/,
 ];
 
 const RATE_LIMIT_PATTERN = /rate_limit/i;
@@ -1055,6 +1054,10 @@ function matchErrorPattern(output) {
 // Soft failure detection (exit code 0 but step did not succeed)
 // ---------------------------------------------------------------------------
 
+// Tools that are benign when denied — the model attempted them but recovered.
+// These should NOT trigger soft failure escalation.
+const BENIGN_DENIED_TOOLS = new Set(['EnterPlanMode', 'AskUserQuestion']);
+
 function detectSoftFailure(stdout) {
   const parsed = extractResultFromStream(stdout);
   if (parsed) {
@@ -1062,7 +1065,14 @@ function detectSoftFailure(stdout) {
       return { isSoftFailure: true, reason: 'error_max_turns' };
     }
     if (Array.isArray(parsed.permission_denials) && parsed.permission_denials.length > 0) {
-      return { isSoftFailure: true, reason: `permission_denials: ${parsed.permission_denials.join(', ')}` };
+      // Filter out benign denials (model tried an interactive tool but recovered)
+      const serious = parsed.permission_denials.filter(d => {
+        const toolName = typeof d === 'object' ? d.tool_name : String(d);
+        return !BENIGN_DENIED_TOOLS.has(toolName);
+      });
+      if (serious.length > 0) {
+        return { isSoftFailure: true, reason: `permission_denials: ${serious.map(d => typeof d === 'object' ? d.tool_name : d).join(', ')}` };
+      }
     }
   }
   return { isSoftFailure: false };
@@ -1186,8 +1196,8 @@ async function escalate(step, reason, output = '') {
 
   await postDiscord(diagnostic);
 
-  // Clean up auto-mode flag and reset state
-  removeAutoMode();
+  // Reset state for next cycle (keep auto-mode flag — the runner is still running
+  // and will start a fresh cycle; removing the flag causes skills to run interactively)
   updateState({ currentStep: 0, lastCompletedStep: 0 });
 }
 
@@ -2044,6 +2054,7 @@ export {
   STEP_KEYS,
   RUNNER_ARTIFACTS,
   IMMEDIATE_ESCALATION_PATTERNS,
+  BENIGN_DENIED_TOOLS,
   RATE_LIMIT_PATTERN,
   VALID_EFFORTS,
   MAX_CONSECUTIVE_ESCALATIONS,

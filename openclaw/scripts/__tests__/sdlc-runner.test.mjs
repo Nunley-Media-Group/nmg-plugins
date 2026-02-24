@@ -154,26 +154,53 @@ describe('AC1: Runner detects error_max_turns as failure', () => {
 });
 
 describe('AC2: Runner detects permission denials as failure', () => {
-  it('returns isSoftFailure:true when permission_denials is non-empty (AC2, FR3)', () => {
+  it('returns isSoftFailure:true when permission_denials contains non-benign tools (AC2, FR3)', () => {
     const stdout = JSON.stringify({
       subtype: 'success',
-      permission_denials: ['AskUserQuestion', 'AskUserQuestion'],
+      permission_denials: ['SomeDangerousTool', 'AnotherTool'],
       session_id: 'abc123',
     });
     const result = detectSoftFailure(stdout);
     expect(result.isSoftFailure).toBe(true);
     expect(result.reason).toContain('permission_denials');
-    expect(result.reason).toContain('AskUserQuestion');
+    expect(result.reason).toContain('SomeDangerousTool');
   });
 
-  it('includes all denial names in the reason string', () => {
+  it('returns isSoftFailure:false when all denials are benign (EnterPlanMode, AskUserQuestion)', () => {
     const stdout = JSON.stringify({
       subtype: 'success',
-      permission_denials: ['ToolA', 'ToolB'],
+      permission_denials: ['AskUserQuestion', 'EnterPlanMode'],
+      session_id: 'abc123',
     });
     const result = detectSoftFailure(stdout);
+    expect(result.isSoftFailure).toBe(false);
+  });
+
+  it('filters benign denials and reports only serious ones', () => {
+    const stdout = JSON.stringify({
+      subtype: 'success',
+      permission_denials: ['AskUserQuestion', 'ToolA', 'EnterPlanMode', 'ToolB'],
+    });
+    const result = detectSoftFailure(stdout);
+    expect(result.isSoftFailure).toBe(true);
     expect(result.reason).toContain('ToolA');
     expect(result.reason).toContain('ToolB');
+    expect(result.reason).not.toContain('AskUserQuestion');
+    expect(result.reason).not.toContain('EnterPlanMode');
+  });
+
+  it('handles object-shaped permission_denials with tool_name field', () => {
+    const stdout = JSON.stringify({
+      subtype: 'success',
+      permission_denials: [
+        { tool_name: 'EnterPlanMode', tool_use_id: 'x' },
+        { tool_name: 'SeriousTool', tool_use_id: 'y' },
+      ],
+    });
+    const result = detectSoftFailure(stdout);
+    expect(result.isSoftFailure).toBe(true);
+    expect(result.reason).toContain('SeriousTool');
+    expect(result.reason).not.toContain('EnterPlanMode');
   });
 });
 
@@ -516,10 +543,9 @@ describe('Error pattern matching', () => {
     expect(result.action).toBe('escalate');
   });
 
-  it('matches EnterPlanMode → escalate', () => {
+  it('does not match EnterPlanMode (benign denial, not unrecoverable)', () => {
     const result = matchErrorPattern('Attempted to call EnterPlanMode in headless mode');
-    expect(result).not.toBeNull();
-    expect(result.action).toBe('escalate');
+    expect(result).toBeNull();
   });
 
   it('matches rate_limit → wait', () => {
@@ -959,12 +985,22 @@ describe('Soft failure integration', () => {
     mockExit.mockRestore();
   });
 
-  it('runStep routes permission_denials (exit 0) to handleFailure (AC2 integration)', async () => {
+  it('runStep treats benign permission_denials (AskUserQuestion) as success, not soft failure (AC2 integration)', () => {
+    // AskUserQuestion is benign — the model tried it, got denied, and recovered.
+    // This should NOT be treated as a soft failure.
+    const softResult = detectSoftFailure(JSON.stringify({
+      subtype: 'success',
+      permission_denials: ['AskUserQuestion'],
+    }));
+    expect(softResult.isSoftFailure).toBe(false);
+  });
+
+  it('runStep routes serious permission_denials (exit 0) to handleFailure (AC2 integration)', async () => {
     const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {});
 
     const softResult = detectSoftFailure(JSON.stringify({
       subtype: 'success',
-      permission_denials: ['AskUserQuestion'],
+      permission_denials: ['SomeSeriousTool'],
     }));
     expect(softResult.isSoftFailure).toBe(true);
 
@@ -975,7 +1011,7 @@ describe('Soft failure integration', () => {
 
     const handleResult = await handleFailure(
       STEPS[1],
-      { exitCode: 0, stdout: JSON.stringify({ permission_denials: ['AskUserQuestion'] }), stderr: '', duration: 5 },
+      { exitCode: 0, stdout: JSON.stringify({ permission_denials: ['SomeSeriousTool'] }), stderr: '', duration: 5 },
       state
     );
     expect(['retry', 'retry-previous', 'escalated']).toContain(handleResult);
