@@ -20,11 +20,20 @@ Update existing project files (steering docs, specs, OpenClaw configs) to the la
 
 ## Automation Mode
 
-**This skill is ALWAYS interactive — `.claude/auto-mode` does NOT apply.**
+If the file `.claude/auto-mode` exists in the project directory, this skill applies **non-destructive changes automatically** and **skips destructive operations** (which require interactive approval). Do NOT call `AskUserQuestion` in auto-mode.
 
-Even if `.claude/auto-mode` exists in the project directory, this skill MUST present proposed changes via `AskUserQuestion` and wait for user approval before modifying any files. Migration is a sensitive operation that requires human review.
+**Non-destructive (auto-applied in auto-mode):** Steering doc section additions, spec file section additions, Related Spec link corrections, legacy frontmatter migration (`Issue` → `Issues`, Change History additions), OpenClaw config key additions, CHANGELOG.md fixes, VERSION file creation/update.
 
-Do NOT skip the review gate in Step 9. Do NOT apply changes without explicit user approval.
+**Destructive (skipped in auto-mode):** Spec directory consolidation, legacy directory renames, legacy directory deletes (Steps 4b–4e). For each skipped operation, record it in a "Skipped Operations" list to output at Step 10.
+
+**In auto-mode:**
+- Step 4d: Skip `AskUserQuestion` entirely; record each consolidation group as a skipped operation and proceed to Step 4f
+- Step 9 Part A: Auto-select all proposed steering doc sections (equivalent to selecting all)
+- Step 9 Part B: Auto-approve all non-destructive changes; skip any destructive operations (record them as skipped)
+- Step 10: After applying changes, emit a machine-readable "Skipped Operations (Auto-Mode)" section
+- Do NOT write to `.claude/migration-exclusions.json` (nothing is declined in auto-mode)
+
+**When `.claude/auto-mode` does NOT exist**, all existing interactive behavior is preserved unchanged — present all findings via `AskUserQuestion` as described in Step 9.
 
 ## What Gets Analyzed
 
@@ -47,6 +56,8 @@ VERSION                        — Single source of truth for project version (p
 ---
 
 ## Workflow
+
+**Before Step 1:** Check whether `.claude/auto-mode` exists in the project root. Set an auto-mode flag for the entire session. This flag determines behavior at Step 4d, Step 9, and Step 10 — check it once here rather than re-reading the file at each branch point.
 
 ### Step 1: Resolve Template Paths
 
@@ -172,11 +183,12 @@ For each group (and solo migration candidates):
 
 1. Show the source directories and proposed target name
 2. Show a brief summary of each source spec's content (first heading, issue number, status)
-3. Use `AskUserQuestion` for each group:
+
+**If `.claude/auto-mode` exists:** Skip `AskUserQuestion` entirely. Record each consolidation group as a skipped operation (type: "consolidation" or "rename" or "rename-bug", affected paths: source directories, reason: "Destructive operation requires interactive approval"). Proceed directly to Step 4f.
+
+**If `.claude/auto-mode` does NOT exist:** Use `AskUserQuestion` for each group:
    - Option 1: "Consolidate into `feature-{slug}/`" (or "Rename to `feature-{slug}/`" / "Rename to `bug-{slug}/`" for solo specs)
    - Option 2: "Skip — leave as-is"
-
-**This skill is always interactive** — `.claude/auto-mode` does NOT apply. Every consolidation requires explicit user confirmation.
 
 ### Step 4e: Apply Consolidation
 
@@ -335,6 +347,10 @@ And stop here.
 
 Otherwise, proceed to approval. The approval flow has two parts:
 
+**If `.claude/auto-mode` exists:** Skip both Part A and Part B approval prompts. Auto-select all proposed steering doc sections (equivalent to selecting all). Auto-approve all non-destructive changes. Any remaining destructive operations (consolidations, renames, deletes) that were not already recorded in Step 4d should be recorded as skipped operations now. Proceed directly to Step 10.
+
+**If `.claude/auto-mode` does NOT exist:** Follow the interactive approval flow below.
+
 #### Part A: Steering doc sections (per-section approval)
 
 If there are proposed steering doc sections, present them via `AskUserQuestion` with `multiSelect: true`. Each option represents one section for one file:
@@ -376,8 +392,6 @@ options:
 
 If there are no non-steering changes, skip Part B.
 
-**This skill does not support auto-mode.** Always present findings and wait for user approval.
-
 ### Step 10: Apply Changes
 
 Follow the detailed apply procedures in [references/migration-procedures.md](references/migration-procedures.md). In summary:
@@ -387,8 +401,23 @@ Follow the detailed apply procedures in [references/migration-procedures.md](ref
 3. **Markdown files** — Insert missing sections after their predecessor heading using `Edit`. Add `---` separator matching file style. Re-read to verify.
 4. **Related Spec corrections** — Replace `**Related Spec**:` lines with resolved feature spec paths.
 5. **JSON config** — Add missing keys only; never overwrite existing values.
-6. **Persist declined sections** — Save unselected steering doc sections to `.claude/migration-exclusions.json`.
+6. **Persist declined sections** — If NOT in auto-mode, save unselected steering doc sections to `.claude/migration-exclusions.json`. In auto-mode, skip this step (nothing is declined).
 7. **Output summary** — Report changes applied, declined, skipped, and filtered sections with recommendations.
+8. **Skipped Operations (Auto-Mode)** — If running in auto-mode and any destructive operations were skipped, emit a machine-readable block after the output summary:
+
+```
+## Skipped Operations (Auto-Mode)
+
+The following destructive operations were skipped because `.claude/auto-mode` is active.
+Run `/migrating-projects` interactively to apply them.
+
+| Operation Type | Affected Paths | Reason |
+|---------------|----------------|--------|
+| consolidation | `42-add-dark-mode/` + `71-dark-mode-toggle/` → `feature-dark-mode/` | Destructive operation requires interactive approval |
+| rename | `55-add-weather-alerts/` → `feature-weather-alerts/` | Destructive operation requires interactive approval |
+```
+
+If no destructive operations were skipped, omit this section entirely.
 
 ---
 
@@ -398,10 +427,11 @@ Follow the detailed apply procedures in [references/migration-procedures.md](ref
 2. **Never create files** — Only update files that already exist (exceptions: `CHANGELOG.md`, `VERSION`, and `.claude/migration-exclusions.json` may be created if missing)
 3. **Never overwrite values** — For JSON, only add keys that are absent
 4. **Skip `feature.gherkin`** — These are generated, not templated
-5. **Always interactive** — Present findings with per-section approval for steering docs and wait for user selection before applying
-6. **Self-updating** — Read templates at runtime; never hardcode template content
-7. **Filter irrelevant sections** — Use codebase analysis (Relevance Heuristic Table) to exclude steering doc sections with no evidence of relevance; persist user declines in `.claude/migration-exclusions.json`
-8. **Conservative defaults** — When a missing section's heading does not match any keyword in the heuristic table, include it in the proposal and let the user decide
+5. **Interactive by default** — When `.claude/auto-mode` is absent, present findings with per-section approval for steering docs and wait for user selection before applying
+6. **Auto-mode aware** — When `.claude/auto-mode` exists: auto-apply all non-destructive changes (section additions, frontmatter updates, config keys, changelog fixes); skip all destructive operations (consolidations, renames, deletes) and report them in a machine-readable "Skipped Operations" block
+7. **Self-updating** — Read templates at runtime; never hardcode template content
+8. **Filter irrelevant sections** — Use codebase analysis (Relevance Heuristic Table) to exclude steering doc sections with no evidence of relevance; persist user declines in `.claude/migration-exclusions.json` (interactive mode only)
+9. **Conservative defaults** — When a missing section's heading does not match any keyword in the heuristic table, include it in the proposal and let the user decide
 
 ---
 
