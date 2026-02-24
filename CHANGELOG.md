@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.17.0] - 2026-02-23
+
+### Changed
+
+- **SDLC runner** — Implement step (Step 4) now uses a single `runClaude()` invocation instead of separate plan + code phases; `implementing-specs` handles planning internally via auto-mode
+- **SDLC runner** — Removed `resolveImplementPhaseConfig()` and `runImplementStep()` (legacy plan/code split); plan/code sub-objects in config are silently ignored
+- **SDLC runner** — Increased `createPR` default `maxTurns` from 15 to 30 in example config
+
 ## [2.16.2] - 2026-02-23
 
 ### Fixed

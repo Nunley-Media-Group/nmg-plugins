@@ -1,7 +1,7 @@
 # Design: Per-Step Model and Effort Level Configuration
 
-**Issues**: #77
-**Date**: 2026-02-22
+**Issues**: #77, #91
+**Date**: 2026-02-23
 **Status**: Draft
 **Author**: Claude (spec-writer)
 
@@ -9,13 +9,13 @@
 
 ## Overview
 
-This feature adds per-step model and effort level configuration to three layers of the nmg-sdlc system: the OpenClaw runner script, individual skill frontmatter, and the implementing-specs skill's internal orchestration.
+This feature adds per-step model and effort level configuration to three layers of the nmg-sdlc system: the OpenClaw runner script, individual skill frontmatter, and the config example template.
 
-At the **runner layer**, `sdlc-runner.mjs` gains per-step `model` and `effort` fields in the step config, resolving via a fallback chain (`step.field → config.field → default`). The `buildClaudeArgs()` function uses the resolved model for `--model` and sets `CLAUDE_CODE_EFFORT_LEVEL` in the subprocess environment. The implement step is always split into two sequential subprocesses (plan + code) with independent model/effort config.
+At the **runner layer**, `sdlc-runner.mjs` gains per-step `model` and `effort` fields in the step config, resolving via a fallback chain (`step.field → config.field → default`). The `buildClaudeArgs()` function uses the resolved model for `--model` and sets `CLAUDE_CODE_EFFORT_LEVEL` in the subprocess environment. The implement step uses a single `runClaude()` invocation — the same as every other step — with the skill's auto-mode handling planning internally.
 
-At the **skill layer**, all SKILL.md files gain a `model` frontmatter field so Claude Code enforces the recommended model during manual invocation. The implementing-specs skill is restructured to run the plan phase directly (with `model: opus` from frontmatter) and delegate the code phase to a new `spec-implementer` subagent (with `model: sonnet`).
+At the **skill layer**, all SKILL.md files gain a `model` frontmatter field so Claude Code enforces the recommended model during manual invocation. The implementing-specs skill's existing auto-mode support (skips `EnterPlanMode`, designs internally, then executes) is relied upon — no changes to the skill itself.
 
-At the **documentation layer**, `sdlc-config.example.json` is updated with recommended per-step defaults, and the README gains a model/effort recommendations table.
+At the **documentation layer**, `sdlc-config.example.json` is updated with recommended per-step defaults (flat config for implement, no nested plan/code), and the README gains a model/effort recommendations table.
 
 ---
 
@@ -29,25 +29,27 @@ Manual User Path:
 │  /implementing-specs #N                                 │
 │  SKILL.md frontmatter: model: opus                      │
 │                                                         │
-│  ┌──────────────────────┐    ┌────────────────────────┐ │
-│  │  Plan Phase (Opus)   │───▶│  Code Phase (Sonnet)   │ │
-│  │  Steps 1-4 of skill  │    │  spec-implementer agent│ │
-│  │  Runs in main convo  │    │  Via Task tool          │ │
-│  └──────────────────────┘    └────────────────────────┘ │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │  Single session (Opus)                            │   │
+│  │  Steps 1-4 of skill (plan + execute internally)   │   │
+│  │  Auto-mode: skips EnterPlanMode, designs then     │   │
+│  │  executes directly in same session                │   │
+│  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 
 Runner Path (OpenClaw):
 ┌─────────────────────────────────────────────────────────┐
 │  sdlc-runner.mjs → implement step                       │
 │                                                         │
-│  ┌──────────────────────┐    ┌────────────────────────┐ │
-│  │  claude -p (plan)    │───▶│  claude -p (code)      │ │
-│  │  --model opus        │    │  --model sonnet         │ │
-│  │  EFFORT_LEVEL=high   │    │  EFFORT_LEVEL=high      │ │
-│  └──────────────────────┘    └────────────────────────┘ │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │  claude -p (single invocation)                    │   │
+│  │  --model opus                                     │   │
+│  │  EFFORT_LEVEL=medium                              │   │
+│  │  Skill's auto-mode handles plan + execute         │   │
+│  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 
-All Other Steps:
+All Steps (including implement):
 ┌─────────────────────────────────────────────────────────┐
 │  sdlc-runner.mjs → buildClaudeArgs()                    │
 │                                                         │
@@ -64,10 +66,11 @@ All Other Steps:
 ```
 1. Runner loads sdlc-config.json
 2. validateConfig() checks global + per-step model/effort values (fail fast)
+   - Legacy plan/code sub-objects under implement are ignored (not validated)
 3. For each step, resolveStepConfig() produces { model, effort } via fallback chain
 4. buildClaudeArgs() uses resolved model for --model flag
 5. runClaude() sets CLAUDE_CODE_EFFORT_LEVEL in subprocess env (if effort resolved)
-6. For implement step: runImplementStep() calls runClaude() twice (plan, then code)
+6. All steps (including implement) use the standard runStep() → runClaude() path
 7. Post-step validation gates run as before
 ```
 
@@ -91,18 +94,20 @@ All Other Steps:
 | `model` | `string` | (falls back to global) | Model override for this step |
 | `effort` | `string` | (falls back to global) | Effort override for this step |
 
-**Implement step** — two new optional sub-step objects:
+**Implement step** — flat config (no nested sub-objects):
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `plan` | `object` | `{}` | Config overrides for the plan phase (`model`, `effort`, `maxTurns`, `timeoutMin`) |
-| `code` | `object` | `{}` | Config overrides for the code phase (`model`, `effort`, `maxTurns`, `timeoutMin`) |
+| `model` | `string` | `"opus"` | Model for the single invocation |
+| `effort` | `string` | `"medium"` | Effort for the single invocation |
+
+> **Legacy `plan`/`code` sub-objects**: If present in an existing config, they are silently ignored. `validateConfig()` no longer validates them, and `resolveImplementPhaseConfig()` is removed.
 
 **Config example (abbreviated):**
 
 ```json
 {
-  "model": "sonnet",
+  "model": "opus",
   "effort": "high",
   "steps": {
     "writeSpecs": {
@@ -113,47 +118,28 @@ All Other Steps:
       "skill": "writing-specs"
     },
     "implement": {
-      "skill": "implementing-specs",
-      "plan": {
-        "model": "opus",
-        "effort": "high",
-        "maxTurns": 50,
-        "timeoutMin": 15
-      },
-      "code": {
-        "model": "sonnet",
-        "effort": "high",
-        "maxTurns": 100,
-        "timeoutMin": 30
-      }
+      "model": "opus",
+      "effort": "medium",
+      "maxTurns": 100,
+      "timeoutMin": 30,
+      "skill": "implementing-specs"
+    },
+    "createPR": {
+      "maxTurns": 30,
+      "timeoutMin": 5,
+      "skill": "creating-prs",
+      "model": "sonnet"
     }
   }
 }
 ```
 
-**Fallback chain for implement sub-steps:**
+**Fallback chain (all steps, including implement):**
 
 ```
-implement.plan.model → implement.model → config.model → 'opus'
-implement.plan.effort → implement.effort → config.effort → (unset)
-implement.code.model → implement.model → config.model → 'opus'
-implement.code.effort → implement.effort → config.effort → (unset)
+step.model → config.model → 'opus'
+step.effort → config.effort → (unset)
 ```
-
-### New Agent Definition
-
-**File**: `plugins/nmg-sdlc/agents/spec-implementer.md`
-
-```yaml
----
-name: spec-implementer
-description: "Executes implementation tasks from specs sequentially. Delegates coding work from implementing-specs after planning is complete."
-tools: Read, Glob, Grep, Write, Edit, Bash, WebFetch, WebSearch
-model: sonnet
----
-```
-
-This agent receives the implementation plan and task list, then executes tasks sequentially using the same rules as the current implementing-specs Step 5 (Execute Tasks). It runs on Sonnet for cost-efficient code generation.
 
 ### Skill Frontmatter Changes
 
@@ -164,7 +150,7 @@ All SKILL.md files gain a `model` field:
 | `creating-issues` | `sonnet` | Structured interview, moderate reasoning |
 | `creating-prs` | `sonnet` | Template-driven PR creation |
 | `generating-openclaw-config` | `sonnet` | Mechanical config generation |
-| `implementing-specs` | `opus` | Plan phase needs deep reasoning (code phase delegates to spec-implementer agent on sonnet) |
+| `implementing-specs` | `opus` | Planning + execution needs deep reasoning |
 | `installing-openclaw-skill` | `sonnet` | Mechanical file operations |
 | `migrating-projects` | `opus` | Complex project analysis |
 | `running-retrospectives` | `opus` | Pattern analysis across defects |
@@ -175,148 +161,34 @@ All SKILL.md files gain a `model` field:
 
 ---
 
-## Database / Storage Changes
-
-### Schema Changes
-
-| Table / Collection | Column / Field | Type | Nullable | Default | Change |
-|--------------------|----------------|------|----------|---------|--------|
-| [name] | [name] | [type] | Yes/No | [value] | Add/Modify/Remove |
-
-### Migration Plan
-
-```
--- Describe the migration approach
--- Reference tech.md for migration conventions
-```
-
-### Data Migration
-
-[If existing data needs transformation, describe the approach]
-
----
-
-## State Management
-
-Reference `structure.md` and `tech.md` for the project's state management patterns.
-
-### New State Shape
-
-```
-// Pseudocode — use project's actual language/framework
-FeatureState {
-  isLoading: boolean
-  items: List<Item>
-  error: string | null
-  selected: Item | null
-}
-```
-
-### State Transitions
-
-```
-Initial → Loading → Success (with data)
-                  → Error (with message)
-
-User action → Optimistic update → Confirm / Rollback
-```
-
----
-
-## UI Components
-
-### New Components
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| [name] | [path per structure.md] | [description] |
-
-### Component Hierarchy
-
-```
-FeatureScreen
-├── Header
-├── Content
-│   ├── LoadingState
-│   ├── ErrorState
-│   ├── EmptyState
-│   └── DataView
-│       ├── ListItem × N
-│       └── DetailView
-└── Actions
-```
-
----
-
 ## Affected Files
 
 ### Runner Script (`openclaw/scripts/sdlc-runner.mjs`)
 
-| Area | Change | Lines |
-|------|--------|-------|
-| Config loading | Add `EFFORT` global, read `config.effort` | ~93 |
-| Config validation | New `validateConfig()` function after config load | ~99-106 (new) |
-| Step config resolution | New `resolveStepConfig(step)` helper | New function |
-| `buildClaudeArgs()` | Use `resolveStepConfig()` for `--model`; return effort separately | ~832-833 |
-| `runClaude()` | Accept effort param, set `CLAUDE_CODE_EFFORT_LEVEL` in subprocess env | ~864-867 |
-| Implement step | New `runImplementStep()` that calls `runClaude()` twice | New function |
-| `runStep()` | Delegate step 4 to `runImplementStep()` | ~1536 |
-| `main()` | Log effort alongside model | ~1649 |
-| Test helpers | Expose new functions, add `effort` to `setConfig()` | ~1847-1857 |
-| Exports | Export `validateConfig`, `resolveStepConfig`, `runImplementStep` | ~1873 |
-
-### Implementing-Specs Skill (`plugins/nmg-sdlc/skills/implementing-specs/SKILL.md`)
-
-| Area | Change |
-|------|--------|
-| Frontmatter | Add `model: opus` |
-| Step 4 | Remains the plan phase (runs on opus via frontmatter) |
-| Step 5 | Restructure to delegate to `spec-implementer` agent via Task tool instead of executing inline |
-| Step 6 | Receives completion summary from agent, formats output |
-
-The key restructuring of Step 5:
-
-**Current**: The skill executes tasks inline in the same conversation.
-
-**New**: The skill delegates task execution to the `spec-implementer` agent:
-1. After plan approval (Step 4), the skill collects the plan, task list, and steering docs
-2. It invokes the `spec-implementer` agent via the Task tool, passing:
-   - The implementation plan
-   - The task list from `tasks.md`
-   - References to steering docs and spec files
-   - The working directory context
-3. The agent executes tasks sequentially on Sonnet
-4. The skill receives the agent's completion summary and formats the Step 6 output
-
-For auto-mode (runner path), the runner handles the split at the subprocess level instead — the skill's internal delegation is irrelevant because the runner spawns two separate `claude -p` processes.
-
-### New Agent (`plugins/nmg-sdlc/agents/spec-implementer.md`)
-
-New file. The agent encapsulates the current Step 5 (Execute Tasks) logic:
-- Read specs and steering docs
-- Execute tasks sequentially from `tasks.md`
-- Follow implementation rules (one task at a time, test after each, reference steering docs)
-- Handle bug fix implementation pattern (flat task list)
-- Handle deviations
-- Report completion summary
+| Area | Change | Lines (approx) |
+|------|--------|----------------|
+| `validateConfig()` | Remove `plan`/`code` sub-object validation loop | ~198-207 |
+| `resolveImplementPhaseConfig()` | Remove entire function | ~239-247 |
+| `buildClaudeArgs()` prompt for step 4 | Remove "Do NOT call EnterPlanMode" from prompt | ~910 |
+| `runImplementStep()` | Remove entire function | ~1640-1725 |
+| `runStep()` | Remove `if (step.number === 4)` special case — step 4 falls through to standard `runClaude()` path | ~1769-1771 |
+| Named exports | Remove `resolveImplementPhaseConfig` and `runImplementStep` from exports | ~2125, ~2137 |
 
 ### Config Template (`openclaw/scripts/sdlc-config.example.json`)
 
-Add `model` and `effort` to every step, plus `plan`/`code` sub-config for `implement`.
+| Area | Change |
+|------|--------|
+| `steps.implement` | Remove nested `plan`/`code` sub-objects; set flat `model: "opus"`, `effort: "medium"` |
+| `steps.createPR` | Increase `maxTurns` from 15 to 30 |
 
-### Migrating-Projects Awareness (`plugins/nmg-sdlc/skills/migrating-projects/SKILL.md`)
+### Test File (`openclaw/scripts/__tests__/sdlc-runner.test.mjs`)
 
-No code changes needed — the migrating-projects skill is self-updating (reads templates at runtime). When a project runs `/migrating-projects` after upgrading to this version, the following changes are automatically detected:
-
-| Migration | How It's Detected | What's Added |
-|-----------|-------------------|--------------|
-| Global `effort` key | Step 5 root-level key comparison | `"effort": "high"` |
-| Per-step `model`/`effort` | Step 5 step sub-key comparison | `"model"` and `"effort"` on each step |
-| `implement.plan`/`implement.code` | Step 5 step sub-key comparison | `"plan"` and `"code"` sub-objects with full defaults |
-
-The existing Step 5 logic ("Compare step sub-keys — For each step that exists in both, identify missing sub-keys") handles nested objects: `plan` and `code` are detected as missing sub-keys of the `implement` step and added with their template default values.
-
-**Verification note**: After implementing the `sdlc-config.example.json` changes, confirm that running `/migrating-projects` against a project with an old-format `sdlc-config.json` correctly proposes adding the new keys without overwriting existing values.
+| Area | Change |
+|------|--------|
+| `resolveImplementPhaseConfig` tests | Remove test suite (~2214-2280) |
+| `runImplementStep` tests | Remove test suite (~2422-2560) |
+| `validateConfig` tests | Update to verify `plan`/`code` sub-objects are ignored (no errors raised) |
+| `runStep` tests | Update or add test verifying step 4 goes through standard `runClaude()` path |
 
 ### Documentation (`README.md`)
 
@@ -331,25 +203,23 @@ Add a "Model & Effort Recommendations" section with:
 
 | Option | Description | Pros | Cons | Decision |
 |--------|-------------|------|------|----------|
-| **A: Inline model switch via `/model` command** | Have the skill call `/model sonnet` mid-session before coding | Simple, no new agent needed | Not programmatically accessible; changes entire session permanently; no way to scope | Rejected — not automatable |
-| **B: `claude -p` subprocess from within skill** | Skill spawns a `claude -p` subprocess for the code phase | Full control over model/effort | Hides output from user; breaks transparency; duplicates runner logic | Rejected — user requested transparency |
-| **C: Custom subagent via Task tool** | Skill delegates code phase to a subagent with `model: sonnet` | Transparent (labeled output block); uses existing Claude Code infrastructure; clean separation | Slight UX difference (subagent output block); agent needs comprehensive instructions | **Selected** |
-| **D: Two separate skills** | Split implementing-specs into `/planning-specs` and `/coding-specs` | Each skill has its own model | Breaks single-command UX; doubles invocation steps for users | Rejected — user wants single invocation |
+| **A: Keep plan/code split, just change defaults** | Keep the two-subprocess architecture but change default models | Minimal code change | Unnecessary complexity; every other step uses single invocation; skill already handles plan internally | Rejected — unnecessary overhead |
+| **B: Single invocation, skill handles internally** | Remove runner split; rely on skill's auto-mode to plan then execute in one session | Consistent with all other steps; simpler runner code; fewer functions to maintain | Single model for both planning and coding (opus for both) | **Selected** — consistency and simplicity win; implementing-specs already has auto-mode support |
+| **C: Deprecation warning before removal** | Emit a warning when `plan`/`code` keys are detected, remove in next major version | Gradual migration path | Over-engineering for an internal tool with few users; adds code that will be immediately removed | Rejected — silent ignore is sufficient for an internal tool |
 
 ---
 
 ## Security Considerations
 
 - [x] **No secrets**: No new secrets or credentials introduced. Config files contain model names and effort levels only.
-- [x] **Input validation**: `validateConfig()` rejects invalid effort values at startup before spawning any subprocesses.
-- [x] **Agent permissions**: The `spec-implementer` agent's `tools` field grants only what's needed for implementation (Read, Glob, Grep, Write, Edit, Bash, WebFetch, WebSearch). No `Task` tool (agents cannot spawn subagents).
+- [x] **Input validation**: `validateConfig()` rejects invalid effort values at startup before spawning any subprocesses. Legacy `plan`/`code` sub-objects are silently ignored (no validation, no injection risk).
 
 ---
 
 ## Performance Considerations
 
 - [x] **Config resolution**: O(1) string lookups per step — negligible overhead.
-- [x] **Implement split**: Two subprocesses instead of one. Net cost is similar — the same work is done, just on a cheaper model for the code phase. This is the primary cost optimization.
+- [x] **Implement step**: Single subprocess instead of two. The skill handles both planning and execution in one session, reducing subprocess spawn overhead.
 - [x] **Skill frontmatter**: Parsed once at skill load time — no runtime overhead.
 
 ---
@@ -358,14 +228,14 @@ Add a "Model & Effort Recommendations" section with:
 
 | Layer | Type | Coverage |
 |-------|------|----------|
-| Config validation | Unit (Jest) | `validateConfig()` accepts valid values, rejects invalid effort/model |
+| Config validation | Unit (Jest) | `validateConfig()` accepts valid values, rejects invalid effort/model, ignores legacy plan/code |
 | Config resolution | Unit (Jest) | `resolveStepConfig()` fallback chain: step → global → default |
-| `buildClaudeArgs()` | Unit (Jest) | Per-step model appears in args; effort in env |
-| `runImplementStep()` | Unit (Jest) | Two `runClaude()` calls with correct config; plan failure stops code phase |
-| Backward compatibility | Unit (Jest) | Config without per-step fields produces same args as before |
+| `buildClaudeArgs()` | Unit (Jest) | Per-step model appears in args; step 4 prompt omits EnterPlanMode warning |
+| `runStep()` for step 4 | Unit (Jest) | Step 4 uses standard `runClaude()` path (no special case) |
+| Backward compatibility | Unit (Jest) | Config without per-step fields produces same args as before; config with legacy plan/code keys doesn't error |
 | Skill frontmatter | Exercise test | Load plugin, verify model field parsed |
-| Implement split (skill) | Exercise test | Run `/implementing-specs` against test project, verify plan runs on opus then code delegates to spec-implementer agent |
-| BDD scenarios | Gherkin feature file | All 9 ACs from requirements |
+| Config example | Structural | `createPR.maxTurns` is 30; implement is flat with `model: "opus"`, `effort: "medium"` |
+| BDD scenarios | Gherkin feature file | All ACs from requirements (AC1-AC2, AC4-AC14; AC3 superseded) |
 
 ---
 
@@ -373,18 +243,16 @@ Add a "Model & Effort Recommendations" section with:
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
-| `spec-implementer` agent receives insufficient context for complex implementations | Medium | Medium | Agent prompt includes explicit instructions to read specs/steering docs; Task tool prompt provides full context |
-| Implement split doubles the number of subprocess invocations for the runner | Low | Low | Same total work; plan phase is short; code phase runs on cheaper model |
+| Existing configs with `plan`/`code` keys break on upgrade | Low | Medium | Silent ignore — `validateConfig()` skips unknown sub-objects; `resolveStepConfig()` only reads `step.model` and `step.effort` |
+| Single invocation for implement runs out of turns | Low | Medium | `maxTurns: 100` in example config is generous; implementing-specs skill is designed for single-session execution |
 | Skill frontmatter `model` field silently ignored on older Claude Code versions | Low | Low | Document minimum Claude Code version; frontmatter is additive — no breakage if ignored |
-| Config validation rejects valid model names added in future Claude Code releases | Low | Medium | Model validation only checks for non-empty string, not an allowlist — future model names work automatically |
+| Removing exported functions breaks downstream consumers | Low | High | Only the test file imports these functions; update tests in the same PR |
 
 ---
 
 ## Open Questions
 
-- [ ] [Technical question]
-- [ ] [Architecture question]
-- [ ] [Integration question]
+None — all design decisions are straightforward simplifications.
 
 ---
 
@@ -393,6 +261,7 @@ Add a "Model & Effort Recommendations" section with:
 | Issue | Date | Summary |
 |-------|------|---------|
 | #77 | 2026-02-22 | Initial feature spec |
+| #91 | 2026-02-23 | Replace plan/code split with single invocation; simplify architecture diagram, data flow, config schema; remove runImplementStep/resolveImplementPhaseConfig; add createPR maxTurns increase |
 
 ---
 
@@ -406,7 +275,7 @@ Before moving to TASKS phase:
 - [x] State management unchanged (config is stateless resolution)
 - [x] No UI components needed (CLI-only)
 - [x] Security considerations addressed
-- [x] Performance impact analyzed (net positive — cost optimization)
+- [x] Performance impact analyzed (net positive — fewer subprocesses)
 - [x] Testing strategy defined
 - [x] Alternatives were considered and documented
 - [x] Risks identified with mitigations

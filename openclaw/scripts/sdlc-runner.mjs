@@ -195,16 +195,6 @@ function validateConfig(config) {
       if (step.effort !== undefined && !VALID_EFFORTS.includes(step.effort)) {
         errors.push(`steps.${key}.effort "${step.effort}" — must be one of: ${VALID_EFFORTS.join(', ')}`);
       }
-      for (const phase of ['plan', 'code']) {
-        if (step[phase]) {
-          if (step[phase].model !== undefined && (typeof step[phase].model !== 'string' || step[phase].model.trim() === '')) {
-            errors.push(`steps.${key}.${phase}.model must be a non-empty string`);
-          }
-          if (step[phase].effort !== undefined && !VALID_EFFORTS.includes(step[phase].effort)) {
-            errors.push(`steps.${key}.${phase}.effort "${step[phase].effort}" — must be one of: ${VALID_EFFORTS.join(', ')}`);
-          }
-        }
-      }
     }
   }
 
@@ -230,21 +220,6 @@ function resolveStepConfig(step, config) {
   };
 }
 
-/**
- * Resolve model, effort, maxTurns, and timeoutMin for an implement phase
- * using the fallback chain:
- *   step[phase].field → step.field → config.field → default
- * Phase must be 'plan' or 'code'.
- */
-function resolveImplementPhaseConfig(step, config, phase) {
-  const phaseConfig = step[phase] || {};
-  return {
-    model: phaseConfig.model || step.model || config.model || 'opus',
-    effort: phaseConfig.effort || step.effort || config.effort || undefined,
-    maxTurns: phaseConfig.maxTurns || step.maxTurns || 20,
-    timeoutMin: phaseConfig.timeoutMin || step.timeoutMin || 10,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // State management
@@ -907,7 +882,7 @@ function buildClaudeArgs(step, state, overrides = {}) {
 
     3: `Write BDD specifications for issue #${issue} on branch ${branch}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
-    4: `Implement the specifications for issue #${issue} on branch ${branch}. Do NOT call EnterPlanMode — this is a headless session with no user to approve plans. Design your approach internally, then implement directly. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
+    4: `Implement the specifications for issue #${issue} on branch ${branch}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
     5: `Verify the implementation for issue #${issue} on branch ${branch}. Fix any findings. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
@@ -1633,96 +1608,6 @@ async function handleSignal(signal) {
 process.on('SIGTERM', () => handleSignal('SIGTERM'));
 process.on('SIGINT', () => handleSignal('SIGINT'));
 
-// ---------------------------------------------------------------------------
-// Implement step: plan + code phases
-// ---------------------------------------------------------------------------
-
-async function runImplementStep(step, state) {
-  const configObj = getConfigObject();
-  const issue = state.currentIssue || '<unknown>';
-  const branch = state.currentBranch || '<unknown>';
-  const skillRoot = step.skill
-    ? path.join(PLUGINS_PATH, 'plugins', 'nmg-sdlc', 'skills', step.skill)
-    : null;
-
-  // --- Plan phase ---
-  const planConfig = resolveImplementPhaseConfig(step, configObj, 'plan');
-
-  log('=== Step 4 (implement): Plan phase ===');
-  await postDiscord(`Step 4 plan phase: designing implementation for issue #${issue}...`);
-
-  const planPrompt = [
-    `You are in the PLAN PHASE for issue #${issue} on branch ${branch}.`,
-    'Read the specifications in .claude/specs/ for this issue.',
-    'Read the steering documents in .claude/steering/.',
-    'Design the implementation approach: map tasks to files, identify code to reuse, determine implementation order.',
-    'Save your implementation plan as a summary in your output.',
-    'Do NOT write any implementation code — only produce the plan.',
-    'Do NOT call EnterPlanMode — this is a headless session with no user to approve plans.',
-    skillRoot ? `Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.` : '',
-  ].filter(Boolean).join(' ');
-
-  const planStepObj = {
-    ...step,
-    maxTurns: planConfig.maxTurns,
-    timeoutMin: planConfig.timeoutMin,
-  };
-
-  const planResult = await runClaude(planStepObj, state, {
-    model: planConfig.model,
-    effort: planConfig.effort,
-    prompt: planPrompt,
-    liveLogLabel: 'implement-plan',
-  });
-
-  log(`Plan phase exited with code ${planResult.exitCode} in ${planResult.duration}s`);
-  writeStepLog('implement-plan', planResult);
-  cleanupProcesses();
-
-  if (planResult.exitCode !== 0) {
-    return { result: planResult, phase: 'plan' };
-  }
-
-  const planSoftFailure = detectSoftFailure(planResult.stdout);
-  if (planSoftFailure.isSoftFailure) {
-    log(`Plan phase soft failure: ${planSoftFailure.reason}`);
-    return { result: planResult, phase: 'plan' };
-  }
-
-  // --- Code phase ---
-  const codeConfig = resolveImplementPhaseConfig(step, configObj, 'code');
-
-  log('=== Step 4 (implement): Code phase ===');
-  await postDiscord(`Step 4 code phase: executing implementation for issue #${issue}...`);
-
-  const codePrompt = [
-    `You are in the CODE PHASE for issue #${issue} on branch ${branch}.`,
-    'Read the specifications and tasks in .claude/specs/ for this issue.',
-    'Read the steering documents in .claude/steering/.',
-    'Execute the implementation tasks from tasks.md sequentially.',
-    'Do NOT call EnterPlanMode — this is a headless session with no user to approve plans.',
-    skillRoot ? `Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.` : '',
-  ].filter(Boolean).join(' ');
-
-  const codeStepObj = {
-    ...step,
-    maxTurns: codeConfig.maxTurns,
-    timeoutMin: codeConfig.timeoutMin,
-  };
-
-  const codeResult = await runClaude(codeStepObj, state, {
-    model: codeConfig.model,
-    effort: codeConfig.effort,
-    prompt: codePrompt,
-    liveLogLabel: 'implement-code',
-  });
-
-  log(`Code phase exited with code ${codeResult.exitCode} in ${codeResult.duration}s`);
-  writeStepLog('implement-code', codeResult);
-  cleanupProcesses();
-
-  return { result: codeResult, phase: 'code' };
-}
 
 // ---------------------------------------------------------------------------
 // Main loop
@@ -1766,15 +1651,10 @@ async function runStep(step, state) {
 
   // Run claude
   let result;
-  if (step.number === 4) {
-    const implResult = await runImplementStep(step, state);
-    result = implResult.result;
-  } else {
-    result = await runClaude(step, state);
-    log(`Step ${step.number} exited with code ${result.exitCode} in ${result.duration}s`);
-    writeStepLog(step.key, result);
-    cleanupProcesses();
-  }
+  result = await runClaude(step, state);
+  log(`Step ${step.number} exited with code ${result.exitCode} in ${result.duration}s`);
+  writeStepLog(step.key, result);
+  cleanupProcesses();
 
   if (result.exitCode === 0) {
     // Check for soft failures (exit code 0 but step did not succeed)
@@ -2122,7 +2002,7 @@ export {
   validateConfig,
   getConfigObject,
   resolveStepConfig,
-  resolveImplementPhaseConfig,
+
   validateSpecs,
   validateCI,
   validatePush,
@@ -2134,7 +2014,7 @@ export {
   handleFailure,
   escalate,
   haltFailureLoop,
-  runImplementStep,
+
   runStep,
   postDiscord,
   log,
