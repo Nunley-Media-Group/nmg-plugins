@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.17.3] - 2026-02-24
+
+### Fixed
+
+- **`/implementing-specs`** — Missing specs error path now checks for `.claude/auto-mode`; in auto-mode, outputs an escalation message ending with "Done. Awaiting orchestrator." instead of calling `AskUserQuestion`, preventing headless sessions from hanging
+
 ## [2.17.2] - 2026-02-24
 
 ### Fixed
