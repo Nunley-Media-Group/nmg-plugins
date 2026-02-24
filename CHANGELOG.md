@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.17.2] - 2026-02-24
+
+### Fixed
+
+- **`/starting-issues`** — Skill now runs `git status --porcelain` as a precondition before `gh issue develop`; aborts with a diagnostic error listing dirty files in interactive mode; in auto-mode, reports as an escalation reason for the runner
+
 ## [2.17.1] - 2026-02-24
 
 ### Fixed
