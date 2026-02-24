@@ -31,8 +31,13 @@ Create a pull request with a spec-driven summary that links to the GitHub issue 
 Gather all information needed for the PR:
 
 1. **Read the issue**: `gh issue view #N` for title, description, acceptance criteria
-2. **Read the spec**: `.claude/specs/{feature-name}/requirements.md` for acceptance criteria
-3. **Read tasks**: `.claude/specs/{feature-name}/tasks.md` for testing phase
+2. **Check for spec files**: Use `Glob` with pattern `.claude/specs/*/requirements.md` to check whether spec files exist for this feature. Match results against the current issue number or branch name (same logic as the Prerequisites fallback guidance). If a match is found, set a **specs-found** flag. If no match is found, set a **specs-not-found** flag.
+3. **Read spec files (specs-found only)**:
+   - `.claude/specs/{feature-name}/requirements.md` for acceptance criteria
+   - `.claude/specs/{feature-name}/tasks.md` for testing phase
+
+   > **Skip this sub-step if specs-not-found.** Acceptance criteria will be extracted from the issue body already fetched in step 1.
+
 4. **Read git state**:
    - `git status` — any uncommitted changes?
    - `git log main..HEAD --oneline` — commits on this branch
@@ -93,7 +98,9 @@ If Step 2 determined a version bump, update all version-related files before gen
 - Format: `feat: [description] (#N)` or `fix: [description] (#N)`
 - Use conventional commit prefixes: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`
 
-**Body**: Use this structure:
+**Body**: Choose the template based on the flag set in Step 1.
+
+**If specs-found (Template A — current behavior, unchanged)**:
 
 ```markdown
 ## Summary
@@ -129,6 +136,34 @@ From `.claude/specs/{feature}/tasks.md` testing phase:
 Closes #N
 ```
 
+**If specs-not-found (Template B — fallback to issue body)**:
+
+```markdown
+## Summary
+
+[2-3 bullet points: what changed and why]
+
+> **No spec files found — acceptance criteria extracted from issue body**
+
+## Acceptance Criteria
+
+From issue body:
+
+- [ ] AC1: [criterion from issue body]
+- [ ] AC2: [criterion from issue body]
+
+## Test Plan
+
+- [ ] [Test type]: [what was tested]
+
+## Version
+
+<!-- Include this section only if Step 2/3 performed a version bump -->
+**{bump_type}** bump: {old_version} → {new_version}
+
+Closes #N
+```
+
 ### Step 5: Push and Create PR
 
 1. **Ensure branch is pushed**: Check if remote tracking branch exists
@@ -149,7 +184,8 @@ Title: [title]
 Base: main ← [branch-name]
 Issue: Closes #N
 
-The PR links to specs at .claude/specs/{feature}/ and will close issue #N when merged.
+[If specs-found]: The PR links to specs at .claude/specs/{feature}/ and will close issue #N when merged.
+[If specs-not-found]: The PR extracts acceptance criteria from the issue body and will close issue #N when merged.
 
 [If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
 ```
@@ -160,8 +196,8 @@ The PR links to specs at .claude/specs/{feature}/ and will close issue #N when m
 
 - **Title**: Under 70 chars, uses conventional commit prefix, references issue
 - **Summary**: Focus on *what* and *why*, not implementation details
-- **Acceptance criteria**: Copied from requirements.md as a checklist
-- **Test plan**: From the testing phase of tasks.md
+- **Acceptance criteria**: Copied from requirements.md as a checklist (specs-found), or extracted from the issue body (specs-not-found)
+- **Test plan**: From the testing phase of tasks.md (specs-found), or manually composed from the issue (specs-not-found)
 - **Closes**: Always include `Closes #N` to auto-close the issue on merge
 
 ---

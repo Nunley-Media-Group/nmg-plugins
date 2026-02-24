@@ -1,0 +1,45 @@
+# File: .claude/specs/bug-handle-missing-spec-files-in-creating-prs/feature.gherkin
+#
+# Generated from: .claude/specs/bug-handle-missing-spec-files-in-creating-prs/requirements.md
+# Issue: #82
+# Type: Defect regression
+
+@regression
+Feature: Handle missing spec files gracefully in /creating-prs
+  The /creating-prs skill previously failed when spec files did not exist
+  because it unconditionally attempted to read requirements.md, design.md,
+  and tasks.md from .claude/specs/{feature}/. This was fixed by adding a
+  spec existence check with fallback to the GitHub issue body.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Fallback to issue body when specs are missing
+    Given the spec directory ".claude/specs/{feature}/" does not exist
+    When "/creating-prs" is invoked for the current issue
+    Then the skill extracts acceptance criteria from the GitHub issue body
+    And the PR is created successfully without errors
+
+  @regression
+  Scenario: PR body adapted for missing specs
+    Given specs do not exist and the skill falls back to the issue body
+    When the PR is created
+    Then the PR body omits the "Specs" section
+    And the "Acceptance Criteria" section is labeled "From issue body"
+
+  @regression
+  Scenario: Warning included in PR body when specs are missing
+    Given specs do not exist for the current feature
+    When the PR is created
+    Then the PR body includes the warning "No spec files found — acceptance criteria extracted from issue body"
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Existing behavior preserved when specs exist
+    Given the spec directory ".claude/specs/{feature}/" exists with valid spec files
+    And the spec files include "requirements.md", "design.md", and "tasks.md"
+    When "/creating-prs" is invoked for the current issue
+    Then the skill reads acceptance criteria from "requirements.md"
+    And the PR body includes the "Specs" section with links to spec files
+    And the "Acceptance Criteria" section is labeled "From .claude/specs/{feature}/requirements.md"
