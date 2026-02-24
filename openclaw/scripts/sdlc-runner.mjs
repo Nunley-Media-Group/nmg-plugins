@@ -1056,7 +1056,7 @@ function matchErrorPattern(output) {
 
 // Tools that are benign when denied — the model attempted them but recovered.
 // These should NOT trigger soft failure escalation.
-const BENIGN_DENIED_TOOLS = new Set(['EnterPlanMode', 'AskUserQuestion']);
+const BENIGN_DENIED_TOOLS = new Set(['EnterPlanMode', 'ExitPlanMode', 'AskUserQuestion']);
 
 function detectSoftFailure(stdout) {
   const parsed = extractResultFromStream(stdout);
