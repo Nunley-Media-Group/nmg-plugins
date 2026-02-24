@@ -1,0 +1,87 @@
+# File: .claude/specs/bug-spec-directory-rename-migrating-projects/feature.gherkin
+#
+# Generated from: .claude/specs/bug-spec-directory-rename-migrating-projects/requirements.md
+# Issue: #83
+# Type: Defect regression
+
+@regression
+Feature: Spec directory rename in /migrating-projects
+  The /migrating-projects skill previously failed to rename legacy
+  {issue#}-{slug}/ spec directories to feature-{slug}/ or bug-{slug}/.
+  This was fixed by adding explicit git mv instructions, expanding
+  cross-reference update logic, and reclassifying solo renames as
+  non-destructive in auto-mode.
+
+  # --- Bug Is Fixed: Legacy Directory Detection ---
+
+  @regression
+  Scenario: Detect legacy spec directory names and classify by type
+    Given spec directories exist with legacy naming:
+      | directory         | first_heading     |
+      | 42-add-dark-mode  | # Requirements:   |
+      | 15-fix-login      | # Defect Report:  |
+    And spec directories exist with new naming:
+      | directory              |
+      | feature-weather-alerts |
+      | bug-session-crash      |
+    When /migrating-projects is invoked
+    Then the skill detects "42-add-dark-mode" as a legacy directory
+    And the skill detects "15-fix-login" as a legacy directory
+    And the skill classifies "42-add-dark-mode" as a feature rename candidate (prefix: feature-)
+    And the skill classifies "15-fix-login" as a bug rename candidate (prefix: bug-)
+    And the skill does not flag "feature-weather-alerts" or "bug-session-crash" as legacy
+
+  # --- Bug Is Fixed: Interactive Rename ---
+
+  @regression
+  Scenario: Interactive rename with user confirmation
+    Given a legacy spec directory "42-add-dark-mode/" exists with "# Requirements:" heading
+    And .claude/auto-mode does NOT exist
+    When /migrating-projects detects the legacy directory
+    Then the skill presents an AskUserQuestion with option "Rename to feature-add-dark-mode/"
+    When the user approves the rename
+    Then git mv is used to rename ".claude/specs/42-add-dark-mode/" to ".claude/specs/feature-add-dark-mode/"
+    And the frontmatter "**Issue**: #42" is updated to "**Issues**: #42" in requirements.md, design.md, and tasks.md
+
+  # --- Bug Is Fixed: Auto-Mode Solo Renames ---
+
+  @regression
+  Scenario: Auto-mode applies solo renames automatically
+    Given a legacy spec directory "42-add-dark-mode/" exists with "# Requirements:" heading
+    And .claude/auto-mode exists
+    When /migrating-projects is invoked
+    Then the solo rename is applied automatically without AskUserQuestion
+    And git mv renames ".claude/specs/42-add-dark-mode/" to ".claude/specs/feature-add-dark-mode/"
+    And the rename does NOT appear in the "Skipped Operations (Auto-Mode)" output
+
+  # --- Related Behavior Still Works: Consolidation Remains Destructive ---
+
+  @regression
+  Scenario: Multi-spec consolidation is still skipped in auto-mode
+    Given legacy spec directories "42-add-dark-mode/" and "71-dark-mode-toggle/" exist
+    And both have "# Requirements:" headings with >50% keyword overlap
+    And .claude/auto-mode exists
+    When /migrating-projects is invoked
+    Then the consolidation is recorded as a skipped operation
+    And the "Skipped Operations (Auto-Mode)" output includes the consolidation group
+    And neither legacy directory is modified
+
+  # --- Bug Is Fixed: Cross-Reference Updates ---
+
+  @regression
+  Scenario: Cross-references updated after rename
+    Given a legacy spec directory "42-add-dark-mode/" has been renamed to "feature-add-dark-mode/"
+    And a defect spec "bug-theme-crash/" has Related Spec pointing to ".claude/specs/42-add-dark-mode/"
+    When the rename operation completes
+    Then Grep discovers the stale Related Spec reference in "bug-theme-crash/requirements.md"
+    And Edit updates the reference to ".claude/specs/feature-add-dark-mode/"
+
+  @regression
+  Scenario: Chain resolution for indirect cross-references
+    Given a legacy spec directory "42-add-dark-mode/" has been renamed to "feature-add-dark-mode/"
+    And defect spec "bug-theme-crash/" has Related Spec pointing to ".claude/specs/42-add-dark-mode/"
+    And defect spec "bug-contrast-issue/" has Related Spec pointing to ".claude/specs/bug-theme-crash/"
+    When cross-reference resolution runs
+    Then "bug-theme-crash/" Related Spec is updated to ".claude/specs/feature-add-dark-mode/"
+    And chain resolution follows "bug-contrast-issue/" through "bug-theme-crash/" to the feature spec
+    And a visited set prevents circular traversal

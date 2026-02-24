@@ -22,12 +22,12 @@ Update existing project files (steering docs, specs, OpenClaw configs) to the la
 
 If the file `.claude/auto-mode` exists in the project directory, this skill applies **non-destructive changes automatically** and **skips destructive operations** (which require interactive approval). Do NOT call `AskUserQuestion` in auto-mode.
 
-**Non-destructive (auto-applied in auto-mode):** Steering doc section additions, spec file section additions, Related Spec link corrections, legacy frontmatter migration (`Issue` → `Issues`, Change History additions), OpenClaw config key additions, CHANGELOG.md fixes, VERSION file creation/update.
+**Non-destructive (auto-applied in auto-mode):** Steering doc section additions, spec file section additions, Related Spec link corrections, legacy frontmatter migration (`Issue` → `Issues`, Change History additions), OpenClaw config key additions, CHANGELOG.md fixes, VERSION file creation/update, legacy directory renames — solo (Steps 4d–4e).
 
-**Destructive (skipped in auto-mode):** Spec directory consolidation, legacy directory renames, legacy directory deletes (Steps 4b–4e). For each skipped operation, record it in a "Skipped Operations" list to output at Step 10.
+**Destructive (skipped in auto-mode):** Spec directory consolidation, legacy directory deletes (Steps 4b–4e). For each skipped operation, record it in a "Skipped Operations" list to output at Step 10.
 
 **In auto-mode:**
-- Step 4d: Skip `AskUserQuestion` entirely; record each consolidation group as a skipped operation and proceed to Step 4f
+- Step 4d: For solo renames (`feature-` or `bug-` targets), auto-apply `git mv`, frontmatter updates, and cross-reference updates without `AskUserQuestion`. For consolidation groups, skip `AskUserQuestion` and record each group as a skipped operation. Proceed to Step 4f
 - Step 9 Part A: Auto-select all proposed steering doc sections (equivalent to selecting all)
 - Step 9 Part B: Auto-approve all non-destructive changes; skip any destructive operations (record them as skipped)
 - Step 10: After applying changes, emit a machine-readable "Skipped Operations (Auto-Mode)" section
@@ -184,7 +184,10 @@ For each group (and solo migration candidates):
 1. Show the source directories and proposed target name
 2. Show a brief summary of each source spec's content (first heading, issue number, status)
 
-**If `.claude/auto-mode` exists:** Skip `AskUserQuestion` entirely. Record each consolidation group as a skipped operation (type: "consolidation" or "rename" or "rename-bug", affected paths: source directories, reason: "Destructive operation requires interactive approval"). Proceed directly to Step 4f.
+**If `.claude/auto-mode` exists:** Handle solo renames and consolidation groups differently:
+   - **Solo renames** (type: `"rename"` or `"rename-bug"` — single directory → `feature-{slug}/` or `bug-{slug}/`): These are non-destructive. Execute the rename automatically — proceed to Step 4e to apply `git mv`, frontmatter updates, and cross-reference updates without `AskUserQuestion`. Do NOT record solo renames as skipped operations.
+   - **Consolidation groups** (type: `"consolidation"` — multiple directories merged into one): These are destructive. Skip `AskUserQuestion` and record each group as a skipped operation (affected paths: source directories, reason: "Destructive operation requires interactive approval").
+   After processing all groups, proceed to Step 4f.
 
 **If `.claude/auto-mode` does NOT exist:** Use `AskUserQuestion` for each group:
    - Option 1: "Consolidate into `feature-{slug}/`" (or "Rename to `feature-{slug}/`" / "Rename to `bug-{slug}/`" for solo specs)
@@ -205,14 +208,14 @@ For each approved group or solo rename:
 7. **Remove legacy directories** after successful merge.
 
 **Solo feature rename** (single legacy spec → `feature-{slug}`):
-1. Rename the directory from `{issue#}-{slug}/` to `feature-{slug}/`
-2. Update frontmatter: `**Issue**: #N` → `**Issues**: #N`
-3. Update defect spec cross-references that pointed to the old directory name
+1. Rename the directory using `git mv`: `git mv .claude/specs/{issue#}-{slug}/ .claude/specs/feature-{slug}/`
+2. Update frontmatter in `requirements.md`, `design.md`, and `tasks.md`: replace `**Issue**: #N` with `**Issues**: #N`
+3. Update defect spec cross-references: Run `Grep` across all `.claude/specs/*/requirements.md` files for `**Related Spec**` fields containing the old path (`.claude/specs/{issue#}-{slug}/`). For each match, verify it is a defect spec by checking for a `# Defect Report:` first heading. Use `Edit` to update the `**Related Spec**` field to point to `.claude/specs/feature-{slug}/`. Then follow chain resolution: for each updated defect spec, check whether other defect specs have `**Related Spec**` fields pointing to IT, and update those as well. Maintain a visited set to prevent circular traversal.
 
 **Solo bug rename** (single legacy bug spec → `bug-{slug}`):
-1. Rename the directory from `{issue#}-{slug}/` to `bug-{slug}/`
+1. Rename the directory using `git mv`: `git mv .claude/specs/{issue#}-{slug}/ .claude/specs/bug-{slug}/`
 2. Keep the singular `**Issue**: #N` field (bugs are per-issue)
-3. Update any defect spec cross-references that pointed to the old directory name
+3. Update defect spec cross-references: Run `Grep` across all `.claude/specs/*/requirements.md` files for `**Related Spec**` fields containing the old path (`.claude/specs/{issue#}-{slug}/`). For each match, verify it is a defect spec by checking for a `# Defect Report:` first heading. Use `Edit` to update the `**Related Spec**` field to point to `.claude/specs/bug-{slug}/`. Then follow chain resolution: for each updated defect spec, check whether other defect specs have `**Related Spec**` fields pointing to IT, and update those as well. Maintain a visited set to prevent circular traversal.
 
 ### Step 4f: Migrate Legacy Frontmatter in Feature Specs
 
@@ -347,7 +350,7 @@ And stop here.
 
 Otherwise, proceed to approval. The approval flow has two parts:
 
-**If `.claude/auto-mode` exists:** Skip both Part A and Part B approval prompts. Auto-select all proposed steering doc sections (equivalent to selecting all). Auto-approve all non-destructive changes. Any remaining destructive operations (consolidations, renames, deletes) that were not already recorded in Step 4d should be recorded as skipped operations now. Proceed directly to Step 10.
+**If `.claude/auto-mode` exists:** Skip both Part A and Part B approval prompts. Auto-select all proposed steering doc sections (equivalent to selecting all). Auto-approve all non-destructive changes (including solo directory renames already applied in Step 4d). Any remaining destructive operations (consolidations, legacy directory deletes) that were not already recorded in Step 4d should be recorded as skipped operations now. Proceed directly to Step 10.
 
 **If `.claude/auto-mode` does NOT exist:** Follow the interactive approval flow below.
 
@@ -414,7 +417,6 @@ Run `/migrating-projects` interactively to apply them.
 | Operation Type | Affected Paths | Reason |
 |---------------|----------------|--------|
 | consolidation | `42-add-dark-mode/` + `71-dark-mode-toggle/` → `feature-dark-mode/` | Destructive operation requires interactive approval |
-| rename | `55-add-weather-alerts/` → `feature-weather-alerts/` | Destructive operation requires interactive approval |
 ```
 
 If no destructive operations were skipped, omit this section entirely.
@@ -428,7 +430,7 @@ If no destructive operations were skipped, omit this section entirely.
 3. **Never overwrite values** — For JSON, only add keys that are absent
 4. **Skip `feature.gherkin`** — These are generated, not templated
 5. **Interactive by default** — When `.claude/auto-mode` is absent, present findings with per-section approval for steering docs and wait for user selection before applying
-6. **Auto-mode aware** — When `.claude/auto-mode` exists: auto-apply all non-destructive changes (section additions, frontmatter updates, config keys, changelog fixes); skip all destructive operations (consolidations, renames, deletes) and report them in a machine-readable "Skipped Operations" block
+6. **Auto-mode aware** — When `.claude/auto-mode` exists: auto-apply all non-destructive changes (section additions, frontmatter updates, config keys, changelog fixes, solo directory renames); skip all destructive operations (consolidations, legacy directory deletes) and report them in a machine-readable "Skipped Operations" block
 7. **Self-updating** — Read templates at runtime; never hardcode template content
 8. **Filter irrelevant sections** — Use codebase analysis (Relevance Heuristic Table) to exclude steering doc sections with no evidence of relevance; persist user declines in `.claude/migration-exclusions.json` (interactive mode only)
 9. **Conservative defaults** — When a missing section's heading does not match any keyword in the heuristic table, include it in the proposal and let the user decide
