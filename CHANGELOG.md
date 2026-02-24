@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.16.2] - 2026-02-23
+
+### Fixed
+
+- **`/creating-prs`** — Skill no longer fails when spec files are missing; falls back to extracting acceptance criteria from the GitHub issue body, omits the "Specs" section, and includes a warning in the PR body
+
 ## [2.16.1] - 2026-02-23
 
 ### Fixed
