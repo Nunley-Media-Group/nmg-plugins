@@ -101,7 +101,7 @@ If any label is `bug`, this is a **defect issue**. All three phases use the **De
    - Present to the user via `AskUserQuestion`:
      - Option 1: "Amend existing spec: `feature-{slug}`" (with brief description from heading/user story)
      - Option 2: "Create new spec" (derives new `feature-{slug}` from current issue title)
-   - **If auto-mode** (`.claude/auto-mode` exists): auto-select Option 1 (amend existing) without prompting
+   - **If auto-mode** (`.claude/auto-mode` exists): skip AskUserQuestion entirely and proceed directly in amendment mode (amend the top-scored existing spec)
 7. **If no candidates found**: proceed to create new spec without prompting
 
 The result of this step determines whether subsequent phases operate in **amendment mode** (modifying an existing spec) or **creation mode** (writing a new spec from scratch).

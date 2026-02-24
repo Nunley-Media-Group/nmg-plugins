@@ -207,8 +207,7 @@ The runner supports per-step model and effort level configuration. Each step can
 | startCycle | (global) | — | Simple git operations |
 | startIssue | sonnet | — | Mechanical: select issue, create branch |
 | writeSpecs | opus | high | Creative: requires deep reasoning for spec quality |
-| implement (plan) | opus | high | Architectural: designs the implementation approach |
-| implement (code) | sonnet | high | Mechanical: executes tasks from the plan |
+| implement | opus | medium | Single invocation: skill handles planning internally |
 | verify | sonnet | high | Checklist-driven: validates against spec criteria |
 | commitPush | sonnet | — | Mechanical: git add/commit/push |
 | createPR | sonnet | — | Template-driven: version bump + PR body |
@@ -217,12 +216,11 @@ The runner supports per-step model and effort level configuration. Each step can
 
 **Configuration layers (highest to lowest priority):**
 
-1. **Phase-level** — `steps.implement.plan.model` / `steps.implement.code.model`
-2. **Step-level** — `steps.writeSpecs.model`
-3. **Global** — top-level `model` / `effort`
-4. **Default** — `opus` for model, unset for effort
+1. **Step-level** — `steps.writeSpecs.model`
+2. **Global** — top-level `model` / `effort`
+3. **Default** — `opus` for model, unset for effort
 
-The implement step is special: it runs in two phases (plan + code) with independent model/effort/maxTurns/timeout settings. See `sdlc-config.example.json` for the full schema.
+The implement step uses a single invocation — the `implementing-specs` skill handles planning internally via auto-mode. See `sdlc-config.example.json` for the full schema.
 
 **Skill frontmatter:** Each SKILL.md includes a `model` field declaring its recommended model. This is informational for interactive use — the runner's config takes precedence for automated runs.
 

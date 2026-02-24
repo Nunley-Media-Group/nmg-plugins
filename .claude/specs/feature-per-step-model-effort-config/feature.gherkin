@@ -1,7 +1,7 @@
-# File: .claude/specs/77-per-step-model-effort-config/feature.gherkin
+# File: .claude/specs/feature-per-step-model-effort-config/feature.gherkin
 #
-# Generated from: .claude/specs/77-per-step-model-effort-config/requirements.md
-# Issue: #77
+# Generated from: .claude/specs/feature-per-step-model-effort-config/requirements.md
+# Issues: #77, #91
 
 Feature: Per-step model and effort level configuration
   As a developer or OpenClaw automation agent running the SDLC workflow
@@ -48,36 +48,28 @@ Feature: Per-step model and effort level configuration
     When the runner executes any step
     Then the subprocess environment does not include CLAUDE_CODE_EFFORT_LEVEL
 
-  # --- Implement Step Split ---
+  # --- Implement Step: Single Invocation (AC10, supersedes old plan/code split) ---
+  # Added by issue #91
 
-  Scenario: Implement step always splits into plan and code phases
+  Scenario: Implement step uses single runClaude invocation
     Given a sdlc-config.json with implement step configured
     When the runner executes the implement step
-    Then two sequential claude subprocesses are spawned
-    And the plan phase completes before the code phase starts
+    Then a single runClaude call is made
+    And no runImplementStep function is called
+    And the subprocess uses the step-level model and effort configuration
 
-  Scenario: Implement plan phase uses plan-specific model and effort
-    Given a sdlc-config.json with implement.plan model "opus" and effort "high"
-    And implement.code model "sonnet" and effort "high"
-    When the runner executes the implement step
-    Then the plan subprocess uses "--model opus"
-    And the plan subprocess environment includes CLAUDE_CODE_EFFORT_LEVEL set to "high"
-    And the code subprocess uses "--model sonnet"
-    And the code subprocess environment includes CLAUDE_CODE_EFFORT_LEVEL set to "high"
+  Scenario: Implement step defaults to opus model and medium effort
+    Given a sdlc-config.json with no implement-level model or effort overrides
+    And no global model or effort overrides
+    When the runner resolves the implement step configuration
+    Then the model defaults to "opus"
+    And the effort defaults to "medium"
 
-  Scenario: Implement sub-step config falls back to step-level then global
-    Given a sdlc-config.json with global model "sonnet" and global effort "medium"
-    And implement step has model "opus" but no plan or code sub-config
-    When the runner executes the implement step
-    Then both plan and code subprocesses use "--model opus"
-    And both subprocess environments include CLAUDE_CODE_EFFORT_LEVEL set to "medium"
-
-  Scenario: Plan phase failure prevents code phase execution
-    Given a sdlc-config.json with implement step configured
-    When the runner executes the implement step
-    And the plan phase subprocess exits with a non-zero code
-    Then the code phase is not executed
-    And the implement step returns the plan phase failure result
+  Scenario: Implement step prompt omits EnterPlanMode instruction
+    Given the runner builds the prompt for step 4
+    When the prompt is constructed
+    Then it does not contain "Do NOT call EnterPlanMode"
+    And it does not reference EnterPlanMode in any form
 
   # --- Backward Compatibility ---
 
@@ -87,20 +79,27 @@ Feature: Per-step model and effort level configuration
     Then the claude subprocess is invoked with "--model opus"
     And the subprocess environment does not include CLAUDE_CODE_EFFORT_LEVEL
 
-  Scenario: Implement step splits even without sub-step config
-    Given a sdlc-config.json with only global model "opus" and no implement.plan or implement.code config
-    When the runner executes the implement step
-    Then two sequential subprocesses are still spawned
-    And both use "--model opus"
+  # Added by issue #91
+  Scenario: Legacy plan/code config is silently ignored
+    Given a sdlc-config.json with plan and code sub-objects under steps.implement
+    When the runner validates the config
+    Then no validation errors are raised for the plan and code sub-objects
+    And the step-level implement.model and implement.effort are used for resolution
 
   # --- Config Template ---
 
-  Scenario: Config template includes per-step model and effort examples
+  # Added by issue #91 (supersedes old config template scenario)
+  Scenario: Config template shows flat implement config
     Given a user reads sdlc-config.example.json
-    When they review the step configuration
-    Then each step includes a model field with a recommended default
-    And each step includes an effort field with a recommended default
-    And the implement step includes plan and code sub-step configuration
+    When they review the implement step configuration
+    Then the implement step has a flat config with model "opus" and effort "medium"
+    And there are no nested plan or code sub-objects
+
+  # Added by issue #91
+  Scenario: Config template shows createPR maxTurns of 30
+    Given a user reads sdlc-config.example.json
+    When they review the createPR step configuration
+    Then maxTurns is 30
 
   # --- Skill Frontmatter ---
 
@@ -129,14 +128,14 @@ Feature: Per-step model and effort level configuration
       | verifying-specs          | sonnet |
       | writing-specs            | opus   |
 
-  # --- Implementing-Specs Skill Split ---
+  # --- Writing-Specs Auto-Mode Fix ---
+  # Added by issue #91
 
-  Scenario: Implementing-specs delegates code phase to spec-implementer agent
-    Given a user runs /implementing-specs manually
-    When the plan phase completes (Steps 1-4)
-    Then Step 5 delegates task execution to the spec-implementer agent via the Task tool
-    And the spec-implementer agent runs on sonnet
-    And the user sees both the plan output and the agent's code execution output
+  Scenario: Writing-specs auto-mode always amends existing spec
+    Given auto-mode is active
+    And spec discovery finds a matching existing feature spec
+    When the skill decides whether to amend or create
+    Then it proceeds directly in amendment mode without calling AskUserQuestion
 
   # --- README Documentation ---
 
@@ -161,17 +160,10 @@ Feature: Per-step model and effort level configuration
     Then it exits with a non-zero exit code
     And the error message identifies the invalid model value
 
-  Scenario: Invalid effort in implement.plan sub-config is rejected
-    Given a sdlc-config.json with implement.plan.effort value "extreme"
-    When the runner starts
-    Then it exits with a non-zero exit code
-    And the error message identifies the invalid field as "steps.implement.plan.effort"
-
   # --- Migrating Projects ---
 
   Scenario: Migration detects new config keys after plugin upgrade
     Given a project with an old-format sdlc-config.json lacking model and effort fields
     When the user runs /migrating-projects after upgrading the plugin
     Then the migration proposes adding the missing model and effort keys
-    And the migration proposes adding implement.plan and implement.code sub-config
     And existing config values are preserved
