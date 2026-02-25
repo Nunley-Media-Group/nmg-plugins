@@ -1,9 +1,9 @@
 # Tasks: OpenClaw Runner Operations
 
-**Issues**: #12, #24, #33, #34
-**Date**: 2026-02-15
+**Issues**: #12, #24, #33, #34, #88
+**Date**: 2026-02-25
 **Status**: Complete
-**Author**: Claude Code (consolidated from issues #12, #24, #33, #34)
+**Author**: Claude Code (consolidated from issues #12, #24, #33, #34, #88)
 
 ---
 
@@ -28,7 +28,11 @@
 | Backend (Persistent Logging) | #34 | 4 | [x] |
 | Integration (Persistent Logging) | #34 | 1 | [x] |
 | Documentation (Persistent Logging) | #34 | 2 | [x] |
-| **Total** | **#12–#34** | **27** | |
+| Setup (Configurable Bounce Retries) | #88 | 1 | [x] |
+| Backend (Configurable Bounce Retries) | #88 | 2 | [x] |
+| Integration (Configurable Bounce Retries) | #88 | 1 | [x] |
+| Documentation (Configurable Bounce Retries) | #88 | 1 | [x] |
+| **Total** | **#12–#88** | **32** | |
 
 ---
 
@@ -476,6 +480,91 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
+## Issue #88 — Configurable Bounce Retry Threshold
+
+### Phase 18: Setup
+
+#### T030: Add MAX_BOUNCE_RETRIES Config Loading with Validation
+
+**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**Type**: Modify
+**Depends**: T002
+**Status**: Complete
+**Acceptance**:
+- [x] `MAX_BOUNCE_RETRIES` declared as a `let` variable with initial value `3`
+- [x] Config loading reads `config.maxBounceRetries` with IIFE validation
+- [x] `undefined`/`null` → default 3 (backward-compatible)
+- [x] Non-integer, zero, or negative values → warning log + default 3
+- [x] Valid positive integer → use as-is
+- [x] Separate from `MAX_RETRIES` (which controls per-step retries)
+
+**Notes**: Place alongside existing `MAX_RETRIES` config loading. Use an IIFE for clean validation logic.
+
+---
+
+### Phase 19: Backend Implementation
+
+#### T031: Implement incrementBounceCount() Helper Function
+
+**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**Type**: Modify (add function)
+**Depends**: T030
+**Status**: Complete
+**Acceptance**:
+- [x] `incrementBounceCount()` increments `bounceCount` and checks against `MAX_BOUNCE_RETRIES`
+- [x] Returns `true` if threshold exceeded, `false` otherwise
+- [x] Logs bounce loop detection message when threshold exceeded
+- [x] Replaces inline bounce increment+check in both `handleFailure()` and `runStep()`
+
+**Notes**: Centralizes the increment-and-check pattern to ensure all bounce paths use the same threshold variable.
+
+#### T032: Enhance Bounce Diagnostic Messages with Precondition Name
+
+**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**Type**: Modify
+**Depends**: T031
+**Status**: Complete
+**Acceptance**:
+- [x] Discord bounce messages include the specific `failedCheck` precondition name from `validatePreconditions()`
+- [x] Discord bounce messages include format `(bounce N/M)` where M is `MAX_BOUNCE_RETRIES`
+- [x] Discord bounce messages include the step being bounced to (step number and key)
+- [x] Log messages include the same enriched information
+- [x] Both `handleFailure()` retry-previous path and `runStep()` precondition retry-previous path use consistent message format
+
+---
+
+### Phase 20: Documentation
+
+#### T033: Update sdlc-config.example.json with maxBounceRetries Field
+
+**File(s)**: `openclaw/scripts/sdlc-config.example.json`
+**Type**: Modify
+**Depends**: T030
+**Status**: Complete
+**Acceptance**:
+- [x] `maxBounceRetries` field present in the example config with value `3`
+- [x] Placed near the existing `maxRetriesPerStep` field for discoverability
+- [x] Valid JSON syntax
+
+---
+
+### Phase 21: Testing
+
+#### T034: Amend Gherkin Feature File with Issue #88 Scenarios
+
+**File(s)**: `.claude/specs/feature-openclaw-runner-operations/feature.gherkin`
+**Type**: Modify
+**Depends**: T032, T033
+**Status**: Complete
+**Acceptance**:
+- [x] All 5 acceptance criteria (AC25–AC29) have corresponding scenarios
+- [x] Scenarios tagged with `# Added by issue #88` comment
+- [x] Scenarios use Given/When/Then format
+- [x] Includes: custom threshold usage, backward-compatible default, enhanced logging, Discord diagnostics, invalid config fallback
+- [x] Feature file is valid Gherkin syntax
+
+---
+
 ## Dependency Graph
 
 ```
@@ -501,7 +590,10 @@ T001 ──▶ T002 ──┬──▶ T003 ──▶ T005
                 ├──▶ T024 ──▶ T025 ──┬──▶ T027
                 │            T026 ──┘
                 │
-                └──▶ T028 ──▶ T029
+                ├──▶ T028 ──▶ T029
+                │
+                └──▶ T030 ──┬──▶ T031 ──▶ T032 ──▶ T034 (feature.gherkin #88)
+                            └──▶ T033
 ```
 
 ---
@@ -514,6 +606,7 @@ T001 ──▶ T002 ──┬──▶ T003 ──▶ T005
 | #24 | 2026-02-15 | Tasks T007–T015: process cleanup implementation, integration points, documentation, BDD |
 | #33 | 2026-02-16 | Tasks T016–T023: failure loop detection, `haltFailureLoop()`, bounce tracking, main loop integration, BDD |
 | #34 | 2026-02-16 | Tasks T024–T029: persistent logging, disk enforcement, SKILL.md updates, config example |
+| #88 | 2026-02-25 | Tasks T030–T034: configurable bounce retry threshold, `incrementBounceCount()` helper, enhanced diagnostics, config example update |
 
 ---
 

@@ -21,5 +21,6 @@
     "monitorCI":    { "maxTurns": 40,  "timeoutMin": 20,                                     "model": "sonnet" },
     "merge":        { "maxTurns": 5,   "timeoutMin": 5,                                      "model": "sonnet" }
   },
-  "maxRetriesPerStep": 3
+  "maxRetriesPerStep": 3,
+  "maxBounceRetries": 3
 }
