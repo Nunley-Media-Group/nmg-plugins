@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.17.4] - 2026-02-25
+
+### Fixed
+
+- **`/verifying-specs`** — Exercise prompt structure now places the skill invocation at the start of the prompt with dry-run instructions appended after (prefixed with "IMPORTANT:"), fixing skill recognition failure for skills with `disable-model-invocation: true`
+
 ## [2.17.3] - 2026-02-24
 
 ### Fixed
