@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.19.0] - 2026-02-25
+
+### Added
+
+- **`/setting-up-steering` template** — `tech.md` now includes a `### Version Bump Classification` subsection under `## Versioning`, pre-populated with default `bug → patch` and `enhancement → minor` rows; both `/creating-prs` and `sdlc-runner.mjs` read this table as the single source of truth for version bump classification
+
+### Changed
+
+- **`/creating-prs`** — Step 2 now reads the version bump classification matrix from `.claude/steering/tech.md` (`### Version Bump Classification` table) instead of using an inline hardcoded matrix; adding a new label→bump mapping to `tech.md` requires no skill changes
+- **`sdlc-runner.mjs`** — `performDeterministicVersionBump()` now reads classification from the `tech.md` Version Bump Classification table instead of hardcoded if-else logic; falls back to `bug → patch / else → minor` if the subsection is absent
+- **`sdlc-runner.mjs`** — `MAX_BOUNCE_RETRIES` is now configurable independently from `maxRetriesPerStep` via the `maxBounceRetries` config key; precondition failure log messages now include a `failedCheck` label and step key for clearer debugging visibility
+
 ## [2.18.1] - 2026-02-25
 
 ### Fixed
