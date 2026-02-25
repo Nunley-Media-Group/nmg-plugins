@@ -1,7 +1,7 @@
 # Design: Exercise-Based Verification for Plugin Projects
 
-**Issues**: #44
-**Date**: 2026-02-16
+**Issues**: #44, #50
+**Date**: 2026-02-25
 **Status**: Draft
 **Author**: Claude (from issue by rnunley-nmg)
 
@@ -18,6 +18,7 @@ Key architectural decisions:
 2. **Agent SDK primary, `claude -p` fallback** — provides full interactive path testing where possible, degrades gracefully
 3. **Prompt-engineered dry-run** — GitHub-integrated skills are exercised with prompt instructions to generate content without creating real artifacts
 4. **Inline scaffolding instructions** — test project creation is described as SKILL.md instructions, not a separate script
+5. **Dynamic SDK path resolution** (Issue #50) — the exercise script resolves the Agent SDK's filesystem path at runtime via `require.resolve()`, then uses dynamic `import()` with a `file://` URL. This bypasses ESM's bare-specifier limitation (which ignores `NODE_PATH`) and avoids symlink creation (which requires elevated privileges on Windows)
 
 ---
 
@@ -53,9 +54,10 @@ checklists/report-template.md
 2. Filter diff for SKILL.md / agents/*.md patterns
 3. IF plugin changes detected:
    a. Create temp dir → scaffold minimal project (steering docs, source, git init)
-   b. Determine exercise method (try Agent SDK → fallback to claude -p)
-   c. For GitHub-integrated skills: append dry-run instructions to prompt
-   d. Invoke skill against test project → capture output
+   b. Resolve Agent SDK path (require.resolve → fallback search → not found)
+   c. Determine exercise method: SDK resolved → Agent SDK; not resolved → claude -p; neither → skip
+   d. For GitHub-integrated skills: append dry-run instructions to prompt
+   e. Invoke skill against test project → capture output
    e. Parse output → evaluate each AC as Pass/Fail/Partial
    f. Delete temp dir
    g. Feed exercise findings into Step 6 (Fix Findings)
@@ -221,35 +223,131 @@ Patterns that indicate plugin changes:
 
 ### 5c: Exercise Changed Skill
 
-Two exercise methods, tried in priority order:
+Three sub-phases: resolve SDK path, choose exercise method, invoke.
 
-#### Primary: Agent SDK with `canUseTool`
+#### 5c-i: Resolve Agent SDK Path (Issue #50)
 
-**When to use**: When `@anthropic-ai/claude-agent-sdk` is importable (check via `node -e "require('@anthropic-ai/claude-agent-sdk')"` or equivalent).
+**Problem**: The exercise script is an ESM module (`.mjs`) that runs in a temp directory. ESM bare-specifier resolution (`import "pkg"`) only searches the `node_modules` hierarchy from the script's location and does NOT respect `NODE_PATH`. When the Agent SDK is installed in a non-standard location (npx cache, global install via a version manager), the import fails with `ERR_MODULE_NOT_FOUND`.
 
-**Invocation pattern** (described in SKILL.md as instructions for Claude to follow):
+**Solution**: Resolve the SDK's absolute filesystem path before writing the exercise script, then use ESM dynamic `import()` with a `file://` URL. This separates "finding the SDK" (CJS resolution, which respects `NODE_PATH` and searches more locations) from "importing the SDK" (ESM, which works with any `file://` URL).
 
+**Resolution strategy** (tried in order):
+
+1. **`require.resolve()`** — Uses CJS module resolution, which respects `NODE_PATH` and searches the standard `node_modules` hierarchy, global modules, and `$HOME/.node_modules`:
+   ```bash
+   node -e "try { console.log(require.resolve('@anthropic-ai/claude-agent-sdk')); } catch { process.exit(1); }"
+   ```
+   If exit code 0, the output is the SDK's entry point absolute path (e.g., `/Users/x/.npm/_npx/.../node_modules/@anthropic-ai/claude-agent-sdk/dist/index.js`).
+
+2. **Fallback search of known locations** — If `require.resolve` fails (SDK not in any standard resolution path), search for the SDK package in known npm cache locations:
+   ```bash
+   node -e "
+     const fs = require('fs');
+     const path = require('path');
+     const os = require('os');
+     const home = os.homedir();
+     const candidates = [
+       path.join(home, '.npm', '_npx'),     // npx cache (macOS/Linux)
+       path.join(home, 'AppData', 'Local', 'npm-cache', '_npx'),  // npx cache (Windows)
+     ];
+     for (const base of candidates) {
+       if (!fs.existsSync(base)) continue;
+       for (const entry of fs.readdirSync(base)) {
+         const pkg = path.join(base, entry, 'node_modules', '@anthropic-ai', 'claude-agent-sdk', 'package.json');
+         if (fs.existsSync(pkg)) {
+           const main = JSON.parse(fs.readFileSync(pkg, 'utf8')).main || 'dist/index.js';
+           console.log(path.resolve(path.dirname(pkg), main));
+           process.exit(0);
+         }
+       }
+     }
+     process.exit(1);
+   "
+   ```
+
+3. **Not found** — If both methods fail, the Agent SDK is not available. Fall through to `claude -p` fallback (or skip if that's also unavailable).
+
+The resolved path is stored as `{sdk-entry-point}` for use in the exercise script template.
+
+**Why this satisfies cross-platform constraints**:
+- No symlinks created (satisfies `structure.md` → "No symlink dependencies")
+- `require.resolve()` is cross-platform
+- Fallback search uses `node:path` for path construction (no hardcoded separators)
+- `pathToFileURL()` correctly handles Windows drive letters (e.g., `C:\Users\...` → `file:///C:/Users/...`)
+
+#### 5c-ii: Choose Exercise Method
+
+**Decision tree**:
+- SDK path resolved → **Agent SDK** (primary method)
+- SDK path not resolved, `claude` CLI available → **`claude -p`** (fallback method)
+- Neither available → **Skip** (graceful degradation)
+
+#### 5c-iii: Primary — Agent SDK with `canUseTool`
+
+**When to use**: When `{sdk-entry-point}` was successfully resolved in 5c-i.
+
+**Modified exercise script template** (changes from Issue #44 marked with `// CHANGED`):
+
+```javascript
+// exercise.mjs — written to {test-project-path}/exercise.mjs
+import { pathToFileURL } from "node:url";         // CHANGED: added for file URL conversion
+import fs from "node:fs";
+
+// CHANGED: Dynamic import using resolved absolute path (bypasses ESM bare-specifier limitation)
+const { query } = await import(pathToFileURL("{sdk-entry-point}").href);
+
+const messages = [];
+for await (const message of query({
+  prompt: "{exercise-prompt}",
+  options: {
+    plugins: [{ type: "local", path: "{plugin-path}" }],
+    cwd: "{test-project-path}",
+    permissionMode: "bypassPermissions",
+    allowDangerouslySkipPermissions: true,
+    maxTurns: 30,
+    env: { ...process.env, CLAUDECODE: "" },
+    canUseTool: async (toolName, input) => {
+      if (toolName === "AskUserQuestion") {
+        const answers = {};
+        for (const q of input.questions) {
+          answers[q.question] = q.options[0].label;
+        }
+        return { behavior: "allow", updatedInput: { ...input, answers } };
+      }
+      return { behavior: "allow", updatedInput: input };
+    },
+  },
+})) {
+  if (message.type === "assistant" && message.message?.content) {
+    for (const block of message.message.content) {
+      if ("text" in block) messages.push(block.text);
+    }
+  } else if (message.type === "result") {
+    messages.push(`Result: ${message.subtype}`);
+    if ("result" in message) messages.push(message.result);
+  }
+}
+fs.writeFileSync("{output-file}", messages.join("\n"));
+console.log("Exercise complete. Output written to {output-file}");
 ```
-Use Bash to run a Node.js script that:
-1. Imports { query } from "@anthropic-ai/claude-agent-sdk"
-2. Invokes the changed skill with:
-   - prompt: "/{skill-name} [appropriate args]"
-   - plugins: [{ type: "local", path: "{absolute-path-to-plugins/nmg-sdlc}" }]
-   - workingDirectory: "{test-project-path}"
-   - canUseTool callback that intercepts AskUserQuestion → auto-selects first option
-3. Collects all output messages into a string
-4. Writes the output to a temp file for evaluation
+
+The key change is replacing:
+```javascript
+import { query } from "@anthropic-ai/claude-agent-sdk";  // OLD: bare specifier, fails if SDK not in node_modules hierarchy
+```
+with:
+```javascript
+import { pathToFileURL } from "node:url";
+const { query } = await import(pathToFileURL("{sdk-entry-point}").href);  // NEW: resolved absolute path as file URL
 ```
 
-The SKILL.md will contain an inline Node.js snippet template that Claude populates with the actual paths and skill name, then executes via `Bash`.
+**For GitHub-integrated skills**: Dry-run instructions appended to the exercise prompt (unchanged from original design).
 
-**For GitHub-integrated skills** (`creating-issues`, `creating-prs`, `starting-issues`): The prompt is prepended with: "This is a dry-run exercise. Do NOT execute any `gh` commands that create, modify, or delete GitHub resources. Instead, output the exact command and arguments you WOULD run, along with the content (title, body, labels) you WOULD use. Proceed through the full workflow, generating all artifacts as text output."
+#### 5c-iv: Fallback — `claude -p` with `--disallowedTools`
 
-#### Fallback: `claude -p` with `--disallowedTools`
+**When to use**: When Agent SDK path resolution fails (5c-i returns no path).
 
-**When to use**: When Agent SDK is not available.
-
-**Invocation pattern**:
+**Invocation pattern** (unchanged from original design):
 
 ```bash
 claude -p "Exercise: /{skill-name} [args]" \
@@ -265,7 +363,7 @@ This tests only the non-interactive path. The verification report notes this lim
 #### Timeout and Error Handling
 
 - **Timeout**: 5 minutes for the exercise subprocess. If exceeded, kill the process and report graceful degradation.
-- **Agent SDK not found**: Fall through to `claude -p` fallback.
+- **Agent SDK path not resolved**: Fall through to `claude -p` fallback.
 - **`claude` CLI not found**: Report graceful degradation — skip exercise testing entirely.
 - **Exercise produces an error**: Capture the error output, report it as a finding, and continue with evaluation of whatever output was captured.
 
@@ -348,6 +446,10 @@ When exercise testing is **skipped** (graceful degradation), the section reads:
 | **B: Inline SKILL.md instructions** | All exercise logic is described as SKILL.md workflow instructions that Claude follows | No new files, consistent with existing skill patterns, Claude handles evaluation natively | Longer SKILL.md, relies on Claude's execution fidelity | **Selected** — matches project architecture (skills are Markdown instructions) |
 | **C: Promptfoo eval suite** | Create a `promptfoo.yaml` config with test cases for each skill | Declarative, repeatable, built-in AskUserQuestion handling | Requires Promptfoo installation, adds external dependency, significant setup | Rejected for now — future enhancement per Out of Scope |
 | **D: Agent SDK only (no fallback)** | Require Agent SDK for exercise testing, skip if unavailable | Simpler implementation | Loses testing capability when SDK not installed | Rejected — fallback provides partial value |
+| **E: Symlink SDK into test project** (Issue #50) | Create `node_modules/@anthropic-ai` symlink in test project pointing to SDK location | Simple, preserves original `import` syntax | Symlinks require elevated privileges on Windows; violates `structure.md` cross-platform contract "No symlink dependencies" | Rejected — cross-platform constraint |
+| **F: Set NODE_PATH for ESM** (Issue #50) | Set `NODE_PATH` env var before running exercise script | Minimal code change | ESM ignores `NODE_PATH` entirely (Node.js design decision); would only work for CJS | Rejected — fundamentally incompatible with ESM |
+| **G: Install SDK in test project** (Issue #50) | Run `npm install @anthropic-ai/claude-agent-sdk` in the test project before exercise | Most robust — standard resolution would work | Slow (network + install), adds external dependency during verification, may fail without network | Rejected — adds latency and network dependency |
+| **H: Dynamic import with resolved file URL** (Issue #50) | Resolve SDK path via `require.resolve()` (CJS), then use `import(pathToFileURL(...))` in ESM script | Cross-platform, no symlinks, no network, fast; consistent availability check | Slightly more complex script template; relies on CJS resolution finding the package | **Selected** — satisfies all cross-platform constraints while being simple and fast |
 
 ---
 
@@ -396,6 +498,8 @@ This feature is itself verified by exercise — the modified `/verifying-specs` 
 | Claude misinterprets exercise SKILL.md instructions | Low | Medium | Instructions are explicit and step-by-step; evaluation is self-contained |
 | Test project scaffolding fails (permissions, disk) | Low | Low | Graceful degradation — report notes skip reason |
 | Dry-run prompt doesn't prevent all GitHub API calls | Low | High | Skill instructions explicitly deny `gh` create/modify/delete; `canUseTool` can intercept `Bash` for `gh` commands |
+| `require.resolve()` cannot find SDK (no NODE_PATH, not in standard hierarchy) | Medium | Low | Fallback search checks npx cache and common install locations; ultimate fallback to `claude -p` still provides partial coverage |
+| Dynamic `import()` of resolved path fails due to CJS/ESM entry point mismatch | Low | Medium | Modern Node.js (v22+) handles `import()` of CJS modules; SDK's package.json `exports` field typically provides ESM entry point |
 
 ---
 
@@ -404,6 +508,7 @@ This feature is itself verified by exercise — the modified `/verifying-specs` 
 | File | Change Type | Description |
 |------|-------------|-------------|
 | `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` | Modified | Add exercise-based verification branch to Step 5 |
+| `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md` | Modified | Update SDK availability check and exercise script template with dynamic path resolution |
 | `plugins/nmg-sdlc/skills/verifying-specs/checklists/report-template.md` | Modified | Add Exercise Test Results section |
 
 ---
@@ -420,6 +525,7 @@ This feature is itself verified by exercise — the modified `/verifying-specs` 
 | Issue | Date | Summary |
 |-------|------|---------|
 | #44 | 2026-02-16 | Initial feature spec |
+| #50 | 2026-02-25 | Add dynamic SDK path resolution design — require.resolve + fallback search + dynamic import with file URL; new alternatives E–H |
 
 ---
 

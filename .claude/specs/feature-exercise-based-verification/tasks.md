@@ -1,7 +1,7 @@
 # Tasks: Exercise-Based Verification for Plugin Projects
 
-**Issues**: #44
-**Date**: 2026-02-16
+**Issues**: #44, #50
+**Date**: 2026-02-25
 **Status**: Planning
 **Author**: Claude (from issue by rnunley-nmg)
 
@@ -16,7 +16,8 @@
 | Report Template | 1 | [ ] |
 | Integration | 1 | [ ] |
 | Testing | 1 | [ ] |
-| **Total** | **8** | |
+| ESM Module Resolution (Issue #50) | 3 | [ ] |
+| **Total** | **11** | |
 
 ---
 
@@ -187,17 +188,69 @@ These tasks modify `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` to add exe
 
 ---
 
+## Phase 6: ESM Module Resolution — Issue #50
+
+These tasks modify the exercise testing reference file to fix ESM module resolution when the Agent SDK is installed in a non-standard location (e.g., npx cache).
+
+### T009: Replace SDK Availability Check with Path-Resolving Check
+
+**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md`
+**Type**: Modify
+**Depends**: T003
+**Acceptance**:
+- [ ] The `require('@anthropic-ai/claude-agent-sdk')` availability check is replaced with `require.resolve('@anthropic-ai/claude-agent-sdk')` that outputs the resolved absolute path
+- [ ] A fallback search is added that checks known SDK locations (npx cache on macOS/Linux/Windows) if `require.resolve` fails
+- [ ] The resolution step outputs the SDK entry point absolute path on success (exit code 0) or exits with code 1 if not found
+- [ ] The resolved path is used as the decision gateway: path found → Agent SDK method, not found → `claude -p` fallback
+- [ ] No symlinks are created during resolution
+
+**Notes**: The resolution uses CJS `require.resolve()` which respects `NODE_PATH` and searches more locations than ESM bare-specifier resolution. The fallback search uses `node:fs` and `node:path` for cross-platform path construction. See design.md section 5c-i for the full resolution strategy.
+
+### T010: Update Exercise Script Template with Dynamic Import
+
+**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md`
+**Type**: Modify
+**Depends**: T009
+**Acceptance**:
+- [ ] The static ESM import `import { query } from "@anthropic-ai/claude-agent-sdk"` is replaced with a dynamic import using the resolved path
+- [ ] The script uses `import { pathToFileURL } from "node:url"` and `await import(pathToFileURL("{sdk-entry-point}").href)` for cross-platform file URL conversion
+- [ ] The `{sdk-entry-point}` placeholder is documented as being populated from the resolution step (T009)
+- [ ] The rest of the exercise script (query invocation, output capture) remains unchanged
+- [ ] The script template is valid ESM syntax that Node.js v22+ can execute
+
+**Notes**: `pathToFileURL` correctly handles Windows drive letters (`C:\...` → `file:///C:/...`) and special characters in paths. Dynamic `import()` works with `file://` URLs regardless of `NODE_PATH` or `node_modules` hierarchy.
+
+### T011: Update BDD Feature File with ESM Resolution Scenarios
+
+**File(s)**: `.claude/specs/feature-exercise-based-verification/feature.gherkin`
+**Type**: Modify
+**Depends**: T009, T010
+**Acceptance**:
+- [ ] Gherkin scenario for AC11 (resolve SDK from non-standard location) is added
+- [ ] Gherkin scenario for AC12 (no symlink dependency) is added
+- [ ] Gherkin scenario for AC13 (consistent availability check) is added
+- [ ] New scenarios are tagged with a comment indicating Issue #50 contribution
+- [ ] All scenarios use Given/When/Then format and are valid Gherkin syntax
+
+**Notes**: These scenarios are appended after the existing scenarios in the feature file. They cover the ESM module resolution enhancement from Issue #50.
+
+---
+
 ## Dependency Graph
 
 ```
 T001 ──▶ T002 ──▶ T003 ──┬──▶ T004 ──▶ T007
                           │
-                          └──▶ T005 ──▶ T007
-                                        ▲
-T006 ───────────────────────────────────┘
+                          ├──▶ T005 ──▶ T007
+                          │                ▲
+                          │   T006 ────────┘
+                          │
+                          └──▶ T009 ──▶ T010 ──▶ T011
 
 T001 ──▶ T008
 T006 ──▶ T008
+T009 ──▶ T011
+T010 ──▶ T011
 ```
 
 ---
@@ -207,6 +260,7 @@ T006 ──▶ T008
 | Issue | Date | Summary |
 |-------|------|---------|
 | #44 | 2026-02-16 | Initial feature spec |
+| #50 | 2026-02-25 | Add Phase 6 (ESM Module Resolution): T009–T011 for dynamic SDK path resolution and updated exercise script template |
 
 ---
 

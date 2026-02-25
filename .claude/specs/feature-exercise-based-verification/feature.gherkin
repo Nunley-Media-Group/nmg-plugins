@@ -1,7 +1,7 @@
-# File: .claude/specs/44-exercise-based-verification/feature.gherkin
+# File: .claude/specs/feature-exercise-based-verification/feature.gherkin
 #
-# Generated from: .claude/specs/44-exercise-based-verification/requirements.md
-# Issue: #44
+# Generated from: .claude/specs/feature-exercise-based-verification/requirements.md
+# Issues: #44, #50
 
 Feature: Exercise-Based Verification for Plugin Projects
   As a developer working on the nmg-sdlc plugin
@@ -124,3 +124,29 @@ Feature: Exercise-Based Verification for Plugin Projects
     Then the existing BDD test coverage verification runs unchanged
     And exercise-based verification is not triggered
     And feature file existence and scenario coverage checks proceed normally
+
+  # --- ESM Module Resolution (Added by issue #50) ---
+
+  # Added by issue #50
+  Scenario: Exercise script resolves Agent SDK from non-standard location
+    Given the Agent SDK is installed in a non-standard location such as the npx cache
+    And the SDK is not in the exercise script's node_modules hierarchy
+    When the exercise script attempts to import the SDK
+    Then the SDK path is resolved via require.resolve or fallback search
+    And the SDK is imported successfully using dynamic import with a file URL
+    And no manual symlinks or NODE_PATH configuration is required
+
+  # Added by issue #50
+  Scenario: Module resolution does not depend on symlinks
+    Given the exercise script needs to resolve the Agent SDK
+    When the SDK is in a non-standard location
+    Then no filesystem symlinks are created during resolution
+    And the resolution uses only standard Node.js APIs (require.resolve, pathToFileURL)
+    And it works on macOS, Linux, and Windows without elevated privileges
+
+  # Added by issue #50
+  Scenario: SDK availability check is consistent with exercise import
+    Given the SDK path resolution step passes successfully
+    When the exercise script subsequently imports the SDK using the resolved path
+    Then the import succeeds without ERR_MODULE_NOT_FOUND
+    And the same resolved path is used for both the availability check and the import
