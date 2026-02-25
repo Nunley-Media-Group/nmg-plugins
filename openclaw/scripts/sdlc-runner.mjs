@@ -1484,14 +1484,57 @@ function performDeterministicVersionBump(state) {
       log(`Warning: could not check milestone completion: ${err.message}`);
     }
 
-    // Apply classification matrix
+    // Apply classification matrix — read from .claude/steering/tech.md if available
+    // Falls back to hardcoded defaults (bug→patch, else→minor) for backward compatibility
+    let bumpType = 'minor'; // default
+    const techMdForClassification = path.join(PROJECT_PATH, '.claude', 'steering', 'tech.md');
+    if (fs.existsSync(techMdForClassification)) {
+      try {
+        const techMdContent = fs.readFileSync(techMdForClassification, 'utf8');
+        const versioningSection = techMdContent.match(/## Versioning\s*\n([\s\S]*?)(?=\n## |\n$|$)/);
+        if (versioningSection) {
+          const classificationSection = versioningSection[1].match(/### Version Bump Classification\s*\n([\s\S]*?)(?=\n### |\n## |$)/);
+          if (classificationSection) {
+            const rows = classificationSection[1].match(/\|[^|]+\|[^|]+\|/g) || [];
+            const classMap = new Map();
+            for (const row of rows) {
+              const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+              if (cells.length >= 2 && cells[0] !== 'Label' && !cells[0].startsWith('-')) {
+                const label = cells[0].replace(/`/g, '').toLowerCase();
+                const bump = cells[1].toLowerCase().trim();
+                classMap.set(label, bump);
+              }
+            }
+            for (const label of labels) {
+              if (classMap.has(label.toLowerCase())) {
+                bumpType = classMap.get(label.toLowerCase());
+                break;
+              }
+            }
+          } else {
+            // No classification subsection — use hardcoded defaults
+            if (labels.includes('bug')) bumpType = 'patch';
+          }
+        } else {
+          // No versioning section — use hardcoded defaults
+          if (labels.includes('bug')) bumpType = 'patch';
+        }
+      } catch (err) {
+        log(`Warning: could not read tech.md classification: ${err.message}`);
+        if (labels.includes('bug')) bumpType = 'patch';
+      }
+    } else {
+      // No tech.md — use hardcoded defaults
+      if (labels.includes('bug')) bumpType = 'patch';
+    }
+
     let newVersion;
     if (isLastInMilestone) {
       newVersion = `${major + 1}.0.0`;
-    } else if (labels.includes('bug')) {
+    } else if (bumpType === 'patch') {
       newVersion = `${major}.${minor}.${patch + 1}`;
     } else {
-      // enhancement or no matching label → minor
+      // minor (default) or any other non-patch bump type
       newVersion = `${major}.${minor + 1}.0`;
     }
 

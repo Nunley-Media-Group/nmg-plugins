@@ -63,6 +63,21 @@ The `VERSION` file (plain text semver at project root) is the **single source of
 - **TOML files**: Use dot-notation matching TOML keys (e.g., `package.version`)
 - **Plain text files**: Use `line:N` for the line number containing the version, or omit Path if the entire file is the version string
 
+### Version Bump Classification
+
+The `/creating-prs` skill and the `sdlc-runner.mjs` deterministic bump postcondition both read this table to classify version bumps. Modify this table to change the classification rules — no skill or script changes are needed.
+
+<!-- TODO: Add or modify label→bump mappings to match your project's labeling conventions. -->
+
+| Label | Bump Type | Description |
+|-------|-----------|-------------|
+| `bug` | patch | Bug fix — backwards-compatible |
+| `enhancement` | minor | New feature — backwards-compatible |
+
+**Default**: If an issue's labels do not match any row, the bump type is **minor**.
+
+**Milestone completion override**: If the issue is the last open issue in its milestone, the bump type is overridden to **major** regardless of labels.
+
 ---
 
 ## Technical Constraints

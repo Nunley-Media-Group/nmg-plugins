@@ -49,13 +49,11 @@ If a `VERSION` file exists in the project root, determine the appropriate versio
 
 1. **Read the current version**: Read the `VERSION` file and verify it contains a valid semver string (X.Y.Z). If the content is not valid semver, warn and skip versioning.
 2. **Read issue labels**: Run `gh issue view #N --json labels --jq '.labels[].name'` to get the issue's labels.
-3. **Apply the classification matrix**:
-
-   | Label | Bump Type | Example |
-   |-------|-----------|---------|
-   | `bug` | Patch | 2.11.0 → 2.11.1 |
-   | `enhancement` | Minor | 2.11.0 → 2.12.0 |
-   | (no label match) | Minor | 2.11.0 → 2.12.0 |
+3. **Read the classification matrix** from `.claude/steering/tech.md`:
+   - Find the `## Versioning` section, then the `### Version Bump Classification` subsection.
+   - Parse the table rows to extract Label → Bump Type mappings (match the Label column against the issue's labels, case-insensitively, stripping any backtick characters).
+   - Use the Bump Type from the first matching row.
+   - **Fallback**: If the subsection is missing from `tech.md`, or if no issue label matches any row, default to **minor** (same as today's behavior for unlabeled issues).
 
 4. **Check milestone completion**: Read the issue's milestone via `gh issue view #N --json milestone --jq '.milestone.title // empty'`. If the issue has a milestone, query its open issue count: `gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title=="{milestone_title}") | .open_issues'`. If `open_issues` is 1 (this issue is the last one open), propose a **major** bump instead (e.g., 2.11.0 → 3.0.0).
 5. **Calculate the new version string** based on the classification.
