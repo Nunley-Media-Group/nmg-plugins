@@ -23,7 +23,7 @@ Select a GitHub issue to work on, create a linked feature branch, and set the is
 If the file `.claude/auto-mode` exists in the project directory:
 - If an issue number was provided as an argument, **skip Steps 2–3** (selection and confirmation) — go directly to Step 4.
 - If no issue number was provided, **select the first available issue** (sorted by issue number ascending — oldest first) from the first viable milestone (sorted alphabetically) (or all open issues if no viable milestone exists) **without calling `AskUserQuestion`**. **Skip Step 3 confirmation.**
-- **Only issues with the `automatable` label are eligible.** Add `--label automatable` to all `gh issue list` commands in auto-mode. If no automatable issues are found, output `No automatable issues found. Done. Awaiting orchestrator.` and exit without creating a branch.
+- **Only issues with the `automatable` label are eligible.** Add `--label automatable` to all `gh issue list` commands in auto-mode. If no automatable issues are found, run a diagnostic query (see "Auto-Mode: Empty Result Handling") and exit without creating a branch.
 
 ## Workflow Overview
 
@@ -84,8 +84,32 @@ Apply deterministic selection based on the number of viable milestones:
 
 After fetching issues in auto-mode, if the result is an empty array (`[]`):
 
-1. Output: `No automatable issues found. Done. Awaiting orchestrator.`
-2. Exit immediately — do **not** create a branch, do **not** fall back to non-automatable issues.
+1. **Run a diagnostic query** to count total open issues in the same scope, **without** the `--label automatable` filter. The diagnostic query MUST match the same scope as the original query:
+
+   - If the original query was milestone-scoped (`-m "<milestone>"`):
+     ```bash
+     gh issue list -s open -m "<milestone>" --json number --jq 'length'
+     ```
+   - If the original query was repo-wide (no milestone):
+     ```bash
+     gh issue list -s open --json number --jq 'length'
+     ```
+
+2. **Output based on the total open count:**
+
+   - **If total open > 0:**
+     ```
+     No automatable issues found (N open issues exist without the automatable label).
+     Consider adding the automatable label to issues that should be picked up automatically.
+     Done. Awaiting orchestrator.
+     ```
+   - **If total open = 0:**
+     ```
+     No automatable issues found. 0 open issues in scope.
+     Done. Awaiting orchestrator.
+     ```
+
+3. Exit immediately — do **not** create a branch, do **not** fall back to non-automatable issues.
 
 ## Step 2: Present Issue Selection
 

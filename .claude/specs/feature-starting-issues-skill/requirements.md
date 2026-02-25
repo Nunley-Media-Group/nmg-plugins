@@ -1,7 +1,7 @@
 # Requirements: Starting Issues Skill
 
-**Issues**: #10
-**Date**: 2026-02-15
+**Issues**: #10, #89
+**Date**: 2026-02-25
 **Status**: Approved
 **Author**: Claude Code (retroactive)
 
@@ -53,6 +53,25 @@ The `/starting-issues` skill was extracted from the earlier `/beginning-dev` ski
 **When** the skill runs
 **Then** it skips issue selection and uses the provided issue number directly
 
+### AC6: Diagnostic Context in Zero-Result Auto-Mode Output
+
+**Given** `/starting-issues` finds zero automatable issues in auto-mode
+**When** the result is returned
+**Then** it additionally queries the total open issue count (without the `automatable` label filter, in the same milestone scope)
+**And** includes it in the output (e.g., "No automatable issues found (N open issues exist without the automatable label)")
+
+### AC7: Suggestion When Open Issues Exist Without Label
+
+**Given** total open issues > 0 but automatable issues = 0
+**When** the zero-result diagnostic output is returned
+**Then** the output suggests checking label assignment as a potential cause (e.g., "Consider adding the `automatable` label to issues that should be picked up automatically.")
+
+### AC8: No Misleading Suggestion When No Open Issues Exist
+
+**Given** total open issues = 0 and automatable issues = 0
+**When** the zero-result diagnostic output is returned
+**Then** the output indicates no work is available without suggesting label checks (e.g., "No automatable issues found. 0 open issues in scope.")
+
 ---
 
 ## Functional Requirements
@@ -64,6 +83,9 @@ The `/starting-issues` skill was extracted from the earlier `/beginning-dev` ski
 | FR3 | Issue status update to "In Progress" in GitHub Projects | Must | Via GraphQL API |
 | FR4 | Automation mode with oldest-first issue selection | Must | `.claude/auto-mode` check |
 | FR5 | Direct issue number argument support | Must | Skips selection steps |
+| FR6 | Query total open issue count (same scope, without label filter) when automatable count is zero in auto-mode | Must | Second `gh issue list` without `--label` |
+| FR7 | Include total open issue count in zero-result diagnostic output | Must | Enhances the "No automatable issues found" message |
+| FR8 | Suggest checking label assignment when open issues > 0 but automatable = 0 | Should | Actionable guidance for operators |
 
 ---
 
@@ -124,6 +146,9 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - Issue assignment to specific developers
 - Branch naming customization beyond the default `gh issue develop` format
 - Multi-issue selection for batch work
+- Automatically applying the `automatable` label to issues
+- Changing how the `automatable` label is managed by `/creating-issues`
+- Adding resilience for other label types
 
 ---
 
@@ -148,6 +173,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 | Issue | Date | Summary |
 |-------|------|---------|
 | #10 | 2026-02-15 | Initial feature spec |
+| #89 | 2026-02-25 | Add diagnostics for zero automatable issues in auto-mode: open issue count, label suggestion |
 
 ## Validation Checklist
 
