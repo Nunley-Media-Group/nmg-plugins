@@ -28,10 +28,10 @@
 | Backend (Persistent Logging) | #34 | 4 | [x] |
 | Integration (Persistent Logging) | #34 | 1 | [x] |
 | Documentation (Persistent Logging) | #34 | 2 | [x] |
-| Setup (Configurable Bounce Retries) | #88 | 1 | [ ] |
-| Backend (Configurable Bounce Retries) | #88 | 2 | [ ] |
-| Integration (Configurable Bounce Retries) | #88 | 1 | [ ] |
-| Documentation (Configurable Bounce Retries) | #88 | 1 | [ ] |
+| Setup (Configurable Bounce Retries) | #88 | 1 | [x] |
+| Backend (Configurable Bounce Retries) | #88 | 2 | [x] |
+| Integration (Configurable Bounce Retries) | #88 | 1 | [x] |
+| Documentation (Configurable Bounce Retries) | #88 | 1 | [x] |
 | **Total** | **#12–#88** | **32** | |
 
 ---
@@ -489,13 +489,14 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **File(s)**: `openclaw/scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T002
+**Status**: Complete
 **Acceptance**:
-- [ ] `MAX_BOUNCE_RETRIES` declared as a `let` variable with initial value `3`
-- [ ] Config loading reads `config.maxBounceRetries` with IIFE validation
-- [ ] `undefined`/`null` → default 3 (backward-compatible)
-- [ ] Non-integer, zero, or negative values → warning log + default 3
-- [ ] Valid positive integer → use as-is
-- [ ] Separate from `MAX_RETRIES` (which controls per-step retries)
+- [x] `MAX_BOUNCE_RETRIES` declared as a `let` variable with initial value `3`
+- [x] Config loading reads `config.maxBounceRetries` with IIFE validation
+- [x] `undefined`/`null` → default 3 (backward-compatible)
+- [x] Non-integer, zero, or negative values → warning log + default 3
+- [x] Valid positive integer → use as-is
+- [x] Separate from `MAX_RETRIES` (which controls per-step retries)
 
 **Notes**: Place alongside existing `MAX_RETRIES` config loading. Use an IIFE for clean validation logic.
 
@@ -508,11 +509,12 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **File(s)**: `openclaw/scripts/sdlc-runner.mjs`
 **Type**: Modify (add function)
 **Depends**: T030
+**Status**: Complete
 **Acceptance**:
-- [ ] `incrementBounceCount()` increments `bounceCount` and checks against `MAX_BOUNCE_RETRIES`
-- [ ] Returns `true` if threshold exceeded, `false` otherwise
-- [ ] Logs bounce loop detection message when threshold exceeded
-- [ ] Replaces inline bounce increment+check in both `handleFailure()` and `runStep()`
+- [x] `incrementBounceCount()` increments `bounceCount` and checks against `MAX_BOUNCE_RETRIES`
+- [x] Returns `true` if threshold exceeded, `false` otherwise
+- [x] Logs bounce loop detection message when threshold exceeded
+- [x] Replaces inline bounce increment+check in both `handleFailure()` and `runStep()`
 
 **Notes**: Centralizes the increment-and-check pattern to ensure all bounce paths use the same threshold variable.
 
@@ -521,12 +523,13 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **File(s)**: `openclaw/scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T031
+**Status**: Complete
 **Acceptance**:
-- [ ] Discord bounce messages include the specific `failedCheck` precondition name from `validatePreconditions()`
-- [ ] Discord bounce messages include format `(bounce N/M)` where M is `MAX_BOUNCE_RETRIES`
-- [ ] Discord bounce messages include the step being bounced to (step number and key)
-- [ ] Log messages include the same enriched information
-- [ ] Both `handleFailure()` retry-previous path and `runStep()` precondition retry-previous path use consistent message format
+- [x] Discord bounce messages include the specific `failedCheck` precondition name from `validatePreconditions()`
+- [x] Discord bounce messages include format `(bounce N/M)` where M is `MAX_BOUNCE_RETRIES`
+- [x] Discord bounce messages include the step being bounced to (step number and key)
+- [x] Log messages include the same enriched information
+- [x] Both `handleFailure()` retry-previous path and `runStep()` precondition retry-previous path use consistent message format
 
 ---
 
@@ -537,10 +540,11 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **File(s)**: `openclaw/scripts/sdlc-config.example.json`
 **Type**: Modify
 **Depends**: T030
+**Status**: Complete
 **Acceptance**:
-- [ ] `maxBounceRetries` field present in the example config with value `3`
-- [ ] Placed near the existing `maxRetriesPerStep` field for discoverability
-- [ ] Valid JSON syntax
+- [x] `maxBounceRetries` field present in the example config with value `3`
+- [x] Placed near the existing `maxRetriesPerStep` field for discoverability
+- [x] Valid JSON syntax
 
 ---
 
@@ -551,12 +555,13 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **File(s)**: `.claude/specs/feature-openclaw-runner-operations/feature.gherkin`
 **Type**: Modify
 **Depends**: T032, T033
+**Status**: Complete
 **Acceptance**:
-- [ ] All 5 acceptance criteria (AC25–AC29) have corresponding scenarios
-- [ ] Scenarios tagged with `# Added by issue #88` comment
-- [ ] Scenarios use Given/When/Then format
-- [ ] Includes: custom threshold usage, backward-compatible default, enhanced logging, Discord diagnostics, invalid config fallback
-- [ ] Feature file is valid Gherkin syntax
+- [x] All 5 acceptance criteria (AC25–AC29) have corresponding scenarios
+- [x] Scenarios tagged with `# Added by issue #88` comment
+- [x] Scenarios use Given/When/Then format
+- [x] Includes: custom threshold usage, backward-compatible default, enhanced logging, Discord diagnostics, invalid config fallback
+- [x] Feature file is valid Gherkin syntax
 
 ---
 

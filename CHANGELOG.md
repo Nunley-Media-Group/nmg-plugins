@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`sdlc-config.example.json`** — `maxBounceRetries` field added alongside `maxRetriesPerStep` so operators can tune the bounce-loop halt threshold without modifying the runner source (issue #88)
+
 ## [2.19.0] - 2026-02-25
 
 ### Added

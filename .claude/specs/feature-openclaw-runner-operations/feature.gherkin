@@ -4,7 +4,7 @@
 #   .claude/specs/12-openclaw-sdlc-orchestration/feature.gherkin (issue #12)
 #   .claude/specs/24-configurable-post-step-process-cleanup/feature.gherkin (issue #24)
 #   .claude/specs/33-failure-loop-detection/feature.gherkin (issue #33)
-# Issues: #12, #24, #33, #34
+# Issues: #12, #24, #33, #34, #88
 
 Feature: OpenClaw Runner Operations
   As an OpenClaw agent operator and developer

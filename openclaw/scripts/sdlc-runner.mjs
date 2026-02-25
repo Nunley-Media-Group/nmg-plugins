@@ -101,7 +101,7 @@ Options:
     if (val === undefined || val === null) return 3;
     const num = Number(val);
     if (!Number.isInteger(num) || num <= 0) {
-      console.log(`Warning: invalid maxBounceRetries value "${val}" — using default 3`);
+      log(`Warning: invalid maxBounceRetries value "${val}" — using default 3`);
       return 3;
     }
     return num;
@@ -852,13 +852,13 @@ function validatePreconditions(step, state) {
     case 9: { // Merge — CI passing
       try {
         const checks = gh('pr checks');
-        if (/fail/i.test(checks)) return { ok: false, reason: 'CI checks failing' };
+        if (/fail/i.test(checks)) return { ok: false, failedCheck: 'CI checks passing', reason: 'CI checks failing' };
         return { ok: true };
       } catch (err) {
         if (/no checks reported/i.test(err.stderr || err.message || '')) {
           return { ok: true };
         }
-        return { ok: false, reason: 'Could not check PR status' };
+        return { ok: false, failedCheck: 'PR status check', reason: 'Could not check PR status' };
       }
     }
 
@@ -1712,6 +1712,7 @@ async function runStep(step, state) {
         await escalate(prevStep, `Bounce loop: ${bounceCount} step-back transitions exceed threshold ${MAX_BOUNCE_RETRIES} (precondition: ${failedCheck})`);
         return 'escalated';
       }
+      log(`Step ${step.number} (${step.key}) bounced to Step ${prevStep.number} (${prevStep.key}). Precondition failed: "${failedCheck}". (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
       await postDiscord(`Step ${step.number} (${step.key}) bounced to Step ${prevStep.number} (${prevStep.key}). Precondition failed: "${failedCheck}". (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
       // Increment retry for the previous step
       const retries = state.retries || {};

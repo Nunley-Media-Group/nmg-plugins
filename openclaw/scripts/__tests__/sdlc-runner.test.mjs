@@ -550,7 +550,7 @@ describe('State extraction', () => {
 describe('Bounce loop detection', () => {
   it('returns false when under threshold', () => {
     __test__.bounceCount = 0;
-    // MAX_RETRIES defaults to 3
+    // MAX_BOUNCE_RETRIES defaults to 3
     expect(incrementBounceCount()).toBe(false);
     expect(incrementBounceCount()).toBe(false);
     expect(incrementBounceCount()).toBe(false);
@@ -567,6 +567,61 @@ describe('Bounce loop detection', () => {
     expect(__test__.bounceCount).toBe(1);
     incrementBounceCount();
     expect(__test__.bounceCount).toBe(2);
+  });
+});
+
+describe('maxBounceRetries config loading (#88)', () => {
+  beforeEach(() => {
+    __test__.resetState();
+  });
+
+  afterEach(() => {
+    // Restore default threshold
+    __test__.setConfig({ maxBounceRetries: 3 });
+  });
+
+  it('uses custom maxBounceRetries value from config', () => {
+    __test__.setConfig({ maxBounceRetries: 5 });
+    __test__.bounceCount = 0;
+    // Should allow 5 bounces before threshold
+    expect(incrementBounceCount()).toBe(false); // 1
+    expect(incrementBounceCount()).toBe(false); // 2
+    expect(incrementBounceCount()).toBe(false); // 3
+    expect(incrementBounceCount()).toBe(false); // 4
+    expect(incrementBounceCount()).toBe(false); // 5
+    expect(incrementBounceCount()).toBe(true);  // 6 — exceeded
+  });
+
+  it('falls back to 3 when maxBounceRetries is null', () => {
+    __test__.setConfig({ maxBounceRetries: null });
+    __test__.bounceCount = 3; // At default threshold (3)
+    expect(incrementBounceCount()).toBe(true);
+  });
+
+  it('falls back to 3 when maxBounceRetries is zero', () => {
+    __test__.setConfig({ maxBounceRetries: 0 });
+    __test__.bounceCount = 3; // At default threshold (3)
+    expect(incrementBounceCount()).toBe(true);
+  });
+
+  it('falls back to 3 when maxBounceRetries is negative', () => {
+    __test__.setConfig({ maxBounceRetries: -1 });
+    __test__.bounceCount = 3; // At default threshold (3)
+    expect(incrementBounceCount()).toBe(true);
+  });
+
+  it('falls back to 3 when maxBounceRetries is a non-numeric string', () => {
+    __test__.setConfig({ maxBounceRetries: 'abc' });
+    __test__.bounceCount = 3; // At default threshold (3)
+    expect(incrementBounceCount()).toBe(true);
+  });
+
+  it('respects custom threshold — does not escalate before threshold', () => {
+    __test__.setConfig({ maxBounceRetries: 2 });
+    __test__.bounceCount = 0;
+    expect(incrementBounceCount()).toBe(false); // 1
+    expect(incrementBounceCount()).toBe(false); // 2
+    expect(incrementBounceCount()).toBe(true);  // 3 — exceeded
   });
 });
 
