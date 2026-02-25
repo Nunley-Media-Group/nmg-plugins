@@ -1,7 +1,7 @@
 # Tasks: OpenClaw Runner Operations
 
-**Issues**: #12, #24, #33, #34
-**Date**: 2026-02-15
+**Issues**: #12, #24, #33, #34, #88
+**Date**: 2026-02-25
 **Status**: Complete
 **Author**: Claude Code (consolidated from issues #12, #24, #33, #34)
 
@@ -28,7 +28,11 @@
 | Backend (Persistent Logging) | #34 | 4 | [x] |
 | Integration (Persistent Logging) | #34 | 1 | [x] |
 | Documentation (Persistent Logging) | #34 | 2 | [x] |
-| **Total** | **#12–#34** | **27** | |
+| Setup (Configurable Bounce Threshold) | #88 | 1 | [ ] |
+| Backend (Configurable Bounce Threshold) | #88 | 2 | [ ] |
+| Documentation (Configurable Bounce Threshold) | #88 | 1 | [ ] |
+| Testing (Configurable Bounce Threshold) | #88 | 1 | [ ] |
+| **Total** | **#12–#88** | **32** | |
 
 ---
 
@@ -476,6 +480,83 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
+## Issue #88 — Configurable Bounce Loop MAX_RETRIES
+
+### Phase 18: Setup
+
+#### T030: Add MAX_BOUNCE_RETRIES Config Loading with Validation
+
+**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**Type**: Modify
+**Depends**: T002
+**Acceptance**:
+- [ ] `MAX_BOUNCE_RETRIES` constant extracted from `config.maxBounceRetries` with default `3`
+- [ ] Validates that the value is a positive integer; logs a warning and falls back to `3` for non-positive or non-numeric values
+- [ ] Placed after existing config loading block (after `MAX_RETRIES = config.maxRetriesPerStep || 3`)
+- [ ] No error thrown when `maxBounceRetries` key is absent from config
+- [ ] Test helper `__setConfig()` updated to accept `maxBounceRetries`
+
+**Notes**: `MAX_RETRIES` continues to control per-step retries. `MAX_BOUNCE_RETRIES` controls only the bounce loop threshold in `incrementBounceCount()`.
+
+---
+
+### Phase 19: Backend Implementation
+
+#### T031: Replace MAX_RETRIES with MAX_BOUNCE_RETRIES in Bounce Loop Detection
+
+**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**Type**: Modify
+**Depends**: T030
+**Acceptance**:
+- [ ] `incrementBounceCount()` uses `MAX_BOUNCE_RETRIES` instead of `MAX_RETRIES` in its threshold comparison
+- [ ] Log message in `incrementBounceCount()` references `MAX_BOUNCE_RETRIES`
+- [ ] All bounce-related log messages in `handleFailure()` and `validateStep()` reference `MAX_BOUNCE_RETRIES` instead of `MAX_RETRIES`
+- [ ] Per-step retry logic continues to use `MAX_RETRIES` (unchanged)
+
+#### T032: Enhance Bounce Logging and Discord Status with Precondition Details
+
+**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**Type**: Modify
+**Depends**: T031
+**Acceptance**:
+- [ ] Bounce log messages include the specific precondition that failed (e.g., `preconds.failedCheck` or `preconds.reason` with specificity)
+- [ ] Bounce log messages include the step being retried by key name (e.g., "writeSpecs"), not just number
+- [ ] Discord bounce status messages include: bounce count, configured threshold (`MAX_BOUNCE_RETRIES`), step being retried (name and number), and which precondition failed
+- [ ] Fallback to existing `preconds.reason` if specific `failedCheck` field is not available
+
+**Notes**: Precondition validator functions may need to return a structured result with a `failedCheck` field identifying the specific check that failed. If the existing `reason` field already contains sufficiently specific information, use it directly.
+
+---
+
+### Phase 20: Documentation
+
+#### T033: Update sdlc-config.example.json with maxBounceRetries Field
+
+**File(s)**: `openclaw/scripts/sdlc-config.example.json`
+**Type**: Modify
+**Depends**: T030
+**Acceptance**:
+- [ ] `maxBounceRetries` field present in example config with value `3`
+- [ ] Field is placed near `maxRetriesPerStep` for discoverability
+- [ ] Valid JSON syntax
+
+---
+
+### Phase 21: Testing
+
+#### T034: Amend Gherkin Feature File for Configurable Bounce Threshold
+
+**File(s)**: `.claude/specs/feature-openclaw-runner-operations/feature.gherkin`
+**Type**: Modify
+**Depends**: T031, T032
+**Acceptance**:
+- [ ] All 5 acceptance criteria (AC25–AC29) have corresponding Gherkin scenarios
+- [ ] Scenarios use Given/When/Then format
+- [ ] Includes happy path (custom threshold used), backward compatibility (default), enhanced logging, Discord status, and invalid config value scenarios
+- [ ] New scenarios tagged with `# Added by issue #88` comment
+
+---
+
 ## Dependency Graph
 
 ```
@@ -501,7 +582,10 @@ T001 ──▶ T002 ──┬──▶ T003 ──▶ T005
                 ├──▶ T024 ──▶ T025 ──┬──▶ T027
                 │            T026 ──┘
                 │
-                └──▶ T028 ──▶ T029
+                ├──▶ T028 ──▶ T029
+                │
+                └──▶ T030 ──┬──▶ T031 ──▶ T032 ──▶ T034 (feature.gherkin #88)
+                            └──▶ T033
 ```
 
 ---
@@ -514,6 +598,7 @@ T001 ──▶ T002 ──┬──▶ T003 ──▶ T005
 | #24 | 2026-02-15 | Tasks T007–T015: process cleanup implementation, integration points, documentation, BDD |
 | #33 | 2026-02-16 | Tasks T016–T023: failure loop detection, `haltFailureLoop()`, bounce tracking, main loop integration, BDD |
 | #34 | 2026-02-16 | Tasks T024–T029: persistent logging, disk enforcement, SKILL.md updates, config example |
+| #88 | 2026-02-25 | Tasks T030–T034: configurable bounce threshold, enhanced bounce logging/Discord, config example update, Gherkin scenarios |
 
 ---
 

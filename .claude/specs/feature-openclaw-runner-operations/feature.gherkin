@@ -4,7 +4,7 @@
 #   .claude/specs/12-openclaw-sdlc-orchestration/feature.gherkin (issue #12)
 #   .claude/specs/24-configurable-post-step-process-cleanup/feature.gherkin (issue #24)
 #   .claude/specs/33-failure-loop-detection/feature.gherkin (issue #33)
-# Issues: #12, #24, #33, #34
+# Issues: #12, #24, #33, #34, #88
 
 Feature: OpenClaw Runner Operations
   As an OpenClaw agent operator and developer
@@ -280,3 +280,59 @@ Feature: OpenClaw Runner Operations
     Given the runner is executing on Windows
     When it resolves the log directory with default config
     Then the log directory is under "C:\Users\<user>\AppData\Local\Temp\sdlc-logs\<project-name>\"
+
+  # ===================================================================
+  # From issue #88 — Configurable Bounce Loop MAX_RETRIES
+  # ===================================================================
+
+  # Added by issue #88
+
+  # --- Configuration ---
+
+  Scenario: Custom maxBounceRetries value is used for bounce loop threshold
+    Given sdlc-config.json includes "maxBounceRetries" set to 5
+    And the runner starts and loads the config
+    When a cycle is in progress and step 5 bounces back to step 4
+    Then the bounce loop threshold is 5 (not the default 3)
+    And the runner allows up to 5 step-back transitions before escalating
+
+  Scenario: Default bounce threshold when maxBounceRetries is absent
+    Given sdlc-config.json does not include a "maxBounceRetries" field
+    When the runner starts and loads the config
+    Then the bounce loop threshold defaults to 3
+    And the runner escalates after more than 3 step-back transitions in a cycle
+
+  # --- Enhanced Logging ---
+
+  Scenario: Bounce loop log includes specific failed precondition
+    Given maxBounceRetries is configured as 5
+    And step 5 (verify) precondition "commits exist on branch" fails
+    When the runner bounces back to step 4 (implement)
+    Then the log message includes the precondition name "commits exist on branch"
+    And the log message includes the current bounce count and threshold (e.g., "bounce 1/5")
+    And the log message includes the step being retried by name (e.g., "implement")
+
+  # --- Discord Status ---
+
+  Scenario: Discord bounce status includes precondition and step details
+    Given maxBounceRetries is configured as 5
+    And a Discord channel is configured
+    And step 5 (verify) precondition "spec files exist" fails
+    When the runner bounces back to step 4 and posts to Discord
+    Then the Discord message includes the bounce count and threshold
+    And the Discord message includes the step being retried by name
+    And the Discord message includes which precondition failed
+
+  # --- Invalid Config ---
+
+  Scenario: Invalid maxBounceRetries falls back to default with warning
+    Given sdlc-config.json includes "maxBounceRetries" set to -1
+    When the runner starts and loads the config
+    Then the bounce loop threshold defaults to 3
+    And a warning is logged about the invalid "maxBounceRetries" value
+
+  Scenario: Non-numeric maxBounceRetries falls back to default with warning
+    Given sdlc-config.json includes "maxBounceRetries" set to "abc"
+    When the runner starts and loads the config
+    Then the bounce loop threshold defaults to 3
+    And a warning is logged about the invalid "maxBounceRetries" value

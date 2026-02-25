@@ -1,7 +1,7 @@
 # Design: OpenClaw Runner Operations
 
-**Issues**: #12, #24, #33, #34
-**Date**: 2026-02-15
+**Issues**: #12, #24, #33, #34, #88
+**Date**: 2026-02-25
 **Status**: Complete
 **Author**: Claude Code (consolidated from issues #12, #24, #33, #34)
 
@@ -19,6 +19,7 @@ Additional capabilities built onto this foundation:
 - **Process cleanup** (issue #24): A configurable `cleanupProcesses()` function kills orphaned processes (e.g., Chrome) at step transitions, escalation, and shutdown.
 - **Failure loop detection** (issue #33): In-memory tracking of consecutive escalations, escalated-issue sets, and per-cycle bounce counts with `haltFailureLoop()` for deterministic exits.
 - **Persistent logging** (issue #34): Per-step log files written to an OS-agnostic temp directory with disk usage enforcement.
+- **Configurable bounce threshold** (issue #88): Separate `maxBounceRetries` config field for bounce loop threshold with enhanced logging and Discord status.
 
 ---
 
@@ -53,6 +54,7 @@ Additional capabilities built onto this foundation:
 │     i. [#34] writeStepLog() per-step              │
 │  4. Track lastCompletedStep                       │
 │  5. [#33] Detect failure loops → haltFailureLoop()│
+│  6. [#88] maxBounceRetries from config            │
 └──────────────────────────────────────────────────┘
          │                    │
          ▼                    ▼
@@ -98,8 +100,8 @@ Additional capabilities built onto this foundation:
 
 | File | Type | Purpose |
 |------|------|---------|
-| `openclaw/scripts/sdlc-runner.mjs` | Create | Main Node.js orchestrator script (issues #12, #24, #33, #34) |
-| `openclaw/scripts/sdlc-config.example.json` | Create/Modify | Config template — per-step settings (#12), cleanup patterns (#24), logging fields (#34) |
+| `openclaw/scripts/sdlc-runner.mjs` | Create | Main Node.js orchestrator script (issues #12, #24, #33, #34, #88) |
+| `openclaw/scripts/sdlc-config.example.json` | Create/Modify | Config template — per-step settings (#12), cleanup patterns (#24), logging fields (#34), bounce threshold (#88) |
 | `openclaw/skills/running-sdlc/SKILL.md` | Create/Modify | OpenClaw skill — invokes runner (#12), cleanup docs (#24), logging docs (#34) |
 
 ---
@@ -568,6 +570,113 @@ The skill also gains a **Logging** section documenting the log directory locatio
 
 ---
 
+## Configurable Bounce Loop Threshold Design (Issue #88)
+
+### From Issue #88
+
+This section describes the configurable bounce loop threshold and enhanced bounce diagnostics added to the SDLC runner.
+
+#### Overview
+
+The runner's bounce loop detection uses `MAX_RETRIES` (loaded from `config.maxRetriesPerStep`) as the threshold for both per-step retries and bounce-back transitions. This conflates two distinct failure modes: a step failing and being retried in-place vs. a step bouncing back to a previous step due to precondition failures. Issue #88 introduces a dedicated `maxBounceRetries` config field to control the bounce loop threshold independently, along with enhanced logging that includes the specific failed precondition name and improved Discord bounce status messages.
+
+All changes are confined to `openclaw/scripts/sdlc-runner.mjs` and `openclaw/scripts/sdlc-config.example.json`. No new files, no external dependencies.
+
+#### Config Schema Addition
+
+A new optional top-level field in `sdlc-config.json`:
+
+```json
+{
+  "maxBounceRetries": 5,
+  "maxRetriesPerStep": 3
+}
+```
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `maxBounceRetries` | `number` (positive integer) | No | `3` | Maximum step-back transitions per cycle before bounce loop escalation. Independent of `maxRetriesPerStep`. |
+
+#### Config Loading Changes
+
+```javascript
+// After existing config loading (line ~97)
+const MAX_BOUNCE_RETRIES = (() => {
+  const val = config.maxBounceRetries;
+  if (val === undefined || val === null) return 3;
+  const num = Number(val);
+  if (!Number.isInteger(num) || num <= 0) {
+    log(`Warning: invalid maxBounceRetries value "${val}" — using default 3`);
+    return 3;
+  }
+  return num;
+})();
+```
+
+The existing `MAX_RETRIES` (from `maxRetriesPerStep`) continues to control per-step retry limits. The new `MAX_BOUNCE_RETRIES` controls only the bounce loop threshold in `incrementBounceCount()`.
+
+#### Modified `incrementBounceCount()` Function
+
+```javascript
+function incrementBounceCount() {
+  bounceCount++;
+  if (bounceCount > MAX_BOUNCE_RETRIES) {
+    log(`Bounce loop detected: ${bounceCount} step-back transitions exceed threshold ${MAX_BOUNCE_RETRIES}`);
+    return true;  // signals escalation needed
+  }
+  return false;
+}
+```
+
+**Change**: Replace `MAX_RETRIES` with `MAX_BOUNCE_RETRIES` in the comparison and log message.
+
+#### Enhanced Bounce Logging
+
+Bounce-related log messages are enhanced to include the specific precondition that failed rather than a generic failure message:
+
+```javascript
+// In handleFailure() / validateStep() precondition failure paths
+log(`Step ${step.number} (${step.key}) precondition failed: "${preconds.failedCheck}". Bouncing to Step ${prevStep.number} (${prevStep.key}). (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
+```
+
+**Key addition**: `preconds.failedCheck` — the name of the specific precondition check that failed (e.g., "spec files exist", "commits on branch", "PR exists"). This requires precondition validators to return a structured result with both `reason` (human-readable) and `failedCheck` (the check name).
+
+#### Enhanced Discord Status Messages
+
+Discord messages for bounce events are updated to include the same enhanced information:
+
+```javascript
+await postDiscord(`⟲ Step ${step.number} (${step.key}) bounced → Step ${prevStep.number} (${prevStep.key}). Precondition failed: "${preconds.failedCheck}". (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
+```
+
+#### Integration Points
+
+| Location | Change | Purpose |
+|----------|--------|---------|
+| Config loading (~line 97) | Add `MAX_BOUNCE_RETRIES` extraction with validation | Separate bounce threshold from per-step retries |
+| `incrementBounceCount()` (~line 1107) | Replace `MAX_RETRIES` with `MAX_BOUNCE_RETRIES` | Use dedicated bounce threshold |
+| `handleFailure()` precondition path (~line 1146) | Include `preconds.failedCheck` in log and Discord | Enhanced diagnostics |
+| `validateStep()` precondition path (~line 1659) | Include `preconds.failedCheck` in log and Discord | Enhanced diagnostics |
+| Test helper `__setConfig()` (~line 1998) | Add `MAX_BOUNCE_RETRIES` setter | Testability |
+
+#### Bounce Threshold Alternatives Considered
+
+| Option | Description | Decision |
+|--------|-------------|----------|
+| **A: Reuse `maxRetriesPerStep`** | Keep using the same value for both per-step retries and bounce threshold | Rejected — conflates two distinct failure modes; operators may want different thresholds |
+| **B: Separate `maxBounceRetries` field** | New config field that defaults to the current behavior | **Selected** — clean separation, backward-compatible, minimal changes |
+| **C: Per-step bounce thresholds** | Different bounce limits per SDLC step | Rejected — out of scope; one global setting is sufficient for now |
+
+#### Bounce Threshold Risks & Mitigations
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| Operators set threshold too high, masking real failures | Low | Medium | Document recommended range (3–10) in example config |
+| `preconds.failedCheck` missing from some precondition paths | Low | Low | Fallback to existing `preconds.reason` if `failedCheck` is not set |
+| Breaking change if `MAX_RETRIES` was used by external callers | Very Low | Low | `MAX_RETRIES` still exists for per-step retries; only bounce path changes |
+
+---
+
 ## Security Considerations
 
 - [x] No secrets in the runner script or config file
@@ -629,6 +738,7 @@ Per `tech.md`, this project uses Gherkin specs as design artifacts rather than e
 | #24 | 2026-02-15 | Added process cleanup design — `cleanupProcesses()`, `shellEscape()`, config schema, integration points |
 | #33 | 2026-02-16 | Added failure loop detection design — `haltFailureLoop()`, modified `escalate()`, bounce tracking, issue exclusion |
 | #34 | 2026-02-16 | Added persistent logging design — `resolveLogDir()`, `writeStepLog()`, `enforceMaxDisk()`, `extractSessionId()`, SKILL.md changes |
+| #88 | 2026-02-25 | Added configurable bounce threshold design — `MAX_BOUNCE_RETRIES`, config validation, enhanced logging with `failedCheck`, Discord status improvements |
 
 ---
 
