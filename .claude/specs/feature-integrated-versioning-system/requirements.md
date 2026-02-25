@@ -1,7 +1,7 @@
 # Requirements: Integrated Versioning System
 
-**Issues**: #41
-**Date**: 2026-02-16
+**Issues**: #41, #87
+**Date**: 2026-02-25
 **Status**: Draft
 **Author**: Claude (nmg-sdlc)
 
@@ -153,6 +153,46 @@ The versioning system must be stack-agnostic (a core product principle) — it p
 - When: `/creating-issues` runs → `/creating-prs` runs
 - Then: Milestone auto-set to "v2"; version auto-bumped to `2.4.0` with no prompts
 
+### AC11: Single Authoritative Location for Classification Logic
+
+**Given** the version classification matrix (label→bump type mapping) needs to be defined
+**When** both `/creating-prs` and `sdlc-runner.mjs` need to determine a version bump
+**Then** the classification rules are defined in a single authoritative location (a steering document section within `.claude/steering/tech.md`) that both consumers reference, rather than each embedding an independent copy of the matrix
+
+**Example**:
+- Given: `.claude/steering/tech.md` contains a `### Version Bump Classification` subsection under `## Versioning`
+- When: `/creating-prs` needs to classify a bump type
+- Then: It reads the matrix from `tech.md` rather than using an inline table
+- And: `sdlc-runner.mjs` parses the same `tech.md` section to build its classification logic
+
+### AC12: Both Consumers Reference Single Source
+
+**Given** the classification logic exists in `tech.md`'s Version Bump Classification subsection
+**When** `/creating-prs` skill determines a version bump
+**Then** it reads the label→bump mappings from the steering document and applies them
+
+**Given** the classification logic exists in `tech.md`'s Version Bump Classification subsection
+**When** `sdlc-runner.mjs` performs its deterministic version bump postcondition
+**Then** it parses the same steering document section and applies the same mappings
+
+**Example**:
+- Given: `tech.md` Version Bump Classification table contains `bug → patch`, `enhancement → minor`
+- When: `/creating-prs` runs for a `bug`-labeled issue
+- Then: It reads `tech.md`, finds the `bug` row, and classifies as patch
+- And: `sdlc-runner.mjs` independently reads `tech.md`, finds the same `bug` row, and classifies as patch
+
+### AC13: Single Change Point for New Mappings
+
+**Given** a new label→bump mapping needs to be added (e.g., `security` → patch)
+**When** the mapping is added to the Version Bump Classification table in `tech.md`
+**Then** both `/creating-prs` and `sdlc-runner.mjs` pick up the new mapping without any code or skill changes
+
+**Example**:
+- Given: A project adds `| security | patch | Security vulnerability fix |` to the tech.md classification table
+- When: `/creating-prs` runs for an issue labeled `security`
+- Then: It finds the `security` row and classifies as patch — no SKILL.md change needed
+- And: `sdlc-runner.mjs` finds the same row and classifies as patch — no script change needed
+
 ### Generated Gherkin Preview
 
 ```gherkin
@@ -237,6 +277,24 @@ Feature: Integrated Versioning System
     When /creating-issues and /creating-prs run
     Then milestone defaults without prompting
     And version bump applies without confirmation
+
+  Scenario: Classification matrix defined in single steering document
+    Given the project's tech.md contains a Version Bump Classification table
+    When /creating-prs or sdlc-runner.mjs needs to classify a version bump
+    Then both read the matrix from tech.md rather than using inline definitions
+
+  Scenario: Both consumers produce identical results from shared source
+    Given tech.md defines "bug" maps to "patch" and "enhancement" maps to "minor"
+    And an issue has the "bug" label
+    When /creating-prs classifies the version bump
+    And sdlc-runner.mjs classifies the version bump independently
+    Then both classify the change as a patch bump
+
+  Scenario: New label mapping requires only one change
+    Given a new "security" to "patch" mapping is added to tech.md
+    When /creating-prs runs for a "security"-labeled issue
+    Then it classifies the change as a patch bump
+    And no SKILL.md or sdlc-runner.mjs code changes are required
 ```
 
 ---
@@ -258,6 +316,10 @@ Feature: Integrated Versioning System
 | FR10 | `/migrating-projects` creates or updates `VERSION` file to match the latest versioned heading in the generated/updated CHANGELOG; falls back to latest git tag or `0.1.0` if no headings exist | Must | VERSION always reflects CHANGELOG state |
 | FR11 | Auto-mode: milestone defaults to current major version; all version bumps (including major) are fully automatic with no confirmation | Must | Consistent with auto-mode pattern |
 | FR12 | `/setting-up-steering` tech.md template includes the new Versioning section | Must | Template update |
+| FR13 | Version Bump Classification subsection in tech.md Versioning section defines label→bump mappings in a parseable table format (Label \| Bump Type \| Description columns) | Must | Single source of truth for classification |
+| FR14 | `/creating-prs` reads classification matrix from `tech.md` Version Bump Classification table instead of using an inline matrix | Must | Replaces hardcoded table in SKILL.md Step 2 |
+| FR15 | `sdlc-runner.mjs` `performDeterministicVersionBump()` parses `tech.md` Version Bump Classification table instead of using hardcoded if-else logic | Must | Replaces hardcoded logic in script |
+| FR16 | Default classification (minor bump) applies when an issue label does not match any row in the tech.md classification table | Must | Preserves existing behavior for unlabeled issues |
 
 ---
 
@@ -328,6 +390,9 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - **Multi-package monorepo versioning** — Single VERSION file per project
 - **Retroactive milestone assignment** — Existing issues won't be assigned to milestones; only new issues going forward
 - **Automated release notes** — GitHub Releases are not managed by this feature
+- **Changing the actual classification rules** — The label→bump mappings (bug→patch, enhancement→minor, milestone→major) remain the same; only their location changes
+- **Adding new version bump categories** — Only patch, minor, and major are supported
+- **Modifying how version bumps are applied** — Only where classification is defined changes, not the bump execution logic
 
 ---
 
@@ -354,6 +419,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 | Issue | Date | Summary |
 |-------|------|---------|
 | #41 | 2026-02-16 | Initial feature spec |
+| #87 | 2026-02-25 | Deduplicate version bump classification logic — AC11-AC13, FR13-FR16 |
 
 ---
 
