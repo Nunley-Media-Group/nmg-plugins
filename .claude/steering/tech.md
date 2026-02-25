@@ -52,6 +52,19 @@ The `VERSION` file at the project root is the single source of truth for the cur
 | `plugins/nmg-sdlc/.claude-plugin/plugin.json` | `version` | Plugin manifest version |
 | `.claude-plugin/marketplace.json` | `plugins[0].version` | Marketplace index — must match plugin.json |
 
+### Version Bump Classification
+
+The `/creating-prs` skill and the `sdlc-runner.mjs` deterministic bump postcondition both read this table to classify version bumps. Modify this table to change the classification rules — no skill or script changes are needed.
+
+| Label | Bump Type | Description |
+|-------|-----------|-------------|
+| `bug` | patch | Bug fix — backwards-compatible |
+| `enhancement` | minor | New feature — backwards-compatible |
+
+**Default**: If an issue's labels do not match any row, the bump type is **minor**.
+
+**Milestone completion override**: If the issue is the last open issue in its milestone, the bump type is overridden to **major** regardless of labels.
+
 ---
 
 ## Technical Constraints

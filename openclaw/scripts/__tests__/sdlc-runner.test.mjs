@@ -2121,6 +2121,156 @@ describe('performDeterministicVersionBump (#60)', () => {
     expect(result).toBe(false);
     logSpy.mockRestore();
   });
+
+  // Classification matrix deduplication (#87)
+  it('reads bump classification from tech.md Version Bump Classification table', () => {
+    const techMdContent = [
+      '## Versioning',
+      '',
+      '| File | Path | Notes |',
+      '|------|------|-------|',
+      '',
+      '### Version Bump Classification',
+      '',
+      '| Label | Bump Type | Description |',
+      '|-------|-----------|-------------|',
+      '| `bug` | patch | Bug fix |',
+      '| `enhancement` | minor | New feature |',
+    ].join('\n');
+
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      if (p.endsWith('tech.md')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return '1.2.3\n';
+      if (p.endsWith('tech.md')) return techMdContent;
+      return '';
+    });
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'bug';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":null}';
+      return '';
+    });
+
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(true);
+
+    const writeCall = mockFs.writeFileSync.mock.calls.find(c => c[0].endsWith('VERSION'));
+    expect(writeCall).toBeDefined();
+    expect(writeCall[1]).toBe('1.2.4\n');
+  });
+
+  it('reads custom label mapping from tech.md (e.g. security → patch)', () => {
+    const techMdContent = [
+      '## Versioning',
+      '',
+      '### Version Bump Classification',
+      '',
+      '| Label | Bump Type | Description |',
+      '|-------|-----------|-------------|',
+      '| `bug` | patch | Bug fix |',
+      '| `security` | patch | Security fix |',
+      '| `enhancement` | minor | New feature |',
+    ].join('\n');
+
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      if (p.endsWith('tech.md')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return '2.0.0\n';
+      if (p.endsWith('tech.md')) return techMdContent;
+      return '';
+    });
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'security';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":null}';
+      return '';
+    });
+
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(true);
+
+    const writeCall = mockFs.writeFileSync.mock.calls.find(c => c[0].endsWith('VERSION'));
+    expect(writeCall).toBeDefined();
+    expect(writeCall[1]).toBe('2.0.1\n');
+  });
+
+  it('defaults to minor when no label matches tech.md classification table', () => {
+    const techMdContent = [
+      '## Versioning',
+      '',
+      '### Version Bump Classification',
+      '',
+      '| Label | Bump Type | Description |',
+      '|-------|-----------|-------------|',
+      '| `bug` | patch | Bug fix |',
+      '| `enhancement` | minor | New feature |',
+    ].join('\n');
+
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      if (p.endsWith('tech.md')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return '1.0.0\n';
+      if (p.endsWith('tech.md')) return techMdContent;
+      return '';
+    });
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'documentation';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":null}';
+      return '';
+    });
+
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(true);
+
+    const writeCall = mockFs.writeFileSync.mock.calls.find(c => c[0].endsWith('VERSION'));
+    expect(writeCall).toBeDefined();
+    expect(writeCall[1]).toBe('1.1.0\n');
+  });
+
+  it('falls back to hardcoded defaults when Version Bump Classification subsection is missing', () => {
+    const techMdContent = [
+      '## Versioning',
+      '',
+      '| File | Path | Notes |',
+      '|------|------|-------|',
+      '',
+      '### Path Syntax',
+      '',
+      '- **JSON files**: Use dot-notation',
+    ].join('\n');
+
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      if (p.endsWith('tech.md')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return '1.2.3\n';
+      if (p.endsWith('tech.md')) return techMdContent;
+      return '';
+    });
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'bug';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":null}';
+      return '';
+    });
+
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(true);
+
+    // Should still do patch bump (hardcoded fallback for 'bug')
+    const writeCall = mockFs.writeFileSync.mock.calls.find(c => c[0].endsWith('VERSION'));
+    expect(writeCall).toBeDefined();
+    expect(writeCall[1]).toBe('1.2.4\n');
+  });
 });
 
 describe('Step 7 prompt includes version bump mandate (#60)', () => {

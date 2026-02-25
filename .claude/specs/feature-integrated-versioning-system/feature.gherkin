@@ -121,3 +121,37 @@ Feature: Integrated Versioning System
       | label       | bump_type | new_version |
       | bug         | patch     | 1.2.4       |
       | enhancement | minor     | 1.3.0       |
+
+  # --- Classification Matrix Deduplication (Issue #87) ---
+  # Added by issue #87
+
+  Scenario: AC11 - Classification matrix defined in single steering document
+    Given the project's tech.md contains a "Version Bump Classification" subsection under "Versioning"
+    And the subsection contains a table mapping "bug" to "patch" and "enhancement" to "minor"
+    When /creating-prs needs to classify a version bump for a "bug"-labeled issue
+    Then it reads the classification from tech.md rather than using an inline table
+    And classifies the change as a patch bump
+
+  Scenario: AC12 - Both consumers produce identical results from shared source
+    Given tech.md Version Bump Classification table maps "bug" to "patch"
+    And an issue has the "bug" label
+    When /creating-prs classifies the version bump by reading tech.md
+    And sdlc-runner.mjs classifies the version bump by parsing the same tech.md section
+    Then both independently classify the change as a patch bump
+
+  Scenario: AC13 - New label mapping requires only one change
+    Given a "security" to "patch" mapping is added to the tech.md Version Bump Classification table
+    When /creating-prs runs for an issue with the "security" label
+    Then it reads the table and classifies the change as a patch bump
+    And no changes to SKILL.md or sdlc-runner.mjs code were required
+
+  Scenario: Classification fallback when tech.md subsection is missing
+    Given the project's tech.md does not contain a "Version Bump Classification" subsection
+    When /creating-prs or sdlc-runner.mjs needs to classify a version bump
+    Then both fall back to the default classification: "bug" maps to patch, everything else maps to minor
+
+  Scenario: Default classification for unlabeled issues via shared source
+    Given tech.md Version Bump Classification table contains rows for "bug" and "enhancement" only
+    And an issue has the "documentation" label which does not match any table row
+    When /creating-prs classifies the version bump
+    Then it defaults to a minor bump

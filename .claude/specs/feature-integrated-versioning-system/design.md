@@ -1,7 +1,7 @@
 # Design: Integrated Versioning System
 
-**Issues**: #41
-**Date**: 2026-02-16
+**Issues**: #41, #87
+**Date**: 2026-02-25
 **Status**: Draft
 **Author**: Claude (nmg-sdlc)
 
@@ -394,6 +394,116 @@ If your project has stack-specific files that contain a version string, declare 
 
 ---
 
+## Classification Matrix Deduplication (Issue #87)
+
+### Problem
+
+Both `/creating-prs` (SKILL.md Step 2, inline Markdown table) and `sdlc-runner.mjs` (`performDeterministicVersionBump()`, hardcoded if-else at lines 1487-1496) independently implement the same label→bump classification matrix:
+
+| Consumer | Format | Location |
+|----------|--------|----------|
+| `/creating-prs` SKILL.md | Markdown table inline in Step 2 | `plugins/nmg-sdlc/skills/creating-prs/SKILL.md:52-58` |
+| `sdlc-runner.mjs` | JavaScript if-else chain | `openclaw/scripts/sdlc-runner.mjs:1487-1496` |
+
+If the matrix changes (e.g., adding a `security` → patch mapping), both locations need independent updates.
+
+### Solution: Steering Document as Single Source of Truth
+
+Add a `### Version Bump Classification` subsection under the existing `## Versioning` section in the tech.md steering template. Both consumers read this section to determine label→bump mappings.
+
+This follows the existing architectural pattern: the runner already parses `tech.md`'s `## Versioning` section to find stack-specific file mappings (lines 1524-1578 of `sdlc-runner.mjs`). Adding a classification subsection extends this pattern rather than introducing a new mechanism.
+
+### New Steering Section: `### Version Bump Classification`
+
+Added under `## Versioning` in the tech.md template:
+
+```markdown
+### Version Bump Classification
+
+The `/creating-prs` skill and the `sdlc-runner.mjs` deterministic bump postcondition both read this table to classify version bumps. Modify this table to change the classification rules — no skill or script changes are needed.
+
+| Label | Bump Type | Description |
+|-------|-----------|-------------|
+| `bug` | patch | Bug fix — backwards-compatible |
+| `enhancement` | minor | New feature — backwards-compatible |
+
+**Default**: If an issue's labels do not match any row, the bump type is **minor**.
+
+**Milestone completion override**: If the issue is the last open issue in its milestone, the bump type is overridden to **major** regardless of labels.
+```
+
+### Consumer Changes
+
+#### 1. `/creating-prs` SKILL.md — Step 2 Modification
+
+**Current**: Step 2 item 3 contains an inline classification matrix table.
+
+**Changed**: Step 2 item 3 reads the classification from `tech.md`:
+
+```
+3. **Read the classification matrix** from `.claude/steering/tech.md`:
+   - Find the `## Versioning` section, then the `### Version Bump Classification` subsection
+   - Parse the table rows to extract Label → Bump Type mappings
+   - Match the issue's labels against the table rows
+   - If no label matches a row, default to **minor**
+   - The milestone completion override (step 4) still applies on top of this classification
+```
+
+The rest of Step 2 (milestone completion check, version calculation, user confirmation) is unchanged.
+
+#### 2. `sdlc-runner.mjs` — `performDeterministicVersionBump()` Modification
+
+**Current**: Lines 1487-1496 contain a hardcoded if-else chain:
+```javascript
+if (isLastInMilestone) {
+  newVersion = `${major + 1}.0.0`;
+} else if (labels.includes('bug')) {
+  newVersion = `${major}.${minor}.${patch + 1}`;
+} else {
+  newVersion = `${major}.${minor + 1}.0`;
+}
+```
+
+**Changed**: Replace with a function that parses the tech.md classification table:
+
+```
+1. Read .claude/steering/tech.md
+2. Extract the ## Versioning section using the same regex already used at line 1529
+3. Within the Versioning section, find the ### Version Bump Classification subsection
+4. Parse the table rows: extract Label and Bump Type columns
+5. Build a label→bumpType map from the parsed rows
+6. Match the issue's labels against the map
+7. Apply milestone completion override (if isLastInMilestone → major)
+8. If no label match → default to minor
+9. Calculate newVersion from the resolved bump type
+```
+
+The table parsing logic reuses the same row-parsing pattern the runner already uses for stack-specific file mappings (line 1532): `row.split('|').map(c => c.trim()).filter(Boolean)`.
+
+### Data Flow (Updated)
+
+```
+tech.md ## Versioning
+  ├── Stack-specific file mappings (existing)
+  │     └── read by: /creating-prs Step 3, sdlc-runner.mjs (lines 1524-1578)
+  └── ### Version Bump Classification (new)
+        ├── read by: /creating-prs Step 2 item 3
+        └── read by: sdlc-runner.mjs performDeterministicVersionBump()
+```
+
+### Fallback Behavior
+
+If the `### Version Bump Classification` subsection is missing from `tech.md` (e.g., the project hasn't updated its steering docs yet):
+
+| Consumer | Fallback |
+|----------|----------|
+| `/creating-prs` | Use the default classification: `bug` → patch, everything else → minor (same as today) |
+| `sdlc-runner.mjs` | Use the same hardcoded default: `bug` → patch, everything else → minor |
+
+This ensures backwards compatibility for projects that haven't migrated their tech.md.
+
+---
+
 ## Alternatives Considered
 
 | Option | Description | Pros | Cons | Decision |
@@ -402,6 +512,9 @@ If your project has stack-specific files that contain a version string, declare 
 | **B: Integrate into existing skills** | Weave versioning into `/creating-issues`, `/creating-prs`, `/migrating-projects` | Zero new skills; versioning is invisible; happens as part of existing workflow | More complex skill modifications | **Selected** — matches "versioning for free" goal |
 | **C: VERSION derived from CHANGELOG only** | No separate VERSION file; parse CHANGELOG for current version | One fewer file to manage | Fragile parsing; CHANGELOG could be malformed; harder for build tools to read | Rejected — plain text VERSION is maximally portable |
 | **D: Milestone auto-assigned by label** | Skip milestone interview; assign based on label type | Less interactive | Loses user control; can't plan future milestones | Rejected — milestones are planning decisions |
+| **E: Shared JSON config file for classification** | Separate `.claude/versioning.json` file defining label→bump mappings | Machine-parseable without Markdown table parsing | Adds a new file type; diverges from steering doc pattern; the runner already parses tech.md tables | Rejected — steering doc table is consistent with existing patterns |
+| **F: Extract classification into a shared JS module** | Node.js module imported by runner, referenced by skill via dynamic context | DRY in the traditional sense; type-safe | Skills are Markdown prompts, not code — they can't import JS modules; adds a build/dependency concern | Rejected — breaks the prompt-based architecture principle |
+| **G: Steering doc table in tech.md (selected)** | Add `### Version Bump Classification` subsection under `## Versioning` in tech.md | Follows existing pattern (runner already parses tech.md); single file to update; both consumers can read it; no new file types | Markdown table parsing is simple but not schema-validated | **Selected** — consistent with architecture, minimal change |
 
 ---
 
@@ -460,6 +573,7 @@ If your project has stack-specific files that contain a version string, declare 
 | Issue | Date | Summary |
 |-------|------|---------|
 | #41 | 2026-02-16 | Initial feature spec |
+| #87 | 2026-02-25 | Deduplicate version bump classification — shared tech.md subsection, consumer modifications |
 
 ---
 

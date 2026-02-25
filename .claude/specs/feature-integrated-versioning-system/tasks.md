@@ -1,7 +1,7 @@
 # Tasks: Integrated Versioning System
 
-**Issues**: #41
-**Date**: 2026-02-16
+**Issues**: #41, #87
+**Date**: 2026-02-25
 **Status**: Planning
 **Author**: Claude (nmg-sdlc)
 
@@ -16,7 +16,8 @@
 | Frontend | 0 (N/A — prompt-based project) | — |
 | Integration | 3 | [ ] |
 | Testing | 1 | [ ] |
-| **Total** | **11** | |
+| Classification Deduplication (Issue #87) | 5 | [ ] |
+| **Total** | **16** | |
 
 ---
 
@@ -248,15 +249,97 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
+## Phase 6: Classification Deduplication — Issue #87
+
+### T012: Add Version Bump Classification Subsection to Tech.md Steering Template
+
+**File(s)**: `plugins/nmg-sdlc/skills/setting-up-steering/templates/tech.md`
+**Type**: Modify
+**Depends**: T001
+**Acceptance**:
+- [ ] New `### Version Bump Classification` subsection exists under `## Versioning`, after the Path Syntax subsection
+- [ ] Subsection includes introductory text explaining that both `/creating-prs` and `sdlc-runner.mjs` read this table
+- [ ] Table has three columns: Label | Bump Type | Description
+- [ ] Default rows include `bug` → `patch` and `enhancement` → `minor`
+- [ ] Documents the default behavior: "if no label matches, bump type is minor"
+- [ ] Documents the milestone completion override: "last open issue in milestone → major"
+- [ ] Has `<!-- TODO: -->` placeholder consistent with existing template style
+- [ ] Existing template content is unchanged
+
+**Notes**: See design.md "Classification Matrix Deduplication" section for the exact content. This extends the existing Versioning section that was added in T001.
+
+### T013: Add Version Bump Classification to nmg-plugins Project Tech.md
+
+**File(s)**: `.claude/steering/tech.md`
+**Type**: Modify
+**Depends**: T012
+**Acceptance**:
+- [ ] `### Version Bump Classification` subsection exists under `## Versioning`
+- [ ] Table contains the default rows: `bug` → `patch`, `enhancement` → `minor`
+- [ ] Default behavior and milestone override are documented
+- [ ] Follows the same format as the template from T012
+- [ ] Existing `tech.md` content is unchanged
+
+**Notes**: This makes the nmg-plugins project itself use the shared classification matrix. Both `/creating-prs` and `sdlc-runner.mjs` will read this when running against this repo.
+
+### T014: Update `/creating-prs` to Read Classification from Tech.md
+
+**File(s)**: `plugins/nmg-sdlc/skills/creating-prs/SKILL.md`
+**Type**: Modify
+**Depends**: T012
+**Acceptance**:
+- [ ] Step 2 item 3 ("Apply the classification matrix") no longer contains an inline table
+- [ ] Instead, Step 2 item 3 instructs Claude to read `.claude/steering/tech.md`, find the `## Versioning` section, then the `### Version Bump Classification` subsection, and parse the table
+- [ ] The instruction specifies: match issue labels against the Label column, use the corresponding Bump Type
+- [ ] Documents the fallback: if the subsection is missing, default to `bug` → patch, everything else → minor
+- [ ] The milestone completion override (Step 2 item 4) remains unchanged
+- [ ] Version calculation, user confirmation, and auto-mode behavior are unchanged
+- [ ] Existing skill functionality beyond classification lookup is preserved
+
+**Notes**: See design.md "Consumer Changes §1" for the updated step text. The key change is replacing 3 lines of inline table with a reference to the steering document.
+
+### T015: Update `sdlc-runner.mjs` to Read Classification from Tech.md
+
+**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**Type**: Modify
+**Depends**: T012
+**Acceptance**:
+- [ ] `performDeterministicVersionBump()` no longer contains hardcoded label→bump if-else logic (lines ~1487-1496)
+- [ ] Instead, it reads `.claude/steering/tech.md`, extracts the `### Version Bump Classification` subsection, and parses the table rows
+- [ ] Table parsing reuses the same row-parsing pattern already used for stack-specific file mappings (split by `|`, trim, filter)
+- [ ] Builds a `Map<string, string>` (or equivalent) of label → bump type from parsed rows
+- [ ] Matches issue labels against the map; first match wins
+- [ ] Default to minor if no label matches any row
+- [ ] Milestone completion override (`isLastInMilestone` → major) still takes priority over label-based classification
+- [ ] Fallback: if the Version Bump Classification subsection is missing from tech.md, uses hardcoded defaults (`bug` → patch, else → minor)
+- [ ] Existing `performDeterministicVersionBump()` functionality beyond classification (VERSION file reading, stack-specific file updates, commit, push) is unchanged
+- [ ] Runner tests in `openclaw/scripts/__tests__/` are updated to cover the new parsing logic
+
+**Notes**: See design.md "Consumer Changes §2". The regex to extract the subsection can be chained from the existing `## Versioning` extraction at line 1529. Parse only within that captured section for the `### Version Bump Classification` heading.
+
+### T016: Update BDD Feature File with Classification Deduplication Scenarios
+
+**File(s)**: `.claude/specs/feature-integrated-versioning-system/feature.gherkin`
+**Type**: Modify
+**Depends**: T012, T014, T015
+**Acceptance**:
+- [ ] Three new scenarios corresponding to AC11, AC12, AC13 are appended
+- [ ] New scenarios are tagged with a comment `# Added by issue #87`
+- [ ] Scenarios use Given/When/Then format consistently
+- [ ] Existing scenarios are unchanged
+- [ ] Valid Gherkin syntax
+
+---
+
 ## Dependency Graph
 
 ```
 T001 (template) ──────────────────────────────────────▶ T008 (this project's tech.md)
-                                                              │
-T002 (VERSION file) ─ (no deps)                               ▼
-                                                         T009 (README)
+                                                    └──▶ T012 (classification template)
+T002 (VERSION file) ─ (no deps)
+
 T003 (creating-issues) ─ (no deps) ─────────────────▶ T009, T010, T011
-                                                         ▲
+
 T004 (creating-prs bump) ─ (no deps) ───────────────▶ T005 (creating-prs artifacts)
                                                     └──▶ T009, T010, T011
 T005 (creating-prs artifacts) ──────────────────────▶ T009, T010, T011
@@ -270,6 +353,16 @@ T008 (this project's tech.md) ────────────────�
 T010 (CHANGELOG) ─ depends on all impl tasks
 
 T011 (BDD feature) ─ depends on all impl tasks
+
+--- Phase 6 (Issue #87) ---
+
+T012 (classification template) ── (after T001) ────▶ T013 (this project's classification)
+                                                    ├──▶ T014 (creating-prs reads tech.md)
+                                                    └──▶ T015 (runner reads tech.md)
+T013 (this project's classification) ── (after T012)
+T014 (creating-prs reads tech.md) ── (after T012)
+T015 (runner reads tech.md) ── (after T012) ───────▶ T016 (BDD update)
+T016 (BDD update) ── (after T012, T014, T015)
 ```
 
 **Execution order** (respecting dependencies):
@@ -277,8 +370,10 @@ T011 (BDD feature) ─ depends on all impl tasks
 1. **Parallel**: T001, T002, T003, T004, T006
 2. **After T004**: T005
 3. **After T006**: T007
-4. **After T001**: T008
-5. **After all impl tasks + T008**: T009, T010, T011 (parallelizable)
+4. **After T001**: T008, T012
+5. **After T012**: T013, T014, T015 (parallelizable)
+6. **After T012 + T014 + T015**: T016
+7. **After all impl tasks + T008**: T009, T010, T011 (parallelizable)
 
 ---
 
@@ -287,6 +382,7 @@ T011 (BDD feature) ─ depends on all impl tasks
 | Issue | Date | Summary |
 |-------|------|---------|
 | #41 | 2026-02-16 | Initial feature spec |
+| #87 | 2026-02-25 | Phase 6: Classification deduplication — T012-T016 |
 
 ---
 
