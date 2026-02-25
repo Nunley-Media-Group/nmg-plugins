@@ -39,6 +39,7 @@ let PLUGINS_PATH = '';
 let MODEL = 'opus';
 let EFFORT = undefined;
 let MAX_RETRIES = 3;
+let MAX_BOUNCE_RETRIES = 3;
 let DISCORD_CHANNEL = null;
 let CLEANUP_PATTERNS = [];
 let STATE_PATH = '';
@@ -95,6 +96,16 @@ Options:
   MODEL = config.model || 'opus';
   EFFORT = config.effort || undefined;
   MAX_RETRIES = config.maxRetriesPerStep || 3;
+  MAX_BOUNCE_RETRIES = (() => {
+    const val = config.maxBounceRetries;
+    if (val === undefined || val === null) return 3;
+    const num = Number(val);
+    if (!Number.isInteger(num) || num <= 0) {
+      console.log(`Warning: invalid maxBounceRetries value "${val}" — using default 3`);
+      return 3;
+    }
+    return num;
+  })();
 
   DISCORD_CHANNEL = args['discord-channel'] || config.discordChannelId || null;
   CLEANUP_PATTERNS = config.cleanup?.processPatterns || [];
@@ -763,24 +774,24 @@ function validatePreconditions(step, state) {
           .join('\n')
           .trim();
         const branch = git('rev-parse --abbrev-ref HEAD');
-        if (status.length > 0) return { ok: false, reason: 'Working tree is dirty' };
-        if (branch !== 'main') return { ok: false, reason: `Expected main branch, on ${branch}` };
+        if (status.length > 0) return { ok: false, failedCheck: 'clean working tree', reason: 'Working tree is dirty' };
+        if (branch !== 'main') return { ok: false, failedCheck: 'on main branch', reason: `Expected main branch, on ${branch}` };
         return { ok: true };
       } catch (err) {
-        return { ok: false, reason: `Git check failed: ${err.message}` };
+        return { ok: false, failedCheck: 'git state check', reason: `Git check failed: ${err.message}` };
       }
     }
 
     case 3: { // Write specs — feature branch exists, issue known
       const branch = git('rev-parse --abbrev-ref HEAD');
-      if (branch === 'main') return { ok: false, reason: 'Still on main, expected feature branch' };
-      if (!state.currentIssue) return { ok: false, reason: 'No current issue set in state' };
+      if (branch === 'main') return { ok: false, failedCheck: 'feature branch exists', reason: 'Still on main, expected feature branch' };
+      if (!state.currentIssue) return { ok: false, failedCheck: 'issue number known', reason: 'No current issue set in state' };
       return { ok: true };
     }
 
     case 4: { // Implement — all 4 spec files exist
       const specsDir = path.join(PROJECT_PATH, '.claude', 'specs');
-      if (!fs.existsSync(specsDir)) return { ok: false, reason: 'No .claude/specs directory' };
+      if (!fs.existsSync(specsDir)) return { ok: false, failedCheck: 'spec files exist', reason: 'No .claude/specs directory' };
       const features = fs.readdirSync(specsDir).filter(d =>
         fs.statSync(path.join(specsDir, d)).isDirectory()
       );
@@ -789,7 +800,7 @@ function validatePreconditions(step, state) {
         : features.length > 0 ? path.join(specsDir, features[features.length - 1]) : null;
 
       if (!featureDir || !fs.existsSync(featureDir)) {
-        return { ok: false, reason: 'No feature spec directory found' };
+        return { ok: false, failedCheck: 'spec files exist', reason: 'No feature spec directory found' };
       }
 
       const required = ['requirements.md', 'design.md', 'tasks.md', 'feature.gherkin'];
@@ -798,17 +809,17 @@ function validatePreconditions(step, state) {
         return !fs.existsSync(fp) || fs.statSync(fp).size === 0;
       });
       if (missing.length > 0) {
-        return { ok: false, reason: `Missing spec files: ${missing.join(', ')}` };
+        return { ok: false, failedCheck: 'spec files exist', reason: `Missing spec files: ${missing.join(', ')}` };
       }
       return { ok: true };
     }
 
     case 5: { // Verify — implementation committed on feature branch
       const branch = git('rev-parse --abbrev-ref HEAD');
-      if (branch === 'main') return { ok: false, reason: 'On main, expected feature branch' };
+      if (branch === 'main') return { ok: false, failedCheck: 'on feature branch', reason: 'On main, expected feature branch' };
       try {
         const log = git('log main..HEAD --oneline');
-        if (!log) return { ok: false, reason: 'No commits ahead of main' };
+        if (!log) return { ok: false, failedCheck: 'commits exist on branch', reason: 'No commits ahead of main' };
       } catch {
         // If main doesn't exist as a ref, just check we have commits
       }
@@ -822,9 +833,9 @@ function validatePreconditions(step, state) {
       const branch = git('rev-parse --abbrev-ref HEAD');
       try {
         const unpushed = git(`log origin/${branch}..HEAD --oneline`);
-        if (unpushed) return { ok: false, reason: 'Unpushed commits exist' };
+        if (unpushed) return { ok: false, failedCheck: 'branch pushed to remote', reason: 'Unpushed commits exist' };
       } catch {
-        return { ok: false, reason: 'Remote branch not found — push first' };
+        return { ok: false, failedCheck: 'branch pushed to remote', reason: 'Remote branch not found — push first' };
       }
       return { ok: true };
     }
@@ -834,7 +845,7 @@ function validatePreconditions(step, state) {
         gh('pr view --json number');
         return { ok: true };
       } catch {
-        return { ok: false, reason: 'No PR found for current branch' };
+        return { ok: false, failedCheck: 'PR exists', reason: 'No PR found for current branch' };
       }
     }
 
@@ -1106,8 +1117,8 @@ function detectSoftFailure(stdout) {
  */
 function incrementBounceCount() {
   bounceCount++;
-  if (bounceCount > MAX_RETRIES) {
-    log(`Bounce loop detected: ${bounceCount} step-back transitions exceed threshold ${MAX_RETRIES}`);
+  if (bounceCount > MAX_BOUNCE_RETRIES) {
+    log(`Bounce loop detected: ${bounceCount} step-back transitions exceed threshold ${MAX_BOUNCE_RETRIES}`);
     return true;
   }
   return false;
@@ -1140,11 +1151,12 @@ async function handleFailure(step, result, state) {
     const preconds = validatePreconditions(step, state);
     if (!preconds.ok) {
       if (incrementBounceCount()) {
-        await escalate(step, `Bounce loop: ${bounceCount} step-back transitions exceed threshold ${MAX_RETRIES}`, output);
+        await escalate(step, `Bounce loop: ${bounceCount} step-back transitions exceed threshold ${MAX_BOUNCE_RETRIES}`, output);
         return 'escalated';
       }
-      log(`Step ${step.number} preconditions failed: ${preconds.reason}. Will retry step ${prevStep.number}. (bounce ${bounceCount}/${MAX_RETRIES})`);
-      await postDiscord(`Step ${step.number} preconditions failed: ${preconds.reason}. Retrying Step ${prevStep.number}. (bounce ${bounceCount}/${MAX_RETRIES})`);
+      const failedCheck = preconds.failedCheck || preconds.reason;
+      log(`Step ${step.number} (${step.key}) precondition failed: "${failedCheck}". Bouncing to Step ${prevStep.number} (${prevStep.key}). (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
+      await postDiscord(`Step ${step.number} (${step.key}) bounced to Step ${prevStep.number} (${prevStep.key}). Precondition failed: "${failedCheck}". (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
       return 'retry-previous';
     }
   }
@@ -1690,16 +1702,17 @@ async function runStep(step, state) {
   // Validate preconditions
   const preconds = validatePreconditions(step, state);
   if (!preconds.ok) {
-    log(`Preconditions failed for step ${step.number}: ${preconds.reason}`);
-    await postDiscord(`Step ${step.number} (${step.key}) preconditions failed: ${preconds.reason}`);
+    const failedCheck = preconds.failedCheck || preconds.reason;
+    log(`Preconditions failed for step ${step.number} (${step.key}): "${failedCheck}"`);
+    await postDiscord(`Step ${step.number} (${step.key}) preconditions failed: "${failedCheck}"`);
 
     if (step.number > 1) {
       const prevStep = STEPS[step.number - 2];
       if (incrementBounceCount()) {
-        await escalate(prevStep, `Bounce loop: ${bounceCount} step-back transitions exceed threshold ${MAX_RETRIES} (precondition: ${preconds.reason})`);
+        await escalate(prevStep, `Bounce loop: ${bounceCount} step-back transitions exceed threshold ${MAX_BOUNCE_RETRIES} (precondition: ${failedCheck})`);
         return 'escalated';
       }
-      await postDiscord(`Retrying Step ${prevStep.number} (${prevStep.key}) to produce required artifacts. (bounce ${bounceCount}/${MAX_RETRIES})`);
+      await postDiscord(`Step ${step.number} (${step.key}) bounced to Step ${prevStep.number} (${prevStep.key}). Precondition failed: "${failedCheck}". (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
       // Increment retry for the previous step
       const retries = state.retries || {};
       const prevCount = (retries[prevStep.number] || 0) + 1;
@@ -2039,6 +2052,14 @@ const __test__ = {
     MODEL = cfg.model ?? MODEL;
     if ('effort' in cfg) EFFORT = cfg.effort;
     MAX_RETRIES = cfg.maxRetriesPerStep ?? MAX_RETRIES;
+    MAX_BOUNCE_RETRIES = (() => {
+      const val = cfg.maxBounceRetries;
+      if (val === undefined) return MAX_BOUNCE_RETRIES;
+      if (val === null) return 3;
+      const num = Number(val);
+      if (!Number.isInteger(num) || num <= 0) return 3;
+      return num;
+    })();
     DISCORD_CHANNEL = cfg.discordChannelId ?? DISCORD_CHANNEL;
     CLEANUP_PATTERNS = cfg.cleanup?.processPatterns ?? CLEANUP_PATTERNS;
     STATE_PATH = cfg.statePath ?? STATE_PATH;
