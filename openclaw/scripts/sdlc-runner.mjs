@@ -1058,6 +1058,14 @@ function matchErrorPattern(output) {
 // These should NOT trigger soft failure escalation.
 const BENIGN_DENIED_TOOLS = new Set(['EnterPlanMode', 'ExitPlanMode', 'AskUserQuestion']);
 
+// Known text-based failure patterns — detected in raw stdout when JSON checks
+// find no failure indicators.  Each entry has a regex and a human-readable label
+// used in the soft-failure reason string and Discord status messages.
+const TEXT_FAILURE_PATTERNS = [
+  { pattern: /EnterPlanMode/i, label: 'EnterPlanMode' },
+  { pattern: /AskUserQuestion.*auto-mode/i, label: 'AskUserQuestion in auto-mode' },
+];
+
 function detectSoftFailure(stdout) {
   const parsed = extractResultFromStream(stdout);
   if (parsed) {
@@ -1072,6 +1080,16 @@ function detectSoftFailure(stdout) {
       });
       if (serious.length > 0) {
         return { isSoftFailure: true, reason: `permission_denials: ${serious.map(d => typeof d === 'object' ? d.tool_name : d).join(', ')}` };
+      }
+    }
+  }
+  // Text-pattern scan: catch failures that produce text output but no JSON indicators.
+  // Only runs when no JSON result was extracted — if JSON was present, the JSON checks
+  // above are authoritative (avoids false positives from tool names in JSON fields).
+  if (!parsed && stdout) {
+    for (const { pattern, label } of TEXT_FAILURE_PATTERNS) {
+      if (pattern.test(stdout)) {
+        return { isSoftFailure: true, reason: `text_pattern: ${label}` };
       }
     }
   }
@@ -2054,6 +2072,7 @@ export {
   STEP_KEYS,
   RUNNER_ARTIFACTS,
   IMMEDIATE_ESCALATION_PATTERNS,
+  TEXT_FAILURE_PATTERNS,
   BENIGN_DENIED_TOOLS,
   RATE_LIMIT_PATTERN,
   VALID_EFFORTS,

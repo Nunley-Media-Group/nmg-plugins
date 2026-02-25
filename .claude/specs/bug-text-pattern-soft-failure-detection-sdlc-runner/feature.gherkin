@@ -1,0 +1,80 @@
+# File: .claude/specs/bug-text-pattern-soft-failure-detection-sdlc-runner/feature.gherkin
+#
+# Generated from: .claude/specs/bug-text-pattern-soft-failure-detection-sdlc-runner/requirements.md
+# Issue: #86
+# Type: Defect regression
+
+@regression
+Feature: Text-pattern soft failure detection in SDLC runner
+  The sdlc-runner's detectSoftFailure() function previously only inspected
+  JSON output fields (subtype, permission_denials) to detect soft failures.
+  Text-based failure messages on stdout/stderr (e.g., "EnterPlanMode called
+  in headless session") were not caught, causing silent failures.
+  This was fixed by adding regex scanning of raw stdout against a
+  configurable TEXT_FAILURE_PATTERNS constant.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Text failure pattern "EnterPlanMode" detected as soft failure
+    Given a step exits with code 0
+    And the stdout contains "EnterPlanMode called in headless session"
+    And the JSON output has no error_max_turns or permission_denials
+    When detectSoftFailure processes the output
+    Then it returns isSoftFailure true with reason "text_pattern: EnterPlanMode"
+
+  @regression
+  Scenario: Text failure pattern "AskUserQuestion in auto-mode" detected as soft failure
+    Given a step exits with code 0
+    And the stdout contains "AskUserQuestion called in auto-mode"
+    And the JSON output has no error_max_turns or permission_denials
+    When detectSoftFailure processes the output
+    Then it returns isSoftFailure true with reason containing "text_pattern:"
+
+  @regression
+  Scenario: Discord message includes matched text pattern
+    Given a text-pattern soft failure is detected for step 3 with key "writeSpecs"
+    When the runner posts the soft failure status to Discord
+    Then the Discord message contains the matched pattern label
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: JSON-based error_max_turns detection still works
+    Given a step exits with code 0
+    And the JSON output contains subtype "error_max_turns"
+    When detectSoftFailure processes the output
+    Then it returns isSoftFailure true with reason "error_max_turns"
+
+  @regression
+  Scenario: JSON-based permission_denials detection still works
+    Given a step exits with code 0
+    And the JSON output contains non-empty permission_denials
+    When detectSoftFailure processes the output
+    Then it returns isSoftFailure true with reason containing "permission_denials"
+
+  @regression
+  Scenario: Normal success output is not misclassified
+    Given a step exits with code 0
+    And the stdout contains normal success output with no failure patterns
+    And the JSON output has subtype "success" and no permission_denials
+    When detectSoftFailure processes the output
+    Then it returns isSoftFailure false
+
+  # --- Edge Cases ---
+
+  @regression
+  Scenario: Text pattern scan runs only when JSON check finds no failure
+    Given a step exits with code 0
+    And the JSON output contains subtype "error_max_turns"
+    And the stdout also contains "EnterPlanMode" text
+    When detectSoftFailure processes the output
+    Then it returns isSoftFailure true with reason "error_max_turns"
+    And the text pattern scan does not override the JSON result
+
+  @regression
+  Scenario: Empty stdout does not cause errors
+    Given a step exits with code 0
+    And the stdout is empty
+    When detectSoftFailure processes the output
+    Then it returns isSoftFailure false

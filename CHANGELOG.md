@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.18.1] - 2026-02-25
+
+### Fixed
+
+- **SDLC runner** — `detectSoftFailure()` now scans stdout/stderr for known text-based failure patterns (e.g., `EnterPlanMode` in headless session, `AskUserQuestion` in auto-mode); text-pattern matches are treated as soft failures with the same retry/escalation behavior as JSON-detected failures, and matched patterns are included in Discord status messages for debugging visibility
+
 ## [2.18.0] - 2026-02-25
 
 ### Fixed
