@@ -1,9 +1,9 @@
 # Requirements: OpenClaw Runner Operations
 
-**Issues**: #12, #24, #33, #34
-**Date**: 2026-02-15
+**Issues**: #12, #24, #33, #34, #88
+**Date**: 2026-02-25
 **Status**: Complete
-**Author**: Claude Code (consolidated from issues #12, #24, #33, #34)
+**Author**: Claude Code (consolidated from issues #12, #24, #33, #34, #88)
 
 ---
 
@@ -175,6 +175,38 @@ Additional capabilities were added iteratively: configurable post-step process c
 **When** it resolves the log directory
 **Then** it uses `os.tmpdir()` (or equivalent) and path separators appropriate to the OS
 
+<!-- From issue #88 -->
+
+### AC25: Configurable Bounce Retry Threshold
+
+**Given** an operator wants to tune the bounce loop threshold
+**When** they set a `maxBounceRetries` field in `sdlc-config.json`
+**Then** the runner uses that value as the bounce loop halt threshold in all bounce detection paths (both `handleFailure()` retry-previous and `runStep()` precondition retry-previous)
+
+### AC26: Backward-Compatible Default for Bounce Retries
+
+**Given** `sdlc-config.json` does not include a `maxBounceRetries` field
+**When** the runner starts
+**Then** the default value of 3 is used, preserving existing behavior
+
+### AC27: Enhanced Bounce Loop Logging with Precondition Name
+
+**Given** a bounce loop retry occurs because a precondition check failed
+**When** the runner logs the bounce event
+**Then** the log includes the specific precondition that failed, the current bounce count, and the configured threshold
+
+### AC28: Discord Status Includes Bounce Diagnostics
+
+**Given** a bounce occurs and the runner reports to Discord
+**When** the status message is sent
+**Then** it includes the bounce count, the configured threshold, and which step is being retried
+
+### AC29: Invalid Config Value Falls Back to Default
+
+**Given** the `maxBounceRetries` config value is not a positive integer (e.g., 0, -1, `"abc"`, `null`)
+**When** the runner loads the config
+**Then** it falls back to the default value of 3 and logs a warning about the invalid value
+
 ---
 
 ## Functional Requirements
@@ -211,6 +243,12 @@ Additional capabilities were added iteratively: configurable post-step process c
 | FR28 | Add `logDir` and `maxLogDiskUsageMB` fields to config schema with defaults | Should | Defaults: `os.tmpdir()/sdlc-logs/<project>/`, 500 MB |
 | FR29 | Update `running-sdlc` SKILL.md with log location, naming conventions, and config options | Must | Documentation update |
 | FR30 | Update `sdlc-config.example.json` with logging config fields | Should | Example config stays current |
+| FR31 | Read `maxBounceRetries` from `sdlc-config.json` top-level field at startup | Must | Single read point; used in all bounce detection paths |
+| FR32 | Default `maxBounceRetries` to 3 if not present in config | Must | Backward-compatible with existing configs |
+| FR33 | Validate `maxBounceRetries` is a positive integer; fall back to 3 with warning on invalid values | Should | Guards against 0, negative, non-numeric inputs |
+| FR34 | Include the specific failed precondition name in bounce loop log messages | Should | e.g., "Precondition failed: spec files exist" |
+| FR35 | Include bounce count, configured threshold, and retrying step name in Discord bounce status messages | Should | Format: `(bounce N/M)` with step identification |
+| FR36 | Update `sdlc-config.example.json` with `maxBounceRetries` field | Should | Example config stays current |
 
 ---
 
@@ -255,7 +293,10 @@ Additional capabilities were added iteratively: configurable post-step process c
 - Discord reporting of cleanup actions (just log locally)
 - Automatic detection of what to clean up — must be explicitly configured
 - Windows support for process cleanup (OpenClaw currently targets macOS/Linux for cleanup)
-- Configurable failure loop thresholds (hardcode sensible defaults for now)
+- ~~Configurable failure loop thresholds (hardcode sensible defaults for now)~~ (bounce retry threshold now configurable via #88; consecutive escalation threshold remains hardcoded at 2)
+- Per-step bounce retry thresholds (one global `maxBounceRetries` setting is sufficient for now)
+- Exponential backoff between bounce retries
+- Configurable consecutive escalation threshold (remains hardcoded at 2)
 - Auto-recovery strategies (e.g., automatically closing problematic issues)
 - ~~Log streaming or real-time tailing UI~~ (implemented: `{step}-live.log` files with real-time streaming via `--output-format stream-json`)
 - Structured/JSON log format (plain text is sufficient)
@@ -276,6 +317,8 @@ Additional capabilities were added iteratively: configurable post-step process c
 | Debugging visibility | Full step output available post-execution | Log files exist for every completed step |
 | Cross-platform | Logs written correctly on macOS, Linux, Windows | `os.tmpdir()` resolves correctly per platform |
 | Disk hygiene | Log directory stays under configured threshold | Cleanup runs before each write |
+| Configurable bounce threshold | Custom `maxBounceRetries` value respected in all bounce paths | Set to 5, observe 4 bounces allowed before escalation |
+| Bounce diagnostic quality | Discord bounce messages are actionable without checking logs | Messages include precondition name, bounce count, threshold, and step |
 
 ---
 
@@ -287,6 +330,7 @@ Additional capabilities were added iteratively: configurable post-step process c
 | #24 | 2026-02-15 | Configurable post-step process cleanup via `cleanup.processPatterns` config field |
 | #33 | 2026-02-16 | Failure loop detection — consecutive escalation halt, same-issue skip, step-bounce detection |
 | #34 | 2026-02-16 | Persistent logging for headless sessions — per-step log files, OS-agnostic log directory, disk usage cap |
+| #88 | 2026-02-25 | Configurable bounce retry threshold via `maxBounceRetries` config field, enhanced bounce diagnostics in logs and Discord |
 
 ---
 
