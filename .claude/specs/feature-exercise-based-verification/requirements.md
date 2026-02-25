@@ -1,7 +1,7 @@
 # Requirements: Exercise-Based Verification for Plugin Projects
 
-**Issues**: #44
-**Date**: 2026-02-16
+**Issues**: #44, #50
+**Date**: 2026-02-25
 **Status**: Draft
 **Author**: Claude (from issue by rnunley-nmg)
 
@@ -140,6 +140,41 @@ The steering docs (`tech.md`) already define the exercise-based verification str
 **When** Step 5 (Verify Test Coverage) executes
 **Then** the existing BDD test coverage verification behavior runs unchanged — checking `.feature` files, Gherkin scenarios, step definitions, and executing the test command from `tech.md`
 
+### AC11: Exercise Script Resolves Agent SDK from Non-Standard Locations
+
+**Given** the Agent SDK (`@anthropic-ai/claude-agent-sdk`) is installed in a non-standard location (e.g., npx cache at `~/.npm/_npx/*/node_modules/`, a global install via a Node version manager, or a path not in the exercise script's `node_modules` hierarchy)
+**When** the exercise script (sub-step 5c) attempts to import the SDK
+**Then** the SDK is resolved and imported successfully without requiring manual symlinks or `NODE_PATH` environment variable configuration
+
+**Example**:
+- Given: Agent SDK is installed at `~/.npm/_npx/81bbc6515d992ace/node_modules/@anthropic-ai/claude-agent-sdk`
+- When: The exercise script runs `import { query } from ...`
+- Then: The SDK is located and imported correctly; the exercise proceeds to invoke the skill
+
+### AC12: Module Resolution Does Not Depend on Symlinks
+
+**Given** the exercise script needs to resolve the Agent SDK
+**When** the SDK is in a non-standard location
+**Then** the resolution mechanism does NOT rely on filesystem symlinks (consistent with `structure.md` cross-platform contracts)
+**And** it works on macOS, Linux, and Windows without elevated privileges
+
+**Example**:
+- Given: Exercise verification runs on Windows where symlinks require admin privileges
+- When: The exercise script resolves the Agent SDK path
+- Then: No symlinks are created; the script uses a symlink-free resolution approach
+
+### AC13: SDK Availability Check Consistent with Exercise Method
+
+**Given** step 5c checks whether the Agent SDK is available before choosing the exercise method
+**When** the SDK is installed but not resolvable via standard ESM `import` (e.g., in npx cache)
+**Then** the availability check uses the same resolution mechanism as the exercise script itself
+**And** a positive availability check guarantees the subsequent exercise import will succeed (no false positives)
+
+**Example**:
+- Given: SDK is at `~/.npm/_npx/.../node_modules/@anthropic-ai/claude-agent-sdk`
+- When: The availability check runs (currently `node -e "require(...)"`)
+- Then: Both the check and the exercise script resolve from the same location; if the check passes, the exercise import will also succeed
+
 ### Generated Gherkin Preview
 
 ```gherkin
@@ -202,6 +237,25 @@ Feature: Exercise-Based Verification for Plugin Projects
     Given no SKILL.md or agent files are in the diff
     When Step 5 executes
     Then the existing BDD test coverage verification runs unchanged
+
+  # --- ESM Module Resolution (Issue #50) ---
+
+  Scenario: Exercise script resolves Agent SDK from non-standard location
+    Given the Agent SDK is installed in a non-standard location
+    When the exercise script attempts to import the SDK
+    Then the SDK is resolved and imported successfully
+    And no manual symlinks or NODE_PATH configuration is required
+
+  Scenario: Module resolution does not depend on symlinks
+    Given the exercise script needs to resolve the Agent SDK
+    When the SDK is in a non-standard location
+    Then the resolution mechanism does not rely on filesystem symlinks
+    And it works on macOS, Linux, and Windows without elevated privileges
+
+  Scenario: SDK availability check consistent with exercise method
+    Given the SDK availability check passes
+    When the exercise script subsequently imports the SDK
+    Then the import succeeds using the same resolution mechanism
 ```
 
 ---
@@ -221,6 +275,10 @@ Feature: Exercise-Based Verification for Plugin Projects
 | FR9 | Fallback to `claude -p` with `--disallowedTools AskUserQuestion` when Agent SDK unavailable | Should | Note fallback in report |
 | FR10 | Graceful degradation when exercise testing is infeasible | Should | Report skipped with reason + manual follow-up recommendation |
 | FR11 | Auto-mode support (non-interactive exercise, suppress verbose output) | Should | Consistent with existing auto-mode pattern |
+| FR12 | Exercise script must dynamically resolve the Agent SDK path before importing, rather than relying on standard ESM bare-specifier resolution | Must | Bare `import "pkg"` only searches `node_modules` hierarchy; SDK may be elsewhere |
+| FR13 | SDK resolution must check known installation locations (npx cache, global `node_modules`, local `node_modules`) without requiring `NODE_PATH` | Must | `NODE_PATH` is ignored by ESM; resolution must be explicit |
+| FR14 | Module resolution approach must not create or depend on filesystem symlinks | Must | Per `structure.md` cross-platform contracts — symlinks require elevated privileges on Windows |
+| FR15 | SDK availability check (step 5c gateway) must use the same resolution mechanism as the exercise script import | Must | Prevents false positives where check passes but import fails |
 
 ---
 
@@ -293,6 +351,8 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - Exercise testing for template-only changes (templates are verified via static analysis)
 - Promptfoo eval suite setup (separate future enhancement)
 - Multi-skill exercise testing in a single verification run (one changed skill per exercise)
+- Changing how or where the Agent SDK is installed (user's responsibility)
+- Supporting Agent SDK installed outside Node.js package manager locations (e.g., manually copied files without valid `package.json`)
 
 ---
 
@@ -321,6 +381,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 | Issue | Date | Summary |
 |-------|------|---------|
 | #44 | 2026-02-16 | Initial feature spec |
+| #50 | 2026-02-25 | Add ESM module resolution requirements — dynamic SDK path resolution, no symlink dependency, consistent availability check |
 
 ---
 

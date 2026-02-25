@@ -38,19 +38,43 @@ Identify whether the changed skill is **GitHub-integrated** (i.e., it creates Gi
 **Dry-run instructions** (for GitHub-integrated skills only — append AFTER the skill invocation):
 > IMPORTANT: This is a dry-run exercise. Do NOT execute any `gh` commands that create, modify, or delete GitHub resources. Instead, output the exact command and arguments you WOULD run, along with the content (title, body, labels) you WOULD use. Proceed through the full workflow, generating all artifacts as text output.
 
+**Step 5c-i: Resolve Agent SDK Path**
+
+ESM bare-specifier resolution (`import "pkg"`) only searches the `node_modules` hierarchy from the script's location and does NOT respect `NODE_PATH`. Resolve the SDK's absolute path via CJS `require.resolve()` first, then use a `file://` URL dynamic import in the exercise script. This works regardless of where the SDK is installed.
+
+**Phase 1** — Try `require.resolve()` using `Bash`:
+```bash
+node -e "try { console.log(require.resolve('@anthropic-ai/claude-agent-sdk')); } catch { process.exit(1); }"
+```
+If exit code 0, store the output as `{sdk-entry-point}`. Proceed to Step 5c-iii.
+
+**Phase 2** — If Phase 1 fails, try the fallback search using `Bash`:
+```bash
+node -e "const fs=require('fs'),path=require('path'),os=require('os'),home=os.homedir(),candidates=[path.join(home,'.npm','_npx'),path.join(home,'AppData','Local','npm-cache','_npx')];for(const base of candidates){if(!fs.existsSync(base))continue;for(const e of fs.readdirSync(base)){const pkg=path.join(base,e,'node_modules','@anthropic-ai','claude-agent-sdk','package.json');if(fs.existsSync(pkg)){const m=JSON.parse(fs.readFileSync(pkg,'utf8')).main||'dist/index.js';console.log(path.resolve(path.dirname(pkg),m));process.exit(0);}}}process.exit(1);"
+```
+If exit code 0, store the output as `{sdk-entry-point}`. Proceed to Step 5c-iii.
+
+**Phase 3** — If both phases fail, `{sdk-entry-point}` is unresolved. Fall through to `claude -p` fallback.
+
+No symlinks are created. All path construction uses Node.js built-in `path` module.
+
+**Step 5c-ii: Choose Exercise Method**
+
+- `{sdk-entry-point}` resolved → **Primary method** (Step 5c-iii below)
+- `{sdk-entry-point}` unresolved, `claude` CLI available → **Fallback method** (`claude -p`, below)
+- Neither → **Skip** (graceful degradation)
+
 **Primary method: Agent SDK with `canUseTool`**
 
-Check if the Agent SDK is available using `Bash`:
-```bash
-node -e "require('@anthropic-ai/claude-agent-sdk'); console.log('available')"
-```
-
-If available, write the following Node.js script to `{test-project-path}/exercise.mjs` using the `Write` tool, then run it via `Bash`. Substitute `{skill-name}`, `{plugin-path}`, `{test-project-path}`, `{output-file}`, and `{exercise-prompt}` with actual values:
+When `{sdk-entry-point}` was successfully resolved in Step 5c-i, write the following Node.js script to `{test-project-path}/exercise.mjs` using the `Write` tool, then run it via `Bash`. Substitute `{skill-name}`, `{plugin-path}`, `{test-project-path}`, `{output-file}`, `{sdk-entry-point}`, and `{exercise-prompt}` with actual values:
 
 ```javascript
 // exercise.mjs — written to {test-project-path}/exercise.mjs
-import { query } from "@anthropic-ai/claude-agent-sdk";
+import { pathToFileURL } from "node:url";  // for cross-platform file URL conversion
 import fs from "node:fs";
+
+// Dynamic import using resolved absolute path (bypasses ESM bare-specifier limitation)
+const { query } = await import(pathToFileURL("{sdk-entry-point}").href);
 
 const messages = [];
 for await (const message of query({
@@ -99,7 +123,7 @@ The `{exercise-prompt}` is:
 The `{plugin-path}` is the absolute path to `plugins/nmg-sdlc` in the current repository.
 The `{output-file}` is `{test-project-path}/exercise-output.txt`.
 
-If the Agent SDK is **not available**, use the fallback method.
+If `{sdk-entry-point}` is **unresolved** (both resolution phases failed), use the fallback method.
 
 **Fallback method: `claude -p`**
 
