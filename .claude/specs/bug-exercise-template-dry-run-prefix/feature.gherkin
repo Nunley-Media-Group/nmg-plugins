@@ -1,0 +1,45 @@
+# File: .claude/specs/bug-exercise-template-dry-run-prefix/feature.gherkin
+#
+# Generated from: .claude/specs/bug-exercise-template-dry-run-prefix/requirements.md
+# Issue: #49
+# Type: Defect regression
+
+@regression
+Feature: Exercise template dry-run prefix prevents skill recognition
+  The exercise testing template previously prepended dry-run instructions
+  before the skill invocation in the exercise prompt. For skills with
+  disable-model-invocation: true, this prevented Claude Code from recognizing
+  the /{skill-name} pattern as a skill invocation. This was fixed by moving
+  the skill invocation to the start of the prompt with dry-run instructions
+  appended after.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Dry-run skills with disable-model-invocation are recognized
+    Given a skill "creating-prs" with "disable-model-invocation: true" in its frontmatter
+    And the skill is GitHub-integrated requiring dry-run mode
+    When the exercise template generates a dry-run prompt for "creating-prs"
+    Then the prompt starts with "/nmg-sdlc:creating-prs" followed by arguments
+    And the dry-run instructions appear after the skill invocation
+    And the dry-run instructions are prefixed with "IMPORTANT:"
+
+  # --- Dry-Run Instructions Still Work ---
+
+  @regression
+  Scenario: Dry-run instructions are respected after reordering
+    Given an exercise prompt with the skill invocation "/nmg-sdlc:creating-prs #42" at the start
+    And dry-run instructions appended after the skill invocation
+    When the nested Claude session processes the prompt
+    Then no mutating "gh" commands are executed
+    And the skill produces structured output matching its SKILL.md workflow
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: Non-disable-model-invocation skills still work with dry-run
+    Given a skill "creating-issues" without "disable-model-invocation: true" in its frontmatter
+    And the skill is GitHub-integrated requiring dry-run mode
+    When the exercise template generates a dry-run prompt for "creating-issues"
+    Then the skill invocation is recognized and the SKILL.md is loaded
+    And the dry-run instructions are respected
