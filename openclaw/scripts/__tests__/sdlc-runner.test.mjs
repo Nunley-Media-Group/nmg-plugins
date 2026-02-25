@@ -92,6 +92,7 @@ const {
   STEP_KEYS,
   RUNNER_ARTIFACTS,
   IMMEDIATE_ESCALATION_PATTERNS,
+  TEXT_FAILURE_PATTERNS,
   RATE_LIMIT_PATTERN,
   VALID_EFFORTS,
   MAX_CONSECUTIVE_ESCALATIONS,
@@ -245,6 +246,58 @@ describe('Non-JSON output does not trigger false positive', () => {
   it('returns isSoftFailure:false for partial JSON', () => {
     const result = detectSoftFailure('{"subtype": "error_max_turns"');
     expect(result.isSoftFailure).toBe(false);
+  });
+});
+
+// ===========================================================================
+// Text-pattern soft failure detection (issue #86)
+// ===========================================================================
+
+describe('Text-pattern soft failure detection', () => {
+  it('detects EnterPlanMode text pattern as soft failure (AC1)', () => {
+    const stdout = 'Some output\nEnterPlanMode called in headless session — cannot enter plan mode without a TTY\nMore output';
+    const result = detectSoftFailure(stdout);
+    expect(result.isSoftFailure).toBe(true);
+    expect(result.reason).toBe('text_pattern: EnterPlanMode');
+  });
+
+  it('detects AskUserQuestion auto-mode text pattern as soft failure (AC1)', () => {
+    const stdout = 'AskUserQuestion called in auto-mode — this skill does not support auto-mode';
+    const result = detectSoftFailure(stdout);
+    expect(result.isSoftFailure).toBe(true);
+    expect(result.reason).toContain('text_pattern:');
+    expect(result.reason).toContain('AskUserQuestion');
+  });
+
+  it('returns isSoftFailure:false for normal success text with no failure patterns (AC6)', () => {
+    const stdout = 'Implementation complete for issue #42.\nFiles created: src/index.js';
+    const result = detectSoftFailure(stdout);
+    expect(result.isSoftFailure).toBe(false);
+  });
+
+  it('JSON error_max_turns takes precedence over text pattern (AC5, edge case)', () => {
+    // JSON check fires first; text pattern scan should not override
+    const stdout = JSON.stringify({
+      subtype: 'error_max_turns',
+      result: 'EnterPlanMode called in headless session',
+    });
+    const result = detectSoftFailure(stdout);
+    expect(result.isSoftFailure).toBe(true);
+    expect(result.reason).toBe('error_max_turns');
+  });
+
+  it('returns isSoftFailure:false for empty stdout (edge case)', () => {
+    const result = detectSoftFailure('');
+    expect(result.isSoftFailure).toBe(false);
+  });
+
+  it('TEXT_FAILURE_PATTERNS is non-empty and each entry has pattern and label', () => {
+    expect(TEXT_FAILURE_PATTERNS.length).toBeGreaterThan(0);
+    for (const entry of TEXT_FAILURE_PATTERNS) {
+      expect(entry.pattern).toBeInstanceOf(RegExp);
+      expect(typeof entry.label).toBe('string');
+      expect(entry.label.length).toBeGreaterThan(0);
+    }
   });
 });
 
