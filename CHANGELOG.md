@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.18.0] - 2026-02-25
+
+### Fixed
+
+- **`/verifying-specs`** — Exercise script now resolves the Agent SDK from non-standard locations (e.g., npx cache) using dynamic `import()` with `pathToFileURL`, replacing the bare ESM specifier that failed when the SDK was outside the `node_modules` hierarchy; availability check updated to use the same path-resolving mechanism, eliminating false positives
+
 ## [2.17.4] - 2026-02-25
 
 ### Fixed
