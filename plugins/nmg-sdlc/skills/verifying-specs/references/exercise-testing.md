@@ -33,10 +33,10 @@ Create a minimal test project for exercising the changed skill:
 
 Determine which skill(s) changed from the diff in 5a. Exercise the **first changed skill** (one skill per exercise run).
 
-Identify whether the changed skill is **GitHub-integrated** (i.e., it creates GitHub resources — `creating-issues`, `creating-prs`, `starting-issues`). If so, prepend the dry-run instructions below to the exercise prompt.
+Identify whether the changed skill is **GitHub-integrated** (i.e., it creates GitHub resources — `creating-issues`, `creating-prs`, `starting-issues`). If so, append the dry-run instructions after the skill invocation in the exercise prompt.
 
-**Dry-run prefix** (for GitHub-integrated skills only):
-> This is a dry-run exercise. Do NOT execute any `gh` commands that create, modify, or delete GitHub resources. Instead, output the exact command and arguments you WOULD run, along with the content (title, body, labels) you WOULD use. Proceed through the full workflow, generating all artifacts as text output.
+**Dry-run instructions** (for GitHub-integrated skills only — append AFTER the skill invocation):
+> IMPORTANT: This is a dry-run exercise. Do NOT execute any `gh` commands that create, modify, or delete GitHub resources. Instead, output the exact command and arguments you WOULD run, along with the content (title, body, labels) you WOULD use. Proceed through the full workflow, generating all artifacts as text output.
 
 **Primary method: Agent SDK with `canUseTool`**
 
@@ -93,7 +93,9 @@ Run the exercise script via `Bash` with a 5-minute timeout (set the `timeout` pa
 node {test-project-path}/exercise.mjs 2>&1
 ```
 
-The `{exercise-prompt}` is: `"/{skill-name} [appropriate args based on the skill's argument-hint]"`
+The `{exercise-prompt}` is:
+- **Non-GitHub-integrated skills**: `"/{skill-name} [appropriate args based on the skill's argument-hint]"`
+- **GitHub-integrated skills (dry-run)**: `"/{skill-name} [args]\n\nIMPORTANT: {dry-run-instructions}"` — skill invocation first, dry-run instructions appended after
 The `{plugin-path}` is the absolute path to `plugins/nmg-sdlc` in the current repository.
 The `{output-file}` is `{test-project-path}/exercise-output.txt`.
 
