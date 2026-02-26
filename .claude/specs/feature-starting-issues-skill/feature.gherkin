@@ -1,7 +1,7 @@
-# File: .claude/specs/10-starting-issues-skill/feature.gherkin
+# File: .claude/specs/feature-starting-issues-skill/feature.gherkin
 #
-# Generated from: .claude/specs/10-starting-issues-skill/requirements.md
-# Issue: #10
+# Generated from: .claude/specs/feature-starting-issues-skill/requirements.md
+# Issues: #10, #89
 
 Feature: Starting Issues Skill
   As a developer ready to begin work on a feature
@@ -32,3 +32,27 @@ Feature: Starting Issues Skill
     Given I invoke "/starting-issues" with an issue number
     When the skill runs
     Then it skips issue selection and uses the provided issue number directly
+
+  # Added by issue #89 — Diagnostics for zero automatable issues
+
+  Scenario: Diagnostic context included in zero-result auto-mode output
+    Given automation mode is active
+    And there are 5 open issues but none have the "automatable" label
+    When "/starting-issues" runs and finds zero automatable issues
+    Then it queries total open issues in the same scope without the label filter
+    And the output includes "No automatable issues found (5 open issues exist without the automatable label)"
+
+  Scenario: Label suggestion when open issues exist without the automatable label
+    Given automation mode is active
+    And there are 3 open issues but none have the "automatable" label
+    When "/starting-issues" runs and finds zero automatable issues
+    Then the output suggests checking label assignment
+    And the output includes "Consider adding the automatable label to issues that should be picked up automatically."
+
+  Scenario: No misleading suggestion when genuinely no open issues
+    Given automation mode is active
+    And there are 0 open issues in the repository
+    When "/starting-issues" runs and finds zero automatable issues
+    Then the output indicates no work is available
+    And the output includes "0 open issues in scope"
+    And the output does not suggest checking label assignment

@@ -1,7 +1,7 @@
 # Tasks: Starting Issues Skill
 
-**Issues**: #10
-**Date**: 2026-02-15
+**Issues**: #10, #89
+**Date**: 2026-02-25
 **Status**: Complete
 **Author**: Claude Code (retroactive)
 
@@ -15,7 +15,8 @@
 | Plugin Files | 1 | [x] |
 | Integration | 1 | [x] |
 | Testing | 1 | [x] |
-| **Total** | **4** | |
+| Enhancement — Issue #89 | 2 | [x] |
+| **Total** | **6** | |
 
 ---
 
@@ -97,16 +98,44 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
+## Phase 5: Enhancement — Issue #89
+
+### T005: Add Diagnostic Query and Output to Auto-Mode Empty Result Handling
+
+**File(s)**: `plugins/nmg-sdlc/skills/starting-issues/SKILL.md`
+**Type**: Modify
+**Depends**: T002
+**Status**: Complete
+**Acceptance**:
+- [x] The "Auto-Mode: Empty Result Handling" section in Step 1 is updated to include a diagnostic query
+- [x] When zero automatable issues are found, the skill instructs a second `gh issue list` call without `--label automatable` (preserving same milestone scope) to get total open issue count
+- [x] When total open > 0: output includes count and a suggestion to check label assignment (AC6, AC7)
+- [x] When total open = 0: output indicates no open issues without suggesting label checks (AC8)
+- [x] The diagnostic query uses `--json number --jq 'length'` to count efficiently
+- [x] Output still ends with `Done. Awaiting orchestrator.` for runner compatibility
+
+**Notes**: Modify only the "Auto-Mode: Empty Result Handling" sub-section. The diagnostic flow has two branches based on total open count. Ensure scope matching — if the original query was milestone-scoped, the diagnostic query must use the same milestone filter.
+
+### T006: Add BDD Scenarios for Diagnostic Output
+
+**File(s)**: `.claude/specs/feature-starting-issues-skill/feature.gherkin`
+**Type**: Modify
+**Depends**: T005
+**Status**: Complete
+**Acceptance**:
+- [x] Scenario for AC6: diagnostic context included in zero-result output
+- [x] Scenario for AC7: label suggestion when open issues exist without label
+- [x] Scenario for AC8: no misleading suggestion when genuinely no open issues
+- [x] All scenarios are valid Gherkin syntax
+
+---
+
 ## Dependency Graph
 
 ```
-T001 ──┬──▶ T002 ──┬──▶ T003 ──▶ T004 ──▶ T005 ──▶ T006
-       │           │
-       │           └──▶ T007 ──▶ T008 ──▶ T009 ──▶ T010 ──▶ T011
-       │                                    │
-       │                                    └──▶ T012, T013 ──▶ T014
-       │
-       └──▶ T015 ──▶ T016, T017
+T001 ──▶ T002 ──▶ T003 ──▶ T004
+                  │
+                  └──▶ T005 ──▶ T006
 ```
 
 ---
@@ -116,6 +145,7 @@ T001 ──┬──▶ T002 ──┬──▶ T003 ──▶ T004 ──▶ T0
 | Issue | Date | Summary |
 |-------|------|---------|
 | #10 | 2026-02-15 | Initial feature spec |
+| #89 | 2026-02-25 | Add diagnostic tasks for zero automatable issues (T005–T006) |
 
 ## Validation Checklist
 
