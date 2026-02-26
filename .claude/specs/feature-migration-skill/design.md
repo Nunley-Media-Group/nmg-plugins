@@ -1,7 +1,7 @@
 # Design: Add Migration Skill
 
-**Issues**: #25, #72
-**Date**: 2026-02-15
+**Issues**: #25, #72, #95
+**Date**: 2026-02-25
 **Status**: Draft
 **Author**: Claude
 
@@ -157,6 +157,74 @@ For `sdlc-config.json`, the approach differs from Markdown:
    - Existing keys → preserve user values (never overwrite)
    - New keys within existing steps (e.g., a new `skill` field added to an existing step) → add with template default
 
+### Config Value Drift Detection (from #95)
+
+The existing JSON Config Diffing (Step 5) identifies **missing** keys — keys present in the template but absent from the project config. Config value drift detection extends this to also identify **divergent values** — keys present in both files but with different scalar values.
+
+**Algorithm:**
+
+1. After identifying missing keys (existing Step 5 logic), perform a second pass over keys that exist in **both** project config and template
+2. For each common key, compare values:
+   - **Root-level scalars** (e.g., `model`, `effort`, `maxRetriesPerStep`, `maxBounceRetries`, `maxLogDiskUsageMB`): direct value comparison
+   - **Step sub-key scalars** (e.g., `steps.createPR.maxTurns`, `steps.verify.timeoutMin`, `steps.implement.model`): iterate over each step present in both configs, compare each sub-key value
+   - **Skip non-scalars**: complex objects (e.g., `cleanup.processPatterns` array) and keys that exist in the project but not in the template (user additions) are excluded from drift comparison
+3. Record each drifted value with:
+   - Dotted key path (e.g., `steps.createPR.maxTurns`)
+   - Current project value
+   - Template default value
+
+**Value comparison rules:**
+
+| Scenario | Action |
+|----------|--------|
+| Key in both, same scalar value | No drift — skip |
+| Key in both, different scalar value | Record as drift |
+| Key in both, both are objects | Recurse into sub-keys (for `steps.*` nesting) |
+| Key in both, one is object and one is scalar | Record as drift (type mismatch) |
+| Key only in project (user addition) | Skip — not a drift candidate (FR32) |
+| Key only in template (missing key) | Handled by existing Step 5 missing-key logic |
+
+**Presentation (Step 9):**
+
+Drifted values are reported in a new "Config Value Drift" section of the migration summary:
+
+```
+### Config Value Drift
+- **steps.createPR.maxTurns**: `15` → `30` (template default)
+- **steps.implement.maxTurns**: `80` → `100` (template default)
+- **maxRetriesPerStep**: `2` → `3` (template default)
+```
+
+**Interactive approval (Step 9, Part C — new):**
+
+In interactive mode, drifted values are presented via `AskUserQuestion` with `multiSelect: true`:
+
+```
+question: "The following config values differ from the current template defaults. Select which values to update (unselected values will be kept as-is):"
+multiSelect: true
+options:
+  - label: "steps.createPR.maxTurns: 15 → 30"
+    description: "Template default was updated from 15 to 30 in v2.17.0"
+  - label: "steps.implement.maxTurns: 80 → 100"
+    description: "Template default for implementation turns"
+  - ...one option per drifted value
+```
+
+**Auto-mode behavior:**
+
+When `.claude/auto-mode` exists, config value drift is:
+- **Reported** in the summary output (so the orchestrator/user can see it)
+- **NOT applied** — value updates are skipped without recording as "skipped operations" (they are informational, not deferred destructive operations)
+- Rationale: drifted values may be intentional customizations (e.g., a project deliberately set lower `maxTurns` for cost control). Automatic updates could break working configurations.
+
+**Application (Step 10):**
+
+For each user-selected drifted value:
+1. Read the current `sdlc-config.json`
+2. Use `Edit` to replace the old value with the template default value
+3. Preserve JSON formatting (2-space indentation per project JSON standards)
+4. Re-read the file to verify the update
+
 ### OpenClaw Skill Version Check
 
 1. **Read installed files** at `~/.openclaw/skills/running-sdlc/`
@@ -230,6 +298,9 @@ The skill uses `${CLAUDE_PLUGIN_ROOT}` or resolves paths relative to the skill's
 | Spec discovery | BDD | Related specs found by keyword matching |
 | Amendment fidelity | BDD | Sequential numbering preserved; no content loss during amendment |
 | Consolidation | BDD | Legacy dirs merged into feature-prefixed dir correctly |
+| Config value drift detection | BDD | Drifted scalar values detected for root and step keys |
+| Config drift per-value approval | BDD | User selects which drifts to update; declined values preserved |
+| Config drift auto-mode | BDD | Drift reported but not applied when auto-mode enabled |
 
 ---
 
@@ -248,6 +319,9 @@ The skill uses `${CLAUDE_PLUGIN_ROOT}` or resolves paths relative to the skill's
 | Legacy migration removes specs that shouldn't be consolidated | Low | High | Every consolidation requires explicit user confirmation; auto-mode does not apply to destructive consolidation |
 | Branch name no longer matches spec directory | Medium | Low | Updated path resolution algorithm checks `**Issues**` frontmatter first, falls back to slug matching |
 | Defect spec cross-references break during consolidation | Medium | Medium | Chain resolution with cycle detection (already proven in current migrating-projects Step 4a) |
+| Drift detection flags intentional customizations | High | Low | Per-value selection lets users decline updates; auto-mode never auto-applies value changes |
+| Drift detection misses nested values | Low | Medium | Recursive comparison for `steps.*` sub-keys; complex objects (arrays) excluded from comparison to avoid false positives |
+| JSON formatting corrupted during drift update | Low | Medium | Use `Edit` to replace individual values; re-read file to verify after each update |
 
 ---
 
@@ -607,6 +681,7 @@ Same changes as implementing-specs (equivalent section).
 |-------|------|---------|
 | #25 | 2026-02-15 | Initial design: migration skill with heading-based section diffing |
 | #72 | 2026-02-22 | Added feature-centric spec management design: spec discovery, amendment flow, consolidation steps, path resolution algorithm |
+| #95 | 2026-02-25 | Added config value drift detection design: value comparison algorithm, per-value approval flow, auto-mode reporting behavior |
 
 ---
 

@@ -1,7 +1,7 @@
 # File: .claude/specs/feature-migration-skill/feature.gherkin
 #
 # Generated from: .claude/specs/feature-migration-skill/requirements.md
-# Issues: #25, #72
+# Issues: #25, #72, #95
 
 Feature: Project Migration Skill
   As a developer using the nmg-sdlc plugin
@@ -250,3 +250,48 @@ Feature: Project Migration Skill
     When the spec discovery step runs
     Then amendment is auto-approved without calling AskUserQuestion
     And the spec is amended with the new issue's requirements
+
+  # Added by issue #95
+
+  # --- Config Value Drift Detection ---
+
+  Scenario: Drifted config values are detected and reported
+    Given a project's "sdlc-config.json" has "steps.createPR.maxTurns" set to 15
+    And the template "sdlc-config.example.json" has "steps.createPR.maxTurns" set to 30
+    When I run "/migrating-projects"
+    Then the migration summary includes a "Config Value Drift" section
+    And "steps.createPR.maxTurns" is listed with current value 15 and template default 30
+
+  Scenario: Nested step values are compared for drift
+    Given a project's "sdlc-config.json" has "steps.implement.maxTurns" set to 80
+    And the template "sdlc-config.example.json" has "steps.implement.maxTurns" set to 100
+    And a project's "sdlc-config.json" has "steps.verify.timeoutMin" set to 20
+    And the template "sdlc-config.example.json" has "steps.verify.timeoutMin" set to 20
+    When I run "/migrating-projects"
+    Then "steps.implement.maxTurns" is reported as drifted (80 → 100)
+    And "steps.verify.timeoutMin" is not reported as drifted (values match)
+
+  Scenario: User selects which drifted values to update
+    Given the migration summary shows 3 drifted config values
+    And the user is in interactive mode
+    When the user is presented with a multiSelect question for drifted values
+    And the user selects 2 of the 3 drifted values to update
+    Then the 2 selected values are updated to template defaults in "sdlc-config.json"
+    And the 1 unselected value remains unchanged
+
+  Scenario: Approved drift updates are written and declined values preserved
+    Given "steps.createPR.maxTurns" is drifted (15 → 30) and the user approves the update
+    And "maxRetriesPerStep" is drifted (2 → 3) and the user declines the update
+    When the migration applies changes
+    Then "sdlc-config.json" has "steps.createPR.maxTurns" set to 30
+    And "sdlc-config.json" has "maxRetriesPerStep" still set to 2
+    And JSON formatting is preserved with 2-space indentation
+
+  Scenario: Auto-mode reports drift but does not apply value updates
+    Given ".claude/auto-mode" exists in the project directory
+    And a project's "sdlc-config.json" has "steps.createPR.maxTurns" set to 15
+    And the template default is 30
+    When I run "/migrating-projects"
+    Then the migration summary includes "steps.createPR.maxTurns: 15 → 30" in the Config Value Drift section
+    And no config values are automatically updated
+    And the drift is not listed in the "Skipped Operations" block

@@ -73,6 +73,28 @@ For the `sdlc-config.json`:
 5. Write the updated JSON (preserve existing values, only add missing keys)
 6. Use `Edit` to add the missing keys — do not overwrite the entire file
 
+### Config value drift updates
+
+For each user-selected drifted value from Step 9 Part C (interactive mode only; this section is skipped entirely in auto-mode):
+
+1. Read the current `sdlc-config.json`
+2. For each selected drifted value, locate the key in the JSON and use `Edit` to replace the old value with the template default value
+3. Preserve JSON formatting — use 2-space indentation per project JSON standards
+4. After each individual value update, re-read the file to verify the update was applied correctly
+5. If a value cannot be found in the file (e.g., the key path changed), skip it and note the failure in the output summary
+
+**Example edit for a step sub-key drift:**
+```
+Old: "maxTurns": 15
+New: "maxTurns": 30
+```
+
+**Example edit for a root-level drift:**
+```
+Old: "maxRetriesPerStep": 2
+New: "maxRetriesPerStep": 3
+```
+
 ### Persist declined sections
 
 After applying approved changes, persist any newly declined steering doc sections:
