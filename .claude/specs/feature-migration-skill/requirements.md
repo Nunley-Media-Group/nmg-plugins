@@ -1,7 +1,7 @@
 # Requirements: Add Migration Skill
 
-**Issues**: #25, #72
-**Date**: 2026-02-15
+**Issues**: #25, #72, #95
+**Date**: 2026-02-25
 **Status**: Draft
 **Author**: Claude
 
@@ -244,6 +244,43 @@ The migration skill should be **self-updating by design**: it reads the latest t
 
 > **Note**: `/migrating-projects` is intentionally excluded from auto-mode for consolidation steps. Migration is a destructive, irreversible operation (it deletes legacy directories and merges content), so it always requires human confirmation regardless of `.claude/auto-mode`. The existing automation mode section in `/migrating-projects` pre-dates this feature and correctly enforces this safety constraint.
 
+<!-- From issue #95 -->
+
+### AC25: Drifted Config Values Are Detected and Reported
+
+**Given** the project's `sdlc-config.json` has a key that also exists in `sdlc-config.example.json`
+**When** the scalar value differs from the template default
+**Then** `/migrating-projects` includes the key in a "Config Value Drift" section of the migration summary, showing both the current value and the template default side-by-side
+
+**Example**:
+- Given: Project config has `"maxTurns": 15` under `steps.createPR`; template has `"maxTurns": 30`
+- When: `/migrating-projects` is run
+- Then: Summary shows `steps.createPR.maxTurns: 15 → 30 (template default)`
+
+### AC26: Nested Step Values Are Also Compared
+
+**Given** a step sub-key exists in both project config and template (e.g., `steps.createPR.maxTurns`)
+**When** the value differs from the template default
+**Then** the drift is detected and included in the Config Value Drift report
+
+### AC27: User Is Asked Per-Value Whether to Accept Template Default
+
+**Given** the migration summary shows config value drift findings
+**When** the user proceeds with migration in interactive mode
+**Then** they are asked via `AskUserQuestion` with `multiSelect: true` to select which drifted values to update to the template default (unselected values are left unchanged)
+
+### AC28: Approved Updates Are Written, Declined Values Preserved
+
+**Given** the user has selected some drifted values to update and skipped others
+**When** the migration applies changes
+**Then** selected values are updated to the template default in `sdlc-config.json`, and skipped values remain exactly as-is
+
+### AC29: Auto-Mode Reports Drift but Does Not Apply Updates
+
+**Given** `.claude/auto-mode` exists
+**When** `/migrating-projects` runs and finds config value drift
+**Then** the drift is included in the summary output but no values are automatically changed (value updates require explicit user approval even in auto-mode, as they may represent intentional customizations)
+
 ---
 
 ## Functional Requirements
@@ -276,6 +313,12 @@ The migration skill should be **self-updating by design**: it reads the latest t
 | FR24 | Downstream skills (`/implementing-specs`, `/verifying-specs`) must resolve specs by issue number regardless of naming convention | Must | Search both `{issue#}-*` and `feature-*/bug-*` patterns |
 | FR25 | Bug specs are never candidates for consolidation — each bug gets its own `bug-{slug}/` directory | Must | Consolidation only applies to `feature-` specs |
 | FR26 | `/migrating-projects` must detect feature-variant specs with legacy singular `**Issue**` frontmatter and propose updating to plural `**Issues**` with Change History | Must | Part of heading-diff + frontmatter analysis |
+| FR27 | Compare scalar values of all keys present in both project config and template during Step 5 config analysis | Must | Extends existing key-level diffing with value-level comparison |
+| FR28 | Report drifted values with current vs template default in migration summary under a "Config Value Drift" section | Must | Side-by-side display: `key: current → template` |
+| FR29 | Present per-value `AskUserQuestion multiSelect` for drift update approval in interactive mode | Must | Each drifted value is an individually selectable option |
+| FR30 | Apply approved drift updates using `Edit` tool, preserving JSON formatting | Must | Only selected values are updated; declined values untouched |
+| FR31 | Auto-mode: report drift in summary only, skip approval and application of value updates | Must | Value updates may represent intentional customizations |
+| FR32 | Skip comparison for keys present in project config but absent from template (user additions) | Should | Custom keys are user extensions, not drift candidates |
 
 ---
 
@@ -370,6 +413,10 @@ The migration skill should be **self-updating by design**: it reads the latest t
 - Changes to `/implementing-specs` or `/verifying-specs` workflow logic (they already read specs by directory path; only the path resolution needs to handle both naming conventions)
 - Spec versioning or diff tracking beyond issue frontmatter and Change History
 - Renaming the `**Issue**` field in existing defect templates (defect specs still use singular `**Issue**` since each bug gets its own spec)
+- Persisting declined drift findings across runs (drift is reported every run; user skips each time)
+- Tracking historical defaults to distinguish "stale default" from "intentional customization" — all value diffs are surfaced; the user decides
+- Updating complex nested objects (e.g., `implement.plan` sub-objects not present in the template) — only scalar values are compared
+- Non-`sdlc-config.json` files for drift detection (steering docs and spec templates have separate migration logic)
 
 ---
 
@@ -384,6 +431,8 @@ The migration skill should be **self-updating by design**: it reads the latest t
 | Amendment fidelity | Zero content loss during amendment | Verify all pre-existing ACs, FRs, and design sections present after amendment |
 | Migration completeness | All legacy specs consolidated into feature-prefixed directories when user approves | Count pre/post migration spec directories |
 | Downstream compatibility | `/implementing-specs` and `/verifying-specs` work with both naming conventions | Exercise both skills against feature-prefixed specs |
+| Drift detection accuracy | All drifted values detected with zero false negatives for scalar keys | Compare a config with known drifted values against the template |
+| Drift update safety | Zero unintended value changes — only user-selected values are updated | Verify declined drifts remain unchanged after migration |
 
 ---
 
@@ -403,6 +452,7 @@ The migration skill should be **self-updating by design**: it reads the latest t
 |-------|------|---------|
 | #25 | 2026-02-15 | Initial feature spec: migration skill for steering docs, specs, and OpenClaw config |
 | #72 | 2026-02-22 | Added feature-centric spec management: spec discovery, amendment flow, naming convention changes, consolidation logic |
+| #95 | 2026-02-25 | Added config value drift detection to /migrating-projects Step 5: value comparison, per-value approval, auto-mode reporting |
 
 ---
 

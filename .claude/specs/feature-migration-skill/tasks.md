@@ -1,7 +1,7 @@
 # Tasks: Add Migration Skill
 
-**Issues**: #25, #72
-**Date**: 2026-02-15
+**Issues**: #25, #72, #95
+**Date**: 2026-02-25
 **Status**: Planning
 **Author**: Claude
 
@@ -20,7 +20,9 @@
 | Migrating-Projects Skill (from #72) | 5 | [x] |
 | Downstream Skills & Docs (from #72) | 3 | [x] |
 | BDD Testing (from #72) | 1 | [x] |
-| **Total** | **25** | |
+| Config Value Drift Detection (from #95) | 4 | [ ] |
+| BDD Testing (from #95) | 1 | [ ] |
+| **Total** | **30** | |
 
 ---
 
@@ -377,13 +379,88 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
+## Phase 10: Config Value Drift Detection (from #95)
+
+### T026: Add Value Comparison Logic to Step 5
+
+**File(s)**: `plugins/nmg-sdlc/skills/migrating-projects/SKILL.md`
+**Type**: Modify
+**Depends**: T002
+**Acceptance**:
+- [ ] Step 5 is extended with a new sub-step after missing-key detection: "Compare scalar values of all keys present in both project config and template"
+- [ ] Comparison covers root-level scalar keys (e.g., `model`, `effort`, `maxRetriesPerStep`, `maxBounceRetries`, `maxLogDiskUsageMB`)
+- [ ] Comparison covers step sub-key scalars (e.g., `steps.createPR.maxTurns`, `steps.verify.timeoutMin`, `steps.implement.model`)
+- [ ] Complex objects (arrays, nested non-step objects) are explicitly excluded from value comparison
+- [ ] Keys present in project config but absent from template are skipped (user additions, per FR32)
+- [ ] Each drifted value is recorded with: dotted key path, current project value, template default value
+
+**Notes**: This task modifies the existing Step 5 instructions. The missing-key logic remains unchanged — drift detection is an additive pass that runs after missing-key identification.
+
+### T027: Add Config Value Drift to Step 9 Summary and Approval Flow
+
+**File(s)**: `plugins/nmg-sdlc/skills/migrating-projects/SKILL.md`
+**Type**: Modify
+**Depends**: T026
+**Acceptance**:
+- [ ] Step 9 migration summary gains a new "Config Value Drift" category showing drifted values with current → template format
+- [ ] In interactive mode, a new "Part C" approval step is added after Part B: `AskUserQuestion` with `multiSelect: true` listing each drifted value as a selectable option
+- [ ] Each option label shows the dotted key path and values (e.g., `steps.createPR.maxTurns: 15 → 30`)
+- [ ] Each option description provides brief context (e.g., the key's purpose)
+- [ ] If no drift is found, Part C is skipped
+- [ ] Unselected values are left unchanged (not recorded as declined or persisted)
+
+### T028: Add Auto-Mode Drift Reporting Behavior
+
+**File(s)**: `plugins/nmg-sdlc/skills/migrating-projects/SKILL.md`
+**Type**: Modify
+**Depends**: T027
+**Acceptance**:
+- [ ] Automation Mode section updated: drift is reported in summary but NOT applied when `.claude/auto-mode` exists
+- [ ] Drift values are NOT recorded in the "Skipped Operations" block (they are informational, not deferred destructive operations)
+- [ ] The "Non-destructive" and "Destructive" classification lists mention config value drift as neither — it is an informational-only category in auto-mode
+- [ ] Step 9 auto-mode path skips Part C (no approval prompt, no application)
+
+### T029: Add Drift Update Application to Step 10
+
+**File(s)**: `plugins/nmg-sdlc/skills/migrating-projects/SKILL.md`
+**Type**: Modify
+**Depends**: T027
+**Acceptance**:
+- [ ] Step 10 apply procedures gain a new item for config value drift updates
+- [ ] Instructions: for each user-selected drifted value, use `Edit` to replace the old value with the template default in `sdlc-config.json`
+- [ ] JSON formatting must be preserved (2-space indentation)
+- [ ] The "Key Rules" section is updated: a new rule clarifies that value updates are an exception to "never overwrite values" — they require explicit per-value user approval
+- [ ] The "What Gets Analyzed" section is updated to mention config value drift
+
+---
+
+## Phase 11: BDD Testing (from #95)
+
+### T030: Append BDD Scenarios for Config Value Drift Detection
+
+**File(s)**: `.claude/specs/feature-migration-skill/feature.gherkin`
+**Type**: Modify
+**Depends**: T026, T027, T028, T029
+**Acceptance**:
+- [ ] All 5 acceptance criteria from issue #95 (AC25–AC29) have corresponding Gherkin scenarios
+- [ ] Scenarios appended at the end of the existing feature file
+- [ ] Tagged with `# Added by issue #95` comment
+- [ ] Uses Given/When/Then format
+- [ ] Covers: drift detection, nested step values, per-value approval, approved/declined updates, auto-mode behavior
+
+---
+
 ## Dependency Graph
 
 ```
 T001 ──▶ T002 ──┬──▶ T003
                 ├──▶ T004
                 ├──▶ T005
-                └──▶ T006
+                ├──▶ T006
+                │
+                └──▶ T026 ──▶ T027 ──▶ T028 ──┐
+                                               ├──▶ T030
+                     T029 ◀────────────────────┘
 
 T007 ─────────────────────────────────────────────────────────────┐
 T008 ─────────────────────────────────────────────────────────────┤
@@ -410,6 +487,7 @@ T010 ──┬──▶ T011 ──▶ T012 ──▶ T013 ──▶ T014 ──
 |-------|------|---------|
 | #25 | 2026-02-15 | Initial task breakdown: migration skill for steering docs, specs, and OpenClaw config (6 tasks) |
 | #72 | 2026-02-22 | Added 19 tasks for feature-centric spec management: templates, writing-specs amendment flow, migrating-projects consolidation, downstream skill updates |
+| #95 | 2026-02-25 | Added 5 tasks for config value drift detection: value comparison, approval flow, auto-mode reporting, BDD scenarios |
 
 ---
 
@@ -422,6 +500,6 @@ Before moving to IMPLEMENT phase:
 - [x] Tasks can be completed independently (given dependencies)
 - [x] Acceptance criteria are verifiable
 - [x] File paths reference actual project structure (per `structure.md`)
-- [x] Test tasks are included (T006, T025)
+- [x] Test tasks are included (T006, T025, T030)
 - [x] No circular dependencies
 - [x] Tasks are in logical execution order
