@@ -1913,6 +1913,7 @@ async function main() {
   log(`Discord channel: ${DISCORD_CHANNEL || 'none (updates will be skipped)'}`);
   if (DRY_RUN) log('DRY-RUN MODE — no actions will be executed');
   if (SINGLE_STEP) log(`Single step mode: running only step ${SINGLE_STEP}`);
+  if (SINGLE_ISSUE_NUMBER) log(`Single issue mode: #${SINGLE_ISSUE_NUMBER}`);
   if (RESUME) log('Resume mode: continuing from existing state');
 
   // Validate project path exists and is a git repo
