@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`/starting-issues`** — Diagnostic output when zero automatable issues are found in auto-mode: runs a scoped `gh issue list` without the label filter and reports the total open issue count; if open issues exist without the label, suggests adding the `automatable` label; if no open issues exist, reports "0 open issues in scope" without a misleading label suggestion (issue #89)
+
 ## [2.20.0] - 2026-02-25
 
 ### Added
