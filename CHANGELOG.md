@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.22.0] - 2026-02-25
+
+### Added
+
+- **`sdlc-runner.mjs`** — Post-Step 3 spec content structure validation: `validateSpecContent()` checks that `requirements.md` contains `**Issues**:` frontmatter and at least one `### AC` heading, and that `tasks.md` contains at least one `### T` task heading; content validation failures trigger a Step 3 retry with per-file, per-check detail in the retry context (issue #90)
+
 ## [2.21.0] - 2026-02-25
 
 ### Added

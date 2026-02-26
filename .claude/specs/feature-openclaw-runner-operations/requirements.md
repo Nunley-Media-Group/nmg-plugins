@@ -1,6 +1,6 @@
 # Requirements: OpenClaw Runner Operations
 
-**Issues**: #12, #24, #33, #34, #88
+**Issues**: #12, #24, #33, #34, #88, #90
 **Date**: 2026-02-25
 **Status**: Complete
 **Author**: Claude Code (consolidated from issues #12, #24, #33, #34, #88)
@@ -207,6 +207,38 @@ Additional capabilities were added iteratively: configurable post-step process c
 **When** the runner loads the config
 **Then** it falls back to the default value of 3 and logs a warning about the invalid value
 
+<!-- From issue #90 -->
+
+### AC30: Requirements.md Frontmatter Validation
+
+**Given** `/writing-specs` has completed (Step 3)
+**When** the runner runs post-step validation
+**Then** it checks that `requirements.md` contains `**Issues**:` frontmatter and at least one `### AC` heading
+
+### AC31: Tasks.md Content Validation
+
+**Given** `/writing-specs` has completed (Step 3)
+**When** the runner runs post-step validation
+**Then** it checks that `tasks.md` contains at least one task heading matching `### T` (e.g., `### T001:`)
+
+### AC32: Content Validation Failure Triggers Retry
+
+**Given** post-Step 3 content validation fails for one or more spec files
+**When** the runner processes the validation result
+**Then** it triggers a retry of Step 3 (writing-specs) with the specific missing elements reported in the retry context
+
+### AC33: Validation Reports Specific Missing Elements Per File
+
+**Given** multiple content checks are performed across spec files
+**When** one or more checks fail
+**Then** the validation error message lists each individual check that failed per file (e.g., "requirements.md: missing **Issues** frontmatter; tasks.md: no task headings found") rather than a generic "validation failed" message
+
+### AC34: Existing File-Existence Checks Are Preserved
+
+**Given** the runner validates spec files after Step 3
+**When** content validation logic is added
+**Then** the existing file-existence and non-zero-size checks still run before content checks, and a missing file is reported as a missing-file error (not a content-structure error)
+
 ---
 
 ## Functional Requirements
@@ -249,6 +281,12 @@ Additional capabilities were added iteratively: configurable post-step process c
 | FR34 | Include the specific failed precondition name in bounce loop log messages | Should | e.g., "Precondition failed: spec files exist" |
 | FR35 | Include bounce count, configured threshold, and retrying step name in Discord bounce status messages | Should | Format: `(bounce N/M)` with step identification |
 | FR36 | Update `sdlc-config.example.json` with `maxBounceRetries` field | Should | Example config stays current |
+| FR37 | Validate `requirements.md` contains `**Issues**:` frontmatter after Step 3 | Must | Content check, not just file existence |
+| FR38 | Validate `requirements.md` contains at least one `### AC` heading after Step 3 | Must | Ensures acceptance criteria were generated |
+| FR39 | Validate `tasks.md` contains at least one task heading (`### T`) after Step 3 | Must | Ensures implementation tasks were generated |
+| FR40 | Report each specific missing element individually in validation failure output | Must | Actionable retry context |
+| FR41 | Trigger Step 3 retry on content validation failure with missing elements in retry context | Must | Reuses existing retry mechanism |
+| FR42 | Preserve existing file-existence and non-zero-size checks as prerequisite to content checks | Must | Content checks only run if files exist |
 
 ---
 
@@ -298,6 +336,9 @@ Additional capabilities were added iteratively: configurable post-step process c
 - Exponential backoff between bounce retries
 - Configurable consecutive escalation threshold (remains hardcoded at 2)
 - Auto-recovery strategies (e.g., automatically closing problematic issues)
+- Validating `design.md` or `testplan.md` content structure (start with the most critical files — `requirements.md` and `tasks.md`)
+- Validating semantic correctness of acceptance criteria or task descriptions
+- Adding content validation to steps other than Step 3 (writing-specs)
 - ~~Log streaming or real-time tailing UI~~ (implemented: `{step}-live.log` files with real-time streaming via `--output-format stream-json`)
 - Structured/JSON log format (plain text is sufficient)
 - Log aggregation to external services (Datadog, ELK, etc.)
@@ -319,6 +360,8 @@ Additional capabilities were added iteratively: configurable post-step process c
 | Disk hygiene | Log directory stays under configured threshold | Cleanup runs before each write |
 | Configurable bounce threshold | Custom `maxBounceRetries` value respected in all bounce paths | Set to 5, observe 4 bounces allowed before escalation |
 | Bounce diagnostic quality | Discord bounce messages are actionable without checking logs | Messages include precondition name, bounce count, threshold, and step |
+| Content validation catch rate | Malformed specs caught before downstream steps | Run with spec files missing frontmatter or task headings; verify retry triggers |
+| Validation specificity | Error messages identify exactly which checks failed | Review validation output for per-file, per-check detail |
 
 ---
 
@@ -331,6 +374,7 @@ Additional capabilities were added iteratively: configurable post-step process c
 | #33 | 2026-02-16 | Failure loop detection — consecutive escalation halt, same-issue skip, step-bounce detection |
 | #34 | 2026-02-16 | Persistent logging for headless sessions — per-step log files, OS-agnostic log directory, disk usage cap |
 | #88 | 2026-02-25 | Configurable bounce retry threshold via `maxBounceRetries` config field, enhanced bounce diagnostics in logs and Discord |
+| #90 | 2026-02-25 | Post-Step 3 spec content structure validation — frontmatter fields, AC headings, task headings — with specific error reporting and retry on failure |
 
 ---
 
