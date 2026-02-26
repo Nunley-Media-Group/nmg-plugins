@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-02-25
+
 ### Added
 
 - **`/migrating-projects`** — Step 5 now detects config value drift: scalar values present in both `sdlc-config.json` and the template that differ are surfaced in a new "Config Value Drift" summary section; in interactive mode, users select per-value via `AskUserQuestion multiSelect` which drifted values to update to the template default; in auto-mode, drift is reported only (no automatic updates, as drifted values may represent intentional customizations) (issue #95)
