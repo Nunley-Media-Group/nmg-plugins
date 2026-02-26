@@ -1348,6 +1348,39 @@ function hasNonEscalatedIssues() {
 // Spec validation gate (post-step-3)
 // ---------------------------------------------------------------------------
 
+/**
+ * Validate spec file content structure after file-existence checks pass.
+ * Returns { ok: boolean, issues: string[] } with per-file, per-check detail.
+ */
+function validateSpecContent(featureDir) {
+  const issues = [];
+
+  // Validate requirements.md
+  try {
+    const reqContent = fs.readFileSync(path.join(featureDir, 'requirements.md'), 'utf8');
+    if (!/\*\*Issues?\*\*\s*:/.test(reqContent)) {
+      issues.push('requirements.md: missing **Issues**: frontmatter');
+    }
+    if (!/^### AC\d/m.test(reqContent)) {
+      issues.push('requirements.md: no ### AC heading found');
+    }
+  } catch (err) {
+    issues.push(`requirements.md: read error — ${err.message}`);
+  }
+
+  // Validate tasks.md
+  try {
+    const taskContent = fs.readFileSync(path.join(featureDir, 'tasks.md'), 'utf8');
+    if (!/^### T\d/m.test(taskContent)) {
+      issues.push('tasks.md: no task heading (### T) found');
+    }
+  } catch (err) {
+    issues.push(`tasks.md: read error — ${err.message}`);
+  }
+
+  return { ok: issues.length === 0, issues };
+}
+
 function validateSpecs(state) {
   const specsDir = path.join(PROJECT_PATH, '.claude', 'specs');
   if (!fs.existsSync(specsDir)) return { ok: false, missing: ['specs directory'] };
@@ -1369,13 +1402,23 @@ function validateSpecs(state) {
     return !fs.existsSync(fp) || fs.statSync(fp).size === 0;
   });
 
+  if (missing.length > 0) {
+    return { ok: false, missing };
+  }
+
+  // Content structure validation (only runs when all files exist with non-zero size)
+  const contentCheck = validateSpecContent(featureDir);
+  if (!contentCheck.ok) {
+    return { ok: false, missing: contentCheck.issues };
+  }
+
   // Update feature name in state if we found it
   const featureName = path.basename(featureDir);
   if (featureName !== state.featureName) {
     updateState({ featureName });
   }
 
-  return { ok: missing.length === 0, missing };
+  return { ok: true, missing: [] };
 }
 
 // ---------------------------------------------------------------------------
@@ -2097,6 +2140,7 @@ export {
   resolveStepConfig,
 
   validateSpecs,
+  validateSpecContent,
   validateCI,
   validatePush,
   validateVersionBump,

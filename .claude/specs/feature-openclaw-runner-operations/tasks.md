@@ -32,8 +32,8 @@
 | Backend (Configurable Bounce Retries) | #88 | 2 | [x] |
 | Integration (Configurable Bounce Retries) | #88 | 1 | [x] |
 | Documentation (Configurable Bounce Retries) | #88 | 1 | [x] |
-| Backend (Spec Content Validation) | #90 | 2 | [ ] |
-| Testing (Spec Content Validation) | #90 | 1 | [ ] |
+| Backend (Spec Content Validation) | #90 | 2 | [x] |
+| Testing (Spec Content Validation) | #90 | 1 | [x] |
 | **Total** | **#12–#90** | **37** | |
 
 ---
@@ -576,15 +576,16 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **File(s)**: `openclaw/scripts/sdlc-runner.mjs`
 **Type**: Modify (add function)
 **Depends**: T002
+**Status**: Complete
 **Acceptance**:
-- [ ] `validateSpecContent(featureDir)` function implemented
-- [ ] Reads `requirements.md` and checks for `**Issues**:` or `**Issue**:` frontmatter via regex `/\*\*Issues?\*\*\s*:/`
-- [ ] Checks `requirements.md` for at least one `### AC` heading via regex `/^### AC\d/m`
-- [ ] Reads `tasks.md` and checks for at least one task heading via regex `/^### T\d/m`
-- [ ] Returns `{ ok: boolean, issues: string[] }` with per-file, per-check detail
-- [ ] Each check failure adds a specific message (e.g., `"requirements.md: missing **Issues**: frontmatter"`)
-- [ ] Read errors are caught per-file and reported as issues (do not throw)
-- [ ] Function placed near existing `validateSpecs()` function
+- [x] `validateSpecContent(featureDir)` function implemented
+- [x] Reads `requirements.md` and checks for `**Issues**:` or `**Issue**:` frontmatter via regex `/\*\*Issues?\*\*\s*:/`
+- [x] Checks `requirements.md` for at least one `### AC` heading via regex `/^### AC\d/m`
+- [x] Reads `tasks.md` and checks for at least one task heading via regex `/^### T\d/m`
+- [x] Returns `{ ok: boolean, issues: string[] }` with per-file, per-check detail
+- [x] Each check failure adds a specific message (e.g., `"requirements.md: missing **Issues**: frontmatter"`)
+- [x] Read errors are caught per-file and reported as issues (do not throw)
+- [x] Function placed near existing `validateSpecs()` function
 
 **Notes**: Use `fs.readFileSync(fp, 'utf8')` consistent with existing file reading patterns in the script. The `m` regex flag is required so `^` matches line starts.
 
@@ -593,12 +594,13 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **File(s)**: `openclaw/scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T035
+**Status**: Complete
 **Acceptance**:
-- [ ] After the existing `missing` array check (file existence + non-zero size), if `missing.length === 0`, call `validateSpecContent(featureDir)`
-- [ ] If `validateSpecContent()` returns `ok: false`, return `{ ok: false, missing: contentCheck.issues }` from `validateSpecs()`
-- [ ] If all file-existence checks pass AND content checks pass, existing return logic unchanged
-- [ ] A missing file is still reported as a file-name string (e.g., `"requirements.md"`), not as a content error
-- [ ] The post-step-3 gate in `runStep()` requires no changes — it already logs `specCheck.missing.join(', ')` and includes them in Discord messages
+- [x] After the existing `missing` array check (file existence + non-zero size), if `missing.length === 0`, call `validateSpecContent(featureDir)`
+- [x] If `validateSpecContent()` returns `ok: false`, return `{ ok: false, missing: contentCheck.issues }` from `validateSpecs()`
+- [x] If all file-existence checks pass AND content checks pass, existing return logic unchanged
+- [x] A missing file is still reported as a file-name string (e.g., `"requirements.md"`), not as a content error
+- [x] The post-step-3 gate in `runStep()` requires no changes — it already logs `specCheck.missing.join(', ')` and includes them in Discord messages
 
 **Notes**: This is a minimal insertion. The existing retry/escalation flow in the post-step-3 gate handles content validation failures identically to file-existence failures — no wiring changes needed.
 
@@ -611,12 +613,13 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **File(s)**: `.claude/specs/feature-openclaw-runner-operations/feature.gherkin`
 **Type**: Modify
 **Depends**: T035, T036
+**Status**: Complete
 **Acceptance**:
-- [ ] All 5 acceptance criteria (AC30–AC34) have corresponding scenarios
-- [ ] Scenarios tagged with `# Added by issue #90` comment
-- [ ] Scenarios use Given/When/Then format
-- [ ] Includes: requirements.md frontmatter check, requirements.md AC heading check, tasks.md task heading check, specific error reporting, file-existence checks preserved
-- [ ] Feature file is valid Gherkin syntax
+- [x] All 5 acceptance criteria (AC30–AC34) have corresponding scenarios
+- [x] Scenarios tagged with `# Added by issue #90` comment
+- [x] Scenarios use Given/When/Then format
+- [x] Includes: requirements.md frontmatter check, requirements.md AC heading check, tasks.md task heading check, specific error reporting, file-existence checks preserved
+- [x] Feature file is valid Gherkin syntax
 
 ---
 
