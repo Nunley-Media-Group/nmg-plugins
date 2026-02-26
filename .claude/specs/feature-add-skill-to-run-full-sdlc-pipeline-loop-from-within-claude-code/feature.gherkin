@@ -1,0 +1,73 @@
+# File: .claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/feature.gherkin
+#
+# Generated from: .claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/requirements.md
+# Issue: #107
+
+Feature: Running SDLC Loop
+  As a developer using Claude Code
+  I want a single skill that orchestrates the full SDLC pipeline
+  So that I can drive the same continuous loop natively from within Claude Code
+
+  # --- Happy Path ---
+
+  Scenario: Loop mode processes all automatable issues
+    Given open issues labelled "automatable" exist in the current milestone
+    And a valid sdlc-config.json exists at the project root
+    When I invoke "/nmg-sdlc:running-sdlc-loop" with no arguments
+    Then the skill invokes sdlc-runner.mjs with CLAUDECODE="" and no --issue flag
+    And the runner processes each automatable issue through the full pipeline sequentially
+    And the runner exits with code 0 when no more automatable issues remain
+
+  Scenario: Single-issue mode runs pipeline for a specific issue
+    Given issue #107 exists and is open
+    And a valid sdlc-config.json exists at the project root
+    When I invoke "/nmg-sdlc:running-sdlc-loop #107"
+    Then the skill invokes sdlc-runner.mjs with CLAUDECODE="" and --issue 107
+    And the runner processes only issue #107 through the full pipeline
+    And the runner exits with code 0 after the PR is merged
+
+  # --- Error Handling ---
+
+  Scenario: No automatable issues produces diagnostic exit
+    Given no issues are labelled "automatable" in the current milestone
+    When the runner executes
+    Then it outputs "No more open issues" or equivalent diagnostic
+    And exits with code 0
+
+  Scenario: Pipeline failure halts and reports
+    Given the runner is processing issue #108
+    And a phase skill fails during the pipeline
+    When the failure is detected
+    Then the runner escalates with the issue number and failed step name
+    And in single-issue mode the runner exits with code 1
+    And in loop mode the runner moves to the next issue after escalation
+
+  # --- Edge Cases ---
+
+  Scenario: Config file missing triggers generation
+    Given no sdlc-config.json exists at the project root
+    When I invoke "/nmg-sdlc:running-sdlc-loop"
+    Then the skill invokes "/nmg-sdlc:generating-openclaw-config" to create the config
+    And then proceeds to invoke the runner with the newly created config
+
+  Scenario: SKILL.md passes best-practice review
+    Given the SKILL.md for running-sdlc-loop has been written
+    When "/doing-skills-right" is run against it
+    Then all structural elements pass validation
+    And frontmatter includes name, description, argument-hint, model, and allowed-tools
+    And an "Integration with SDLC Workflow" section is present
+
+  Scenario: State isolation between loop iterations
+    Given the runner is processing multiple issues in loop mode
+    When it finishes one issue and begins the next
+    Then the runner resets cycle state (currentIssue, currentBranch, featureName, retries)
+    And checks out main and pulls latest before starting the next cycle
+    And the issue number is determined from the branch name after step 2 (ground truth)
+
+  Scenario: Auto-mode propagation
+    Given the runner is launched by the skill
+    When the runner starts
+    Then it creates ".claude/auto-mode" automatically
+    And each phase skill running in claude -p subprocesses detects auto-mode
+    And all interactive prompts are suppressed throughout the pipeline
+    And auto-mode is removed when the runner exits

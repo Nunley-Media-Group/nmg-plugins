@@ -34,6 +34,7 @@ const isMainModule = process.argv[1] && fileURLToPath(import.meta.url) === path.
 let DRY_RUN = false;
 let SINGLE_STEP = null;
 let RESUME = false;
+let SINGLE_ISSUE_NUMBER = null;
 let PROJECT_PATH = '';
 let PLUGINS_PATH = '';
 let MODEL = 'opus';
@@ -53,6 +54,7 @@ if (isMainModule) {
       'dry-run': { type: 'boolean', default: false },
       'discord-channel': { type: 'string' },
       step:    { type: 'string'  },
+      issue:   { type: 'string'  },
       resume:  { type: 'boolean', default: false },
       help:    { type: 'boolean', default: false },
     },
@@ -68,6 +70,7 @@ Options:
   --dry-run                  Log actions without executing
   --discord-channel <id>     Discord channel ID for status updates
   --step <N>                 Run only step N (1-9), then exit
+  --issue <N>                Process only issue #N then exit (single-cycle mode)
   --resume                   Resume from existing sdlc-state.json
   --help                     Show this help
 `);
@@ -81,6 +84,11 @@ Options:
 
   DRY_RUN = args['dry-run'];
   SINGLE_STEP = args.step ? parseInt(args.step, 10) : null;
+  SINGLE_ISSUE_NUMBER = args.issue ? parseInt(args.issue, 10) : null;
+  if (args.issue && (!Number.isInteger(SINGLE_ISSUE_NUMBER) || SINGLE_ISSUE_NUMBER <= 0)) {
+    console.error(`Error: --issue must be a positive integer, got "${args.issue}"`);
+    process.exit(1);
+  }
   RESUME = args.resume;
 
   // Load configuration
@@ -889,7 +897,9 @@ function buildClaudeArgs(step, state, overrides = {}) {
   const prompts = {
     1: 'Check out main, clean the working tree, and pull latest. Run: git checkout main && git clean -fd && git checkout -- . && git pull. Report the current branch and latest commit.',
 
-    2: `Select and start the next GitHub issue from the current milestone. Create a linked feature branch and set the issue to In Progress.${escalatedIssues.size > 0 ? ` Do NOT select any of these previously-escalated issues: ${[...escalatedIssues].map(i => `#${i}`).join(', ')}.` : ''} Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
+    2: SINGLE_ISSUE_NUMBER
+      ? `Start issue #${SINGLE_ISSUE_NUMBER}. Create a linked feature branch and set the issue to In Progress. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`
+      : `Select and start the next GitHub issue from the current milestone. Create a linked feature branch and set the issue to In Progress.${escalatedIssues.size > 0 ? ` Do NOT select any of these previously-escalated issues: ${[...escalatedIssues].map(i => `#${i}`).join(', ')}.` : ''} Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
     3: `Write BDD specifications for issue #${issue} on branch ${branch}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
@@ -1226,6 +1236,12 @@ async function escalate(step, reason, output = '') {
 
   await postDiscord(diagnostic);
 
+  // In single-issue mode, exit immediately on escalation — no next cycle
+  if (SINGLE_ISSUE_NUMBER) {
+    removeAutoMode();
+    process.exit(1);
+  }
+
   // Reset state for next cycle (keep auto-mode flag — the runner is still running
   // and will start a fresh cycle; removing the flag causes skills to run interactively)
   updateState({ currentStep: 0, lastCompletedStep: 0 });
@@ -1550,7 +1566,7 @@ function performDeterministicVersionBump(state) {
         if (versioningSection) {
           const classificationSection = versioningSection[1].match(/### Version Bump Classification\s*\n([\s\S]*?)(?=\n### |\n## |$)/);
           if (classificationSection) {
-            const rows = classificationSection[1].match(/\|[^|]+\|[^|]+\|/g) || [];
+            const rows = classificationSection[1].match(/\|[^|\n]+\|[^|\n]+\|/g) || [];
             const classMap = new Map();
             for (const row of rows) {
               const cells = row.split('|').map(c => c.trim()).filter(Boolean);
@@ -1627,7 +1643,7 @@ function performDeterministicVersionBump(state) {
         const versioningMatch = techMd.match(/## Versioning\s*\n([\s\S]*?)(?=\n## |\n$|$)/);
         if (versioningMatch) {
           // Parse table rows: | file | dot.path |
-          const tableRows = versioningMatch[1].match(/\|[^|]+\|[^|]+\|/g) || [];
+          const tableRows = versioningMatch[1].match(/\|[^|\n]+\|[^|\n]+\|/g) || [];
           for (const row of tableRows) {
             const cells = row.split('|').map(c => c.trim()).filter(Boolean);
             if (cells.length < 2 || cells[0] === 'File' || cells[0].startsWith('-')) continue;
@@ -1897,6 +1913,7 @@ async function main() {
   log(`Discord channel: ${DISCORD_CHANNEL || 'none (updates will be skipped)'}`);
   if (DRY_RUN) log('DRY-RUN MODE — no actions will be executed');
   if (SINGLE_STEP) log(`Single step mode: running only step ${SINGLE_STEP}`);
+  if (SINGLE_ISSUE_NUMBER) log(`Single issue mode: #${SINGLE_ISSUE_NUMBER}`);
   if (RESUME) log('Resume mode: continuing from existing state');
 
   // Validate project path exists and is a git repo
@@ -1983,8 +2000,8 @@ async function main() {
 
   // Main continuous loop
   while (!shuttingDown) {
-    // Check for open issues
-    if (!DRY_RUN && !hasOpenIssues()) {
+    // Check for open issues (skip in single-issue mode — we already know which issue to work on)
+    if (!SINGLE_ISSUE_NUMBER && !DRY_RUN && !hasOpenIssues()) {
       log('No more open issues. All done!');
       await postDiscord('No more open issues in the project. SDLC runner complete.');
       updateState({ currentStep: 0 });
@@ -1992,8 +2009,8 @@ async function main() {
       break;
     }
 
-    // Check if all remaining issues have been escalated this session
-    if (!DRY_RUN && escalatedIssues.size > 0 && !hasNonEscalatedIssues()) {
+    // Check if all remaining issues have been escalated this session (skip in single-issue mode)
+    if (!SINGLE_ISSUE_NUMBER && !DRY_RUN && escalatedIssues.size > 0 && !hasNonEscalatedIssues()) {
       await haltFailureLoop('all issues escalated', [
         `All open issues have been escalated: ${[...escalatedIssues].map(i => `#${i}`).join(', ')}`,
         'No non-escalated issues remain.',
@@ -2040,8 +2057,8 @@ async function main() {
         continue;
       }
 
-      // Post-step-2 safety check: halt if Claude selected an escalated issue
-      if (result === 'ok' && step.number === 2) {
+      // Post-step-2 safety check: halt if Claude selected an escalated issue (skip in single-issue mode)
+      if (!SINGLE_ISSUE_NUMBER && result === 'ok' && step.number === 2) {
         const freshState = readState();
         if (freshState.currentIssue && escalatedIssues.has(freshState.currentIssue)) {
           await haltFailureLoop('all issues escalated', [
@@ -2054,8 +2071,16 @@ async function main() {
       // After successful merge (step 9), reset consecutive escalation counter
       if (result === 'ok' && step.number === 9) {
         consecutiveEscalations = 0;
+        if (SINGLE_ISSUE_NUMBER) {
+          log(`Single-issue mode: issue #${SINGLE_ISSUE_NUMBER} complete. Exiting.`);
+          removeAutoMode();
+          break; // Exit the for loop
+        }
       }
     }
+
+    // Single-issue mode: exit the while loop after the for loop completes
+    if (SINGLE_ISSUE_NUMBER) break;
 
     // After a full cycle (or escalation), reset for next iteration
     state = readState();
@@ -2089,6 +2114,7 @@ const __test__ = {
     bounceCount = 0;
     consecutiveEscalations = 0;
     escalatedIssues.clear();
+    SINGLE_ISSUE_NUMBER = null;
   },
   setConfig(cfg) {
     PROJECT_PATH = cfg.projectPath ?? PROJECT_PATH;
@@ -2104,6 +2130,7 @@ const __test__ = {
       if (!Number.isInteger(num) || num <= 0) return 3;
       return num;
     })();
+    if ('singleIssueNumber' in cfg) SINGLE_ISSUE_NUMBER = cfg.singleIssueNumber;
     DISCORD_CHANNEL = cfg.discordChannelId ?? DISCORD_CHANNEL;
     CLEANUP_PATTERNS = cfg.cleanup?.processPatterns ?? CLEANUP_PATTERNS;
     STATE_PATH = cfg.statePath ?? STATE_PATH;
@@ -2113,6 +2140,8 @@ const __test__ = {
     ORCHESTRATION_LOG = cfg.orchestrationLog ?? ORCHESTRATION_LOG;
     if (cfg.configSteps !== undefined) configSteps = cfg.configSteps;
   },
+  get singleIssueNumber() { return SINGLE_ISSUE_NUMBER; },
+  set singleIssueNumber(v) { SINGLE_ISSUE_NUMBER = v; },
   get bounceCount() { return bounceCount; },
   set bounceCount(v) { bounceCount = v; },
   get consecutiveEscalations() { return consecutiveEscalations; },
