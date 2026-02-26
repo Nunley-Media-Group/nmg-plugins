@@ -1,6 +1,6 @@
 # Design: OpenClaw Runner Operations
 
-**Issues**: #12, #24, #33, #34, #88
+**Issues**: #12, #24, #33, #34, #88, #90
 **Date**: 2026-02-25
 **Status**: Complete
 **Author**: Claude Code (consolidated from issues #12, #24, #33, #34, #88)
@@ -20,6 +20,7 @@ Additional capabilities built onto this foundation:
 - **Failure loop detection** (issue #33): In-memory tracking of consecutive escalations, escalated-issue sets, and per-cycle bounce counts with `haltFailureLoop()` for deterministic exits.
 - **Persistent logging** (issue #34): Per-step log files written to an OS-agnostic temp directory with disk usage enforcement.
 - **Configurable bounce retries** (issue #88): The bounce loop threshold is configurable via `maxBounceRetries` in the config, with enhanced diagnostic messages including the specific failed precondition name.
+- **Spec content validation** (issue #90): Post-Step 3 validation extended beyond file existence to check content structure — required frontmatter fields and heading patterns — with per-file, per-check failure reporting.
 
 ---
 
@@ -52,6 +53,7 @@ Additional capabilities built onto this foundation:
 │     g. Auto-commit if dirty (step 4)              │
 │     h. [#24] cleanupProcesses() post-step         │
 │     i. [#34] writeStepLog() per-step              │
+│     j. [#90] validateSpecContent() post-step 3    │
 │  4. Track lastCompletedStep                       │
 │  5. [#33] Detect failure loops → haltFailureLoop()│
 └──────────────────────────────────────────────────┘
@@ -90,6 +92,7 @@ Additional capabilities built onto this foundation:
       - escalate() checks consecutive escalation count → haltFailureLoop() if >= 2
    h. bounce detection in handleFailure() and runStep() precondition paths
    i. After implementation: auto-commit dirty work tree
+   j. After step 3 file-existence check passes: validateSpecContent() reads files and checks structure
 6. After all steps: post completion to Discord; reset consecutiveEscalations
 ```
 
@@ -99,7 +102,7 @@ Additional capabilities built onto this foundation:
 
 | File | Type | Purpose |
 |------|------|---------|
-| `openclaw/scripts/sdlc-runner.mjs` | Create | Main Node.js orchestrator script (issues #12, #24, #33, #34, #88) |
+| `openclaw/scripts/sdlc-runner.mjs` | Create | Main Node.js orchestrator script (issues #12, #24, #33, #34, #88, #90) |
 | `openclaw/scripts/sdlc-config.example.json` | Create/Modify | Config template — per-step settings (#12), cleanup patterns (#24), logging fields (#34), `maxBounceRetries` (#88) |
 | `openclaw/skills/running-sdlc/SKILL.md` | Create/Modify | OpenClaw skill — invokes runner (#12), cleanup docs (#24), logging docs (#34) |
 
@@ -702,6 +705,147 @@ log(`Bounce ${bounceCount}/${MAX_BOUNCE_RETRIES}: Step ${step.number} → Step $
 
 ---
 
+## Spec Content Structure Validation Design (Issue #90)
+
+### From Issue #90
+
+This section describes the content structure validation added to the post-Step 3 validation gate in the SDLC runner.
+
+#### Overview
+
+The existing `validateSpecs()` function checks that 4 spec files exist with non-zero size after Step 3 (writing-specs). However, a file containing only a heading or placeholder text passes this check while breaking downstream steps that expect structured content (frontmatter fields, AC headings, task entries).
+
+This design extends `validateSpecs()` with a new `validateSpecContent()` function that reads the content of `requirements.md` and `tasks.md` and checks for required structural elements. The function runs only after existing file-existence checks pass, preserving backward compatibility. Failures report specific missing elements per file and trigger a retry of Step 3 with actionable context.
+
+All changes are confined to `openclaw/scripts/sdlc-runner.mjs`. No new files, no new dependencies, no config changes.
+
+#### Component Diagram
+
+```
+sdlc-runner.mjs
+├── validateSpecs() (MODIFIED)
+│   ├── Existing: file existence + non-zero size checks
+│   └── NEW: if files pass → validateSpecContent()
+│
+├── validateSpecContent(featureDir) (NEW)
+│   ├── Read requirements.md → check for **Issues**: and ### AC
+│   ├── Read tasks.md → check for ### T
+│   └── Return { ok, issues[] } with per-file, per-check detail
+│
+└── runStep() post-step-3 gate (MODIFIED)
+    └── validateSpecs() failure now includes content issues in retry context
+```
+
+#### New Function: `validateSpecContent()`
+
+```javascript
+/**
+ * Validate spec file content structure after file-existence checks pass.
+ * Returns { ok: boolean, issues: string[] } with per-file detail.
+ */
+function validateSpecContent(featureDir) {
+  const issues = [];
+
+  // Validate requirements.md
+  try {
+    const reqContent = fs.readFileSync(path.join(featureDir, 'requirements.md'), 'utf8');
+    if (!/\*\*Issues?\*\*\s*:/.test(reqContent)) {
+      issues.push('requirements.md: missing **Issues**: frontmatter');
+    }
+    if (!/^### AC\d/m.test(reqContent)) {
+      issues.push('requirements.md: no ### AC heading found');
+    }
+  } catch (err) {
+    issues.push(`requirements.md: read error — ${err.message}`);
+  }
+
+  // Validate tasks.md
+  try {
+    const taskContent = fs.readFileSync(path.join(featureDir, 'tasks.md'), 'utf8');
+    if (!/^### T\d/m.test(taskContent)) {
+      issues.push('tasks.md: no task heading (### T) found');
+    }
+  } catch (err) {
+    issues.push(`tasks.md: read error — ${err.message}`);
+  }
+
+  return { ok: issues.length === 0, issues };
+}
+```
+
+**Design decisions:**
+
+| Decision | Rationale |
+|----------|-----------|
+| Regex `\*\*Issues?\*\*\s*:` matches both `**Issues**:` and `**Issue**:` | Backward compatibility with legacy single-issue field name |
+| Regex `^### AC\d` requires line-start `###` followed by `AC` and a digit | Matches `### AC1:`, `### AC12:`, etc. without false positives on prose mentioning "AC" |
+| Regex `^### T\d` matches task headings | Matches `### T001:`, `### T01:`, `### T1:` — any task numbering format |
+| `m` flag on regexes | Enables `^` to match start of any line, not just start of string |
+| Read errors caught per-file | A read error on one file doesn't prevent checking the other |
+| Returns `issues[]` not `missing[]` | Distinct from `validateSpecs()` existing `missing[]` (which tracks missing files) to avoid confusion |
+
+#### Modified `validateSpecs()`
+
+The existing function gains a content validation step after file-existence checks pass:
+
+```javascript
+function validateSpecs(state) {
+  // ... existing directory and file existence checks (unchanged) ...
+
+  const required = ['requirements.md', 'design.md', 'tasks.md', 'feature.gherkin'];
+  const missing = required.filter(f => {
+    const fp = path.join(featureDir, f);
+    return !fs.existsSync(fp) || fs.statSync(fp).size === 0;
+  });
+
+  if (missing.length > 0) {
+    return { ok: false, missing };  // File-existence failure — unchanged behavior
+  }
+
+  // NEW: Content structure validation (only runs when all files exist)
+  const contentCheck = validateSpecContent(featureDir);
+  if (!contentCheck.ok) {
+    return { ok: false, missing: contentCheck.issues };
+  }
+
+  // ... existing featureName state update (unchanged) ...
+  return { ok: missing.length === 0, missing };
+}
+```
+
+**Key constraint**: Content validation runs ONLY when all 4 files exist with non-zero size. This preserves the existing error reporting hierarchy — missing files are always reported as missing-file errors, never as content errors.
+
+#### Integration Point in `runStep()` Post-Step-3 Gate
+
+The existing post-step-3 gate code requires no changes. It already:
+1. Calls `validateSpecs(state)` and checks `specCheck.ok`
+2. Logs `specCheck.missing.join(', ')` — now includes content issues
+3. Posts to Discord with the specific missing elements
+4. Retries or escalates based on retry count
+
+The only change is that `specCheck.missing` may now contain content structure issues (e.g., `"requirements.md: missing **Issues**: frontmatter"`) in addition to the existing file-name entries (e.g., `"requirements.md"`). The downstream logging and Discord reporting handle both formats identically since they join the array into a comma-separated string.
+
+#### Content Validation Alternatives Considered
+
+| Option | Description | Decision |
+|--------|-------------|----------|
+| **A: Inline content checks in `validateSpecs()`** | Add regex checks directly inside the existing `missing` filter | Rejected — mixes file-existence and content concerns; harder to maintain |
+| **B: Separate `validateSpecContent()` function** | Dedicated function called after file checks pass | **Selected** — clear separation of concerns; easy to extend for new files later |
+| **C: Config-driven validation rules** | Define content checks in `sdlc-config.json` | Rejected — over-engineering for 3 fixed checks; adds config complexity |
+| **D: Full markdown AST parsing** | Parse markdown into AST and validate structure | Rejected — requires external dependency or complex parsing; regex is sufficient for heading/frontmatter checks |
+
+#### Content Validation Risks & Mitigations
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| Regex false negatives (valid spec doesn't match) | Low | Medium | Patterns are deliberately broad (`### AC\d` matches any numbering); tested against actual spec output from `/writing-specs` |
+| Regex false positives (invalid spec matches) | Low | Low | Content validation is a safety net, not a guarantee — it catches the most common failures (empty specs, missing frontmatter). Semantic correctness is out of scope. |
+| `readFileSync` fails on valid files | Very Low | Low | Per-file try/catch; read error reported as an issue, triggers retry |
+| Content validation adds latency | Very Low | Very Low | Two small file reads (typically < 50 KB each); negligible relative to multi-minute Claude sessions |
+| Legacy specs use `**Issue**:` (singular) | Low | Medium | Regex matches both `**Issues**:` and `**Issue**:` via `Issues?` pattern |
+
+---
+
 ## Security Considerations
 
 - [x] No secrets in the runner script or config file
@@ -741,6 +885,7 @@ log(`Bounce ${bounceCount}/${MAX_BOUNCE_RETRIES}: Step ${step.number} → Step $
 | Disk cleanup | Verification | Oldest files pruned when over threshold; orchestration log preserved |
 | Session ID extraction | Verification | Extracts from valid JSON; falls back to UUID |
 | Configurable bounce threshold | BDD (Gherkin) | Config loading, validation, default fallback, enhanced diagnostics |
+| Spec content validation | BDD (Gherkin) | Requirements.md frontmatter check, AC heading check, tasks.md task heading check, specific error reporting, retry on failure, file-existence checks preserved |
 
 Per `tech.md`, this project uses Gherkin specs as design artifacts rather than executable tests. Verification is done through `/verifying-specs`.
 
@@ -765,6 +910,7 @@ Per `tech.md`, this project uses Gherkin specs as design artifacts rather than e
 | #33 | 2026-02-16 | Added failure loop detection design — `haltFailureLoop()`, modified `escalate()`, bounce tracking, issue exclusion |
 | #34 | 2026-02-16 | Added persistent logging design — `resolveLogDir()`, `writeStepLog()`, `enforceMaxDisk()`, `extractSessionId()`, SKILL.md changes |
 | #88 | 2026-02-25 | Added configurable bounce retry threshold — `MAX_BOUNCE_RETRIES` config loading with validation, `incrementBounceCount()` helper, enhanced Discord/log diagnostics |
+| #90 | 2026-02-25 | Added spec content structure validation — `validateSpecContent()` function, modified `validateSpecs()` to check frontmatter and headings after file-existence passes, per-file error reporting |
 
 ---
 
@@ -777,3 +923,4 @@ Per `tech.md`, this project uses Gherkin specs as design artifacts rather than e
 - [x] Process cleanup design documented with integration points
 - [x] Failure loop detection design documented with state preservation contract
 - [x] Persistent logging design documented with cross-platform approach
+- [x] Spec content validation design documented with regex patterns, separation of concerns, and backward compatibility

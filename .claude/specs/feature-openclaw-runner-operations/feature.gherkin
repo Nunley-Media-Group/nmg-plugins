@@ -4,12 +4,12 @@
 #   .claude/specs/12-openclaw-sdlc-orchestration/feature.gherkin (issue #12)
 #   .claude/specs/24-configurable-post-step-process-cleanup/feature.gherkin (issue #24)
 #   .claude/specs/33-failure-loop-detection/feature.gherkin (issue #33)
-# Issues: #12, #24, #33, #34, #88
+# Issues: #12, #24, #33, #34, #88, #90
 
 Feature: OpenClaw Runner Operations
   As an OpenClaw agent operator and developer
-  I want a deterministic SDLC orchestrator with process cleanup, failure loop detection, and persistent logging
-  So that the workflow runs reliably, orphaned processes are cleaned up, infinite loops are detected, and sessions are debuggable
+  I want a deterministic SDLC orchestrator with process cleanup, failure loop detection, persistent logging, and spec content validation
+  So that the workflow runs reliably, orphaned processes are cleaned up, infinite loops are detected, sessions are debuggable, and malformed specs are caught early
 
   # ===================================================================
   # From issue #12 — OpenClaw SDLC Orchestration
@@ -352,3 +352,67 @@ Feature: OpenClaw Runner Operations
     When the runner loads the config
     Then the bounce loop threshold defaults to 3
     And the runner logs a warning containing 'invalid maxBounceRetries value "0"'
+
+  # ===================================================================
+  # Added by issue #90 — Spec Content Structure Validation
+  # ===================================================================
+
+  # --- Requirements.md Validation ---
+
+  # Added by issue #90
+  Scenario: Requirements.md frontmatter validation detects missing Issues field
+    Given /writing-specs has completed (Step 3)
+    And requirements.md exists with non-zero size but does not contain "**Issues**:" frontmatter
+    When the runner runs post-step validation
+    Then the validation fails with message containing "requirements.md: missing **Issues**: frontmatter"
+    And the runner retries Step 3
+
+  # Added by issue #90
+  Scenario: Requirements.md AC heading validation detects missing acceptance criteria
+    Given /writing-specs has completed (Step 3)
+    And requirements.md exists with "**Issues**: #90" frontmatter but no "### AC" headings
+    When the runner runs post-step validation
+    Then the validation fails with message containing "requirements.md: no ### AC heading found"
+    And the runner retries Step 3
+
+  # --- Tasks.md Validation ---
+
+  # Added by issue #90
+  Scenario: Tasks.md content validation detects missing task headings
+    Given /writing-specs has completed (Step 3)
+    And tasks.md exists with non-zero size but contains no "### T" headings
+    When the runner runs post-step validation
+    Then the validation fails with message containing "tasks.md: no task heading (### T) found"
+    And the runner retries Step 3
+
+  # --- Specific Error Reporting ---
+
+  # Added by issue #90
+  Scenario: Validation reports all specific missing elements across files
+    Given /writing-specs has completed (Step 3)
+    And requirements.md is missing "**Issues**:" frontmatter and has no "### AC" headings
+    And tasks.md has no "### T" headings
+    When the runner runs post-step validation
+    Then the validation error lists all three issues: missing frontmatter, missing AC headings, and missing task headings
+    And the Discord message includes all specific missing elements
+
+  # --- Backward Compatibility ---
+
+  # Added by issue #90
+  Scenario: File-existence checks still run before content validation
+    Given /writing-specs has completed (Step 3)
+    And requirements.md does not exist
+    When the runner runs post-step validation
+    Then the validation fails with "requirements.md" as a missing file
+    And no content structure checks are attempted
+    And the error is reported as a missing-file error, not a content error
+
+  # Added by issue #90
+  Scenario: Well-formed specs pass both file-existence and content validation
+    Given /writing-specs has completed (Step 3)
+    And all 4 spec files exist with non-zero size
+    And requirements.md contains "**Issues**: #90" and "### AC1:" heading
+    And tasks.md contains "### T001:" heading
+    When the runner runs post-step validation
+    Then validation passes
+    And the runner proceeds to Step 4

@@ -1,6 +1,6 @@
 # Tasks: OpenClaw Runner Operations
 
-**Issues**: #12, #24, #33, #34, #88
+**Issues**: #12, #24, #33, #34, #88, #90
 **Date**: 2026-02-25
 **Status**: Complete
 **Author**: Claude Code (consolidated from issues #12, #24, #33, #34, #88)
@@ -32,7 +32,9 @@
 | Backend (Configurable Bounce Retries) | #88 | 2 | [x] |
 | Integration (Configurable Bounce Retries) | #88 | 1 | [x] |
 | Documentation (Configurable Bounce Retries) | #88 | 1 | [x] |
-| **Total** | **#12–#88** | **32** | |
+| Backend (Spec Content Validation) | #90 | 2 | [ ] |
+| Testing (Spec Content Validation) | #90 | 1 | [ ] |
+| **Total** | **#12–#90** | **37** | |
 
 ---
 
@@ -565,6 +567,59 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
+## Issue #90 — Spec Content Structure Validation
+
+### Phase 22: Backend Implementation
+
+#### T035: Implement validateSpecContent() Function
+
+**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**Type**: Modify (add function)
+**Depends**: T002
+**Acceptance**:
+- [ ] `validateSpecContent(featureDir)` function implemented
+- [ ] Reads `requirements.md` and checks for `**Issues**:` or `**Issue**:` frontmatter via regex `/\*\*Issues?\*\*\s*:/`
+- [ ] Checks `requirements.md` for at least one `### AC` heading via regex `/^### AC\d/m`
+- [ ] Reads `tasks.md` and checks for at least one task heading via regex `/^### T\d/m`
+- [ ] Returns `{ ok: boolean, issues: string[] }` with per-file, per-check detail
+- [ ] Each check failure adds a specific message (e.g., `"requirements.md: missing **Issues**: frontmatter"`)
+- [ ] Read errors are caught per-file and reported as issues (do not throw)
+- [ ] Function placed near existing `validateSpecs()` function
+
+**Notes**: Use `fs.readFileSync(fp, 'utf8')` consistent with existing file reading patterns in the script. The `m` regex flag is required so `^` matches line starts.
+
+#### T036: Modify validateSpecs() to Call validateSpecContent() After File-Existence Checks
+
+**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**Type**: Modify
+**Depends**: T035
+**Acceptance**:
+- [ ] After the existing `missing` array check (file existence + non-zero size), if `missing.length === 0`, call `validateSpecContent(featureDir)`
+- [ ] If `validateSpecContent()` returns `ok: false`, return `{ ok: false, missing: contentCheck.issues }` from `validateSpecs()`
+- [ ] If all file-existence checks pass AND content checks pass, existing return logic unchanged
+- [ ] A missing file is still reported as a file-name string (e.g., `"requirements.md"`), not as a content error
+- [ ] The post-step-3 gate in `runStep()` requires no changes — it already logs `specCheck.missing.join(', ')` and includes them in Discord messages
+
+**Notes**: This is a minimal insertion. The existing retry/escalation flow in the post-step-3 gate handles content validation failures identically to file-existence failures — no wiring changes needed.
+
+---
+
+### Phase 23: Testing
+
+#### T037: Amend Gherkin Feature File with Issue #90 Scenarios
+
+**File(s)**: `.claude/specs/feature-openclaw-runner-operations/feature.gherkin`
+**Type**: Modify
+**Depends**: T035, T036
+**Acceptance**:
+- [ ] All 5 acceptance criteria (AC30–AC34) have corresponding scenarios
+- [ ] Scenarios tagged with `# Added by issue #90` comment
+- [ ] Scenarios use Given/When/Then format
+- [ ] Includes: requirements.md frontmatter check, requirements.md AC heading check, tasks.md task heading check, specific error reporting, file-existence checks preserved
+- [ ] Feature file is valid Gherkin syntax
+
+---
+
 ## Dependency Graph
 
 ```
@@ -592,8 +647,10 @@ T001 ──▶ T002 ──┬──▶ T003 ──▶ T005
                 │
                 ├──▶ T028 ──▶ T029
                 │
-                └──▶ T030 ──┬──▶ T031 ──▶ T032 ──▶ T034 (feature.gherkin #88)
-                            └──▶ T033
+                ├──▶ T030 ──┬──▶ T031 ──▶ T032 ──▶ T034 (feature.gherkin #88)
+                │           └──▶ T033
+                │
+                └──▶ T035 ──▶ T036 ──▶ T037 (feature.gherkin #90)
 ```
 
 ---
@@ -607,6 +664,7 @@ T001 ──▶ T002 ──┬──▶ T003 ──▶ T005
 | #33 | 2026-02-16 | Tasks T016–T023: failure loop detection, `haltFailureLoop()`, bounce tracking, main loop integration, BDD |
 | #34 | 2026-02-16 | Tasks T024–T029: persistent logging, disk enforcement, SKILL.md updates, config example |
 | #88 | 2026-02-25 | Tasks T030–T034: configurable bounce retry threshold, `incrementBounceCount()` helper, enhanced diagnostics, config example update |
+| #90 | 2026-02-25 | Tasks T035–T037: `validateSpecContent()` function, `validateSpecs()` modification, BDD scenarios for content validation |
 
 ---
 
