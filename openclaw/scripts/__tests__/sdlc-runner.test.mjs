@@ -2654,3 +2654,96 @@ describe('__test__.setConfig supports effort and configSteps (#77)', () => {
     expect(obj).toBeDefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// --issue flag (single-issue mode) (#107)
+// ---------------------------------------------------------------------------
+
+describe('--issue flag (single-issue mode) (#107)', () => {
+  describe('SINGLE_ISSUE_NUMBER getter/setter via __test__', () => {
+    it('defaults to null after resetState', () => {
+      __test__.resetState();
+      expect(__test__.singleIssueNumber).toBeNull();
+    });
+
+    it('can be set and read via __test__', () => {
+      __test__.singleIssueNumber = 42;
+      expect(__test__.singleIssueNumber).toBe(42);
+      __test__.singleIssueNumber = null; // cleanup
+    });
+
+    it('can be set via setConfig', () => {
+      __test__.setConfig({ singleIssueNumber: 99 });
+      expect(__test__.singleIssueNumber).toBe(99);
+      __test__.setConfig({ singleIssueNumber: null });
+    });
+  });
+
+  describe('Step 2 prompt with single issue number', () => {
+    it('includes specific issue number when SINGLE_ISSUE_NUMBER is set', () => {
+      __test__.singleIssueNumber = 42;
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue('# mock skill');
+
+      const step = STEPS[1]; // Step 2 = startIssue
+      const state = defaultState();
+      const args = buildClaudeArgs(step, state);
+      const promptIdx = args.indexOf('-p') + 1;
+
+      expect(args[promptIdx]).toContain('Start issue #42');
+      expect(args[promptIdx]).not.toContain('Select and start the next');
+
+      __test__.singleIssueNumber = null;
+    });
+
+    it('uses default selection prompt when SINGLE_ISSUE_NUMBER is null', () => {
+      __test__.singleIssueNumber = null;
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue('# mock skill');
+
+      const step = STEPS[1]; // Step 2 = startIssue
+      const state = defaultState();
+      const args = buildClaudeArgs(step, state);
+      const promptIdx = args.indexOf('-p') + 1;
+
+      expect(args[promptIdx]).toContain('Select and start the next');
+      expect(args[promptIdx]).not.toContain('Start issue #');
+    });
+
+    it('does NOT include escalated issue exclusion in prompt when set', () => {
+      __test__.singleIssueNumber = 42;
+      __test__.escalatedIssues.add(10);
+      __test__.escalatedIssues.add(20);
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue('# mock skill');
+
+      const step = STEPS[1]; // Step 2 = startIssue
+      const state = defaultState();
+      const args = buildClaudeArgs(step, state);
+      const promptIdx = args.indexOf('-p') + 1;
+
+      expect(args[promptIdx]).not.toContain('Do NOT select');
+      expect(args[promptIdx]).not.toContain('#10');
+      expect(args[promptIdx]).not.toContain('#20');
+
+      __test__.singleIssueNumber = null;
+    });
+
+    it('includes escalated issue exclusion in default mode when issues are escalated', () => {
+      __test__.singleIssueNumber = null;
+      __test__.escalatedIssues.add(10);
+      __test__.escalatedIssues.add(20);
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue('# mock skill');
+
+      const step = STEPS[1]; // Step 2 = startIssue
+      const state = defaultState();
+      const args = buildClaudeArgs(step, state);
+      const promptIdx = args.indexOf('-p') + 1;
+
+      expect(args[promptIdx]).toContain('Do NOT select');
+      expect(args[promptIdx]).toContain('#10');
+      expect(args[promptIdx]).toContain('#20');
+    });
+  });
+});

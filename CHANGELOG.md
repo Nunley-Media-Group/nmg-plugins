@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`/running-sdlc-loop`** — New skill that runs the full SDLC pipeline from within an active Claude Code session; supports single-issue mode (`/running-sdlc-loop #42`) and continuous loop mode (`/running-sdlc-loop`); invokes `sdlc-runner.mjs` as a subprocess with `CLAUDECODE=""` to enable nested `claude -p` sessions (issue #107)
+- **`sdlc-runner.mjs`** — `--issue <N>` CLI flag for single-issue mode: targets a specific issue instead of selecting the next open one, runs a single SDLC cycle, and exits on completion or escalation
+
+### Fixed
+
+- **`sdlc-runner.mjs`** — Table row parsing regex in `performDeterministicVersionBump()` now uses `[^|\n]` instead of `[^|]` to prevent cross-line matching in Markdown tables, fixing incorrect version bump classification when the `## Versioning` section contains both a file mapping table and a `### Version Bump Classification` table
+
 ## [3.0.0] - 2026-02-25
 
 ### Added

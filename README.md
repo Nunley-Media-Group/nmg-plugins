@@ -294,6 +294,7 @@ The **classification matrix**:
 | `/verifying-specs #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
 | `/creating-prs #N` | Determine version bump, update VERSION/CHANGELOG/stack files, create PR with spec-driven summary |
 | `/running-retrospectives` | Batch-analyze defect specs to identify spec-writing gaps and produce `.claude/steering/retrospective.md` with actionable learnings |
+| `/running-sdlc-loop [#N]` | Run the full SDLC pipeline from within an active Claude Code session — processes a specific issue or loops over all open issues via `sdlc-runner.mjs` |
 | `/setting-up-steering` | Set up or enhance project steering documents (product, tech, structure) — bootstraps on first run, enhances existing docs on subsequent runs |
 | `/migrating-projects` | Update project specs, steering docs, configs, CHANGELOG, and VERSION to latest standards |
 | `/installing-openclaw-skill` | Copy the OpenClaw running-sdlc skill from the marketplace clone to `~/.openclaw/skills/` and restart the gateway |
