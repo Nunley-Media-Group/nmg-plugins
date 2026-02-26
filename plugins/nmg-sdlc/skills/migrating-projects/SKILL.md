@@ -240,7 +240,7 @@ This step runs on ALL feature-variant specs in `feature-*/` directories, catchin
 
 If `sdlc-config.json` exists in the project root:
 
-1. **Read both files** — the project's `sdlc-config.json` and the template `sdlc-config.example.json`
+1. **Read both files** — the project's `sdlc-config.json` and the template `sdlc-config.example.json`. If either file cannot be parsed as valid JSON, skip config analysis entirely and note the parse error in the summary (e.g., "Config analysis skipped — `sdlc-config.json` is not valid JSON").
 2. **Compare root-level keys** — Identify keys present in the template but absent from the project config
 3. **Compare `steps.*` keys** — Identify missing step entries (e.g., a new step added to the template)
 4. **Compare step sub-keys** — For each step that exists in both, identify missing sub-keys (e.g., `skill`, `timeoutMin`)
@@ -248,7 +248,7 @@ If `sdlc-config.json` exists in the project root:
 6. **Compare scalar values for drift** — After identifying missing keys, perform a second pass over keys that exist in **both** the project config and the template:
    - **Root-level scalars** (e.g., `model`, `effort`, `maxRetriesPerStep`, `maxBounceRetries`, `maxLogDiskUsageMB`): compare values directly
    - **Step sub-key scalars** (e.g., `steps.createPR.maxTurns`, `steps.verify.timeoutMin`, `steps.implement.model`): for each step present in both configs, compare each sub-key value
-   - **Skip non-scalars**: if both values are objects, recurse into sub-keys (for `steps.*` nesting); if one is an object and the other a scalar, record as drift (type mismatch); arrays and complex nested objects not present in the template are excluded
+   - **Skip non-scalars**: if both values are objects, recurse into sub-keys (for `steps.*` nesting — max two levels deep: `steps.{stepName}.{subKey}`); if one is an object and the other a scalar, record as drift (type mismatch); arrays and complex nested objects not present in the template are excluded
    - **Skip user additions**: keys present in the project config but absent from the template are not drift candidates (FR32)
 7. **Record each drifted value** with:
    - Dotted key path (e.g., `steps.createPR.maxTurns`)
