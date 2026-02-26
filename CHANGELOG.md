@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-02-26
+
 ### Added
 
 - **`/running-sdlc-loop`** — New skill that runs the full SDLC pipeline from within an active Claude Code session; supports single-issue mode (`/running-sdlc-loop #42`) and continuous loop mode (`/running-sdlc-loop`); invokes `sdlc-runner.mjs` as a subprocess with `CLAUDECODE=""` to enable nested `claude -p` sessions (issue #107)
