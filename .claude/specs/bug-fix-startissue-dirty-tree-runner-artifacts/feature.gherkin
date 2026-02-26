@@ -1,0 +1,45 @@
+# File: .claude/specs/bug-fix-startissue-dirty-tree-runner-artifacts/feature.gherkin
+#
+# Generated from: .claude/specs/bug-fix-startissue-dirty-tree-runner-artifacts/requirements.md
+# Type: Defect regression
+
+@regression
+Feature: startIssue does not fail when runner artifacts are the only dirty files
+  The starting-issues skill previously failed with "Working tree is not clean"
+  when .claude/sdlc-state.json was git-tracked and modified by the runner.
+  This was fixed by (1) making the runner untrack previously committed artifacts
+  and (2) making the skill filter known runner artifacts from the dirty-tree check.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: Runner untracks previously committed runner artifacts at startup
+    Given the SDLC runner starts with a target project where ".claude/sdlc-state.json" is git-tracked
+    And the target project's .gitignore contains ".claude/sdlc-state.json"
+    When the runner initializes
+    Then the runner runs "git rm --cached .claude/sdlc-state.json"
+    And ".claude/sdlc-state.json" is no longer tracked by git
+    And the file still exists on the filesystem
+
+  @regression
+  Scenario: starting-issues skill filters runner artifacts from dirty-tree check
+    Given the working tree contains only modified runner artifacts ".claude/sdlc-state.json" and ".claude/auto-mode"
+    When the starting-issues skill evaluates the working tree precondition
+    Then the filtered output is considered clean
+    And branch creation proceeds normally
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: starting-issues skill still rejects real dirty files
+    Given the working tree contains a modified source file "src/index.js" alongside runner artifacts
+    When the starting-issues skill evaluates the working tree precondition
+    Then the skill aborts with "Working tree is not clean"
+    And the error lists "src/index.js" as a dirty file
+
+  @regression
+  Scenario: Runner untrack is idempotent
+    Given the SDLC runner starts with a target project where ".claude/sdlc-state.json" is NOT git-tracked
+    When the runner initializes
+    Then the untrack check completes silently without error
+    And no "git rm --cached" command is executed for ".claude/sdlc-state.json"

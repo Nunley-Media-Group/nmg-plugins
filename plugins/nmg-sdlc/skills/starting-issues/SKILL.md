@@ -152,8 +152,10 @@ Before any branch operation, verify the working tree is clean:
 git status --porcelain
 ```
 
-- **If the output is empty** (clean tree): proceed to branch creation below.
-- **If the output is non-empty** (dirty tree): abort immediately. Do **not** call `gh issue develop`.
+**Filter SDLC runner artifacts** before evaluating the output. Remove any lines whose file path ends with `.claude/sdlc-state.json` or `.claude/auto-mode` — these are runtime artifacts managed by the SDLC runner and are not real working-tree dirt.
+
+- **If the filtered output is empty** (clean tree): proceed to branch creation below.
+- **If the filtered output is non-empty** (dirty tree): abort immediately. Do **not** call `gh issue develop`.
 
 **Interactive mode** — output an error and stop:
 

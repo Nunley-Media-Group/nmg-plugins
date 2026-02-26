@@ -607,6 +607,26 @@ function ensureRunnerArtifactsGitignored() {
   log(`Appended to .gitignore: ${missing.join(', ')}`);
 }
 
+/**
+ * If any RUNNER_ARTIFACTS are already git-tracked (committed before the
+ * .gitignore entry was in place), untrack them with `git rm --cached`.
+ * This is a one-time self-healing operation — once untracked, .gitignore
+ * keeps them out of future commits.
+ */
+function untrackRunnerArtifactsIfTracked() {
+  for (const artifact of RUNNER_ARTIFACTS) {
+    try {
+      // ls-files --error-unmatch exits non-zero if the file is not tracked
+      git(`ls-files --error-unmatch ${artifact}`);
+      // If we get here, the file IS tracked — untrack it
+      git(`rm --cached ${artifact}`);
+      log(`Untracked previously committed runner artifact: ${artifact}`);
+    } catch {
+      // Not tracked (or doesn't exist) — nothing to do
+    }
+  }
+}
+
 function removeAutoMode() {
   try {
     fs.unlinkSync(path.join(PROJECT_PATH, '.claude', 'auto-mode'));
@@ -1930,6 +1950,9 @@ async function main() {
 
   // Ensure runner artifacts are gitignored before creating any
   ensureRunnerArtifactsGitignored();
+
+  // Self-heal: untrack runner artifacts that were committed before gitignore was in place
+  untrackRunnerArtifactsIfTracked();
 
   // Ensure auto-mode flag exists
   const autoModePath = path.join(PROJECT_PATH, '.claude', 'auto-mode');

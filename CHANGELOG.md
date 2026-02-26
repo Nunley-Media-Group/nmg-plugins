@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-02-26
+
+### Fixed
+
+- **`sdlc-runner.mjs`** — Runner now self-heals projects where `.claude/sdlc-state.json` was committed before the gitignore fix (#57): `untrackRunnerArtifactsIfTracked()` runs `git rm --cached` on already-tracked runner artifacts at startup, making `.gitignore` effective
+- **`/starting-issues`** — Step 4 working-tree check now filters known SDLC runner artifacts (`.claude/sdlc-state.json`, `.claude/auto-mode`) from `git status --porcelain` output before evaluating dirtiness, preventing false "Working tree is not clean" aborts when only runner state files are modified
+
 ## [3.1.0] - 2026-02-26
 
 ### Added
