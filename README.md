@@ -281,6 +281,44 @@ The **classification matrix**:
 
 **Stack-specific files** (e.g., `package.json`, `Cargo.toml`) are declared in `tech.md`'s `## Versioning` section. The `/creating-prs` skill reads this mapping to update all version files in a single commit. Run `/migrating-projects` to bootstrap `CHANGELOG.md` and `VERSION` from git history if they don't exist yet.
 
+### Verification Gates
+
+The `## Verification Gates` section in `tech.md` declares mandatory verification steps that `/verifying-specs` enforces as hard gates. Each gate specifies when it applies, what command to run, and how to determine success.
+
+**Gate table format:**
+
+| Gate | Condition | Action | Pass Criteria |
+|------|-----------|--------|---------------|
+| Unit Tests | Always | `npm test` | Exit code 0 |
+| E2E Tests | `e2e/` directory exists | `npm run test:e2e` | Exit code 0 |
+| Robot E2E Tests | `integration_test/` directory exists | `flutter test integration_test/` | Exit code 0 |
+| Coverage Threshold | Always | `npm run test:coverage` | Exit code 0 AND `coverage/lcov.info` file generated |
+
+**Column semantics:**
+
+| Column | Purpose |
+|--------|---------|
+| **Gate** | Human-readable name used in reports |
+| **Condition** | When the gate applies: `Always`, `{path} directory exists`, or `{glob} files exist in {path}` |
+| **Action** | Shell command to execute via Bash |
+| **Pass Criteria** | Success check: `Exit code 0`, `{file} file generated`, or compound using `AND` |
+
+**How gates are enforced:**
+
+During `/verifying-specs` Step 5, each gate's condition is evaluated. If applicable, the action command runs and the pass criteria are checked against the actual result. Gate results appear in the verification report and GitHub issue comment.
+
+**Status semantics:**
+
+| Status | Meaning |
+|--------|---------|
+| **Pass** | Gate condition was met, action ran, and all pass criteria were satisfied |
+| **Fail** | Gate condition was met, action ran, but one or more pass criteria were not satisfied |
+| **Incomplete** | Gate condition was met but the action could not be executed (tool unavailable, timeout, etc.) |
+
+Any gate Fail caps the overall verification status at "Partial". Any gate Incomplete caps it at "Incomplete". A "Pass" overall status requires all applicable gates to pass.
+
+**Migration:** Existing projects can add the `## Verification Gates` section by running `/migrating-projects` — the migration skill detects missing sections from the updated template and offers to add them.
+
 ## Skills Reference
 
 ### SDLC Skills

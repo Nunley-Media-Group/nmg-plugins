@@ -152,6 +152,18 @@ Use this template to generate the final verification report.
 
 ---
 
+## Steering Doc Verification Gates
+
+*Include this section when verification gates were extracted from tech.md. Omit entirely if tech.md has no `## Verification Gates` section.*
+
+| Gate | Status | Evidence |
+|------|--------|----------|
+| [gate name] | Pass / Fail / Incomplete | [output excerpt, artifact path, or blocker reason] |
+
+**Gate Summary**: [X/Y] gates passed, [Z] failed, [W] incomplete
+
+---
+
 ## Fixes Applied
 
 | Severity | Category | Location | Original Issue | Fix Applied |

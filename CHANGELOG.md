@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-03-03
+
+### Added
+
+- **`/verifying-specs`** — Steering doc verification gates: projects can declare mandatory verification constraints in a structured `## Verification Gates` section in `tech.md`; the skill extracts gates at Step 1, executes them as hard sub-steps in Step 5f, and aggregates results into a Pass/Partial/Incomplete status — a "Pass" verdict requires all applicable gates to pass (issue #109)
+- **`/verifying-specs`** report template — New "Steering Doc Verification Gates" section with per-gate status (Pass/Fail/Incomplete) and evidence/blocker reason
+- **`/setting-up-steering`** tech.md template — `## Verification Gates` section scaffolded for new projects, with condition/action/pass-criteria table and usage guidance
+- **README.md** — Verification Gates convention documented with example table and status semantics
+
 ## [3.1.1] - 2026-02-26
 
 ### Fixed

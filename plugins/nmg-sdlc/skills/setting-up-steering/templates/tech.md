@@ -233,6 +233,36 @@ Feature: Example
 
 ---
 
+## Verification Gates
+
+Declare mandatory verification steps that `/verifying-specs` enforces as hard gates. Each gate specifies when it applies, what command to run, and how to determine success.
+
+<!-- TODO: Define project-specific verification gates. Remove or replace the example rows below. -->
+
+| Gate | Condition | Action | Pass Criteria |
+|------|-----------|--------|---------------|
+| Unit Tests | Always | `npm test` | Exit code 0 |
+| E2E Tests | `e2e/` directory exists | `npm run test:e2e` | Exit code 0 |
+| Integration Tests | `*.integration.test.*` files exist in `tests/` | `npm run test:integration` | Exit code 0 AND `coverage/lcov.info` file generated |
+
+### Condition Evaluation Rules
+
+- `Always` — gate always applies
+- `{path} directory exists` — gate applies only when the directory is present (`test -d {path}`)
+- `{glob} files exist in {path}` — gate applies only when matching files are found in the given path
+
+If no `## Verification Gates` section exists in `tech.md`, no gates are enforced (backward-compatible).
+
+### Pass Criteria Evaluation Rules
+
+- `Exit code 0` — the Action command must exit with code 0
+- `{file} file generated` — the named file must exist after the Action command completes (artifact verification)
+- `output contains "{text}"` — stdout or stderr must contain the specified text
+- Compound criteria use `AND` — all sub-criteria must be satisfied (e.g., `Exit code 0 AND report.xml file generated`)
+- The verifying-specs skill evaluates these textual criteria against actual results — no stack-specific logic is needed
+
+---
+
 ## Environment Variables
 
 <!-- Pre-fill from .env.example, docker-compose, or discovered env usage -->

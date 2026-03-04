@@ -54,6 +54,19 @@ Read all steering documents (these define project conventions used throughout ve
 
 **These are required inputs, not optional references.** Steering docs define the verification framework (behavioral contracts, checklist applicability, script verification contracts) and must be loaded before any evaluation begins. They must also be provided to any subagents dispatched during the review.
 
+#### Extract Verification Gates
+
+After loading `tech.md`, check if it contains a `## Verification Gates` section:
+
+- **If present**: Parse each table row as a named gate with four fields:
+  - **Gate** — human-readable name (used in reports)
+  - **Condition** — when the gate applies (`Always`, `{path} directory exists`, `{glob} files exist in {path}`)
+  - **Action** — shell command to execute
+  - **Pass Criteria** — how to determine success (`Exit code 0`, `{file} file generated`, compound `AND`)
+- **If absent**: No gates are enforced. This is backward-compatible — existing projects without the section are unaffected.
+
+Queue the extracted gates as mandatory steps for execution during Step 5 (sub-step 5f).
+
 ### Step 2: Load Issue
 
 Read the GitHub issue for the original acceptance criteria:
@@ -143,6 +156,39 @@ Follow the full exercise testing procedure in [references/exercise-testing.md](r
 
 Exercise findings are treated as findings for Step 6, just like any other verification finding. If neither Agent SDK nor `claude` CLI is available, skip exercise testing and record the reason for the report (graceful degradation).
 
+#### 5f: Execute Verification Gates
+
+If verification gates were extracted from `tech.md` in Step 1, execute each gate:
+
+**For each gate:**
+
+1. **Evaluate Condition**
+   - `Always` — proceed to execution
+   - `{path} directory exists` — check via `test -d {path}`. If the directory does not exist, **skip** this gate silently (do not report as Incomplete)
+   - `{glob} files exist in {path}` — check via Glob tool or `ls {path}/{glob}`. If no matching files exist, **skip** this gate silently
+   - If the condition cannot be evaluated → record as **Incomplete** with reason: `"Cannot evaluate condition: {reason}"`
+
+2. **Execute Action**
+   - Run the Action command via Bash, capturing exit code, stdout, and stderr
+   - If the command is not found or prerequisites are missing → record as **Incomplete** with reason: `"Tool unavailable: {details}"`
+   - If the command times out → record as **Incomplete** with reason: `"Command timed out"`
+
+3. **Evaluate Pass Criteria**
+   - Parse the Pass Criteria string from the gate definition
+   - `Exit code 0` — check that the Action command exited with code 0
+   - `{file} file generated` — check that the named file exists after the Action completes
+   - `output contains "{text}"` — check that stdout or stderr contains the specified text
+   - Compound criteria using `AND` — **all** sub-criteria must be satisfied
+   - All sub-criteria pass → gate status is **Pass**
+   - Any sub-criteria fails → gate status is **Fail**
+
+4. **Record Result**
+   - Gate name, status (**Pass** / **Fail** / **Incomplete**), and evidence (output excerpt, artifact path, or blocker reason)
+
+**Important**: The skill evaluates textual pass criteria against actual results. It does NOT contain stack-specific logic — any shell command works as a gate action.
+
+If no gates were extracted (section absent in `tech.md`), skip this sub-step entirely.
+
 ### Step 6: Fix Findings
 
 Work through all findings discovered in Steps 3–5 and fix them before generating the report.
@@ -194,9 +240,24 @@ The report includes:
 - Architecture review scores (SOLID, security, performance, testability, error handling)
 - Test coverage analysis
 - Exercise test results (if plugin changes were detected in Step 5a — includes skill exercised, method, AC evaluation, and captured output summary; or graceful degradation note if exercise was skipped)
+- **Steering Doc Verification Gates** (if gates were extracted from `tech.md` — includes each gate's name, status, and evidence; or omitted entirely if no `## Verification Gates` section exists)
 - Fixes applied (what was found and how it was fixed)
 - Remaining issues (items that could not be auto-fixed, with reasons)
 - Recommendations
+
+#### Gate Status Aggregation
+
+Gate results act as a **ceiling** on the overall verification status — they can lower it but never raise it:
+
+| Gate Results | Overall Status Impact |
+|-------------|----------------------|
+| All gates Pass | No effect (status determined by other factors) |
+| Any gate Fail | Overall status cannot exceed "Partial" |
+| Any gate Incomplete | Overall status cannot exceed "Incomplete" |
+| Mix of Fail and Incomplete | Overall status cannot exceed "Incomplete" |
+| No `## Verification Gates` section | No effect (backward-compatible) |
+
+Status hierarchy from best to worst: **Pass > Partial > Incomplete > Fail**.
 
 ### Step 8: Update GitHub Issue
 
@@ -235,6 +296,16 @@ The comment should include:
 - Step definitions: [Implemented / Missing]
 - Test execution: [Pass / Fail / Not run]
 
+### Steering Doc Verification Gates
+
+*Include this section when gates were extracted from tech.md. Omit entirely if tech.md has no `## Verification Gates` section.*
+
+| Gate | Status | Evidence |
+|------|--------|----------|
+| [gate name] | Pass / Fail / Incomplete | [output excerpt or blocker reason] |
+
+**Gate Summary**: [X/Y] passed, [Z] failed, [W] incomplete
+
 ### Fixes Applied
 
 | Severity | Category | Location | Issue | Fix |
@@ -257,10 +328,11 @@ The comment should include:
 ```
 Verification complete for issue #N.
 
-Status: [Pass / Partial / Fail]
+Status: [Pass / Partial / Fail / Incomplete]
 Acceptance criteria: [X/Y] passing
 Architecture score: [average]
 Test coverage: [X/Y] criteria covered
+Verification gates: [X/Y] passed, [Z] failed, [W] incomplete (omit line if no gates defined)
 Fixes applied: [count]
 Remaining issues: [count]
 

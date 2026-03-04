@@ -1,7 +1,7 @@
 # Requirements: Verifying Specs Skill
 
-**Issues**: #7
-**Date**: 2026-02-15
+**Issues**: #7, #109
+**Date**: 2026-03-03
 **Status**: Approved
 **Author**: Claude Code (retroactive)
 
@@ -53,6 +53,54 @@ The `/verifying-specs` skill validates that the implementation matches the speci
 **When** verification runs
 **Then** it checks reproduction, validates `@regression` scenarios, audits blast radius, and confirms minimal change scope
 
+### AC6: Structured Verification Gates Section in tech.md
+
+**Given** a project with a `tech.md` steering document
+**When** the project defines mandatory verification constraints
+**Then** the constraints are declared in a structured `## Verification Gates` section with a table containing: gate name, applicability condition, verification command/action, and pass criteria
+
+### AC7: Gate Extraction During Verification
+
+**Given** a project's `tech.md` contains a `## Verification Gates` section
+**When** the verifying-specs skill runs Step 1 (Load Specifications and Steering Docs)
+**Then** the skill extracts each gate as a named mandatory step to be executed during Step 5
+
+### AC8: Gate Enforcement During Test Verification
+
+**Given** the skill has extracted mandatory verification gates from steering docs
+**When** Step 5 (Verify Test Coverage) executes
+**Then** each applicable gate is executed as an explicit sub-step, the gate's pass criteria are evaluated against the actual result (supporting both exit code checks and artifact/output verification), and the gate is recorded with its outcome
+
+### AC9: Incomplete Status for Unexecutable Gates
+
+**Given** a mandatory verification gate cannot be executed (e.g., prerequisites not met, tool unavailable)
+**When** the skill evaluates the gate
+**Then** the overall verification status is set to "Incomplete" (not Pass or Fail), and the gate is recorded as unevaluated with the reason
+
+### AC10: Report Template Includes Gate Results
+
+**Given** verification gates were extracted from steering docs
+**When** the verification report is generated (Step 7)
+**Then** the report includes a mandatory "Steering Doc Verification Gates" section listing each gate with its status (Pass/Fail/Incomplete) and evidence or blocker reason
+
+### AC11: Pass Report Requires All Gates Satisfied
+
+**Given** one or more verification gates have status Incomplete or Fail
+**When** the overall verification status is determined
+**Then** the status cannot be "Pass" — it must be "Partial" (some gates failed) or "Incomplete" (gates were not executed)
+
+### AC12: Stack-Agnostic Gate Definitions
+
+**Given** verification gates are defined in `tech.md`
+**When** different projects define different gates (e.g., E2E robot tests, load tests, accessibility audits, API contract tests)
+**Then** the mechanism works for any gate type without the skill containing stack-specific logic
+
+### AC13: Migration Path for Existing Projects
+
+**Given** an existing project with a `tech.md` that lacks the `## Verification Gates` section
+**When** a developer runs `/migrating-projects` after updating the nmg-sdlc plugin
+**Then** the migrating-projects skill detects the missing `## Verification Gates` section and offers to add it (with the structured table template) via the standard section-merge workflow
+
 ---
 
 ## Functional Requirements
@@ -67,6 +115,15 @@ The `/verifying-specs` skill validates that the implementation matches the speci
 | FR6 | GitHub issue updated with verification evidence | Must | Via `gh issue comment` |
 | FR7 | Bug fix verification with regression and blast radius checks | Must | Defect-specific checks |
 | FR8 | Verification checklists for SOLID, security, performance, testability | Must | In `checklists/` directory |
+| FR9 | Define a `## Verification Gates` section format for `tech.md` with structured gate declarations (name, condition, action, pass criteria) | Must | Table format for stack-agnostic gate definitions |
+| FR10 | Update verifying-specs Step 1 to extract verification gates from steering docs | Must | Parse `## Verification Gates` table into named mandatory steps |
+| FR11 | Update verifying-specs Step 5 to execute each applicable gate as a hard sub-step | Must | Execute gate action, evaluate pass criteria, record result |
+| FR12 | Set verification status to "Incomplete" when any mandatory gate cannot be executed | Must | Prevents false Pass when gates are skipped |
+| FR13 | Add a "Steering Doc Verification Gates" section to the report template | Must | Gate name, status (Pass/Fail/Incomplete), evidence/blocker |
+| FR14 | Prevent "Pass" status when any gate is Incomplete or Fail | Must | Status must be "Partial" or "Incomplete" instead |
+| FR15 | Update the setting-up-steering tech.md template to include the Verification Gates section | Must | New projects get the section scaffolded |
+| FR16 | Document the Verification Gates convention in README.md | Must | User-facing documentation |
+| FR17 | Ensure migrating-projects detects and offers the Verification Gates section for existing projects | Must | Automatic via template-driven design — verify it works end-to-end |
 
 ---
 
@@ -129,6 +186,11 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - Performance benchmarking or load testing
 - Security scanning with external tools (SAST/DAST)
 - Automated deployment verification
+- Automatically detecting verification constraints from prose (structured `## Verification Gates` section is required)
+- Executing gates that require interactive prerequisites (e.g., starting a simulator) — these should be reported as Incomplete with the prerequisite documented
+- Changes to the writing-specs or implementing-specs skills
+- Defining specific gates for any particular project (each project defines its own)
+- Changes to the migrating-projects skill code (it is self-updating and reads templates at runtime)
 
 ---
 
@@ -153,6 +215,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 | Issue | Date | Summary |
 |-------|------|---------|
 | #7 | 2026-02-15 | Initial feature spec |
+| #109 | 2026-03-03 | Add steering doc verification gates: structured gate format in tech.md, gate extraction and enforcement in verifying-specs, report template updates, migration path |
 
 ---
 
