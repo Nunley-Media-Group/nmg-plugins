@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **Skills** — Removed `model: opus` from 5 skills to prevent forced Opus usage that causes API rate limits on Opus 4.6 1M; `implementing-specs` and `writing-specs` now inherit the session model, while `migrating-projects`, `running-retrospectives`, and `setting-up-steering` use `model: sonnet` (issue #111)
+- **Skills** — Removed `model:` frontmatter field from all 12 skills to prevent model-switch rate limit errors when invoking skills via `/`; skills now inherit the session model instead of overriding it (issue #111)
 - **Skills** — Added `disable-model-invocation: true` to 4 slash-command-only skills (`running-sdlc-loop`, `installing-openclaw-skill`, `generating-openclaw-config`, `running-retrospectives`) to reduce always-in-context token overhead (issue #111)
 
 ## [4.0.0] - 2026-03-03

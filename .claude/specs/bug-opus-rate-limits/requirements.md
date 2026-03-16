@@ -1,4 +1,4 @@
-# Defect Report: Skills Force Opus Model, Causing API Rate Limits on Opus 4.6 1M
+# Defect Report: Skill `model:` Frontmatter Causes Rate Limit Errors on Opus 4.6 1M
 
 **Issues**: #111
 **Date**: 2026-03-15
@@ -9,43 +9,38 @@
 
 ## Reproduction
 
-1. Install the nmg-sdlc plugin (v4.0.0) in Claude Code
+1. Install the nmg-sdlc plugin in Claude Code
 2. Set Claude Code model to Opus 4.6 with 1M context
-3. Use any SDLC skill workflow (e.g., `/writing-specs`, `/implementing-specs`)
-4. Observe API rate limit errors during normal usage
+3. Invoke any skill via `/skill-name` — get "API Error: Rate limit reached"
+4. Ask Claude to do the same task without `/` — works fine
 
 ## Expected Behavior
 
-Skills should not force Opus model usage beyond what the user's session provides. Skills only invoked via explicit slash commands should not contribute to always-in-context token overhead.
+Skills invoked via `/skill-name` should use the same model as the current session without triggering a model switch or separate rate limit bucket.
 
 ## Actual Behavior
 
-- 5 skills hardcode `model: opus` in SKILL.md frontmatter, forcing Opus usage regardless of session model
-- Only 3 of 12 skills have `disable-model-invocation: true`, meaning 9 skill descriptions are included in every API call
-- Users on Opus 4.6 1M (which has tight rate limits) hit rate limit errors during normal workflows
+Skills with a `model:` frontmatter field trigger a model switch when invoked via `/`. This switch hits a different rate limit bucket, causing "API Error: Rate limit reached" even when the user hasn't exhausted their session model's limits. The error only occurs with `/` invocation — natural invocation (asking Claude to do the task) works fine because no model switch occurs.
 
 ## Root Cause
 
-The `model: opus` frontmatter field was set on skills during initial development when Opus rate limits were more generous. The Opus 4.6 1M tier has significantly tighter rate limits, and forcing Opus on 5 skills unnecessarily consumes that quota. Additionally, skills that are only invoked via explicit slash commands (like `/running-sdlc-loop`, `/installing-openclaw-skill`) were missing `disable-model-invocation: true`, causing their descriptions to be included in the available skills list on every turn.
+The `model:` frontmatter field in SKILL.md overrides the session model when a skill is invoked via `/`. This model switch causes the API call to hit a different per-model rate limit bucket. A bug was fixed in Claude Code v2.1.70: "Fixed spurious 'Context limit reached' when invoking a skill with `model:` frontmatter on a 1M-context session" — confirming the interaction between skill model overrides and rate limit handling was actively buggy.
+
+The fix is to remove the `model:` field entirely from all skills so they inherit the session model and stay in the same rate limit bucket.
 
 ---
 
 ## Acceptance Criteria
 
-### AC1: No skills force Opus model
+### AC1: No skill has a model field
 **Given** any skill in the nmg-sdlc plugin
 **When** the skill's SKILL.md frontmatter is examined
-**Then** no skill has `model: opus` — skills either inherit the session model (no `model` field) or use `model: sonnet`
+**Then** no skill has a `model:` field — all skills inherit the session model
 
 ### AC2: Slash-command-only skills have disable-model-invocation
-**Given** skills that are only ever invoked via explicit slash commands (`/running-sdlc-loop`, `/installing-openclaw-skill`, `/generating-openclaw-config`, `/running-retrospectives`)
+**Given** skills only invoked via explicit slash commands (`/running-sdlc-loop`, `/installing-openclaw-skill`, `/generating-openclaw-config`, `/running-retrospectives`)
 **When** the plugin is loaded
-**Then** those skills have `disable-model-invocation: true` and do not appear in the available skills list
-
-### AC3: Session-model inheritance for complex skills
-**Given** `implementing-specs` and `writing-specs` (skills that benefit from the best available model)
-**When** invoked by the user
-**Then** they inherit the user's session model (no `model` field in frontmatter) rather than forcing a specific model
+**Then** those skills have `disable-model-invocation: true`
 
 ---
 
@@ -53,15 +48,11 @@ The `model: opus` frontmatter field was set on skills during initial development
 
 | ID | Requirement |
 |----|-------------|
-| FR1 | Remove `model: opus` from `implementing-specs` — inherit session model |
-| FR2 | Remove `model: opus` from `writing-specs` — inherit session model |
-| FR3 | Change `model: opus` to `model: sonnet` on `migrating-projects` |
-| FR4 | Change `model: opus` to `model: sonnet` on `running-retrospectives` |
-| FR5 | Change `model: opus` to `model: sonnet` on `setting-up-steering` |
-| FR6 | Add `disable-model-invocation: true` to `running-sdlc-loop` |
-| FR7 | Add `disable-model-invocation: true` to `installing-openclaw-skill` |
-| FR8 | Add `disable-model-invocation: true` to `generating-openclaw-config` |
-| FR9 | Add `disable-model-invocation: true` to `running-retrospectives` |
+| FR1 | Remove `model:` field from all 12 SKILL.md files |
+| FR2 | Add `disable-model-invocation: true` to `running-sdlc-loop` |
+| FR3 | Add `disable-model-invocation: true` to `installing-openclaw-skill` |
+| FR4 | Add `disable-model-invocation: true` to `generating-openclaw-config` |
+| FR5 | Add `disable-model-invocation: true` to `running-retrospectives` |
 
 ---
 
@@ -70,3 +61,4 @@ The `model: opus` frontmatter field was set on skills during initial development
 | Issue | Date | Summary |
 |-------|------|---------|
 | #111 | 2026-03-15 | Initial defect spec |
+| #111 | 2026-03-15 | Updated: remove all `model:` fields to prevent model switch on `/` invocation |

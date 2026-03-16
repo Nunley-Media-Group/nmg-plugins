@@ -1,32 +1,15 @@
 @regression
-Feature: Skills do not force Opus model usage
+Feature: Skills inherit session model to avoid rate limit bucket switches
 
   Background:
     Given the nmg-sdlc plugin is installed in Claude Code
 
-  Scenario: No skill forces Opus model
-    When the SKILL.md frontmatter of all skills is examined
-    Then no skill has "model: opus" in its frontmatter
-
-  Scenario: Complex skills inherit session model
-    Given the user's Claude Code session is using any model
-    When "implementing-specs" or "writing-specs" is invoked
-    Then the skill inherits the session model
-    And there is no "model" field in the skill's frontmatter
-
-  Scenario: Template-based skills use Sonnet
-    Given the skills "migrating-projects", "running-retrospectives", and "setting-up-steering"
-    When their SKILL.md frontmatter is examined
-    Then each has "model: sonnet"
+  Scenario: No skill has a model field
+    When the SKILL.md frontmatter of all 12 skills is examined
+    Then no skill has a "model:" field
+    And all skills inherit the session model
 
   Scenario: Slash-command-only skills are not auto-triggerable
     Given the skills "running-sdlc-loop", "installing-openclaw-skill", "generating-openclaw-config", and "running-retrospectives"
     When the plugin is loaded
     Then each has "disable-model-invocation: true" in its frontmatter
-    And their descriptions are not included in the available skills list
-
-  Scenario: Auto-triggerable skills remain discoverable
-    Given the skills "creating-issues", "implementing-specs", "starting-issues", "verifying-specs", and "writing-specs"
-    When the plugin is loaded
-    Then each does not have "disable-model-invocation: true"
-    And their descriptions appear in the available skills list
