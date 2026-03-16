@@ -2,7 +2,6 @@
 name: running-sdlc-loop
 description: "Run the full SDLC pipeline loop from within an active Claude Code session. Use when user says 'run the SDLC loop', 'run the pipeline', 'process issue #N through the pipeline', 'run sdlc for #N', or 'run the full cycle'. Do NOT use for OpenClaw/Discord-based runner management (use running-sdlc instead). Invokes sdlc-runner.mjs as a subprocess with CLAUDECODE unset to enable nested claude sessions."
 argument-hint: "[#issue-number]"
-model: sonnet
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Bash(node:*), Bash(test:*), Bash(cat:*), Bash(git:*), Skill
 ---
