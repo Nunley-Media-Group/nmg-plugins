@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.0.1] - 2026-03-15
+
 ### Fixed
 
 - **Skills** — Removed `model: opus` from 5 skills to prevent forced Opus usage that causes API rate limits on Opus 4.6 1M; `implementing-specs` and `writing-specs` now inherit the session model, while `migrating-projects`, `running-retrospectives`, and `setting-up-steering` use `model: sonnet` (issue #111)
