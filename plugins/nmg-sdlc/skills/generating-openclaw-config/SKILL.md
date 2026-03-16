@@ -2,6 +2,7 @@
 name: generating-openclaw-config
 description: "Generate an SDLC runner config for the current project. Use when user says 'generate config', 'set up SDLC runner', 'configure openclaw', or asks about sdlc-config.json. Creates a ready-to-use sdlc-config.json from the template with project-specific paths."
 model: sonnet
+disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Bash(basename:*), Bash(realpath:*), Bash(pwd:*), Bash(git:*), Bash(test:*)
 ---
 
