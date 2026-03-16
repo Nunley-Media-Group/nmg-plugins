@@ -4,12 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [4.0.1] - 2026-03-15
+## [4.0.2] - 2026-03-15
 
 ### Fixed
 
 - **Skills** — Removed `model:` frontmatter field from all 12 skills to prevent model-switch rate limit errors when invoking skills via `/`; skills now inherit the session model instead of overriding it (issue #111)
 - **Skills** — Added `disable-model-invocation: true` to 4 slash-command-only skills (`running-sdlc-loop`, `installing-openclaw-skill`, `generating-openclaw-config`, `running-retrospectives`) to reduce always-in-context token overhead (issue #111)
+
+## [4.0.1] - 2026-03-15
+
+### Fixed
+
+- **Skills** — Superseded by 4.0.2 — initial attempt pinned skills to explicit model IDs but did not address the root cause (model-switch rate limit bucket issue)
 
 ## [4.0.0] - 2026-03-03
 
