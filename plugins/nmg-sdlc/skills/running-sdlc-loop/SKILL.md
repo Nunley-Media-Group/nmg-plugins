@@ -1,9 +1,9 @@
 ---
 name: running-sdlc-loop
-description: "Run the full SDLC pipeline loop from within an active Claude Code session. Use when user says 'run the SDLC loop', 'run the pipeline', 'process issue #N through the pipeline', 'run sdlc for #N', or 'run the full cycle'. Do NOT use for OpenClaw/Discord-based runner management (use running-sdlc instead). Invokes sdlc-runner.mjs as a subprocess with CLAUDECODE unset to enable nested claude sessions."
+description: "Run the full SDLC pipeline loop from within an active Claude Code session. Invokes sdlc-runner.mjs as a subprocess with CLAUDECODE unset to enable nested claude sessions."
 argument-hint: "[#issue-number]"
 disable-model-invocation: true
-allowed-tools: Read, Glob, Grep, Bash(node:*), Bash(test:*), Bash(cat:*), Bash(git:*), Skill
+allowed-tools: Read, Glob, Grep, Bash(node:*), Bash(env:*), Bash(CLAUDECODE:*), Bash(test:*), Bash(git:*), Skill
 ---
 
 # Running SDLC Loop
@@ -45,11 +45,7 @@ test -f "$(git rev-parse --show-toplevel)/sdlc-config.json"
 
 ## Step 3: Read Config and Locate Runner
 
-Read the config file and extract the `pluginsPath` value:
-
-```bash
-cat sdlc-config.json
-```
+Read the config file and extract the `pluginsPath` value using the Read tool on `sdlc-config.json`.
 
 Derive the runner script path:
 ```

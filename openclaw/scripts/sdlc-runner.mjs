@@ -104,16 +104,7 @@ Options:
   MODEL = config.model || 'opus';
   EFFORT = config.effort || undefined;
   MAX_RETRIES = config.maxRetriesPerStep || 3;
-  MAX_BOUNCE_RETRIES = (() => {
-    const val = config.maxBounceRetries;
-    if (val === undefined || val === null) return 3;
-    const num = Number(val);
-    if (!Number.isInteger(num) || num <= 0) {
-      log(`Warning: invalid maxBounceRetries value "${val}" — using default 3`);
-      return 3;
-    }
-    return num;
-  })();
+  MAX_BOUNCE_RETRIES = parseMaxBounceRetries(config.maxBounceRetries);
 
   DISCORD_CHANNEL = args['discord-channel'] || config.discordChannelId || null;
   CLEANUP_PATTERNS = config.cleanup?.processPatterns || [];
@@ -132,6 +123,16 @@ Options:
   }
 
   STATE_PATH = path.join(PROJECT_PATH, '.claude', 'sdlc-state.json');
+
+  // Logging setup (uses the already-parsed config)
+  LOG_DIR = resolveLogDir(config, PROJECT_PATH);
+  MAX_LOG_DISK_BYTES = (config.maxLogDiskUsageMB || 500) * 1024 * 1024;
+
+  try {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+  } catch { /* non-fatal — log() will silently skip file writes */ }
+
+  ORCHESTRATION_LOG = path.join(LOG_DIR, 'sdlc-runner.log');
 }
 
 // ---------------------------------------------------------------------------
@@ -146,19 +147,6 @@ function resolveLogDir(cfg, projectPath) {
 let LOG_DIR = '';
 let MAX_LOG_DISK_BYTES = 500 * 1024 * 1024;
 let ORCHESTRATION_LOG = '';
-
-if (isMainModule) {
-  // Re-read config for logging setup (config was parsed inside the guard above)
-  const _cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  LOG_DIR = resolveLogDir(_cfg, PROJECT_PATH);
-  MAX_LOG_DISK_BYTES = (_cfg.maxLogDiskUsageMB || 500) * 1024 * 1024;
-
-  try {
-    fs.mkdirSync(LOG_DIR, { recursive: true });
-  } catch { /* non-fatal — log() will silently skip file writes */ }
-
-  ORCHESTRATION_LOG = path.join(LOG_DIR, 'sdlc-runner.log');
-}
 
 // Failure loop detection — in-memory, not persisted to state file
 const MAX_CONSECUTIVE_ESCALATIONS = 2;
@@ -239,6 +227,57 @@ function resolveStepConfig(step, config) {
   };
 }
 
+
+// ---------------------------------------------------------------------------
+// Shared helpers (used by validation, state detection, and spec checks)
+// ---------------------------------------------------------------------------
+
+const REQUIRED_SPEC_FILES = ['requirements.md', 'design.md', 'tasks.md', 'feature.gherkin'];
+
+/**
+ * Locate the feature directory inside .claude/specs/.
+ * Matches by featureName, branchSlug, or falls back to the last directory.
+ * Returns the absolute path, or null if nothing is found.
+ */
+function findFeatureDir(specsDir, featureName, branchSlug) {
+  if (!fs.existsSync(specsDir)) return null;
+  const dirs = fs.readdirSync(specsDir)
+    .filter(d => fs.statSync(path.join(specsDir, d)).isDirectory());
+  if (dirs.length === 0) return null;
+
+  if (featureName && dirs.includes(featureName)) {
+    return path.join(specsDir, featureName);
+  }
+  const matched = branchSlug
+    ? dirs.find(d => d.includes(branchSlug)) || dirs[dirs.length - 1]
+    : dirs[dirs.length - 1];
+  return path.join(specsDir, matched);
+}
+
+/**
+ * Check that all required spec files exist with non-zero size.
+ * Returns an array of missing/empty filenames (empty = all present).
+ */
+function checkRequiredSpecFiles(featureDir) {
+  return REQUIRED_SPEC_FILES.filter(f => {
+    const fp = path.join(featureDir, f);
+    return !fs.existsSync(fp) || fs.statSync(fp).size === 0;
+  });
+}
+
+/**
+ * Parse maxBounceRetries from a config value, returning a validated integer
+ * or the default of 3.
+ */
+function parseMaxBounceRetries(val) {
+  if (val === undefined || val === null) return 3;
+  const num = Number(val);
+  if (!Number.isInteger(num) || num <= 0) {
+    log(`Warning: invalid maxBounceRetries value "${val}" — using default 3`);
+    return 3;
+  }
+  return num;
+}
 
 // ---------------------------------------------------------------------------
 // State management
@@ -342,26 +381,10 @@ function detectAndHydrateState() {
   // Check for spec files (step 3)
   const specsDir = path.join(PROJECT_PATH, '.claude', 'specs');
   let featureName = null;
-  if (fs.existsSync(specsDir)) {
-    const dirs = fs.readdirSync(specsDir)
-      .filter(d => fs.statSync(path.join(specsDir, d)).isDirectory());
-
-    // Try to match by branch slug, otherwise take the last directory
-    const slug = branchMatch[2];
-    const matched = dirs.find(d => d.includes(slug)) || (dirs.length > 0 ? dirs[dirs.length - 1] : null);
-
-    if (matched) {
-      const featureDir = path.join(specsDir, matched);
-      const required = ['requirements.md', 'design.md', 'tasks.md', 'feature.gherkin'];
-      const allPresent = required.every(f => {
-        const fp = path.join(featureDir, f);
-        return fs.existsSync(fp) && fs.statSync(fp).size > 0;
-      });
-      if (allPresent) {
-        lastCompletedStep = 3;
-        featureName = matched;
-      }
-    }
+  const featureDir = findFeatureDir(specsDir, null, branchMatch[2]);
+  if (featureDir && checkRequiredSpecFiles(featureDir).length === 0) {
+    lastCompletedStep = 3;
+    featureName = path.basename(featureDir);
   }
 
   // Check for commits ahead of main (step 4 — conservative; steps 4/5 indistinguishable)
@@ -819,23 +842,11 @@ function validatePreconditions(step, state) {
 
     case 4: { // Implement — all 4 spec files exist
       const specsDir = path.join(PROJECT_PATH, '.claude', 'specs');
-      if (!fs.existsSync(specsDir)) return { ok: false, failedCheck: 'spec files exist', reason: 'No .claude/specs directory' };
-      const features = fs.readdirSync(specsDir).filter(d =>
-        fs.statSync(path.join(specsDir, d)).isDirectory()
-      );
-      const featureDir = state.featureName
-        ? path.join(specsDir, state.featureName)
-        : features.length > 0 ? path.join(specsDir, features[features.length - 1]) : null;
-
-      if (!featureDir || !fs.existsSync(featureDir)) {
+      const featureDir = findFeatureDir(specsDir, state.featureName);
+      if (!featureDir) {
         return { ok: false, failedCheck: 'spec files exist', reason: 'No feature spec directory found' };
       }
-
-      const required = ['requirements.md', 'design.md', 'tasks.md', 'feature.gherkin'];
-      const missing = required.filter(f => {
-        const fp = path.join(featureDir, f);
-        return !fs.existsSync(fp) || fs.statSync(fp).size === 0;
-      });
+      const missing = checkRequiredSpecFiles(featureDir);
       if (missing.length > 0) {
         return { ok: false, failedCheck: 'spec files exist', reason: `Missing spec files: ${missing.join(', ')}` };
       }
@@ -1325,13 +1336,9 @@ function extractStateFromStep(step, result, state) {
   if (step.number === 3) {
     // Try to detect the feature name from specs directory
     const specsDir = path.join(PROJECT_PATH, '.claude', 'specs');
-    if (fs.existsSync(specsDir)) {
-      const dirs = fs.readdirSync(specsDir)
-        .filter(d => fs.statSync(path.join(specsDir, d)).isDirectory())
-        .sort(); // lexicographic — newest usually last
-      if (dirs.length > 0) {
-        patch.featureName = dirs[dirs.length - 1];
-      }
+    const featureDir = findFeatureDir(specsDir);
+    if (featureDir) {
+      patch.featureName = path.basename(featureDir);
     }
   }
 
@@ -1419,25 +1426,13 @@ function validateSpecContent(featureDir) {
 
 function validateSpecs(state) {
   const specsDir = path.join(PROJECT_PATH, '.claude', 'specs');
-  if (!fs.existsSync(specsDir)) return { ok: false, missing: ['specs directory'] };
+  const featureDir = findFeatureDir(specsDir, state.featureName);
 
-  const features = fs.readdirSync(specsDir).filter(d =>
-    fs.statSync(path.join(specsDir, d)).isDirectory()
-  );
-  const featureDir = state.featureName
-    ? path.join(specsDir, state.featureName)
-    : features.length > 0 ? path.join(specsDir, features[features.length - 1]) : null;
-
-  if (!featureDir || !fs.existsSync(featureDir)) {
+  if (!featureDir) {
     return { ok: false, missing: ['feature directory'] };
   }
 
-  const required = ['requirements.md', 'design.md', 'tasks.md', 'feature.gherkin'];
-  const missing = required.filter(f => {
-    const fp = path.join(featureDir, f);
-    return !fs.existsSync(fp) || fs.statSync(fp).size === 0;
-  });
-
+  const missing = checkRequiredSpecFiles(featureDir);
   if (missing.length > 0) {
     return { ok: false, missing };
   }
@@ -1524,6 +1519,51 @@ function validateVersionBump() {
 // Deterministic version bump (recovery when LLM skips the bump)
 // ---------------------------------------------------------------------------
 
+/**
+ * Classify the version bump type from issue labels.
+ * Reads the classification matrix from .claude/steering/tech.md if available,
+ * falls back to hardcoded defaults (bug→patch, else→minor).
+ */
+function classifyBumpType(labels, projectPath) {
+  const techMdPath = path.join(projectPath, '.claude', 'steering', 'tech.md');
+
+  if (!fs.existsSync(techMdPath)) {
+    return labels.includes('bug') ? 'patch' : 'minor';
+  }
+
+  try {
+    const content = fs.readFileSync(techMdPath, 'utf8');
+    const versioningSection = content.match(/## Versioning\s*\n([\s\S]*?)(?=\n## |\n$|$)/);
+    if (!versioningSection) {
+      return labels.includes('bug') ? 'patch' : 'minor';
+    }
+
+    const classSection = versioningSection[1].match(/### Version Bump Classification\s*\n([\s\S]*?)(?=\n### |\n## |$)/);
+    if (!classSection) {
+      return labels.includes('bug') ? 'patch' : 'minor';
+    }
+
+    // Parse the markdown table into a label→bump map
+    const rows = classSection[1].match(/\|[^|\n]+\|[^|\n]+\|/g) || [];
+    const classMap = new Map();
+    for (const row of rows) {
+      const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+      if (cells.length >= 2 && cells[0] !== 'Label' && !cells[0].startsWith('-')) {
+        classMap.set(cells[0].replace(/`/g, '').toLowerCase(), cells[1].toLowerCase().trim());
+      }
+    }
+
+    for (const label of labels) {
+      const bump = classMap.get(label.toLowerCase());
+      if (bump) return bump;
+    }
+    return 'minor';
+  } catch (err) {
+    log(`Warning: could not read tech.md classification: ${err.message}`);
+    return labels.includes('bug') ? 'patch' : 'minor';
+  }
+}
+
 function performDeterministicVersionBump(state) {
   const versionPath = path.join(PROJECT_PATH, 'VERSION');
 
@@ -1575,49 +1615,7 @@ function performDeterministicVersionBump(state) {
       log(`Warning: could not check milestone completion: ${err.message}`);
     }
 
-    // Apply classification matrix — read from .claude/steering/tech.md if available
-    // Falls back to hardcoded defaults (bug→patch, else→minor) for backward compatibility
-    let bumpType = 'minor'; // default
-    const techMdForClassification = path.join(PROJECT_PATH, '.claude', 'steering', 'tech.md');
-    if (fs.existsSync(techMdForClassification)) {
-      try {
-        const techMdContent = fs.readFileSync(techMdForClassification, 'utf8');
-        const versioningSection = techMdContent.match(/## Versioning\s*\n([\s\S]*?)(?=\n## |\n$|$)/);
-        if (versioningSection) {
-          const classificationSection = versioningSection[1].match(/### Version Bump Classification\s*\n([\s\S]*?)(?=\n### |\n## |$)/);
-          if (classificationSection) {
-            const rows = classificationSection[1].match(/\|[^|\n]+\|[^|\n]+\|/g) || [];
-            const classMap = new Map();
-            for (const row of rows) {
-              const cells = row.split('|').map(c => c.trim()).filter(Boolean);
-              if (cells.length >= 2 && cells[0] !== 'Label' && !cells[0].startsWith('-')) {
-                const label = cells[0].replace(/`/g, '').toLowerCase();
-                const bump = cells[1].toLowerCase().trim();
-                classMap.set(label, bump);
-              }
-            }
-            for (const label of labels) {
-              if (classMap.has(label.toLowerCase())) {
-                bumpType = classMap.get(label.toLowerCase());
-                break;
-              }
-            }
-          } else {
-            // No classification subsection — use hardcoded defaults
-            if (labels.includes('bug')) bumpType = 'patch';
-          }
-        } else {
-          // No versioning section — use hardcoded defaults
-          if (labels.includes('bug')) bumpType = 'patch';
-        }
-      } catch (err) {
-        log(`Warning: could not read tech.md classification: ${err.message}`);
-        if (labels.includes('bug')) bumpType = 'patch';
-      }
-    } else {
-      // No tech.md — use hardcoded defaults
-      if (labels.includes('bug')) bumpType = 'patch';
-    }
+    const bumpType = classifyBumpType(labels, PROJECT_PATH);
 
     let newVersion;
     if (isLastInMilestone) {
@@ -1775,6 +1773,29 @@ process.on('SIGINT', () => handleSignal('SIGINT'));
 // Main loop
 // ---------------------------------------------------------------------------
 
+/**
+ * Run a post-step validation gate. If the validator fails, retry or escalate
+ * using the standard pattern shared by steps 3, 6, and 8.
+ * Returns null if validation passed, or a step result string ('retry'|'escalated').
+ */
+async function runValidationGate(step, state, validateFn, label) {
+  const check = validateFn();
+  if (check.ok) return null;
+
+  const reason = check.reason || check.missing?.join(', ') || 'unknown';
+  log(`${label} failed: ${reason}`);
+  await postDiscord(`${label} failed after Step ${step.number} — ${reason}. Retrying...`);
+
+  const retries = state.retries || {};
+  const count = (retries[step.number] || 0) + 1;
+  if (count >= MAX_RETRIES) {
+    await escalate(step, `${label} failed after ${MAX_RETRIES} attempts`);
+    return 'escalated';
+  }
+  updateState({ retries: { ...retries, [step.number]: count } });
+  return 'retry';
+}
+
 async function runStep(step, state) {
   log(`=== Step ${step.number}: ${step.key} ===`);
 
@@ -1839,36 +1860,14 @@ async function runStep(step, state) {
 
     // Special: spec validation gate after step 3
     if (step.number === 3) {
-      const specCheck = validateSpecs(state);
-      if (!specCheck.ok) {
-        log(`Spec validation failed: missing ${specCheck.missing.join(', ')}`);
-        await postDiscord(`Spec validation failed after Step 3 — missing: ${specCheck.missing.join(', ')}. Retrying...`);
-        const retries = state.retries || {};
-        const count = (retries[3] || 0) + 1;
-        if (count >= MAX_RETRIES) {
-          await escalate(step, `Spec validation failed after ${MAX_RETRIES} attempts`);
-          return 'escalated';
-        }
-        updateState({ retries: { ...retries, 3: count } });
-        return 'retry';
-      }
+      const gate = await runValidationGate(step, state, () => validateSpecs(state), 'Spec validation');
+      if (gate) return gate;
     }
 
     // Special: push validation gate after step 6
     if (step.number === 6) {
-      const pushCheck = validatePush();
-      if (!pushCheck.ok) {
-        log(`Push validation failed: ${pushCheck.reason}`);
-        await postDiscord(`Push validation failed after Step 6 — ${pushCheck.reason}. Retrying...`);
-        const retries = state.retries || {};
-        const count = (retries[6] || 0) + 1;
-        if (count >= MAX_RETRIES) {
-          await escalate(step, `Push validation failed after ${MAX_RETRIES} attempts`);
-          return 'escalated';
-        }
-        updateState({ retries: { ...retries, 6: count } });
-        return 'retry';
-      }
+      const gate = await runValidationGate(step, state, validatePush, 'Push validation');
+      if (gate) return gate;
     }
 
     // Special: version bump postcondition gate after step 7
@@ -1900,19 +1899,8 @@ async function runStep(step, state) {
 
     // Special: CI validation gate after step 8
     if (step.number === 8) {
-      const ciCheck = validateCI();
-      if (!ciCheck.ok) {
-        log(`CI validation failed: ${ciCheck.reason}`);
-        await postDiscord(`CI validation failed after Step 8 — ${ciCheck.reason}. Retrying...`);
-        const retries = state.retries || {};
-        const count = (retries[8] || 0) + 1;
-        if (count >= MAX_RETRIES) {
-          await escalate(step, `CI validation failed after ${MAX_RETRIES} attempts`);
-          return 'escalated';
-        }
-        updateState({ retries: { ...retries, 8: count } });
-        return 'retry';
-      }
+      const gate = await runValidationGate(step, state, validateCI, 'CI validation');
+      if (gate) return gate;
     }
 
     await postDiscord(`Step ${step.number} (${step.key}) complete.${result.duration > 60 ? ` (${Math.round(result.duration / 60)}min)` : ''}`);
@@ -2145,14 +2133,9 @@ const __test__ = {
     MODEL = cfg.model ?? MODEL;
     if ('effort' in cfg) EFFORT = cfg.effort;
     MAX_RETRIES = cfg.maxRetriesPerStep ?? MAX_RETRIES;
-    MAX_BOUNCE_RETRIES = (() => {
-      const val = cfg.maxBounceRetries;
-      if (val === undefined) return MAX_BOUNCE_RETRIES;
-      if (val === null) return 3;
-      const num = Number(val);
-      if (!Number.isInteger(num) || num <= 0) return 3;
-      return num;
-    })();
+    MAX_BOUNCE_RETRIES = cfg.maxBounceRetries === undefined
+      ? MAX_BOUNCE_RETRIES
+      : parseMaxBounceRetries(cfg.maxBounceRetries);
     if ('singleIssueNumber' in cfg) SINGLE_ISSUE_NUMBER = cfg.singleIssueNumber;
     DISCORD_CHANNEL = cfg.discordChannelId ?? DISCORD_CHANNEL;
     CLEANUP_PATTERNS = cfg.cleanup?.processPatterns ?? CLEANUP_PATTERNS;
@@ -2190,6 +2173,12 @@ export {
   validateConfig,
   getConfigObject,
   resolveStepConfig,
+
+  findFeatureDir,
+  checkRequiredSpecFiles,
+  parseMaxBounceRetries,
+  classifyBumpType,
+  runValidationGate,
 
   validateSpecs,
   validateSpecContent,
@@ -2231,6 +2220,7 @@ export {
   IS_WINDOWS,
   STEPS,
   STEP_KEYS,
+  REQUIRED_SPEC_FILES,
   RUNNER_ARTIFACTS,
   IMMEDIATE_ESCALATION_PATTERNS,
   TEXT_FAILURE_PATTERNS,

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.0.3] - 2026-04-15
+
+### Fixed
+
+- **`/running-sdlc-loop`** — Trimmed dead auto-trigger phrases from skill description (skill uses `disable-model-invocation: true`); added `Bash(CLAUDECODE:*)` to `allowed-tools` to cover the `CLAUDECODE="" node ...` command pattern that was blocked by the previous `Bash(node:*)` pattern; replaced `cat` instruction with Read tool
+- **`sdlc-runner.mjs`** — Extracted shared helpers to eliminate duplication: `findFeatureDir()` replaces 4 inline feature-directory lookups, `checkRequiredSpecFiles()` replaces 3 inline spec-file checks, `parseMaxBounceRetries()` replaces 2 identical IIFEs, `classifyBumpType()` extracts 40-line nested classification from `performDeterministicVersionBump()` into flat early-return style, `runValidationGate()` consolidates identical retry-or-escalate boilerplate from post-step gates (steps 3, 6, 8); merged duplicate `isMainModule` blocks to eliminate redundant config re-read from disk
+
 ## [4.0.2] - 2026-03-15
 
 ### Fixed
