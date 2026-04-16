@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Improved
+
+- **`/writing-specs` review gates** — All three phase gates (Requirements, Design, Tasks) now present structured inline summaries with full spec detail so users can evaluate proposals without opening the markdown files; replaced open-ended questions with a numbered `[1] Approve / [2] Revise` menu
+
 ## [4.1.0] - 2026-04-15
 
 ### Removed

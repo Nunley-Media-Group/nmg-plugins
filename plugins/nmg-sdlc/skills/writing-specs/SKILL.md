@@ -183,12 +183,39 @@ Write to (or amend) `.claude/specs/{feature-name}/requirements.md`
 
 **[If `.claude/auto-mode` exists]:** Gate is pre-approved — proceed immediately to Phase 2.
 
-**[If `.claude/auto-mode` does NOT exist]:** Present the requirements spec to the user:
-- "Does this capture the requirements correctly?"
-- "Are all acceptance criteria testable?"
-- "Anything missing from scope?"
+**[If `.claude/auto-mode` does NOT exist]:** Present an inline summary of what was written so the user can evaluate without opening the file. Structure it exactly like this:
 
-Do not proceed to Phase 2 until the user approves.
+---
+
+**Requirements Summary** — `.claude/specs/{feature-name}/requirements.md`
+
+**User Story**: As a [type], I want [action] so that [benefit]
+
+**Acceptance Criteria** ([count] total):
+- **AC1: [Name]** — Given [precondition], when [action], then [outcome]
+- **AC2: [Name]** — Given [precondition], when [action], then [outcome]
+- *(list every AC with its one-line Given/When/Then summary)*
+
+**Key Functional Requirements**:
+- FR1: [requirement] *(Must)*
+- FR2: [requirement] *(Should)*
+- *(list all FRs with priority)*
+
+**Out of Scope**: [comma-separated list of excluded items]
+
+**Open Questions**: [list any, or "None"]
+
+---
+
+After the summary, present a numbered menu via `AskUserQuestion`:
+
+```
+Select an option:
+  [1] Approve — proceed to technical design
+  [2] Revise — I'll describe what to change
+```
+
+If the user selects 2 (or provides feedback), apply their changes to the file and re-present the summary and menu. Repeat until they select 1.
 
 ---
 
@@ -231,12 +258,40 @@ Write to (or amend) `.claude/specs/{feature-name}/design.md`
 
 **[If `.claude/auto-mode` exists]:** Gate is pre-approved — proceed immediately to Phase 3.
 
-**[If `.claude/auto-mode` does NOT exist]:** Present the technical design to the user:
-- "Does this architecture align with the project?"
-- "Are there concerns about the approach?"
-- "Any alternatives to consider?"
+**[If `.claude/auto-mode` does NOT exist]:** Present an inline summary of the design so the user can evaluate without opening the file. Structure it exactly like this:
 
-Do not proceed to Phase 3 until the user approves.
+---
+
+**Design Summary** — `.claude/specs/{feature-name}/design.md`
+
+**Approach**: [2-3 sentence summary of the architectural approach — what components are involved, the key design decision, and why this approach was chosen over alternatives]
+
+**Components Modified**:
+- `path/to/file` — [what changes and why]
+- `path/to/file` — [what changes and why]
+- *(list every file/component being added or modified)*
+
+**New APIs / Interfaces**:
+- `[endpoint or method signature]` — [purpose]
+- *(list all, or "None")*
+
+**Database / Storage Changes**: [summary of schema changes, or "None"]
+
+**Key Tradeoff**: [the most important architectural tradeoff and why you chose this side of it]
+
+**Risks**: [top 1-2 risks with their mitigations]
+
+---
+
+After the summary, present a numbered menu via `AskUserQuestion`:
+
+```
+Select an option:
+  [1] Approve — proceed to implementation tasks
+  [2] Revise — I'll describe what to change
+```
+
+If the user selects 2 (or provides feedback), apply their changes to the file and re-present the summary and menu. Repeat until they select 1.
 
 ---
 
@@ -304,10 +359,44 @@ Write to (or amend):
 
 **[If `.claude/auto-mode` exists]:** Gate is pre-approved — proceed immediately to output.
 
-**[If `.claude/auto-mode` does NOT exist]:** Present the task breakdown to the user:
-- "Are the tasks properly scoped?"
-- "Are dependencies correct?"
-- "Is the phasing logical?"
+**[If `.claude/auto-mode` does NOT exist]:** Present an inline summary of the task breakdown so the user can evaluate without opening the file. Structure it exactly like this:
+
+---
+
+**Tasks Summary** — `.claude/specs/{feature-name}/tasks.md`
+
+**Phase breakdown**:
+| Phase | Tasks | Key work |
+|-------|-------|----------|
+| Setup | [count] | [1-line summary of what this phase does] |
+| Backend | [count] | [1-line summary] |
+| Frontend | [count] | [1-line summary] |
+| Integration | [count] | [1-line summary] |
+| Testing | [count] | [1-line summary] |
+| **Total** | **[N] tasks** | |
+
+*(For defects, show the flat task list instead of phases)*
+
+**Task list**:
+- **T001**: [title] → `file/path` *(depends: none)*
+- **T002**: [title] → `file/path` *(depends: T001)*
+- *(list every task with its target file and dependencies)*
+
+**Critical path**: T001 → T003 → T004 → ... → T[last] *(the longest dependency chain)*
+
+**Gherkin scenarios**: [count] scenarios covering [count] acceptance criteria
+
+---
+
+After the summary, present a numbered menu via `AskUserQuestion`:
+
+```
+Select an option:
+  [1] Approve — specs are complete
+  [2] Revise — I'll describe what to change
+```
+
+If the user selects 2 (or provides feedback), apply their changes to the file and re-present the summary and menu. Repeat until they select 1.
 
 ---
 
