@@ -6,7 +6,7 @@ Claude Code plugins by Nunley Media Group.
 
 ### nmg-sdlc
 
-The **nmg-sdlc** plugin is a stack-agnostic, BDD spec-driven development toolkit that brings structured software delivery to Claude Code. It covers the entire development lifecycle — issue grooming with acceptance criteria, three-phase specification writing, plan-mode implementation, automated verification with integrated versioning, and PR creation — but the core flow is five commands: `/starting-issues` → `/writing-specs` → `/implementing-specs` → `/verifying-specs` → `/creating-prs`. Each command runs in a fresh context window with only the artifacts it needs — specs, steering docs, and issue metadata — keeping token usage small and efficient across the entire lifecycle. A dedicated architecture reviewer agent scores every implementation across five quality checklists (SOLID principles, security, performance, testability, and error handling), while a retrospective system analyzes past defects to continuously improve spec quality. Steering documents (`product.md`, `tech.md`, `structure.md`) let teams encode project-specific conventions that guide every step. A retrospective system (`/running-retrospectives`) analyzes past defect specs to identify recurring gaps and produces actionable learnings in `retrospective.md` — which `/writing-specs` and `/implementing-specs` automatically consume, so lessons from previous cycles directly improve future specs and implementations. For Claude Code plugin projects, exercise-based verification goes beyond static checks — it scaffolds a temporary workspace, installs the plugin, and runs the changed skills end-to-end to validate they actually work. The entire workflow runs interactively with human review gates or fully headless through [OpenClaw](https://openclaw.ai/) integration.
+The **nmg-sdlc** plugin is a stack-agnostic, BDD spec-driven development toolkit that brings structured software delivery to Claude Code. It covers the entire development lifecycle — issue grooming with acceptance criteria, three-phase specification writing, plan-mode implementation, automated verification with integrated versioning, and PR creation — but the core flow is five commands: `/starting-issues` → `/writing-specs` → `/implementing-specs` → `/verifying-specs` → `/creating-prs`. Each command runs in a fresh context window with only the artifacts it needs — specs, steering docs, and issue metadata — keeping token usage small and efficient across the entire lifecycle. A dedicated architecture reviewer agent scores every implementation across five quality checklists (SOLID principles, security, performance, testability, and error handling), while a retrospective system analyzes past defects to continuously improve spec quality. Steering documents (`product.md`, `tech.md`, `structure.md`) let teams encode project-specific conventions that guide every step. A retrospective system (`/running-retrospectives`) analyzes past defect specs to identify recurring gaps and produces actionable learnings in `retrospective.md` — which `/writing-specs` and `/implementing-specs` automatically consume, so lessons from previous cycles directly improve future specs and implementations. For Claude Code plugin projects, exercise-based verification goes beyond static checks — it scaffolds a temporary workspace, installs the plugin, and runs the changed skills end-to-end to validate they actually work. The entire workflow runs interactively with human review gates or fully headless through the built-in SDLC runner.
 
 It provides a GitHub issue-driven workflow:
 
@@ -137,64 +137,35 @@ Determines the version bump (patch for bugs, minor for enhancements, major on mi
 
 ## Automation Mode
 
-The plugin supports fully automated operation via [OpenClaw](https://openclaw.ai/), an AI agent platform that orchestrates Claude Code sessions. A deterministic Node.js runner drives the full development cycle — issue selection, spec writing, implementation, verification, PR creation, CI monitoring, and merge — looping continuously until no open issues remain.
+The plugin supports fully automated operation through a deterministic Node.js runner (`scripts/sdlc-runner.mjs`) that drives the full development cycle — issue selection, spec writing, implementation, verification, PR creation, CI monitoring, and merge — looping continuously until no open issues remain.
 
 ### Setup
 
-#### 1. Install OpenClaw
-
-Follow the [OpenClaw getting started guide](https://openclaw.ai/) to install the `openclaw` CLI and connect it to your Discord server.
-
-#### 2. Install the OpenClaw skill
-
-The `/installing-openclaw-skill` skill copies the `running-sdlc` skill and SDLC runner script from the nmg-plugins marketplace clone to `~/.openclaw/skills/running-sdlc/`, patches a known CLI bug, and restarts the OpenClaw gateway. Run it from any project that has nmg-sdlc installed:
-
-```bash
-/installing-openclaw-skill
-```
-
-This is the recommended method. It sources files from the marketplace clone at `~/.claude/plugins/marketplaces/nmg-plugins/`, so make sure you've installed the plugin first (see [Installation](#installation)). Re-run it any time you update the plugin to keep the OpenClaw skill in sync.
-
-Alternative install methods (for development or CI):
-
-```bash
-# From within the nmg-plugins repo — installs everything including the OpenClaw skill
-/installing-locally
-
-# Standalone shell script (copy mode)
-./openclaw/scripts/install-openclaw-skill.sh
-
-# Standalone shell script (symlink mode — stays in sync with the repo)
-./openclaw/scripts/install-openclaw-skill.sh --link
-```
-
-#### 3. Generate a project config
+#### 1. Generate a project config
 
 From within the target project (must have a `.claude/` directory):
 
 ```bash
-/generating-openclaw-config
+/generating-sdlc-config
 ```
 
-This writes `sdlc-config.json` to the project root and adds it to `.gitignore`. The config specifies the project path, per-step timeouts and turn limits, which nmg-sdlc skills to inject, and an optional Discord channel ID for status updates.
+This writes `sdlc-config.json` to the project root and adds it to `.gitignore`. The config specifies the project path, per-step timeouts and turn limits, and which nmg-sdlc skills to inject.
 
-#### 4. Launch the runner
+#### 2. Launch the runner
 
-Via OpenClaw (from Discord or the CLI):
-
-```
-/running-sdlc start --config /path/to/sdlc-config.json
-```
-
-Or run directly without OpenClaw:
+From within a Claude Code session:
 
 ```bash
-node openclaw/scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json --discord-channel 1234567890
+/running-sdlc-loop
 ```
 
-The `--discord-channel` flag is optional. When launched via OpenClaw, the channel ID is auto-detected from the invoking Discord channel. It can also be set as `discordChannelId` in the config file.
+Or run directly:
 
-See [`openclaw/README.md`](openclaw/README.md) for all commands (`start`, `status`, `stop`), flags (`--resume`, `--dry-run`, `--step N`), state files, and error handling details.
+```bash
+node scripts/sdlc-runner.mjs --config /path/to/sdlc-config.json
+```
+
+Available flags: `--resume`, `--dry-run`, `--step N`, `--issue N`.
 
 ### Model & Effort Configuration
 
@@ -335,16 +306,7 @@ Any gate Fail caps the overall verification status at "Partial". Any gate Incomp
 | `/running-sdlc-loop [#N]` | Run the full SDLC pipeline from within an active Claude Code session — processes a specific issue or loops over all open issues via `sdlc-runner.mjs` |
 | `/setting-up-steering` | Set up or enhance project steering documents (product, tech, structure) — bootstraps on first run, enhances existing docs on subsequent runs |
 | `/migrating-projects` | Update project specs, steering docs, configs, CHANGELOG, and VERSION to latest standards |
-| `/installing-openclaw-skill` | Copy the OpenClaw running-sdlc skill from the marketplace clone to `~/.openclaw/skills/` and restart the gateway |
-| `/generating-openclaw-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path auto-detected and written to the project root |
-
-### OpenClaw Skills
-
-These skills are part of the [OpenClaw](https://openclaw.ai/) integration (in [`openclaw/`](openclaw/README.md)), not the nmg-sdlc plugin:
-
-| Skill | Description |
-|-------|-------------|
-| `/running-sdlc start\|status\|stop --config <path>` | Launch, monitor, or stop the deterministic SDLC runner for a project. See [`openclaw/README.md`](openclaw/README.md) for setup and details |
+| `/generating-sdlc-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path auto-detected and written to the project root |
 
 ### Utility Skills
 
@@ -352,7 +314,7 @@ These are repo-level utilities (not part of the nmg-sdlc plugin itself):
 
 | Skill | Description |
 |-------|-------------|
-| `/installing-locally` | Install or update all marketplace plugins to the local Claude Code plugin cache, sync the OpenClaw skill, and restart the OpenClaw gateway |
+| `/installing-locally` | Install or update all marketplace plugins to the local Claude Code plugin cache |
 
 ## Updating
 

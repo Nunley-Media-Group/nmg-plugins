@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-04-15
+
+### Removed
+
+- **OpenClaw integration** — Removed the entire `openclaw/` directory (OpenClaw skill, runner installer, CLI patch, README), the `/installing-openclaw-skill` and `/generating-openclaw-config` skills, and all Discord status posting from `sdlc-runner.mjs`; the runner now logs status messages instead of posting to Discord
+- **`--discord-channel` CLI flag** — Removed from `sdlc-runner.mjs`; `discordChannelId` removed from config template
+
+### Changed
+
+- **`sdlc-runner.mjs`** — Moved from `openclaw/scripts/` to `scripts/` at the repo root; `postDiscord()` replaced with a log-only implementation
+- **`/generating-openclaw-config`** — Renamed to `/generating-sdlc-config`; updated template path from `openclaw/scripts/` to `scripts/`
+- **`/running-sdlc-loop`** — Updated runner path from `openclaw/scripts/` to `scripts/`; removed OpenClaw references
+- **`/migrating-projects`** — Removed Step 6 (OpenClaw Skill Version check); renumbered Steps 7–10 to 6–9; renamed "OpenClaw Config" references to "Runner Config"
+- **`/installing-locally`** — Removed OpenClaw skill sync (Step 5) and gateway restart (Step 6)
+- **README.md** — Rewrote Automation Mode section; removed OpenClaw setup steps, skills table, and references
+
 ## [4.0.3] - 2026-04-15
 
 ### Fixed

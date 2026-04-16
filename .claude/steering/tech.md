@@ -15,8 +15,8 @@ nmg-sdlc Plugin
     ├── Agents (architecture-reviewer — subagent for verification)
     └── Templates (spec, steering, checklist files)
 
-OpenClaw (optional automation layer)
-    ├── running-sdlc Skill (Discord-triggered)
+SDLC Runner (automation layer)
+    ├── running-sdlc-loop Skill (in-session)
     └── sdlc-runner.mjs (Node.js orchestrator)
         └── Spawns `claude -p` subprocesses per SDLC step
 ```
@@ -31,14 +31,14 @@ OpenClaw (optional automation layer)
 | Skill definitions | Markdown (SKILL.md) | N/A |
 | Automation runner | Node.js (ESM) | v24+ |
 | Issue tracker | GitHub Issues + Projects | gh CLI |
-| Automation platform | OpenClaw | Latest |
+| Automation runner | Node.js (sdlc-runner.mjs) | v24+ |
 
 ### External Services
 
 | Service | Purpose | Notes |
 |---------|---------|-------|
 | GitHub API | Issue/PR management, branch creation | Via `gh` CLI; requires `GITHUB_TOKEN` |
-| Discord | Status updates from OpenClaw | Via `openclaw message send` |
+| Console/Log | Status updates from SDLC runner | Via log files in `<tmpdir>/sdlc-logs/` |
 | Claude API | Powers Claude Code sessions | Underlying LLM for all skills |
 
 ---
@@ -153,7 +153,7 @@ This project MUST work on macOS, Windows, and Linux. All contributions must resp
 - Ambiguous placeholder text
 ```
 
-### JavaScript (OpenClaw Scripts)
+### JavaScript (Runner Scripts)
 
 ```javascript
 // GOOD patterns
@@ -231,7 +231,7 @@ gh pr merge <number> --merge
 
 **This project is a Claude Code plugin. Skills are Markdown instructions, not executable code. The only way to verify a skill change is to exercise it in Claude Code.**
 
-Traditional test frameworks (Jest, pytest, etc.) apply only to the OpenClaw runner script. For everything else — skills, agents, templates — verification means loading the plugin and running the skill against a real or test project.
+Traditional test frameworks (Jest, pytest, etc.) apply only to the SDLC runner script. For everything else — skills, agents, templates — verification means loading the plugin and running the skill against a real or test project.
 
 ### BDD Testing
 
@@ -240,7 +240,7 @@ Traditional test frameworks (Jest, pytest, etc.) apply only to the OpenClaw runn
 | Layer | Framework | Location |
 |-------|-----------|----------|
 | BDD specs | Gherkin feature files | `.claude/specs/{feature-name}/feature.gherkin` |
-| Runner tests | Jest (ESM) | `openclaw/scripts/__tests__/` |
+| Runner tests | Jest (ESM) | `scripts/__tests__/` |
 
 Gherkin specs serve as **design artifacts and verification criteria** — they define the expected behavior that exercise-based testing validates.
 
@@ -365,7 +365,7 @@ This tests the "no-questions" execution path only. Use the Agent SDK approach fo
 | Smoke test (`claude -p`) | `--disallowedTools AskUserQuestion` | Quick verification | Denied — tests fallback path only |
 | Spec verification | `/verifying-specs` skill — behavioral contract checking | All changes | N/A |
 | Architecture review | `architecture-reviewer` agent — 5 checklists scored 1–5 | Code structure, scripts | N/A |
-| Runner unit tests | Jest (`npm test` in `openclaw/scripts/`) | `sdlc-runner.mjs` | N/A |
+| Runner unit tests | Jest (`npm test` in `scripts/`) | `sdlc-runner.mjs` | N/A |
 | Structural validation | Verify `plugin.json`/`marketplace.json` schema, file existence | Plugin manifests | N/A |
 | Prompt quality review | Unambiguous instructions, complete workflow paths, correct tool references | SKILL.md files | N/A |
 
@@ -450,7 +450,7 @@ For Markdown skills, the "code quality" equivalent is prompt quality:
 
 ### Script Verification
 
-For `sdlc-runner.mjs`, `install-openclaw-skill.sh`, and other runtime scripts:
+For `sdlc-runner.mjs` and other runtime scripts:
 
 | Contract | Check |
 |----------|-------|

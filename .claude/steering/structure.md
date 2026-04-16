@@ -24,9 +24,8 @@ nmg-plugins/
 │       ├── skills/               # Skill definitions (one dir per skill)
 │       │   ├── creating-issues/
 │       │   ├── creating-prs/
-│       │   ├── generating-openclaw-config/
+│       │   ├── generating-sdlc-config/
 │       │   ├── implementing-specs/
-│       │   ├── installing-openclaw-skill/
 │       │   ├── running-retrospectives/
 │       │   │   └── templates/    # Retrospective output template
 │       │   ├── setting-up-steering/
@@ -38,16 +37,10 @@ nmg-plugins/
 │       │       └── templates/    # Spec document templates
 │       └── agents/
 │           └── architecture-reviewer.md  # Subagent for verification
-├── openclaw/                     # OpenClaw integration (separate from plugin)
-│   ├── scripts/
-│   │   ├── sdlc-runner.mjs       # Deterministic SDLC orchestrator
-│   │   ├── sdlc-config.example.json  # Config template
-│   │   ├── install-openclaw-skill.sh  # Installer script
-│   │   └── patch-openclaw-message-hang.mjs  # CLI bug workaround
-│   ├── skills/
-│   │   └── running-sdlc/
-│   │       └── SKILL.md          # OpenClaw skill definition
-│   └── README.md                 # OpenClaw integration docs
+├── scripts/                      # SDLC runner and tests
+│   ├── sdlc-runner.mjs           # Deterministic SDLC orchestrator
+│   ├── sdlc-config.example.json  # Config template
+│   └── __tests__/                # Runner unit tests (Jest)
 ├── CLAUDE.md                     # Project instructions for Claude Code
 ├── CHANGELOG.md                  # Versioned changelog with [Unreleased] section
 ├── README.md                     # Public documentation
@@ -77,7 +70,7 @@ Plugin Package (plugins/nmg-sdlc/)
 │  Agents (*.md)      │ ← Specialized subagents (architecture review)
 └─────────────────────┘
 
-OpenClaw (openclaw/) — optional automation layer
+SDLC Runner (scripts/) — automation layer
     ↓ (drives)
 Claude Code sessions via `claude -p`
 ```
@@ -91,7 +84,7 @@ Claude Code sessions via `claude -p`
 | Skills | Define SDLC workflow steps, prompt Claude | Execute code directly; skills are Markdown |
 | Templates | Provide output structure for generated documents | Contain logic or conditionals |
 | Agents | Perform specialized analysis (architecture review) | Spawn subagents or use Task tool |
-| OpenClaw scripts | Orchestrate `claude -p` sessions deterministically | Contain SDLC logic (that lives in skills) |
+| Runner scripts | Orchestrate `claude -p` sessions deterministically | Contain SDLC logic (that lives in skills) |
 
 ---
 
@@ -113,7 +106,7 @@ Claude Code sessions via `claude -p`
 | Skill definitions | `SKILL.md` (uppercase) | `writing-specs/SKILL.md` |
 | Templates | kebab-case `.md` or `.gherkin` | `requirements.md`, `feature.gherkin` |
 | Plugin manifests | `plugin.json` or `marketplace.json` | `.claude-plugin/plugin.json` |
-| Scripts | kebab-case `.mjs` or `.sh` | `sdlc-runner.mjs`, `install-openclaw-skill.sh` |
+| Scripts | kebab-case `.mjs` or `.sh` | `sdlc-runner.mjs` |
 | Config files | kebab-case `.json` | `sdlc-config.example.json` |
 
 ### Spec Output
@@ -181,7 +174,7 @@ Claude Code sessions via `claude -p`
 
 ## Import Order
 
-### JavaScript (ESM — OpenClaw scripts)
+### JavaScript (ESM — Runner scripts)
 
 ```javascript
 // 1. Node.js built-in modules (with node: prefix)

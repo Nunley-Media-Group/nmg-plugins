@@ -129,7 +129,7 @@ Ask type-specific questions to refine the need. Skip any topics already answered
 
 ### Step 5b: Automation Eligibility
 
-Ask whether this issue is suitable for fully automated processing (i.e., an OpenClaw agent can handle the full SDLC cycle without human judgment).
+Ask whether this issue is suitable for fully automated processing (i.e., the SDLC runner can handle the full cycle without human judgment).
 
 Use `AskUserQuestion`:
 

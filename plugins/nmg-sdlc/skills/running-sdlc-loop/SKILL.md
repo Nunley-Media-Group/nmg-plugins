@@ -39,7 +39,7 @@ test -f "$(git rev-parse --show-toplevel)/sdlc-config.json"
 - **If found** → proceed to Step 3.
 - **If not found** → invoke the config generator:
   ```
-  Skill("nmg-sdlc:generating-openclaw-config")
+  Skill("nmg-sdlc:generating-sdlc-config")
   ```
   Then verify the config was created before proceeding.
 
@@ -49,12 +49,12 @@ Read the config file and extract the `pluginsPath` value using the Read tool on 
 
 Derive the runner script path:
 ```
-<pluginsPath>/openclaw/scripts/sdlc-runner.mjs
+<pluginsPath>/scripts/sdlc-runner.mjs
 ```
 
 Verify the runner exists:
 ```bash
-test -f "<pluginsPath>/openclaw/scripts/sdlc-runner.mjs"
+test -f "<pluginsPath>/scripts/sdlc-runner.mjs"
 ```
 
 If the runner is not found, report the error and stop.
@@ -77,7 +77,6 @@ Run the command and stream its output. The runner handles all orchestration:
 - Auto-mode flag management (`.claude/auto-mode`)
 - Step sequencing and precondition validation
 - Retry logic and escalation
-- Discord status updates (if configured)
 - Clean exit after completion
 
 ## Step 5: Report Results
@@ -95,15 +94,15 @@ Do **not** create or remove `.claude/auto-mode` manually — the runner handles 
 
 ## Integration with SDLC Workflow
 
-This skill is the in-session equivalent of the OpenClaw `/running-sdlc` skill. Use it when you want to run the SDLC pipeline without leaving Claude Code:
+This skill runs the SDLC pipeline from within Claude Code:
 
 ```
-In-session (this skill):
 /running-sdlc-loop #42     →  Processes issue #42 through the full pipeline
 /running-sdlc-loop          →  Processes all open issues in a continuous loop
-
-Via OpenClaw (external):
-/running-sdlc start --config <path>   →  Same pipeline, launched from Discord
 ```
 
-The underlying runner (`sdlc-runner.mjs`) is identical in both cases. The difference is how it's launched: this skill runs it as a foreground subprocess, while OpenClaw runs it as a background process with Discord integration.
+The underlying runner (`sdlc-runner.mjs`) can also be invoked directly:
+
+```bash
+node scripts/sdlc-runner.mjs --config sdlc-config.json
+```

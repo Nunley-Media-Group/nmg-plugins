@@ -22,13 +22,13 @@ All feature development should align with these guidelines.
 | Wants structured process | BDD specs provide guardrails without excessive ceremony |
 | Values quality gates | Verification step catches drift before PR |
 
-### Secondary: OpenClaw Automation Agent
+### Secondary: SDLC Runner (Automation)
 
 | Characteristic | Implication |
 |----------------|-------------|
 | Headless execution | Skills must detect `.claude/auto-mode` and skip interactive prompts |
 | Deterministic orchestration | Runner script drives steps sequentially with preconditions |
-| Discord reporting | Status updates flow to Discord channels |
+| Log-based reporting | Status updates flow to console and log files |
 
 ---
 
@@ -36,7 +36,7 @@ All feature development should align with these guidelines.
 
 1. **Structured SDLC workflow** — Transforms vague requirements into verified implementations via issue → spec → implement → verify → PR pipeline
 2. **Stack-agnostic BDD** — Works with any language/framework; steering docs customize to the project
-3. **Full automation support** — OpenClaw integration enables hands-off development cycles
+3. **Full automation support** — The SDLC runner enables hands-off development cycles
 
 ---
 
@@ -59,7 +59,7 @@ All feature development should align with these guidelines.
 |--------|--------|----------------|
 | Spec-to-implementation fidelity | Zero drift findings on first verify | Validates the spec-driven approach works |
 | Skill adoption | All SDLC steps used end-to-end | Proves the workflow is complete and practical |
-| Automation reliability | OpenClaw completes full cycles without manual intervention | Validates headless operation |
+| Automation reliability | SDLC runner completes full cycles without manual intervention | Validates headless operation |
 | Exercise verification | Changed skills verified by invocation against a test project | Validates that skill changes produce correct behavior, not just correct text |
 
 ---
@@ -77,11 +77,10 @@ All feature development should align with these guidelines.
 ### Should Have
 - Issue branch linking and status management (`/starting-issues`)
 - Defect-specific spec templates (bug label detection)
-- OpenClaw automation mode support
+- Automation mode support (`/running-sdlc-loop`)
 
 ### Could Have
-- OpenClaw runner script and skill (`/running-sdlc`)
-- Config generation (`/generating-openclaw-config`)
+- SDLC runner config generation (`/generating-sdlc-config`)
 
 ### Won't Have (Now)
 - Multi-repo orchestration
@@ -103,13 +102,13 @@ All feature development should align with these guidelines.
 6. Runs /creating-prs #N — reviews PR before submission
 ```
 
-### Journey 2: Automated SDLC Cycle (OpenClaw)
+### Journey 2: Automated SDLC Cycle (Runner)
 
 ```
-1. OpenClaw picks oldest open issue from milestone
+1. Runner picks oldest open issue from milestone
 2. Runs each skill sequentially via claude -p subprocesses
 3. Auto-approves all gates (auto-mode enabled)
-4. Posts Discord status updates at each step
+4. Logs status updates at each step
 5. Creates PR, monitors CI, merges on green
 6. Loops to next issue
 ```

@@ -127,6 +127,5 @@ After applying changes, output a summary:
 
 ### Recommendations
 - Review added sections and customize placeholder content
-- Run /installing-openclaw-skill to update the OpenClaw skill
 - To re-propose a declined section, remove it from .claude/migration-exclusions.json
 ```

@@ -7,7 +7,7 @@ allowed-tools: Read, Glob, Grep, Edit, Write, Bash(gh:*), Bash(git:*), AskUserQu
 
 # Migrating Projects
 
-Update existing project files (steering docs, specs, OpenClaw configs) to the latest template standards by diffing headings against current templates and merging missing sections — preserving all user content.
+Update existing project files (steering docs, specs, runner configs) to the latest template standards by diffing headings against current templates and merging missing sections — preserving all user content.
 
 **This skill is self-updating.** It reads templates at runtime, so when templates gain new sections, this skill detects them automatically without any code changes.
 
@@ -21,21 +21,21 @@ Update existing project files (steering docs, specs, OpenClaw configs) to the la
 
 If the file `.claude/auto-mode` exists in the project directory, this skill applies **non-destructive changes automatically** and **skips destructive operations** (which require interactive approval). Do NOT call `AskUserQuestion` in auto-mode.
 
-**Non-destructive (auto-applied in auto-mode):** Steering doc section additions, spec file section additions, Related Spec link corrections, legacy frontmatter migration (`Issue` → `Issues`, Change History additions), OpenClaw config key additions, CHANGELOG.md fixes, VERSION file creation/update, legacy directory renames — solo (Steps 4d–4e).
+**Non-destructive (auto-applied in auto-mode):** Steering doc section additions, spec file section additions, Related Spec link corrections, legacy frontmatter migration (`Issue` → `Issues`, Change History additions), runner config key additions, CHANGELOG.md fixes, VERSION file creation/update, legacy directory renames — solo (Steps 4d–4e).
 
-**Destructive (skipped in auto-mode):** Spec directory consolidation, legacy directory deletes (Steps 4b–4e). For each skipped operation, record it in a "Skipped Operations" list to output at Step 10.
+**Destructive (skipped in auto-mode):** Spec directory consolidation, legacy directory deletes (Steps 4b–4e). For each skipped operation, record it in a "Skipped Operations" list to output at Step 9.
 
 **Informational only (reported but not applied in auto-mode):** Config value drift (Step 5 sub-step 6). Drifted values are included in the migration summary for visibility but are NOT automatically updated and are NOT recorded in the "Skipped Operations" block. Value updates may represent intentional customizations and require explicit per-value user approval in interactive mode.
 
 **In auto-mode:**
 - Step 4d: For solo renames (`feature-` or `bug-` targets), auto-apply `git mv`, frontmatter updates, and cross-reference updates without `AskUserQuestion`. For consolidation groups, skip `AskUserQuestion` and record each group as a skipped operation. Proceed to Step 4f
-- Step 9 Part A: Auto-select all proposed steering doc sections (equivalent to selecting all)
-- Step 9 Part B: Auto-approve all non-destructive changes; skip any destructive operations (record them as skipped)
-- Step 9 Part C: Skip entirely — do not prompt for config value drift updates; drift is reported in the summary only
-- Step 10: After applying changes, emit a machine-readable "Skipped Operations (Auto-Mode)" section
+- Step 8 Part A: Auto-select all proposed steering doc sections (equivalent to selecting all)
+- Step 8 Part B: Auto-approve all non-destructive changes; skip any destructive operations (record them as skipped)
+- Step 8 Part C: Skip entirely — do not prompt for config value drift updates; drift is reported in the summary only
+- Step 9: After applying changes, emit a machine-readable "Skipped Operations (Auto-Mode)" section
 - Do NOT write to `.claude/migration-exclusions.json` (nothing is declined in auto-mode)
 
-**When `.claude/auto-mode` does NOT exist**, all existing interactive behavior is preserved unchanged — present all findings via `AskUserQuestion` as described in Step 9.
+**When `.claude/auto-mode` does NOT exist**, all existing interactive behavior is preserved unchanged — present all findings via `AskUserQuestion` as described in Step 8.
 
 ## What Gets Analyzed
 
@@ -47,8 +47,7 @@ If the file `.claude/auto-mode` exists in the project directory, this skill appl
 .claude/specs/*/                — Spec directory naming (legacy {issue#}-{slug} vs feature-/bug- convention)
 .claude/specs/feature-*/*.md   — Spec frontmatter format (singular **Issue** vs plural **Issues**, Change History)
 .claude/migration-exclusions.json — Declined sections (read to skip, written after user declines)
-sdlc-config.json               — OpenClaw runner config (JSON key merge + value drift detection)
-~/.openclaw/skills/running-sdlc/ — OpenClaw skill version check
+sdlc-config.json               — SDLC runner config (JSON key merge + value drift detection)
 CHANGELOG.md                   — Changelog format and completeness (Keep a Changelog)
 VERSION                        — Single source of truth for project version (plain text semver)
 ```
@@ -59,7 +58,7 @@ VERSION                        — Single source of truth for project version (p
 
 ## Workflow
 
-**Before Step 1:** Check whether `.claude/auto-mode` exists in the project root. Set an auto-mode flag for the entire session. This flag determines behavior at Step 4d, Step 9, and Step 10 — check it once here rather than re-reading the file at each branch point.
+**Before Step 1:** Check whether `.claude/auto-mode` exists in the project root. Set an auto-mode flag for the entire session. This flag determines behavior at Step 4d, Step 8, and Step 9 — check it once here rather than re-reading the file at each branch point.
 
 ### Step 1: Resolve Template Paths
 
@@ -71,9 +70,9 @@ Locate the template directories from the installed plugin. Use this skill's own 
   - Maps to `.claude/steering/retrospective.md`
 - **Spec templates:** `plugins/nmg-sdlc/skills/writing-specs/templates/*.md`
   - `requirements.md`, `design.md`, `tasks.md`
-- **Config template:** `openclaw/scripts/sdlc-config.example.json`
+- **Config template:** `scripts/sdlc-config.example.json`
 
-Use `Glob` to find the skill's own `SKILL.md` path, then resolve `../../..` to get the plugin root. From the plugin root, resolve `../..` to get the marketplace root (which contains `openclaw/`).
+Use `Glob` to find the skill's own `SKILL.md` path, then resolve `../../..` to get the plugin root. From the plugin root, resolve `../..` to get the marketplace root (which contains `scripts/`).
 
 Read all template files. If a template file cannot be found, skip that category and note it in the summary.
 
@@ -230,12 +229,12 @@ After consolidation (or independently, for feature specs that already use `featu
    - Is the `## Change History` section missing?
 3. For files with singular `**Issue**`: propose replacing `**Issue**: #N` with `**Issues**: #N`
 4. For files missing `## Change History`: propose adding the section before `## Validation Checklist` with a single entry: `| #N | [original date from **Date** field] | Initial feature spec |`
-5. Present findings alongside other migration proposals in Step 9
+5. Present findings alongside other migration proposals in Step 8
 6. Apply on user confirmation using `Edit`
 
 This step runs on ALL feature-variant specs in `feature-*/` directories, catching specs that were created by newer `/writing-specs` but somehow have stale frontmatter, renamed from legacy directories but not yet updated, or already in the new naming convention from a prior partial migration.
 
-### Step 5: Analyze OpenClaw Config
+### Step 5: Analyze SDLC Runner Config
 
 If `sdlc-config.json` exists in the project root:
 
@@ -254,22 +253,9 @@ If `sdlc-config.json` exists in the project root:
    - Current project value
    - Template default value
 
-**Important:** Never overwrite existing values. Only add keys that are entirely absent. Config value drift is reported separately and requires explicit per-value user approval before any values are updated (see Step 9 Part C).
+**Important:** Never overwrite existing values. Only add keys that are entirely absent. Config value drift is reported separately and requires explicit per-value user approval before any values are updated (see Step 8 Part C).
 
-### Step 6: Check OpenClaw Skill Version
-
-Compare the installed OpenClaw skill with the source in the marketplace clone:
-
-- **Installed:** `~/.openclaw/skills/running-sdlc/`
-- **Source:** `openclaw/skills/running-sdlc/` (relative to marketplace root)
-
-For each file in the source directory, read both the installed and source versions. If any file differs (or is missing from the installation), record a warning.
-
-If the installed skill is outdated or missing, suggest running `/installing-openclaw-skill` to update.
-
-If `~/.openclaw/skills/running-sdlc/` does not exist, note that OpenClaw is not installed and skip this check.
-
-### Step 7: Analyze CHANGELOG.md
+### Step 6: Analyze CHANGELOG.md
 
 Check whether the project has a `CHANGELOG.md` and ensure it follows the [Keep a Changelog](https://keepachangelog.com/) format.
 
@@ -297,9 +283,9 @@ Reconcile it with the Keep a Changelog format:
 4. **Check preamble**: Ensure the file starts with a title (`# Changelog`) and a brief description.
 5. **Preserve manual entries**: Any entries that do not correspond to conventional commits must be preserved exactly as-is.
 
-Record findings (missing sections, malformed headings, reconciliation needed) for the summary in Step 10.
+Record findings (missing sections, malformed headings, reconciliation needed) for the summary in Step 9.
 
-### Step 8: Analyze VERSION File
+### Step 7: Analyze VERSION File
 
 Ensure the project has a `VERSION` file that reflects the current version.
 
@@ -312,9 +298,9 @@ Ensure the project has a `VERSION` file that reflects the current version.
    - If `VERSION` exists: Read it and compare to the expected version. If they differ, record a finding to update it.
    - If they match: No action needed.
 
-Record findings for the summary in Step 10.
+Record findings for the summary in Step 9.
 
-### Step 9: Present Findings
+### Step 8: Present Findings
 
 Display a per-file summary of all proposed changes. Group by category:
 
@@ -340,7 +326,7 @@ Display a per-file summary of all proposed changes. Group by category:
 - **feature-dark-mode/requirements.md** — Update `**Issue**` → `**Issues**`, add Change History section
 - **feature-dark-mode/design.md** — Update `**Issue**` → `**Issues**`, add Change History section
 
-### OpenClaw Config
+### Runner Config
 - **sdlc-config.json** — Add 2 missing keys: "cleanup", "steps.merge"
 
 ### Config Value Drift
@@ -352,8 +338,6 @@ Display a per-file summary of all proposed changes. Group by category:
 - **bug-auto-mode-cleanup/requirements.md** — Related Spec points to defect spec; suggested correction: `.claude/specs/feature-automation-mode-support/`
 - **bug-session-crash/requirements.md** — Related Spec points to nonexistent directory; suggested correction: N/A
 
-### OpenClaw Skill
-- ⚠ Installed skill is outdated — run /installing-openclaw-skill to update
 ```
 
 If everything is up to date, report:
@@ -366,7 +350,7 @@ And stop here.
 
 Otherwise, proceed to approval. The approval flow has three parts:
 
-**If `.claude/auto-mode` exists:** Skip Part A, Part B, and Part C approval prompts. Auto-select all proposed steering doc sections (equivalent to selecting all). Auto-approve all non-destructive changes (including solo directory renames already applied in Step 4d). Any remaining destructive operations (consolidations, legacy directory deletes) that were not already recorded in Step 4d should be recorded as skipped operations now. Config value drift is reported in the summary but NOT applied — skip Part C entirely (value updates may represent intentional customizations). Proceed directly to Step 10.
+**If `.claude/auto-mode` exists:** Skip Part A, Part B, and Part C approval prompts. Auto-select all proposed steering doc sections (equivalent to selecting all). Auto-approve all non-destructive changes (including solo directory renames already applied in Step 4d). Any remaining destructive operations (consolidations, legacy directory deletes) that were not already recorded in Step 4d should be recorded as skipped operations now. Config value drift is reported in the summary but NOT applied — skip Part C entirely (value updates may represent intentional customizations). Proceed directly to Step 9.
 
 **If `.claude/auto-mode` does NOT exist:** Follow the interactive approval flow below.
 
@@ -385,7 +369,7 @@ options:
   - ...one option per proposed section
 ```
 
-Sections the user does **not** select are treated as declined and will be persisted in Step 10.
+Sections the user does **not** select are treated as declined and will be persisted in Step 9.
 
 If there are **no** proposed steering doc sections (all were filtered by relevance or exclusions), skip Part A.
 
@@ -400,7 +384,7 @@ options:
   - "Skip — leave as-is"
 ```
 
-For spec frontmatter migrations, spec file sections, Related Spec corrections, OpenClaw config keys, CHANGELOG fixes, or VERSION changes, ask as a batch:
+For spec frontmatter migrations, spec file sections, Related Spec corrections, runner config keys, CHANGELOG fixes, or VERSION changes, ask as a batch:
 
 ```
 question: "Apply the remaining migration changes (spec sections, frontmatter updates, Related Spec corrections, config, changelog)?"
@@ -436,7 +420,7 @@ options:
 
 If no drift was found in Step 5, skip Part C.
 
-### Step 10: Apply Changes
+### Step 9: Apply Changes
 
 Follow the detailed apply procedures in [references/migration-procedures.md](references/migration-procedures.md). In summary:
 
@@ -473,7 +457,7 @@ If no destructive operations were skipped, omit this section entirely.
 
 1. **Never modify existing content** — Only insert new sections or add new keys
 2. **Never create files** — Only update files that already exist (exceptions: `CHANGELOG.md`, `VERSION`, and `.claude/migration-exclusions.json` may be created if missing)
-3. **Never overwrite values** — For JSON, only add keys that are absent. Exception: config value drift updates are applied only with explicit per-value user approval (Step 9 Part C); in auto-mode, value updates are never applied
+3. **Never overwrite values** — For JSON, only add keys that are absent. Exception: config value drift updates are applied only with explicit per-value user approval (Step 8 Part C); in auto-mode, value updates are never applied
 4. **Skip `feature.gherkin`** — These are generated, not templated
 5. **Interactive by default** — When `.claude/auto-mode` is absent, present findings with per-section approval for steering docs and wait for user selection before applying
 6. **Auto-mode aware** — When `.claude/auto-mode` exists: auto-apply all non-destructive changes (section additions, frontmatter updates, config keys, changelog fixes, solo directory renames); skip all destructive operations (consolidations, legacy directory deletes) and report them in a machine-readable "Skipped Operations" block

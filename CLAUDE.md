@@ -13,9 +13,7 @@ plugins/nmg-sdlc/                 — The nmg-sdlc plugin
   .claude-plugin/plugin.json      — Plugin manifest
   skills/                         — Skill definitions (one directory per skill)
   agents/                         — Subagent definitions (architecture-reviewer)
-openclaw/                         — OpenClaw integration (separate from the plugin)
-  scripts/                        — SDLC runner script and config template
-  skills/running-sdlc/            — OpenClaw skill definition
+scripts/                          — SDLC runner script, config template, and tests
 CHANGELOG.md                      — Keep an [Unreleased] section for pending changes
 README.md                         — Public docs: workflow, installation, skills reference
 ```
