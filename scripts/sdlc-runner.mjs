@@ -1536,30 +1536,10 @@ function performDeterministicVersionBump(state) {
       log(`Warning: could not read issue labels: ${err.message}`);
     }
 
-    // Check milestone completion — is this the last open issue in its milestone?
-    let isLastInMilestone = false;
-    try {
-      const milestoneJson = gh(`issue view ${issue} --json milestone`);
-      const parsed = JSON.parse(milestoneJson);
-      if (parsed.milestone && parsed.milestone.title) {
-        const milestoneTitle = parsed.milestone.title;
-        const milestonesJson = gh('api repos/{owner}/{repo}/milestones');
-        const milestones = JSON.parse(milestonesJson);
-        const ms = milestones.find(m => m.title === milestoneTitle);
-        if (ms && ms.open_issues === 1) {
-          isLastInMilestone = true;
-        }
-      }
-    } catch (err) {
-      log(`Warning: could not check milestone completion: ${err.message}`);
-    }
-
     const bumpType = classifyBumpType(labels, PROJECT_PATH);
 
     let newVersion;
-    if (isLastInMilestone) {
-      newVersion = `${major + 1}.0.0`;
-    } else if (bumpType === 'patch') {
+    if (bumpType === 'patch') {
       newVersion = `${major}.${minor}.${patch + 1}`;
     } else {
       // minor (default) or any other non-patch bump type

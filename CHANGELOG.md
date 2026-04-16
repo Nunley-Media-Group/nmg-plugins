@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.3.0] - 2026-04-15
+
+### Changed
+
+- **`sdlc-runner.mjs`** — Removed automatic major version bumps; `performDeterministicVersionBump()` no longer checks milestone completion or increments the major version — only patch (bug) and minor (default) bumps are applied; major version changes must be done manually
+
 ## [4.2.1] - 2026-04-15
 
 ### Fixed
