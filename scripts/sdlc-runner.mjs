@@ -429,6 +429,16 @@ function detectAndHydrateState() {
     }
   }
 
+  // If the runner was shut down by signal, the SIGTERM handler auto-pushed WIP
+  // commits. That makes artifact probing think "all pushed → step 6 done" even
+  // if the runner was mid-way through an earlier step. Cap the probed value to
+  // what the state file recorded before shutdown.
+  const savedState = readState();
+  if (savedState.signalShutdown && savedState.lastCompletedStep < lastCompletedStep) {
+    log(`detectAndHydrateState: signal shutdown detected — capping lastCompletedStep from ${lastCompletedStep} to ${savedState.lastCompletedStep} (state file value)`);
+    lastCompletedStep = savedState.lastCompletedStep;
+  }
+
   log(`detectAndHydrateState: detected lastCompletedStep=${lastCompletedStep}, featureName=${featureName || '<unknown>'}`);
 
   return {
@@ -1676,8 +1686,10 @@ async function handleSignal(signal) {
   const savedState = readState();
   const nextStep = (savedState.lastCompletedStep || 0) + 1;
   postDiscord(`SDLC runner stopped (${signal}). Work saved. Resume with --resume to continue from Step ${nextStep}.`).catch(() => {});
-  // Preserve lastCompletedStep for resume — don't reset step tracking
-  updateState({ runnerPid: null });
+  // Preserve lastCompletedStep for resume — don't reset step tracking.
+  // Mark signalShutdown so detectAndHydrateState knows the auto-push was WIP,
+  // not a completed step 6.
+  updateState({ runnerPid: null, signalShutdown: true });
   removeAutoMode();
   process.exit(0);
 }

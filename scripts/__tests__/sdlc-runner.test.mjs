@@ -1178,6 +1178,97 @@ describe('No CI checks handling (#54)', () => {
 });
 
 // ===========================================================================
+// Signal shutdown hydration — lastCompletedStep capping
+// ===========================================================================
+
+describe('detectAndHydrateState after signal shutdown', () => {
+  it('caps lastCompletedStep to state file value when signalShutdown is set', () => {
+    // Simulate: runner was at step 3 (writeSpecs), SIGTERM auto-pushed WIP.
+    // Artifact probing would see "no unpushed commits" → step 6.
+    // But state file says lastCompletedStep=3 + signalShutdown=true → cap to 3.
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('rev-parse --abbrev-ref HEAD')) return '42-my-feature';
+      if (cmd.includes('pr view --json state')) throw new Error('no PR');
+      if (cmd.includes('log main..HEAD --oneline')) return 'abc123 feat: implement';
+      if (cmd.includes('log origin/42-my-feature..HEAD --oneline')) return ''; // all pushed
+      return '';
+    });
+
+    const specsDir = `${TEST_PROJECT}/.claude/specs`;
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return true;
+      if (p.includes('.claude/specs')) return true;
+      if (p.includes('42-my-feature') || p.includes('my-feature')) return true;
+      return false;
+    });
+    mockFs.readdirSync.mockReturnValue(['42-my-feature']);
+    mockFs.statSync.mockReturnValue({ isDirectory: () => true, size: 200 });
+    mockFs.readFileSync.mockReturnValue(JSON.stringify({
+      lastCompletedStep: 3,
+      signalShutdown: true,
+      currentStep: 3,
+    }));
+
+    const result = detectAndHydrateState();
+    expect(result.lastCompletedStep).toBe(3);
+  });
+
+  it('does not cap lastCompletedStep when signalShutdown is not set', () => {
+    // Normal case: no signal shutdown, artifact probing should be trusted.
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('rev-parse --abbrev-ref HEAD')) return '42-my-feature';
+      if (cmd.includes('pr view --json state')) throw new Error('no PR');
+      if (cmd.includes('log main..HEAD --oneline')) return 'abc123 feat: implement';
+      if (cmd.includes('log origin/42-my-feature..HEAD --oneline')) return ''; // all pushed
+      if (cmd.includes('pr view --json number')) throw new Error('no PR');
+      return '';
+    });
+
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return true;
+      if (p.includes('.claude/specs')) return true;
+      if (p.includes('42-my-feature') || p.includes('my-feature')) return true;
+      return false;
+    });
+    mockFs.readdirSync.mockReturnValue(['42-my-feature']);
+    mockFs.statSync.mockReturnValue({ isDirectory: () => true, size: 200 });
+    mockFs.readFileSync.mockReturnValue(JSON.stringify({
+      lastCompletedStep: 3,
+      // no signalShutdown
+    }));
+
+    const result = detectAndHydrateState();
+    // Artifact probing: specs exist (3), commits ahead (4), all pushed (6)
+    expect(result.lastCompletedStep).toBe(6);
+  });
+
+  it('does not cap when state file lastCompletedStep >= probed value', () => {
+    // Edge case: state file step is already at or above probed step — no capping needed.
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('rev-parse --abbrev-ref HEAD')) return '42-my-feature';
+      if (cmd.includes('pr view --json state')) throw new Error('no PR');
+      if (cmd.includes('log main..HEAD --oneline')) return ''; // no commits ahead
+      return '';
+    });
+
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return true;
+      if (p.includes('.claude/specs')) return false;
+      return false;
+    });
+    mockFs.readdirSync.mockReturnValue([]);
+    mockFs.readFileSync.mockReturnValue(JSON.stringify({
+      lastCompletedStep: 5,
+      signalShutdown: true,
+    }));
+
+    const result = detectAndHydrateState();
+    // Probed: only on feature branch → step 2. State says 5, but 5 > 2 so no cap.
+    expect(result.lastCompletedStep).toBe(2);
+  });
+});
+
+// ===========================================================================
 // Utility function tests
 // ===========================================================================
 

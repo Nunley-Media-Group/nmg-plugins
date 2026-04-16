@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.3.2] - 2026-04-16
+
+### Fixed
+
+- **`sdlc-runner.mjs`** — Fixed `detectAndHydrateState()` skipping steps after SIGTERM auto-push: the shutdown handler's commit+push made artifact probing think step 6 was complete even if the runner was mid-step-3; now persists a `signalShutdown` flag in state and caps the probed `lastCompletedStep` to the state file's value on resume
+
 ## [4.3.1] - 2026-04-15
 
 ### Fixed
