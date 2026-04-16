@@ -28,14 +28,14 @@ The design is intentionally simple: a single flag file (`.claude/auto-mode`) tri
 ┌─────────────────────────────────────────────────┐
 │              All SDLC Skills                      │
 ├─────────────────────────────────────────────────┤
-│  /creating-issues  → skip interview, infer ACs   │
+│  /draft-issue  → skip interview, infer ACs   │
 │                    → apply `automatable` label    │
-│  /starting-issues  → filter by `automatable`     │
+│  /start-issue  → filter by `automatable`     │
 │                    → auto-select oldest eligible  │
-│  /writing-specs    → skip 3 review gates          │
-│  /implementing-specs → skip EnterPlanMode         │
-│  /verifying-specs  → skip approval gates          │
-│  /creating-prs     → output orchestrator signal   │
+│  /write-spec    → skip 3 review gates          │
+│  /write-code → skip EnterPlanMode         │
+│  /verify-code  → skip approval gates          │
+│  /open-pr     → output orchestrator signal   │
 └─────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────┐
@@ -44,8 +44,8 @@ The design is intentionally simple: a single flag file (`.claude/auto-mode`) tri
 │  Color: #0E8A16 (green)                          │
 │  Description: "Suitable for automated SDLC       │
 │                processing"                        │
-│  Applied by: /creating-issues (Step 8)           │
-│  Filtered by: /starting-issues (Step 1)          │
+│  Applied by: /draft-issue (Step 8)           │
+│  Filtered by: /start-issue (Step 1)          │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -65,7 +65,7 @@ The design is intentionally simple: a single flag file (`.claude/auto-mode`) tri
    b. Suggest next steps at completion
 ```
 
-### Automatable Label Flow (`/creating-issues`)
+### Automatable Label Flow (`/draft-issue`)
 
 ```
 1. Interview phase runs (or auto-mode infers criteria)
@@ -84,7 +84,7 @@ The design is intentionally simple: a single flag file (`.claude/auto-mode`) tri
    c. If missing despite intent, warn in output
 ```
 
-### Automatable Label Filter Flow (`/starting-issues`)
+### Automatable Label Filter Flow (`/start-issue`)
 
 ```
 1. Auto-mode issue fetch:
@@ -214,12 +214,12 @@ FeatureScreen
 
 | File | Type | Purpose |
 |------|------|---------|
-| `plugins/nmg-sdlc/skills/creating-issues/SKILL.md` | Modify | Add Automation Mode section; add automatable question (new Step 5b); update Step 8 to conditionally include `automatable` label; add label auto-creation; add postcondition check |
-| `plugins/nmg-sdlc/skills/starting-issues/SKILL.md` | Modify | Add Automation Mode section; add `--label automatable` filter in auto-mode issue fetching; add empty-set handling; add automatable indicator in interactive mode |
-| `plugins/nmg-sdlc/skills/writing-specs/SKILL.md` | Modify | Add Automation Mode section |
-| `plugins/nmg-sdlc/skills/implementing-specs/SKILL.md` | Modify | Add Automation Mode section |
-| `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` | Modify | Add Automation Mode section |
-| `plugins/nmg-sdlc/skills/creating-prs/SKILL.md` | Modify | Add orchestrator signal output |
+| `plugins/nmg-sdlc/skills/draft-issue/SKILL.md` | Modify | Add Automation Mode section; add automatable question (new Step 5b); update Step 8 to conditionally include `automatable` label; add label auto-creation; add postcondition check |
+| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | Modify | Add Automation Mode section; add `--label automatable` filter in auto-mode issue fetching; add empty-set handling; add automatable indicator in interactive mode |
+| `plugins/nmg-sdlc/skills/write-spec/SKILL.md` | Modify | Add Automation Mode section |
+| `plugins/nmg-sdlc/skills/write-code/SKILL.md` | Modify | Add Automation Mode section |
+| `plugins/nmg-sdlc/skills/verify-code/SKILL.md` | Modify | Add Automation Mode section |
+| `plugins/nmg-sdlc/skills/open-pr/SKILL.md` | Modify | Add orchestrator signal output |
 
 ---
 
@@ -290,7 +290,7 @@ FeatureScreen
 | Issue | Date | Summary |
 |-------|------|---------|
 | #11 | 2026-02-15 | Initial feature spec |
-| #71 | 2026-02-22 | Add automatable label gate: data flows for label creation, filtering, postcondition verification; updated file changes for creating-issues and starting-issues |
+| #71 | 2026-02-22 | Add automatable label gate: data flows for label creation, filtering, postcondition verification; updated file changes for draft-issue and start-issue |
 
 ## Validation Checklist
 

@@ -17,7 +17,7 @@
 
 ## Background
 
-The `/installing-locally` skill is a repo-level utility (in `.claude/skills/`, not part of any individual plugin) that installs all plugins from the marketplace to the user's local `~/.claude/plugins/` directory. It reads the marketplace index to discover available plugins, copies their skills, hooks, and agents to the appropriate local directories, and handles any necessary cleanup of stale files. It was enhanced to also sync the OpenClaw `running-sdlc` skill to `~/.openclaw/skills/` and restart the OpenClaw gateway, making it a single command for full local development setup.
+The `/installing-locally` skill is a repo-level utility (in `.claude/skills/`, not part of any individual plugin) that installs all plugins from the marketplace to the user's local `~/.claude/plugins/` directory. It reads the marketplace index to discover available plugins, copies their skills, hooks, and agents to the appropriate local directories, and handles any necessary cleanup of stale files.
 
 ---
 
@@ -35,18 +35,6 @@ The `/installing-locally` skill is a repo-level utility (in `.claude/skills/`, n
 **When** installation runs
 **Then** all skill directories, hook configurations, and agent definitions are copied to the local plugin directory
 
-### AC3: OpenClaw Skill Is Synced
-
-**Given** the OpenClaw `running-sdlc` skill exists in the repo
-**When** `/installing-locally` runs
-**Then** the skill is synced to `~/.openclaw/skills/running-sdlc/`
-
-### AC4: Gateway Is Restarted After Sync
-
-**Given** the OpenClaw skill is synced
-**When** the sync completes
-**Then** the OpenClaw gateway is restarted
-
 ---
 
 ## Functional Requirements
@@ -55,8 +43,6 @@ The `/installing-locally` skill is a repo-level utility (in `.claude/skills/`, n
 |----|-------------|----------|-------|
 | FR1 | Read marketplace index to discover plugins | Must | From marketplace.json |
 | FR2 | Copy plugin skills, hooks, and agents to `~/.claude/plugins/` | Must | Via rsync |
-| FR3 | Sync OpenClaw `running-sdlc` skill to `~/.openclaw/skills/` | Must | SKILL.md, runner, config |
-| FR4 | Restart OpenClaw gateway after sync | Must | Via `openclaw gateway restart` |
 | FR5 | Available as a repo-level skill (not part of any plugin) | Must | In `.claude/skills/` |
 
 ---
@@ -67,7 +53,7 @@ The `/installing-locally` skill is a repo-level utility (in `.claude/skills/`, n
 |--------|-------------|
 | **Performance** | rsync for efficient incremental sync |
 | **Security** | Local file operations only; no remote downloads |
-| **Reliability** | Non-fatal gateway restart; version mismatch warnings |
+| **Reliability** | Version mismatch warnings |
 
 ---
 
@@ -106,12 +92,10 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 
 ### Internal Dependencies
 - [x] Plugin scaffold (#2) for marketplace.json format
-- [x] OpenClaw SDLC orchestration (#12) for running-sdlc skill
 
 ### External Dependencies
 - [x] `rsync` for file synchronization
 - [x] `git` for marketplace repo management
-- [x] `openclaw` CLI for gateway restart
 - [x] `jq` for JSON manipulation
 
 ---

@@ -25,7 +25,7 @@
 **Acceptance**:
 - [ ] `validateVersionBump()` function exists and checks `git diff main -- VERSION` after Step 7
 - [ ] `performDeterministicVersionBump()` function exists and performs version bumping via shell commands when `validateVersionBump()` fails
-- [ ] The deterministic bump reads `VERSION`, issue labels (`gh issue view`), milestone (`gh api`), and `.claude/steering/tech.md` to compute bump type using the same classification matrix as `/creating-prs` Step 2
+- [ ] The deterministic bump reads `VERSION`, issue labels (`gh issue view`), milestone (`gh api`), and `.claude/steering/tech.md` to compute bump type using the same classification matrix as `/open-pr` Step 2
 - [ ] The deterministic bump updates `VERSION`, `CHANGELOG.md` (moves `[Unreleased]` entries to versioned heading), and stack-specific files from `tech.md`
 - [ ] The deterministic bump commits with `chore: bump version to {new_version}` and pushes
 - [ ] Step 7 postcondition gate is added in `runStep()` after the existing Step 6 gate block (follows the pattern of steps 3, 6, 8)
@@ -40,7 +40,7 @@
 - The postcondition gate pattern should match the existing `validateSpecs()`, `validatePush()`, and `validateCI()` patterns
 - The `performDeterministicVersionBump()` function should be robust: guard against missing files, parse errors, and invalid semver
 - For `CHANGELOG.md` updates, find `## [Unreleased]`, insert `## [{new_version}] - {YYYY-MM-DD}` after it, move entries
-- For stack-specific files, parse the `## Versioning` table from `tech.md` (same format as `/creating-prs` Step 3)
+- For stack-specific files, parse the `## Versioning` table from `tech.md` (same format as `/open-pr` Step 3)
 - Use the existing `git()` and `gh()` helper functions for shell commands
 - Commit format: `chore: bump version to {new_version}`
 
@@ -66,7 +66,7 @@
 - [ ] Existing runner tests still pass (`npm test` in `openclaw/scripts/`)
 - [ ] Step numbering is unchanged (STEP_KEYS array, STEPS mapping)
 - [ ] Config schema is unchanged (sdlc-config.example.json)
-- [ ] `/creating-prs` SKILL.md is unmodified (AC4 — manual workflow preserved)
+- [ ] `/open-pr` SKILL.md is unmodified (AC4 — manual workflow preserved)
 - [ ] The postcondition does not double-bump when the LLM correctly performs Steps 2–3
 - [ ] Projects without a `VERSION` file are unaffected (postcondition skipped)
 

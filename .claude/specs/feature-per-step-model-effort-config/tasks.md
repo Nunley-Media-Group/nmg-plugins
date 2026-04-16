@@ -127,17 +127,17 @@
 ### T008: Add `model` frontmatter to all SKILL.md files
 
 **File(s)**:
-- `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
-- `plugins/nmg-sdlc/skills/creating-prs/SKILL.md`
+- `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
+- `plugins/nmg-sdlc/skills/open-pr/SKILL.md`
 - `plugins/nmg-sdlc/skills/generating-openclaw-config/SKILL.md`
-- `plugins/nmg-sdlc/skills/implementing-specs/SKILL.md`
+- `plugins/nmg-sdlc/skills/write-code/SKILL.md`
 - `plugins/nmg-sdlc/skills/installing-openclaw-skill/SKILL.md`
-- `plugins/nmg-sdlc/skills/migrating-projects/SKILL.md`
-- `plugins/nmg-sdlc/skills/running-retrospectives/SKILL.md`
-- `plugins/nmg-sdlc/skills/setting-up-steering/SKILL.md`
-- `plugins/nmg-sdlc/skills/starting-issues/SKILL.md`
-- `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md`
-- `plugins/nmg-sdlc/skills/writing-specs/SKILL.md`
+- `plugins/nmg-sdlc/skills/migrate-project/SKILL.md`
+- `plugins/nmg-sdlc/skills/run-retro/SKILL.md`
+- `plugins/nmg-sdlc/skills/setup-steering/SKILL.md`
+- `plugins/nmg-sdlc/skills/start-issue/SKILL.md`
+- `plugins/nmg-sdlc/skills/verify-code/SKILL.md`
+- `plugins/nmg-sdlc/skills/write-spec/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -158,9 +158,9 @@
 - [x] Agent instructions cover: reading specs and steering docs, executing tasks sequentially from `tasks.md`, following implementation rules, handling bug fix patterns, handling deviations, reporting completion summary
 - [x] Agent instructions are self-contained (no references to SKILL.md steps — the agent must work independently)
 
-### T010: Restructure implementing-specs to delegate code phase to spec-implementer
+### T010: Restructure write-code to delegate code phase to spec-implementer
 
-**File(s)**: `plugins/nmg-sdlc/skills/implementing-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/write-code/SKILL.md`
 **Type**: Modify
 **Depends**: T008, T009
 **Acceptance**:
@@ -209,7 +209,7 @@
 **Depends**: T007, T010, T011
 **Acceptance**:
 - [x] Entries added under `[Unreleased]` section
-- [x] Covers: per-step model/effort in runner, implementing-specs plan/code split, skill frontmatter model, new spec-implementer agent, config template updates
+- [x] Covers: per-step model/effort in runner, write-code plan/code split, skill frontmatter model, new spec-implementer agent, config template updates
 
 ---
 
@@ -274,7 +274,7 @@
 **Type**: Modify
 **Depends**: T017
 **Acceptance**:
-- [ ] `steps.implement` is a flat object: `{ "maxTurns": 100, "timeoutMin": 30, "skill": "implementing-specs", "model": "opus", "effort": "medium" }` — no nested `plan`/`code` sub-objects
+- [ ] `steps.implement` is a flat object: `{ "maxTurns": 100, "timeoutMin": 30, "skill": "write-code", "model": "opus", "effort": "medium" }` — no nested `plan`/`code` sub-objects
 - [ ] `steps.createPR.maxTurns` is increased from 15 to 30
 - [ ] All other step configs are unchanged
 - [ ] JSON is valid and properly formatted (2-space indent)
@@ -301,9 +301,9 @@
 - [ ] `CHANGELOG.md` has entries under `[Unreleased]` for: removal of plan/code split, simplified implement step, createPR maxTurns increase
 - [ ] `README.md` model/effort recommendations table is updated: implement step shows single invocation with `opus`/`medium` (no plan/code split mention)
 
-### T021: Fix writing-specs auto-mode spec discovery
+### T021: Fix write-spec auto-mode spec discovery
 
-**File(s)**: `plugins/nmg-sdlc/skills/writing-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/write-spec/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -329,7 +329,7 @@ T007, T010, T011 ──▶ T013
 Phase 6 (new for #91):
 T016 ──▶ T017 ──▶ T018 ──▶ T020
 T016, T017 ──▶ T019
-T021 (independent — writing-specs fix)
+T021 (independent — write-spec fix)
 ```
 
 ---
@@ -339,7 +339,7 @@ T021 (independent — writing-specs fix)
 | Issue | Date | Summary |
 |-------|------|---------|
 | #77 | 2026-02-22 | Initial feature spec: T001–T015 across 5 phases |
-| #91 | 2026-02-23 | Phase 6 (T016–T021): remove plan/code split, simplify implement step, increase createPR maxTurns, fix writing-specs auto-mode spec discovery |
+| #91 | 2026-02-23 | Phase 6 (T016–T021): remove plan/code split, simplify implement step, increase createPR maxTurns, fix write-spec auto-mode spec discovery |
 
 ---
 

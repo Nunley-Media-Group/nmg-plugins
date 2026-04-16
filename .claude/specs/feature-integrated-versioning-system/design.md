@@ -9,9 +9,9 @@
 
 ## Overview
 
-This feature weaves versioning into three existing skills (`/creating-issues`, `/creating-prs`, `/setting-up-steering`) and one existing skill (`/migrating-projects`), plus adds a new tech.md template section. The design follows the existing pattern: skills are Markdown prompts that instruct Claude to use `gh` CLI, file I/O, and `AskUserQuestion` at decision points.
+This feature weaves versioning into three existing skills (`/draft-issue`, `/open-pr`, `/setup-steering`) and one existing skill (`/migrate-project`), plus adds a new tech.md template section. The design follows the existing pattern: skills are Markdown prompts that instruct Claude to use `gh` CLI, file I/O, and `AskUserQuestion` at decision points.
 
-The core data flow is: a plain-text `VERSION` file is the single source of truth for the current version. `/creating-issues` reads it for milestone defaults. `/creating-prs` reads it, applies the semver classification matrix, writes the new version back, and updates `CHANGELOG.md` and any stack-specific files declared in `tech.md`. `/migrating-projects` bootstraps or reconciles both `VERSION` and `CHANGELOG.md` from git history. The steering doc bridge (`tech.md` Versioning section) maps the universal `VERSION` to project-specific manifests.
+The core data flow is: a plain-text `VERSION` file is the single source of truth for the current version. `/draft-issue` reads it for milestone defaults. `/open-pr` reads it, applies the semver classification matrix, writes the new version back, and updates `CHANGELOG.md` and any stack-specific files declared in `tech.md`. `/migrate-project` bootstraps or reconciles both `VERSION` and `CHANGELOG.md` from git history. The steering doc bridge (`tech.md` Versioning section) maps the universal `VERSION` to project-specific manifests.
 
 No runtime code (JavaScript/scripts) is modified. All changes are to SKILL.md files and one template file — consistent with the prompt-based architecture.
 
@@ -27,7 +27,7 @@ No runtime code (JavaScript/scripts) is modified. All changes are to SKILL.md fi
                     read │    read/write      create/update
                          │         │              │
 ┌────────────────┐  ┌────────────────┐  ┌──────────────────┐
-│ /creating-     │  │ /creating-prs  │  │ /migrating-      │
+│ /creating-     │  │ /open-pr  │  │ /migrating-      │
 │  issues        │  │                │  │  projects         │
 │                │  │  reads labels  │  │                   │
 │ reads VERSION  │  │  reads VERSION │  │ reads git history │
@@ -58,14 +58,14 @@ No runtime code (JavaScript/scripts) is modified. All changes are to SKILL.md fi
 ### Data Flow
 
 ```
-1. /creating-issues reads VERSION → extracts major version → presents as milestone default
-2. /creating-issues creates milestone via gh api if needed → assigns issue
-3. /creating-prs reads issue labels → classifies bump type (bug→patch, enhancement→minor)
-4. /creating-prs reads milestone → checks if this PR closes last open issue → proposes major
-5. /creating-prs reads VERSION → applies bump → writes new VERSION
-6. /creating-prs reads CHANGELOG.md → moves [Unreleased] under new version heading
-7. /creating-prs reads tech.md Versioning section → updates declared stack-specific files
-8. /migrating-projects reads git log + git tags → generates/updates CHANGELOG.md → derives VERSION
+1. /draft-issue reads VERSION → extracts major version → presents as milestone default
+2. /draft-issue creates milestone via gh api if needed → assigns issue
+3. /open-pr reads issue labels → classifies bump type (bug→patch, enhancement→minor, default→minor)
+4. /open-pr presents classification to developer → developer can override to major (manual only)
+5. /open-pr reads VERSION → applies bump → writes new VERSION
+6. /open-pr reads CHANGELOG.md → moves [Unreleased] under new version heading
+7. /open-pr reads tech.md Versioning section → updates declared stack-specific files
+8. /migrate-project reads git log + git tags → generates/updates CHANGELOG.md → derives VERSION
 ```
 
 ---
@@ -182,9 +182,9 @@ FeatureScreen
 
 ## Skill Modifications
 
-### 1. `/creating-issues` — Milestone Assignment
+### 1. `/draft-issue` — Milestone Assignment
 
-**Location**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
+**Location**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 
 **Insertion point**: After **Step 2** (Classify Issue Type), before **Step 3** (Investigate Codebase). New step becomes **Step 2b: Assign Milestone**.
 
@@ -217,9 +217,9 @@ Step 2b: Assign Milestone
 
 **Affected auto-mode section**: Add milestone defaulting (read VERSION → v{major}) to the auto-mode path that currently skips Steps 2-4.
 
-### 2. `/creating-prs` — Version Bumping & Artifact Updates
+### 2. `/open-pr` — Version Bumping & Artifact Updates
 
-**Location**: `plugins/nmg-sdlc/skills/creating-prs/SKILL.md`
+**Location**: `plugins/nmg-sdlc/skills/open-pr/SKILL.md`
 
 **Insertion point**: Between existing **Step 1** (Read Context) and **Step 2** (Generate PR Content). New steps become **Step 1b: Determine Version Bump** and **Step 1c: Update Version Artifacts**.
 
@@ -241,23 +241,16 @@ Step 2b: Assign Milestone
    - If "enhancement" label → MINOR (x.Y.0)
    - If neither → MINOR (default for unlabeled changes)
 
-5. Check for milestone completion (major bump override):
-   If milestone is set:
-     a. Get milestone number: gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title=="vN") | .number'
-     b. Count open issues: gh api repos/{owner}/{repo}/issues?milestone={number}&state=open --jq 'length'
-     c. If open count == 1 (this is the last issue):
-        - Override bump type to MAJOR (X.0.0)
-
-6. Calculate new version:
+5. Calculate new version:
    - PATCH: increment Z (2.3.1 → 2.3.2)
    - MINOR: increment Y, reset Z (2.3.1 → 2.4.0)
    - MAJOR: increment X, reset Y and Z (2.3.1 → 3.0.0)
 
-7. [Manual mode] Present classification to developer via AskUserQuestion:
+6. [Manual mode] Present classification to developer via AskUserQuestion:
    - "Version bump: {current} → {new} ({bump_type}). Override?"
    - Options: "Accept {bump_type}", "Patch", "Minor", "Major"
 
-8. [Auto-mode] Apply classified bump without confirmation
+7. [Auto-mode] Apply classified bump without confirmation (patch or minor only)
 ```
 
 **Step 1c: Update Version Artifacts**
@@ -287,9 +280,9 @@ Step 2b: Assign Milestone
 
 **Integration with existing Step 2 (Generate PR Content)**: The PR body should include a "Version" section noting the bump type and new version.
 
-### 3. `/setting-up-steering` — Tech.md Versioning Section
+### 3. `/setup-steering` — Tech.md Versioning Section
 
-**Location**: `plugins/nmg-sdlc/skills/setting-up-steering/templates/tech.md`
+**Location**: `plugins/nmg-sdlc/skills/setup-steering/templates/tech.md`
 
 **Insertion point**: After the **Technology Stack** section (after External Services table), before **Technical Constraints**.
 
@@ -298,9 +291,9 @@ Step 2b: Assign Milestone
 ```markdown
 ## Versioning
 
-The nmg-sdlc versioning system uses a universal `VERSION` file (plain text semver) as the single source of truth. Stack-specific version files are updated automatically by `/creating-prs` based on the mappings below.
+The nmg-sdlc versioning system uses a universal `VERSION` file (plain text semver) as the single source of truth. Stack-specific version files are updated automatically by `/open-pr` based on the mappings below.
 
-If your project has stack-specific files that contain a version string, declare them here so `/creating-prs` can update them alongside `VERSION`.
+If your project has stack-specific files that contain a version string, declare them here so `/open-pr` can update them alongside `VERSION`.
 
 | File | Path | Notes |
 |------|------|-------|
@@ -317,11 +310,11 @@ If your project has stack-specific files that contain a version string, declare 
 - **Plain text**: Use `line` if the version is the entire file content (like VERSION itself)
 ```
 
-### 4. `/migrating-projects` — CHANGELOG & VERSION Bootstrapping
+### 4. `/migrate-project` — CHANGELOG & VERSION Bootstrapping
 
-**Location**: `plugins/nmg-sdlc/skills/migrating-projects/SKILL.md`
+**Location**: `plugins/nmg-sdlc/skills/migrate-project/SKILL.md`
 
-**Insertion point**: New steps after the existing **Step 6** (Check OpenClaw Skill Version) and before **Step 7** (Present Findings). New steps become **Step 6b: Analyze CHANGELOG.md** and **Step 6c: Analyze VERSION File**.
+**Insertion point**: New steps after existing migration checks and before **Step 7** (Present Findings). New steps become **Step 6b: Analyze CHANGELOG.md** and **Step 6c: Analyze VERSION File**.
 
 **Step 6b: Analyze CHANGELOG.md**
 
@@ -398,12 +391,12 @@ If your project has stack-specific files that contain a version string, declare 
 
 ### Problem
 
-Both `/creating-prs` (SKILL.md Step 2, inline Markdown table) and `sdlc-runner.mjs` (`performDeterministicVersionBump()`, hardcoded if-else at lines 1487-1496) independently implement the same label→bump classification matrix:
+Both `/open-pr` (SKILL.md Step 2, inline Markdown table) and `sdlc-runner.mjs` (`performDeterministicVersionBump()`, hardcoded if-else at lines 1487-1496) independently implement the same label→bump classification matrix:
 
 | Consumer | Format | Location |
 |----------|--------|----------|
-| `/creating-prs` SKILL.md | Markdown table inline in Step 2 | `plugins/nmg-sdlc/skills/creating-prs/SKILL.md:52-58` |
-| `sdlc-runner.mjs` | JavaScript if-else chain | `openclaw/scripts/sdlc-runner.mjs:1487-1496` |
+| `/open-pr` SKILL.md | Markdown table inline in Step 2 | `plugins/nmg-sdlc/skills/open-pr/SKILL.md:52-58` |
+| `sdlc-runner.mjs` | JavaScript if-else chain | `scripts/sdlc-runner.mjs` |
 
 If the matrix changes (e.g., adding a `security` → patch mapping), both locations need independent updates.
 
@@ -420,7 +413,7 @@ Added under `## Versioning` in the tech.md template:
 ```markdown
 ### Version Bump Classification
 
-The `/creating-prs` skill and the `sdlc-runner.mjs` deterministic bump postcondition both read this table to classify version bumps. Modify this table to change the classification rules — no skill or script changes are needed.
+The `/open-pr` skill and the `sdlc-runner.mjs` deterministic bump postcondition both read this table to classify version bumps. Modify this table to change the classification rules — no skill or script changes are needed.
 
 | Label | Bump Type | Description |
 |-------|-----------|-------------|
@@ -429,12 +422,12 @@ The `/creating-prs` skill and the `sdlc-runner.mjs` deterministic bump postcondi
 
 **Default**: If an issue's labels do not match any row, the bump type is **minor**.
 
-**Milestone completion override**: If the issue is the last open issue in its milestone, the bump type is overridden to **major** regardless of labels.
+**Major bumps**: Major version bumps are applied manually by the developer via the override prompt in `/open-pr`. They are not triggered automatically.
 ```
 
 ### Consumer Changes
 
-#### 1. `/creating-prs` SKILL.md — Step 2 Modification
+#### 1. `/open-pr` SKILL.md — Step 2 Modification
 
 **Current**: Step 2 item 3 contains an inline classification matrix table.
 
@@ -446,7 +439,7 @@ The `/creating-prs` skill and the `sdlc-runner.mjs` deterministic bump postcondi
    - Parse the table rows to extract Label → Bump Type mappings
    - Match the issue's labels against the table rows
    - If no label matches a row, default to **minor**
-   - The milestone completion override (step 4) still applies on top of this classification
+   - Major bumps are manual-only — the developer can override via the confirmation prompt
 ```
 
 The rest of Step 2 (milestone completion check, version calculation, user confirmation) is unchanged.
@@ -455,11 +448,10 @@ The rest of Step 2 (milestone completion check, version calculation, user confir
 
 **Current**: Lines 1487-1496 contain a hardcoded if-else chain:
 ```javascript
-if (isLastInMilestone) {
-  newVersion = `${major + 1}.0.0`;
-} else if (labels.includes('bug')) {
+if (labels.includes('bug')) {
   newVersion = `${major}.${minor}.${patch + 1}`;
 } else {
+  // minor (default) or any other non-patch bump type
   newVersion = `${major}.${minor + 1}.0`;
 }
 ```
@@ -468,14 +460,13 @@ if (isLastInMilestone) {
 
 ```
 1. Read .claude/steering/tech.md
-2. Extract the ## Versioning section using the same regex already used at line 1529
+2. Extract the ## Versioning section
 3. Within the Versioning section, find the ### Version Bump Classification subsection
 4. Parse the table rows: extract Label and Bump Type columns
 5. Build a label→bumpType map from the parsed rows
 6. Match the issue's labels against the map
-7. Apply milestone completion override (if isLastInMilestone → major)
-8. If no label match → default to minor
-9. Calculate newVersion from the resolved bump type
+7. If no label match → default to minor
+8. Calculate newVersion from the resolved bump type (patch or minor only)
 ```
 
 The table parsing logic reuses the same row-parsing pattern the runner already uses for stack-specific file mappings (line 1532): `row.split('|').map(c => c.trim()).filter(Boolean)`.
@@ -485,9 +476,9 @@ The table parsing logic reuses the same row-parsing pattern the runner already u
 ```
 tech.md ## Versioning
   ├── Stack-specific file mappings (existing)
-  │     └── read by: /creating-prs Step 3, sdlc-runner.mjs (lines 1524-1578)
+  │     └── read by: /open-pr Step 3, sdlc-runner.mjs (lines 1524-1578)
   └── ### Version Bump Classification (new)
-        ├── read by: /creating-prs Step 2 item 3
+        ├── read by: /open-pr Step 2 item 3
         └── read by: sdlc-runner.mjs performDeterministicVersionBump()
 ```
 
@@ -497,7 +488,7 @@ If the `### Version Bump Classification` subsection is missing from `tech.md` (e
 
 | Consumer | Fallback |
 |----------|----------|
-| `/creating-prs` | Use the default classification: `bug` → patch, everything else → minor (same as today) |
+| `/open-pr` | Use the default classification: `bug` → patch, everything else → minor (same as today) |
 | `sdlc-runner.mjs` | Use the same hardcoded default: `bug` → patch, everything else → minor |
 
 This ensures backwards compatibility for projects that haven't migrated their tech.md.
@@ -509,7 +500,7 @@ This ensures backwards compatibility for projects that haven't migrated their te
 | Option | Description | Pros | Cons | Decision |
 |--------|-------------|------|------|----------|
 | **A: Separate `/bumping-version` skill** | Standalone skill for version management | Clear separation; callable independently | Adds ceremony; user must remember to run it; doesn't integrate into PR flow | Rejected — versioning should be automatic in the PR flow |
-| **B: Integrate into existing skills** | Weave versioning into `/creating-issues`, `/creating-prs`, `/migrating-projects` | Zero new skills; versioning is invisible; happens as part of existing workflow | More complex skill modifications | **Selected** — matches "versioning for free" goal |
+| **B: Integrate into existing skills** | Weave versioning into `/draft-issue`, `/open-pr`, `/migrate-project` | Zero new skills; versioning is invisible; happens as part of existing workflow | More complex skill modifications | **Selected** — matches "versioning for free" goal |
 | **C: VERSION derived from CHANGELOG only** | No separate VERSION file; parse CHANGELOG for current version | One fewer file to manage | Fragile parsing; CHANGELOG could be malformed; harder for build tools to read | Rejected — plain text VERSION is maximally portable |
 | **D: Milestone auto-assigned by label** | Skip milestone interview; assign based on label type | Less interactive | Loses user control; can't plan future milestones | Rejected — milestones are planning decisions |
 | **E: Shared JSON config file for classification** | Separate `.claude/versioning.json` file defining label→bump mappings | Machine-parseable without Markdown table parsing | Adds a new file type; diverges from steering doc pattern; the runner already parses tech.md tables | Rejected — steering doc table is consistent with existing patterns |
@@ -543,7 +534,7 @@ This ensures backwards compatibility for projects that haven't migrated their te
 |-------|------|----------|
 | Skill modifications | BDD (Gherkin) | All 10+1 acceptance criteria become scenarios |
 | Prompt quality | Manual verification | Each modified skill can be followed step-by-step with predictable results |
-| Contract preservation | `/verifying-specs` | Postconditions of modified skills still satisfy downstream consumers |
+| Contract preservation | `/verify-code` | Postconditions of modified skills still satisfy downstream consumers |
 | Cross-platform | Manual | `gh api` and file operations use POSIX-compatible commands |
 
 ---
@@ -552,19 +543,19 @@ This ensures backwards compatibility for projects that haven't migrated their te
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
-| CHANGELOG parsing errors on malformed files | Medium | Medium | `/migrating-projects` preserves existing content; only adds structure, never deletes |
+| CHANGELOG parsing errors on malformed files | Medium | Medium | `/migrate-project` preserves existing content; only adds structure, never deletes |
 | Milestone API changes in `gh` CLI | Low | Medium | Use stable `gh api` REST endpoints, not experimental CLI subcommands |
 | Stack-specific file updates corrupt non-JSON files | Medium | High | Path syntax is well-defined; TOML support uses dot-notation same as JSON; skill reads full file before writing |
-| VERSION file doesn't exist on first `/creating-prs` run | High (expected) | Low | Skill checks for VERSION existence and skips versioning gracefully if absent |
-| Major bump triggers on partial milestone (race condition) | Low | Medium | Count uses `state=open` API filter; only triggers when exactly 1 open issue remains |
+| VERSION file doesn't exist on first `/open-pr` run | High (expected) | Low | Skill checks for VERSION existence and skips versioning gracefully if absent |
+| Developer forgets to manually apply major bump | Low | Medium | Milestone tracking and release notes serve as reminders; auto-mode only applies patch/minor |
 
 ---
 
 ## Open Questions
 
 - [x] Minor bump semantics: Confirmed as standard semver x.Y.0
-- [ ] Should `/creating-prs` warn if `VERSION` doesn't exist? Design says: skip silently. Can revisit.
-- [ ] Milestone completion detection: Current design counts open issues at PR creation time. If two PRs are created simultaneously for the last two issues, both could see "1 open" — acceptable for now since manual confirmation guards against double-major-bump.
+- [ ] Should `/open-pr` warn if `VERSION` doesn't exist? Design says: skip silently. Can revisit.
+- [ ] Major bumps are manual-only — developer must explicitly choose major in the override prompt.
 
 ---
 

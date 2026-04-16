@@ -5,18 +5,18 @@
 
 Feature: Exercise-Based Verification for Plugin Projects
   As a developer working on the nmg-sdlc plugin
-  I want /verifying-specs to exercise changed skills against a test project
+  I want /verify-code to exercise changed skills against a test project
   So that skill changes are verified by actual invocation, not just static analysis
 
   # --- Plugin Change Detection ---
 
   Scenario: Detect plugin changes in diff
-    Given /verifying-specs is running and has loaded the spec and diff
+    Given /verify-code is running and has loaded the spec and diff
     When the changed files include SKILL.md or agent definition .md files
     Then the skill flags the change as a plugin change requiring exercise-based verification
 
   Scenario: Detect plugin changes from SKILL.md files
-    Given the diff includes "plugins/nmg-sdlc/skills/verifying-specs/SKILL.md"
+    Given the diff includes "plugins/nmg-sdlc/skills/verify-code/SKILL.md"
     When Step 5 runs plugin change detection
     Then exercise-based verification is triggered
 

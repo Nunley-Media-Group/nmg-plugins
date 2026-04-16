@@ -10,6 +10,6 @@ Feature: Skills inherit session model to avoid rate limit bucket switches
     And all skills inherit the session model
 
   Scenario: Slash-command-only skills are not auto-triggerable
-    Given the skills "running-sdlc-loop", "installing-openclaw-skill", "generating-openclaw-config", and "running-retrospectives"
+    Given the skills "run-loop", "installing-openclaw-skill", "generating-openclaw-config", and "run-retro"
     When the plugin is loaded
     Then each has "disable-model-invocation: true" in its frontmatter

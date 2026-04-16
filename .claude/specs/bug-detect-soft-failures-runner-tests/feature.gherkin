@@ -51,7 +51,7 @@ Feature: Soft failure detection in SDLC runner
 
   @regression
   Scenario: Starting-issues skill respects auto-mode in headless execution
-    Given the starting-issues SKILL.md is loaded
+    Given the start-issue SKILL.md is loaded
     And the file .claude/auto-mode exists in the project directory
     When Claude reads the skill instructions
     Then the automation directive to skip AskUserQuestion is prominently visible

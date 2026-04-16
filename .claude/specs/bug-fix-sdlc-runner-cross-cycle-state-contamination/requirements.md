@@ -105,7 +105,7 @@ Two issues in `openclaw/scripts/sdlc-runner.mjs` combine to produce this defect:
 ## Out of Scope
 
 - Restructuring the step execution model (e.g., parallelism)
-- Changes to the starting-issues skill itself
+- Changes to the start-issue skill itself
 - Adding integration tests for multi-cycle scenarios (separate issue)
 
 ---

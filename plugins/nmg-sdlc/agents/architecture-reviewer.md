@@ -1,18 +1,18 @@
 ---
 name: architecture-reviewer
-description: "Evaluates architecture quality: SOLID principles, layer separation, security, performance, testability. Auto-invoked by verifying-specs."
+description: "Evaluates architecture quality: SOLID principles, layer separation, security, performance, testability. Auto-invoked by verify-code."
 tools: Read, Glob, Grep
 model: opus
-skills: verifying-specs
+skills: verify-code
 ---
 
 # Architecture Reviewer Agent
 
-Systematically evaluates code architecture quality using the verification checklists from the `verifying-specs` skill.
+Systematically evaluates code architecture quality using the verification checklists from the `verify-code` skill.
 
 ## When Auto-Invoked
 
-This agent is automatically invoked by `/verifying-specs` during Step 4 (Architecture Review). It can also be invoked manually for ad-hoc architecture reviews.
+This agent is automatically invoked by `/verify-code` during Step 4 (Architecture Review). It can also be invoked manually for ad-hoc architecture reviews.
 
 ## Review Process
 

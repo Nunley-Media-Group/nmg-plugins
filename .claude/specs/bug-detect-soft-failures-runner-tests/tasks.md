@@ -14,7 +14,7 @@
 | T001 | Add soft failure detection to the runner | [ ] |
 | T002 | Refactor runner for testability (isMainModule guard + exports) | [ ] |
 | T003 | Create Jest test suite with ESM config | [ ] |
-| T004 | Improve auto-mode instruction prominence in starting-issues | [ ] |
+| T004 | Improve auto-mode instruction prominence in start-issue | [ ] |
 | T005 | Verify no regressions | [ ] |
 
 ---
@@ -84,7 +84,7 @@
 
 ### T004: Improve Auto-Mode Instruction Prominence in Starting-Issues
 
-**File(s)**: `plugins/nmg-sdlc/skills/starting-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/start-issue/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -106,7 +106,7 @@
 - [ ] All Jest tests pass (`npm test` in `openclaw/scripts/`)
 - [ ] Script still runs correctly as CLI (`node sdlc-runner.mjs --help` exits 0)
 - [ ] No side effects in related code paths (per blast radius from design.md)
-- [ ] `starting-issues` SKILL.md manual-mode workflow is unchanged
+- [ ] `start-issue` SKILL.md manual-mode workflow is unchanged
 
 ---
 

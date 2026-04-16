@@ -17,10 +17,10 @@ Feature: Exercise template dry-run prefix prevents skill recognition
 
   @regression
   Scenario: Dry-run skills with disable-model-invocation are recognized
-    Given a skill "creating-prs" with "disable-model-invocation: true" in its frontmatter
+    Given a skill "open-pr" with "disable-model-invocation: true" in its frontmatter
     And the skill is GitHub-integrated requiring dry-run mode
-    When the exercise template generates a dry-run prompt for "creating-prs"
-    Then the prompt starts with "/nmg-sdlc:creating-prs" followed by arguments
+    When the exercise template generates a dry-run prompt for "open-pr"
+    Then the prompt starts with "/nmg-sdlc:open-pr" followed by arguments
     And the dry-run instructions appear after the skill invocation
     And the dry-run instructions are prefixed with "IMPORTANT:"
 
@@ -28,7 +28,7 @@ Feature: Exercise template dry-run prefix prevents skill recognition
 
   @regression
   Scenario: Dry-run instructions are respected after reordering
-    Given an exercise prompt with the skill invocation "/nmg-sdlc:creating-prs #42" at the start
+    Given an exercise prompt with the skill invocation "/nmg-sdlc:open-pr #42" at the start
     And dry-run instructions appended after the skill invocation
     When the nested Claude session processes the prompt
     Then no mutating "gh" commands are executed
@@ -38,8 +38,8 @@ Feature: Exercise template dry-run prefix prevents skill recognition
 
   @regression
   Scenario: Non-disable-model-invocation skills still work with dry-run
-    Given a skill "creating-issues" without "disable-model-invocation: true" in its frontmatter
+    Given a skill "draft-issue" without "disable-model-invocation: true" in its frontmatter
     And the skill is GitHub-integrated requiring dry-run mode
-    When the exercise template generates a dry-run prompt for "creating-issues"
+    When the exercise template generates a dry-run prompt for "draft-issue"
     Then the skill invocation is recognized and the SKILL.md is loaded
     And the dry-run instructions are respected

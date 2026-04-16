@@ -11,15 +11,13 @@
 
 **As a** developer using Claude Code
 **I want** a single skill that orchestrates the full SDLC pipeline across all automatable issues
-**So that** I can drive the same continuous loop that OpenClaw provides, but natively from within a Claude Code session
+**So that** I can drive a continuous SDLC loop natively from within a Claude Code session
 
 ---
 
 ## Background
 
-The nmg-sdlc toolkit provides individual skills for each SDLC phase (`/creating-issues`, `/starting-issues`, `/writing-specs`, `/implementing-specs`, `/verifying-specs`, `/creating-prs`). Today, chaining these into a continuous loop requires either running each skill manually in sequence or setting up OpenClaw, which orchestrates the loop externally via `sdlc-runner.mjs` and `claude -p` subprocesses.
-
-Neither option is accessible from within an active Claude Code session. This skill fills that gap by orchestrating the full pipeline natively — picking automatable issues, running each phase in sequence via the `Skill` tool, and looping until the milestone is clear. It is a parallel capability to the OpenClaw runner, not a replacement.
+The nmg-sdlc toolkit provides individual skills for each SDLC phase (`/draft-issue`, `/start-issue`, `/write-spec`, `/write-code`, `/verify-code`, `/open-pr`). Today, chaining these into a continuous loop requires running each skill manually in sequence. This skill fills that gap by orchestrating the full pipeline natively — invoking `sdlc-runner.mjs` which picks automatable issues, runs each phase in sequence via `claude -p` subprocesses, and loops until the milestone is clear.
 
 ---
 
@@ -29,51 +27,51 @@ Neither option is accessible from within an active Claude Code session. This ski
 
 ### AC1: Loop Mode — Processes All Automatable Issues Sequentially
 
-**Given** I invoke `/nmg-sdlc:running-sdlc-loop` with no arguments and there are open issues labelled `automatable` in the current milestone
+**Given** I invoke `/nmg-sdlc:run-loop` with no arguments and there are open issues labelled `automatable` in the current milestone
 **When** the skill executes
 **Then** it selects the oldest automatable issue, runs it through the full pipeline (start-issue -> write-specs -> implement-specs -> verify-specs -> create-pr), then loops to the next issue until none remain
 **And** upon completing all issues, it outputs a summary listing each issue processed and its final status
 
 **Example**:
 - Given: Milestone `v3` has issues #107 (automatable), #108 (automatable), #109 (not automatable)
-- When: `/nmg-sdlc:running-sdlc-loop` is invoked
+- When: `/nmg-sdlc:run-loop` is invoked
 - Then: Issues #107 and #108 are processed in order; #109 is skipped; summary shows both completed
 
 ### AC2: Single-Issue Mode — Runs Pipeline for a Specific Issue
 
-**Given** I invoke `/nmg-sdlc:running-sdlc-loop #107`
+**Given** I invoke `/nmg-sdlc:run-loop #107`
 **When** the skill executes
 **Then** it runs only issue #107 through the full pipeline (start-issue -> write-specs -> implement-specs -> verify-specs -> create-pr)
 **And** it exits when the PR is created, outputting the PR URL and issue number
 
 **Example**:
 - Given: Issue #107 exists and is open
-- When: `/nmg-sdlc:running-sdlc-loop #107`
+- When: `/nmg-sdlc:run-loop #107`
 - Then: Pipeline runs for #107 only, outputs "PR created for #107: <url>"
 
 ### AC3: No Automatable Issues — Diagnostic Exit
 
-**Given** I invoke `/nmg-sdlc:running-sdlc-loop` with no arguments and no issues are labelled `automatable` in the open milestone
+**Given** I invoke `/nmg-sdlc:run-loop` with no arguments and no issues are labelled `automatable` in the open milestone
 **When** the skill executes
 **Then** it outputs a clear diagnostic message ("No automatable issues found in milestone vN") including the milestone name and the count of total open issues (without the `automatable` label) for context
 **And** it exits cleanly without error
 
 **Example**:
 - Given: Milestone `v3` has 5 open issues, none with `automatable` label
-- When: `/nmg-sdlc:running-sdlc-loop`
+- When: `/nmg-sdlc:run-loop`
 - Then: Output says "No automatable issues found in milestone v3 (5 open issues exist without the automatable label)"
 
 ### AC4: Pipeline Failure — Halts and Reports
 
-**Given** a phase skill (e.g., `/verifying-specs`) reports a failure or exits unexpectedly for the current issue
+**Given** a phase skill (e.g., `/verify-code`) reports a failure or exits unexpectedly for the current issue
 **When** the failure is detected
 **Then** the skill halts the loop, reports the failure with the issue number and failed phase name
 **And** it does not proceed to the next issue or the next phase
 
 **Example**:
-- Given: Issue #107 is being processed, `/implementing-specs` fails
+- Given: Issue #107 is being processed, `/write-code` fails
 - When: Failure is detected
-- Then: Output says "Pipeline halted: #107 failed at implementing-specs. <error details>"
+- Then: Output says "Pipeline halted: #107 failed at write-code. <error details>"
 
 ### AC5: SKILL.md Validated with /doing-skills-right
 
@@ -125,19 +123,19 @@ Feature: Running SDLC Loop
 
   Scenario: Loop mode processes all automatable issues
     Given open issues labelled "automatable" exist in the current milestone
-    When I invoke "/nmg-sdlc:running-sdlc-loop" with no arguments
+    When I invoke "/nmg-sdlc:run-loop" with no arguments
     Then it processes each automatable issue through the full pipeline sequentially
     And outputs a summary of all processed issues
 
   Scenario: Single-issue mode runs pipeline for a specific issue
     Given issue #107 exists and is open
-    When I invoke "/nmg-sdlc:running-sdlc-loop #107"
+    When I invoke "/nmg-sdlc:run-loop #107"
     Then it runs only issue #107 through the full pipeline
     And exits when the PR is created
 
   Scenario: No automatable issues produces diagnostic exit
     Given no issues are labelled "automatable" in the current milestone
-    When I invoke "/nmg-sdlc:running-sdlc-loop"
+    When I invoke "/nmg-sdlc:run-loop"
     Then it outputs "No automatable issues found in milestone vN"
     And exits cleanly
 
@@ -178,8 +176,8 @@ Feature: Running SDLC Loop
 |----|-------------|----------|-------|
 | FR1 | Skill accepts optional issue number argument; when omitted, runner loops all automatable issues | Must | Argument via `$ARGUMENTS`; maps to `--issue N` runner flag |
 | FR2 | Runner creates `.claude/auto-mode` on startup and removes it on exit; phase skills detect it independently | Must | Runner already does this; no skill-level auto-mode management needed |
-| FR3 | Runner selects issues via `gh issue list` (sorted oldest first) in `claude -p` subprocesses | Must | Existing runner behavior; `/starting-issues` auto-mode pattern |
-| FR4 | Skill invokes `sdlc-runner.mjs` — the same script OpenClaw uses — with `CLAUDECODE=""` to enable subprocess spawning | Must | Phase sequence handled by runner: startCycle -> startIssue -> writeSpecs -> implement -> verify -> commitPush -> createPR -> monitorCI -> merge |
+| FR3 | Runner selects issues via `gh issue list` (sorted oldest first) in `claude -p` subprocesses | Must | Existing runner behavior; `/start-issue` auto-mode pattern |
+| FR4 | Skill invokes `sdlc-runner.mjs` with `CLAUDECODE=""` to enable subprocess spawning | Must | Phase sequence handled by runner: startCycle -> startIssue -> writeSpecs -> implement -> verify -> commitPush -> createPR -> monitorCI -> merge |
 | FR5 | Runner manages state via `sdlc-state.json` with per-step tracking, retry counts, and cycle detection | Must | Existing runner behavior; no duplicate state management in skill |
 | FR6 | On pipeline failure, runner escalates with issue number, failed step, and retry history; in single-issue mode (`--issue`), exits with code 1 | Must | Existing escalation for loop mode; new exit behavior for `--issue` mode |
 | FR7 | SKILL.md frontmatter declares all required tools (`allowed-tools`) | Must | Must include Read, Glob, Grep, Bash(node:*), Bash(test:*), Bash(cat:*), Skill |
@@ -188,7 +186,7 @@ Feature: Running SDLC Loop
 | FR10 | Runner resets cycle state after step 9 and re-selects issues fresh each cycle (state isolation) | Must | Existing runner behavior via `extractStateFromStep` step 9 reset |
 | FR11 | Runner validates preconditions before each step (postconditions of previous step) | Must | Existing runner behavior via `validatePreconditions()` |
 | FR12 | Runner `--issue N` flag restricts processing to a single issue and exits after one cycle | Must | New runner enhancement |
-| FR13 | Skill locates or generates `sdlc-config.json` before invoking the runner | Must | Invokes `/generating-openclaw-config` if config is missing |
+| FR13 | Skill locates or generates `sdlc-config.json` before invoking the runner | Must | Invokes `/init-config` if config is missing |
 
 ---
 
@@ -206,11 +204,11 @@ Feature: Running SDLC Loop
 ## Dependencies
 
 ### Internal Dependencies
-- [x] `/starting-issues` skill — invoked to create branch and set issue status
-- [x] `/writing-specs` skill — invoked to generate spec documents
-- [x] `/implementing-specs` skill — invoked to execute implementation
-- [x] `/verifying-specs` skill — invoked to verify implementation
-- [x] `/creating-prs` skill — invoked to create pull request
+- [x] `/start-issue` skill — invoked to create branch and set issue status
+- [x] `/write-spec` skill — invoked to generate spec documents
+- [x] `/write-code` skill — invoked to execute implementation
+- [x] `/verify-code` skill — invoked to verify implementation
+- [x] `/open-pr` skill — invoked to create pull request
 - [x] `/doing-skills-right` skill — used to validate SKILL.md during implementation
 
 ### External Dependencies
@@ -224,12 +222,10 @@ Feature: Running SDLC Loop
 
 ## Out of Scope
 
-- Discord status notifications (remains OpenClaw's responsibility)
-- CI monitoring and auto-merge (handled by OpenClaw)
-- Replacing the OpenClaw runner (`sdlc-runner.mjs`) — this is a parallel capability for in-session use
-- Creating new issues or assigning milestones (handled by `/creating-issues`)
+- Discord status notifications (not part of the SDLC runner)
+- Creating new issues or assigning milestones (handled by `/draft-issue`)
 - Retry logic for failed phases — the skill halts on failure rather than retrying
-- Configurable timeouts per phase (the OpenClaw runner handles this; in-session execution has no hard time limits)
+- Configurable timeouts per phase (the runner handles this internally)
 
 ---
 

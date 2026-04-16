@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-04-16
+
+### Changed (BREAKING)
+
+- **All 11 gerund-form skills renamed to imperative verb-object form** — the new names are shorter, more ergonomic at the command line, and better match how users describe their intent. Existing slash-command muscle memory and any automation that invokes these skills by name must be updated:
+
+  | Old | New |
+  |-----|-----|
+  | `/creating-issues` | `/draft-issue` |
+  | `/starting-issues` | `/start-issue` |
+  | `/writing-specs` | `/write-spec` |
+  | `/implementing-specs` | `/write-code` |
+  | `/verifying-specs` | `/verify-code` |
+  | `/creating-prs` | `/open-pr` |
+  | `/running-sdlc-loop` | `/run-loop` |
+  | `/running-retrospectives` | `/run-retro` |
+  | `/setting-up-steering` | `/setup-steering` |
+  | `/migrating-projects` | `/migrate-project` |
+  | `/generating-sdlc-config` | `/init-config` |
+
+- **Skill descriptions enhanced with question-form triggers** — each skill's `description` frontmatter now includes natural question phrasings (e.g., "how do I start an issue", "how do I create a PR") so users asking Claude questions reliably land on the right skill. The description is the primary mechanism Claude uses to decide when to invoke a skill
+- **Every skill now explicitly describes the next step** — each SKILL.md ends with a clear "Next step" pointer to the next skill in the SDLC pipeline, making the workflow self-documenting and introspectable ("how do I start an issue?" → triggers `/start-issue`, which describes what comes after)
+- **Spec directories renamed** — 22 directories in `.claude/specs/` that referenced old skill names were renamed (e.g., `feature-creating-issues-skill/` → `feature-draft-issue-skill/`); git history preserves the original names
+
+### Migration Notes
+
+- Run `/migrate-project` after upgrading to pick up any template changes
+- If you previously ran `/creating-issues`, now run `/draft-issue` — same behavior, new name
+- Automation scripts that invoke these skills by slash-command name must be updated to the new names
+
 ## [4.3.2] - 2026-04-16
 
 ### Fixed
@@ -27,14 +57,14 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **All SDLC skills** — Every step now outputs the next slash command to guide users through the workflow; `/creating-issues` was incorrectly pointing to `/writing-specs` instead of `/starting-issues`, and `/starting-issues` had no next-step guidance at all
-- **All SDLC skills** — "Integration with SDLC Workflow" diagrams updated to include `/starting-issues` in the chain (was omitted from 6 of 9 skills)
+- **All SDLC skills** — Every step now outputs the next slash command to guide users through the workflow; `/draft-issue` was incorrectly pointing to `/write-spec` instead of `/start-issue`, and `/start-issue` had no next-step guidance at all
+- **All SDLC skills** — "Integration with SDLC Workflow" diagrams updated to include `/start-issue` in the chain (was omitted from 6 of 9 skills)
 
 ## [4.2.0] - 2026-04-15
 
 ### Improved
 
-- **`/writing-specs` review gates** — All three phase gates (Requirements, Design, Tasks) now present structured inline summaries with full spec detail so users can evaluate proposals without opening the markdown files; replaced open-ended questions with a numbered `[1] Approve / [2] Revise` menu
+- **`/write-spec` review gates** — All three phase gates (Requirements, Design, Tasks) now present structured inline summaries with full spec detail so users can evaluate proposals without opening the markdown files; replaced open-ended questions with a numbered `[1] Approve / [2] Revise` menu
 
 ## [4.1.0] - 2026-04-15
 
@@ -46,9 +76,9 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **`sdlc-runner.mjs`** — Moved from `openclaw/scripts/` to `scripts/` at the repo root; `postDiscord()` replaced with a log-only implementation
-- **`/generating-openclaw-config`** — Renamed to `/generating-sdlc-config`; updated template path from `openclaw/scripts/` to `scripts/`
-- **`/running-sdlc-loop`** — Updated runner path from `openclaw/scripts/` to `scripts/`; removed OpenClaw references
-- **`/migrating-projects`** — Removed Step 6 (OpenClaw Skill Version check); renumbered Steps 7–10 to 6–9; renamed "OpenClaw Config" references to "Runner Config"
+- **`/generating-openclaw-config`** — Renamed to `/init-config`; updated template path from `openclaw/scripts/` to `scripts/`
+- **`/run-loop`** — Updated runner path from `openclaw/scripts/` to `scripts/`; removed OpenClaw references
+- **`/migrate-project`** — Removed Step 6 (OpenClaw Skill Version check); renumbered Steps 7–10 to 6–9; renamed "OpenClaw Config" references to "Runner Config"
 - **`/installing-locally`** — Removed OpenClaw skill sync (Step 5) and gateway restart (Step 6)
 - **README.md** — Rewrote Automation Mode section; removed OpenClaw setup steps, skills table, and references
 
@@ -56,7 +86,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **`/running-sdlc-loop`** — Trimmed dead auto-trigger phrases from skill description (skill uses `disable-model-invocation: true`); added `Bash(CLAUDECODE:*)` to `allowed-tools` to cover the `CLAUDECODE="" node ...` command pattern that was blocked by the previous `Bash(node:*)` pattern; replaced `cat` instruction with Read tool
+- **`/run-loop`** — Trimmed dead auto-trigger phrases from skill description (skill uses `disable-model-invocation: true`); added `Bash(CLAUDECODE:*)` to `allowed-tools` to cover the `CLAUDECODE="" node ...` command pattern that was blocked by the previous `Bash(node:*)` pattern; replaced `cat` instruction with Read tool
 - **`sdlc-runner.mjs`** — Extracted shared helpers to eliminate duplication: `findFeatureDir()` replaces 4 inline feature-directory lookups, `checkRequiredSpecFiles()` replaces 3 inline spec-file checks, `parseMaxBounceRetries()` replaces 2 identical IIFEs, `classifyBumpType()` extracts 40-line nested classification from `performDeterministicVersionBump()` into flat early-return style, `runValidationGate()` consolidates identical retry-or-escalate boilerplate from post-step gates (steps 3, 6, 8); merged duplicate `isMainModule` blocks to eliminate redundant config re-read from disk
 
 ## [4.0.2] - 2026-03-15
@@ -64,7 +94,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - **Skills** — Removed `model:` frontmatter field from all 12 skills to prevent model-switch rate limit errors when invoking skills via `/`; skills now inherit the session model instead of overriding it (issue #111)
-- **Skills** — Added `disable-model-invocation: true` to 4 slash-command-only skills (`running-sdlc-loop`, `installing-openclaw-skill`, `generating-openclaw-config`, `running-retrospectives`) to reduce always-in-context token overhead (issue #111)
+- **Skills** — Added `disable-model-invocation: true` to 4 slash-command-only skills (`run-loop`, `installing-openclaw-skill`, `generating-openclaw-config`, `run-retro`) to reduce always-in-context token overhead (issue #111)
 
 ## [4.0.1] - 2026-03-15
 
@@ -76,9 +106,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **`/verifying-specs`** — Steering doc verification gates: projects can declare mandatory verification constraints in a structured `## Verification Gates` section in `tech.md`; the skill extracts gates at Step 1, executes them as hard sub-steps in Step 5f, and aggregates results into a Pass/Partial/Incomplete status — a "Pass" verdict requires all applicable gates to pass (issue #109)
-- **`/verifying-specs`** report template — New "Steering Doc Verification Gates" section with per-gate status (Pass/Fail/Incomplete) and evidence/blocker reason
-- **`/setting-up-steering`** tech.md template — `## Verification Gates` section scaffolded for new projects, with condition/action/pass-criteria table and usage guidance
+- **`/verify-code`** — Steering doc verification gates: projects can declare mandatory verification constraints in a structured `## Verification Gates` section in `tech.md`; the skill extracts gates at Step 1, executes them as hard sub-steps in Step 5f, and aggregates results into a Pass/Partial/Incomplete status — a "Pass" verdict requires all applicable gates to pass (issue #109)
+- **`/verify-code`** report template — New "Steering Doc Verification Gates" section with per-gate status (Pass/Fail/Incomplete) and evidence/blocker reason
+- **`/setup-steering`** tech.md template — `## Verification Gates` section scaffolded for new projects, with condition/action/pass-criteria table and usage guidance
 - **README.md** — Verification Gates convention documented with example table and status semantics
 
 ## [3.1.1] - 2026-02-26
@@ -86,13 +116,13 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - **`sdlc-runner.mjs`** — Runner now self-heals projects where `.claude/sdlc-state.json` was committed before the gitignore fix (#57): `untrackRunnerArtifactsIfTracked()` runs `git rm --cached` on already-tracked runner artifacts at startup, making `.gitignore` effective
-- **`/starting-issues`** — Step 4 working-tree check now filters known SDLC runner artifacts (`.claude/sdlc-state.json`, `.claude/auto-mode`) from `git status --porcelain` output before evaluating dirtiness, preventing false "Working tree is not clean" aborts when only runner state files are modified
+- **`/start-issue`** — Step 4 working-tree check now filters known SDLC runner artifacts (`.claude/sdlc-state.json`, `.claude/auto-mode`) from `git status --porcelain` output before evaluating dirtiness, preventing false "Working tree is not clean" aborts when only runner state files are modified
 
 ## [3.1.0] - 2026-02-26
 
 ### Added
 
-- **`/running-sdlc-loop`** — New skill that runs the full SDLC pipeline from within an active Claude Code session; supports single-issue mode (`/running-sdlc-loop #42`) and continuous loop mode (`/running-sdlc-loop`); invokes `sdlc-runner.mjs` as a subprocess with `CLAUDECODE=""` to enable nested `claude -p` sessions (issue #107)
+- **`/run-loop`** — New skill that runs the full SDLC pipeline from within an active Claude Code session; supports single-issue mode (`/run-loop #42`) and continuous loop mode (`/run-loop`); invokes `sdlc-runner.mjs` as a subprocess with `CLAUDECODE=""` to enable nested `claude -p` sessions (issue #107)
 - **`sdlc-runner.mjs`** — `--issue <N>` CLI flag for single-issue mode: targets a specific issue instead of selecting the next open one, runs a single SDLC cycle, and exits on completion or escalation
 
 ### Fixed
@@ -103,7 +133,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **`/migrating-projects`** — Step 5 now detects config value drift: scalar values present in both `sdlc-config.json` and the template that differ are surfaced in a new "Config Value Drift" summary section; in interactive mode, users select per-value via `AskUserQuestion multiSelect` which drifted values to update to the template default; in auto-mode, drift is reported only (no automatic updates, as drifted values may represent intentional customizations) (issue #95)
+- **`/migrate-project`** — Step 5 now detects config value drift: scalar values present in both `sdlc-config.json` and the template that differ are surfaced in a new "Config Value Drift" summary section; in interactive mode, users select per-value via `AskUserQuestion multiSelect` which drifted values to update to the template default; in auto-mode, drift is reported only (no automatic updates, as drifted values may represent intentional customizations) (issue #95)
 
 ## [2.22.0] - 2026-02-25
 
@@ -115,7 +145,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **`/starting-issues`** — Diagnostic output when zero automatable issues are found in auto-mode: runs a scoped `gh issue list` without the label filter and reports the total open issue count; if open issues exist without the label, suggests adding the `automatable` label; if no open issues exist, reports "0 open issues in scope" without a misleading label suggestion (issue #89)
+- **`/start-issue`** — Diagnostic output when zero automatable issues are found in auto-mode: runs a scoped `gh issue list` without the label filter and reports the total open issue count; if open issues exist without the label, suggests adding the `automatable` label; if no open issues exist, reports "0 open issues in scope" without a misleading label suggestion (issue #89)
 
 ## [2.20.0] - 2026-02-25
 
@@ -127,11 +157,11 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **`/setting-up-steering` template** — `tech.md` now includes a `### Version Bump Classification` subsection under `## Versioning`, pre-populated with default `bug → patch` and `enhancement → minor` rows; both `/creating-prs` and `sdlc-runner.mjs` read this table as the single source of truth for version bump classification
+- **`/setup-steering` template** — `tech.md` now includes a `### Version Bump Classification` subsection under `## Versioning`, pre-populated with default `bug → patch` and `enhancement → minor` rows; both `/open-pr` and `sdlc-runner.mjs` read this table as the single source of truth for version bump classification
 
 ### Changed
 
-- **`/creating-prs`** — Step 2 now reads the version bump classification matrix from `.claude/steering/tech.md` (`### Version Bump Classification` table) instead of using an inline hardcoded matrix; adding a new label→bump mapping to `tech.md` requires no skill changes
+- **`/open-pr`** — Step 2 now reads the version bump classification matrix from `.claude/steering/tech.md` (`### Version Bump Classification` table) instead of using an inline hardcoded matrix; adding a new label→bump mapping to `tech.md` requires no skill changes
 - **`sdlc-runner.mjs`** — `performDeterministicVersionBump()` now reads classification from the `tech.md` Version Bump Classification table instead of hardcoded if-else logic; falls back to `bug → patch / else → minor` if the subsection is absent
 - **`sdlc-runner.mjs`** — `MAX_BOUNCE_RETRIES` is now configurable independently from `maxRetriesPerStep` via the `maxBounceRetries` config key; precondition failure log messages now include a `failedCheck` label and step key for clearer debugging visibility
 
@@ -145,37 +175,37 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **`/verifying-specs`** — Exercise script now resolves the Agent SDK from non-standard locations (e.g., npx cache) using dynamic `import()` with `pathToFileURL`, replacing the bare ESM specifier that failed when the SDK was outside the `node_modules` hierarchy; availability check updated to use the same path-resolving mechanism, eliminating false positives
+- **`/verify-code`** — Exercise script now resolves the Agent SDK from non-standard locations (e.g., npx cache) using dynamic `import()` with `pathToFileURL`, replacing the bare ESM specifier that failed when the SDK was outside the `node_modules` hierarchy; availability check updated to use the same path-resolving mechanism, eliminating false positives
 
 ## [2.17.4] - 2026-02-25
 
 ### Fixed
 
-- **`/verifying-specs`** — Exercise prompt structure now places the skill invocation at the start of the prompt with dry-run instructions appended after (prefixed with "IMPORTANT:"), fixing skill recognition failure for skills with `disable-model-invocation: true`
+- **`/verify-code`** — Exercise prompt structure now places the skill invocation at the start of the prompt with dry-run instructions appended after (prefixed with "IMPORTANT:"), fixing skill recognition failure for skills with `disable-model-invocation: true`
 
 ## [2.17.3] - 2026-02-24
 
 ### Fixed
 
-- **`/implementing-specs`** — Missing specs error path now checks for `.claude/auto-mode`; in auto-mode, outputs an escalation message ending with "Done. Awaiting orchestrator." instead of calling `AskUserQuestion`, preventing headless sessions from hanging
+- **`/write-code`** — Missing specs error path now checks for `.claude/auto-mode`; in auto-mode, outputs an escalation message ending with "Done. Awaiting orchestrator." instead of calling `AskUserQuestion`, preventing headless sessions from hanging
 
 ## [2.17.2] - 2026-02-24
 
 ### Fixed
 
-- **`/starting-issues`** — Skill now runs `git status --porcelain` as a precondition before `gh issue develop`; aborts with a diagnostic error listing dirty files in interactive mode; in auto-mode, reports as an escalation reason for the runner
+- **`/start-issue`** — Skill now runs `git status --porcelain` as a precondition before `gh issue develop`; aborts with a diagnostic error listing dirty files in interactive mode; in auto-mode, reports as an escalation reason for the runner
 
 ## [2.17.1] - 2026-02-24
 
 ### Fixed
 
-- **`/migrating-projects`** — Skill now detects legacy `{issue#}-{slug}/` spec directories and proposes renaming them to `feature-{slug}/` or `bug-{slug}` using `git mv`; auto-mode applies solo renames as non-destructive operations; cross-reference updates use `Grep`/`Edit` with chain resolution
+- **`/migrate-project`** — Skill now detects legacy `{issue#}-{slug}/` spec directories and proposes renaming them to `feature-{slug}/` or `bug-{slug}` using `git mv`; auto-mode applies solo renames as non-destructive operations; cross-reference updates use `Grep`/`Edit` with chain resolution
 
 ## [2.17.0] - 2026-02-23
 
 ### Changed
 
-- **SDLC runner** — Implement step (Step 4) now uses a single `runClaude()` invocation instead of separate plan + code phases; `implementing-specs` handles planning internally via auto-mode
+- **SDLC runner** — Implement step (Step 4) now uses a single `runClaude()` invocation instead of separate plan + code phases; `write-code` handles planning internally via auto-mode
 - **SDLC runner** — Removed `resolveImplementPhaseConfig()` and `runImplementStep()` (legacy plan/code split); plan/code sub-objects in config are silently ignored
 - **SDLC runner** — Increased `createPR` default `maxTurns` from 15 to 30 in example config
 
@@ -183,35 +213,35 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **`/creating-prs`** — Skill no longer fails when spec files are missing; falls back to extracting acceptance criteria from the GitHub issue body, omits the "Specs" section, and includes a warning in the PR body
+- **`/open-pr`** — Skill no longer fails when spec files are missing; falls back to extracting acceptance criteria from the GitHub issue body, omits the "Specs" section, and includes a warning in the PR body
 
 ## [2.16.1] - 2026-02-23
 
 ### Fixed
 
-- **`/migrating-projects` auto-mode support** — Skill now applies non-destructive changes automatically and skips destructive operations (consolidation, renames, deletes) with a machine-readable summary when `.claude/auto-mode` is present, instead of hanging on `AskUserQuestion` in headless sessions
+- **`/migrate-project` auto-mode support** — Skill now applies non-destructive changes automatically and skips destructive operations (consolidation, renames, deletes) with a machine-readable summary when `.claude/auto-mode` is present, instead of hanging on `AskUserQuestion` in headless sessions
 
 ## [2.16.0] - 2026-02-23
 
 ### Added
 
-- **Automatable label gate** — `/creating-issues` now asks (Step 5b) whether the issue is suitable for hands-off automation; if "Yes", an `automatable` label is created (if needed) and applied; auto-mode applies the label automatically
-- **Automation-eligible issue filtering** — `/starting-issues` in auto-mode now filters `gh issue list` with `--label automatable`; if no automatable issues are found, it exits cleanly instead of picking a non-automatable issue
+- **Automatable label gate** — `/draft-issue` now asks (Step 5b) whether the issue is suitable for hands-off automation; if "Yes", an `automatable` label is created (if needed) and applied; auto-mode applies the label automatically
+- **Automation-eligible issue filtering** — `/start-issue` in auto-mode now filters `gh issue list` with `--label automatable`; if no automatable issues are found, it exits cleanly instead of picking a non-automatable issue
 - **Spec directory cleanup** — Remaining numbered spec directories (`{issue#}-{slug}/`) renamed to feature-centric format (`feature-{slug}/`, `bug-{slug}/`) and retrospective path references updated accordingly
 
 ## [2.15.0] - 2026-02-22
 
 ### Added
 
-- **Feature-centric spec management** — `/writing-specs` now searches existing `feature-`-prefixed spec directories for related features before creating a new spec; when a match is found, the user is asked to confirm amendment vs. new spec creation (auto-mode auto-approves the amendment)
+- **Feature-centric spec management** — `/write-spec` now searches existing `feature-`-prefixed spec directories for related features before creating a new spec; when a match is found, the user is asked to confirm amendment vs. new spec creation (auto-mode auto-approves the amendment)
 - **Spec directory naming convention** — New specs are created as `feature-{slug}/` (enhancements) or `bug-{slug}/` (bugs) instead of `{issue#}-{slug}/`; issue numbers are tracked in spec frontmatter only
 - **Multi-issue frontmatter** — Spec templates use `**Issues**: #N` (plural) with a `## Change History` table; amended specs accumulate all contributing issue numbers and change summaries
 - **Spec discovery pipeline** — Keyword extraction from issue title (stop-word filtered) → Glob `feature-*/requirements.md` → Grep scoring → ranked candidate presentation
 - **Amendment content preservation** — New ACs, FRs, design sections, tasks, and Gherkin scenarios are appended to existing spec content; nothing is removed or replaced
-- **`/migrating-projects` consolidation** — Detects legacy `{issue#}-{slug}` spec directories, clusters related specs by keyword overlap, presents consolidation candidates per group for explicit user confirmation, merges into `feature-`-prefixed directories with combined frontmatter and Change History
+- **`/migrate-project` consolidation** — Detects legacy `{issue#}-{slug}` spec directories, clusters related specs by keyword overlap, presents consolidation candidates per group for explicit user confirmation, merges into `feature-`-prefixed directories with combined frontmatter and Change History
 - **Defect cross-reference resolution** — During consolidation, all defect spec `**Related Spec**` fields pointing to legacy directories are updated to new `feature-`-prefixed paths; chain resolution with cycle detection handles multi-hop references
-- **Legacy frontmatter migration** — `/migrating-projects` detects feature specs with singular `**Issue**` frontmatter and proposes updating to plural `**Issues**` with a `## Change History` section
-- **Downstream compatibility** — `/implementing-specs` and `/verifying-specs` spec resolution searches both new `feature-`/`bug-` naming and legacy `{issue#}-{slug}` patterns; multi-issue frontmatter (`**Issues**`) searched first with fallback to singular `**Issue**`
+- **Legacy frontmatter migration** — `/migrate-project` detects feature specs with singular `**Issue**` frontmatter and proposes updating to plural `**Issues**` with a `## Change History` section
+- **Downstream compatibility** — `/write-code` and `/verify-code` spec resolution searches both new `feature-`/`bug-` naming and legacy `{issue#}-{slug}` patterns; multi-issue frontmatter (`**Issues**`) searched first with fallback to singular `**Issue**`
 
 ## [2.14.0] - 2026-02-22
 
@@ -222,8 +252,8 @@ All notable changes to this project will be documented in this file.
 - **`resolveStepConfig(step, config)`** — Resolution helper implementing the model/effort fallback chain for generic steps
 - **`resolveImplementPhaseConfig(step, config, phase)`** — Resolution helper for the implement step's plan/code phases, including maxTurns and timeout fallback
 - **`runImplementStep(step, state)`** — Two-phase implement execution: plan phase (read specs, design approach) followed by code phase (execute tasks), with separate logging (`implement-plan`, `implement-code`), soft failure detection, and Discord status for each phase
-- **`spec-implementer` agent** — New agent (`plugins/nmg-sdlc/agents/spec-implementer.md`) for executing implementation tasks from specs; runs on Sonnet, auto-invoked by `/implementing-specs` during Step 5
-- **Skill `model` frontmatter** — All 11 SKILL.md files now declare a recommended `model` field: `opus` for writing-specs, implementing-specs, migrating-projects, running-retrospectives, setting-up-steering; `sonnet` for creating-issues, creating-prs, generating-openclaw-config, installing-openclaw-skill, starting-issues, verifying-specs
+- **`spec-implementer` agent** — New agent (`plugins/nmg-sdlc/agents/spec-implementer.md`) for executing implementation tasks from specs; runs on Sonnet, auto-invoked by `/write-code` during Step 5
+- **Skill `model` frontmatter** — All 11 SKILL.md files now declare a recommended `model` field: `opus` for write-spec, write-code, migrate-project, run-retro, setup-steering; `sonnet` for draft-issue, open-pr, generating-openclaw-config, installing-openclaw-skill, start-issue, verify-code
 - **`CLAUDE_CODE_EFFORT_LEVEL` env var** — `runClaude()` sets this in the subprocess environment when effort is configured, enabling per-step effort control
 
 ### Changed
@@ -232,28 +262,28 @@ All notable changes to this project will be documented in this file.
 - **`runClaude()`** — Now accepts an `overrides` object for model, effort, and prompt; resolves config via `resolveStepConfig()` with fallback to globals
 - **`runStep()`** — Step 4 (implement) now delegates to `runImplementStep()` for two-phase execution instead of a single `runClaude()` call
 - **`sdlc-config.example.json`** — Added global `effort`, per-step `model`/`effort`, and `plan`/`code` sub-objects for the implement step
-- **`/implementing-specs`** — Step 5 now delegates to `spec-implementer` agent via Task tool in interactive mode; auto-mode continues to work inline
+- **`/write-code`** — Step 5 now delegates to `spec-implementer` agent via Task tool in interactive mode; auto-mode continues to work inline
 - **README.md** — Added "Model & Effort Configuration" section with recommendations table and configuration layer documentation
 
 ## [2.13.0] - 2026-02-22
 
 ### Added
 
-- **`/running-retrospectives`** — SHA-256 content hashing and state tracking (`retrospective-state.json`) so unchanged defect specs are skipped on subsequent runs; carried-forward learnings extracted from existing `retrospective.md` tables; output summary now shows spec partition breakdown (new/modified/skipped/removed) and learning source breakdown (new vs. carried forward)
+- **`/run-retro`** — SHA-256 content hashing and state tracking (`retrospective-state.json`) so unchanged defect specs are skipped on subsequent runs; carried-forward learnings extracted from existing `retrospective.md` tables; output summary now shows spec partition breakdown (new/modified/skipped/removed) and learning source breakdown (new vs. carried forward)
 
 ## [2.12.13] - 2026-02-22
 
 ### Fixed
 
-- **`/running-retrospectives`** — Defect spec discovery rewritten from unreliable Grep-glob (`*/requirements.md` misses two-level paths) to deterministic Glob + Read-heading approach; added chain resolution that follows defect-to-defect `Related Spec` links to the root feature spec, with cycle detection and orphan handling
-- **`/writing-specs`** — Phase 1 Step 7 Related Spec search now filters out defect specs (checks first heading for `# Defect Report:`) and follows defect chains to find the root feature spec when no feature spec directly matches keywords
-- **`/migrating-projects`** — New Step 4a validates `Related Spec` links in defect specs: checks target existence, verifies target is a feature spec, follows chains through defect specs, detects circular references, and presents corrections for user approval
+- **`/run-retro`** — Defect spec discovery rewritten from unreliable Grep-glob (`*/requirements.md` misses two-level paths) to deterministic Glob + Read-heading approach; added chain resolution that follows defect-to-defect `Related Spec` links to the root feature spec, with cycle detection and orphan handling
+- **`/write-spec`** — Phase 1 Step 7 Related Spec search now filters out defect specs (checks first heading for `# Defect Report:`) and follows defect chains to find the root feature spec when no feature spec directly matches keywords
+- **`/migrate-project`** — New Step 4a validates `Related Spec` links in defect specs: checks target existence, verifies target is a feature spec, follows chains through defect specs, detects circular references, and presents corrections for user approval
 
 ## [2.12.12] - 2026-02-20
 
 ### Fixed
 
-- **`/migrating-projects`** — Missing template sections are now filtered by codebase evidence (glob-based relevance heuristics) before being proposed; users can approve or decline individual sections via `multiSelect`; declined sections are persisted in `.claude/migration-exclusions.json` and skipped on future runs
+- **`/migrate-project`** — Missing template sections are now filtered by codebase evidence (glob-based relevance heuristics) before being proposed; users can approve or decline individual sections via `multiSelect`; declined sections are persisted in `.claude/migration-exclusions.json` and skipped on future runs
 
 ## [2.12.11] - 2026-02-20
 
@@ -271,7 +301,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **`/starting-issues`** — Milestone selection no longer iterates through random milestones; now fetches milestones with `open_issues` metadata, filters to viable milestones, and applies deterministic 3-way selection (zero → fallback to all issues, one → auto-select, multiple → present to user or pick first alphabetically in auto-mode)
+- **`/start-issue`** — Milestone selection no longer iterates through random milestones; now fetches milestones with `open_issues` metadata, filters to viable milestones, and applies deterministic 3-way selection (zero → fallback to all issues, one → auto-select, multiple → present to user or pick first alphabetically in auto-mode)
 
 ## [2.12.8] - 2026-02-19
 
@@ -283,13 +313,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **`/running-retrospectives`** — Severity grep pattern updated from plain `Severity:` to regex `\*{0,2}Severity\*{0,2}:` to match both bold-formatted (`**Severity**: High`) and plain (`Severity: High`) fields in defect specs; also fixed Related Spec field reference to use bold-formatted variant from defect template
+- **`/run-retro`** — Severity grep pattern updated from plain `Severity:` to regex `\*{0,2}Severity\*{0,2}:` to match both bold-formatted (`**Severity**: High`) and plain (`Severity: High`) fields in defect specs; also fixed Related Spec field reference to use bold-formatted variant from defect template
 
 ## [2.12.6] - 2026-02-16
 
 ### Fixed
 
-- **`/writing-specs`** — Defect variant now actively searches `.claude/specs/*/requirements.md` for related feature specs by keyword matching (file paths, function names, component names) instead of relying on passive agent intuition; populates the **Related Spec** field with any match or N/A if none found
+- **`/write-spec`** — Defect variant now actively searches `.claude/specs/*/requirements.md` for related feature specs by keyword matching (file paths, function names, component names) instead of relying on passive agent intuition; populates the **Related Spec** field with any match or N/A if none found
 
 ## [2.12.5] - 2026-02-16
 
@@ -307,7 +337,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **`/migrating-projects`** — Skill now explicitly ignores `.claude/auto-mode` and always presents proposed changes for interactive review via `AskUserQuestion`, matching the original spec's out-of-scope declaration that migration is always interactive
+- **`/migrate-project`** — Skill now explicitly ignores `.claude/auto-mode` and always presents proposed changes for interactive review via `AskUserQuestion`, matching the original spec's out-of-scope declaration that migration is always interactive
 
 ## [2.12.2] - 2026-02-16
 
@@ -319,24 +349,24 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **`/verifying-specs`** — Exercise-based verification for plugin projects: generates targeted exercises that test plugin capabilities through real usage scenarios instead of relying on traditional test suites
+- **`/verify-code`** — Exercise-based verification for plugin projects: generates targeted exercises that test plugin capabilities through real usage scenarios instead of relying on traditional test suites
 
 ## [2.12.0] - 2026-02-16
 
 ### Added
 
 - **Integrated versioning system** — `VERSION` file (plain text semver) as the single source of truth for project versions
-- **`/creating-issues`** — Milestone assignment step: reads VERSION for major version default, creates milestones via `gh api` if missing, passes `--milestone` to `gh issue create`
-- **`/creating-prs`** — Automatic version bump classification: reads issue labels (`bug` → patch, `enhancement` → minor), detects milestone completion for major bumps, updates VERSION/CHANGELOG/stack-specific files
-- **`/migrating-projects`** — CHANGELOG.md analysis: generates from git history if missing, reconciles existing changelogs with Keep a Changelog format
-- **`/migrating-projects`** — VERSION file analysis: derives expected version from CHANGELOG/git tags, creates or updates VERSION
+- **`/draft-issue`** — Milestone assignment step: reads VERSION for major version default, creates milestones via `gh api` if missing, passes `--milestone` to `gh issue create`
+- **`/open-pr`** — Automatic version bump classification: reads issue labels (`bug` → patch, `enhancement` → minor), detects milestone completion for major bumps, updates VERSION/CHANGELOG/stack-specific files
+- **`/migrate-project`** — CHANGELOG.md analysis: generates from git history if missing, reconciles existing changelogs with Keep a Changelog format
+- **`/migrate-project`** — VERSION file analysis: derives expected version from CHANGELOG/git tags, creates or updates VERSION
 - **tech.md template** — New `## Versioning` section: declares stack-specific version file mappings (file/path/notes table) bridging VERSION to package.json, Cargo.toml, etc.
 
 ### Changed
 
-- **`/creating-issues`** — Workflow expanded from 8 to 9 steps (milestone assignment inserted as Step 3); auto-mode runs Step 3 non-interactively
-- **`/creating-prs`** — Workflow expanded from 4 to 6 steps (version bump classification as Step 2, version artifact updates as Step 3); PR body includes Version section
-- **`/migrating-projects`** — Workflow expanded from 8 to 10 steps (CHANGELOG analysis as Step 7, VERSION analysis as Step 8); "What Gets Analyzed" section updated
+- **`/draft-issue`** — Workflow expanded from 8 to 9 steps (milestone assignment inserted as Step 3); auto-mode runs Step 3 non-interactively
+- **`/open-pr`** — Workflow expanded from 4 to 6 steps (version bump classification as Step 2, version artifact updates as Step 3); PR body includes Version section
+- **`/migrate-project`** — Workflow expanded from 8 to 10 steps (CHANGELOG analysis as Step 7, VERSION analysis as Step 8); "What Gets Analyzed" section updated
 
 ## [2.11.0] - 2026-02-16
 
@@ -366,17 +396,17 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **`/migrating-projects`** — New skill that updates existing project specs, steering docs, and OpenClaw configs to latest template standards by diffing headings against current templates and merging missing sections while preserving all user content
-- **`/running-retrospectives`** — New skill that batch-analyzes defect specs to identify spec-writing gaps (missing ACs, undertested boundaries, domain-specific gaps) and produces `.claude/steering/retrospective.md` with actionable learnings
-- **`/creating-issues`** — Upfront issue type classification: first question after gathering context asks whether this is a Bug or Enhancement/Feature via `AskUserQuestion`, then performs type-specific codebase investigation before the interview
-- **`/creating-issues`** — Enhancement path: explores existing specs and source code, adds "Current State" section to issue body between Background and Acceptance Criteria
-- **`/creating-issues`** — Bug path: searches codebase, traces code paths, forms root cause hypothesis, confirms with user, adds "Root Cause Analysis" section to issue body
+- **`/migrate-project`** — New skill that updates existing project specs, steering docs, and OpenClaw configs to latest template standards by diffing headings against current templates and merging missing sections while preserving all user content
+- **`/run-retro`** — New skill that batch-analyzes defect specs to identify spec-writing gaps (missing ACs, undertested boundaries, domain-specific gaps) and produces `.claude/steering/retrospective.md` with actionable learnings
+- **`/draft-issue`** — Upfront issue type classification: first question after gathering context asks whether this is a Bug or Enhancement/Feature via `AskUserQuestion`, then performs type-specific codebase investigation before the interview
+- **`/draft-issue`** — Enhancement path: explores existing specs and source code, adds "Current State" section to issue body between Background and Acceptance Criteria
+- **`/draft-issue`** — Bug path: searches codebase, traces code paths, forms root cause hypothesis, confirms with user, adds "Root Cause Analysis" section to issue body
 
 ### Changed
 
-- **`/setting-up-steering`** — Now detects existing steering files and offers an enhancement flow instead of always running the bootstrap flow; metadata and documentation updated to reflect iterative use
-- **`/writing-specs`** — Phase 1 now reads `retrospective.md` (when present) to apply defect-derived learnings when drafting acceptance criteria
-- **`/creating-issues`** — Interview questions now branch explicitly by issue type instead of adapting passively; workflow expanded from 6 steps to 8 steps (classification and investigation inserted as Steps 2–3); auto-mode references updated accordingly
+- **`/setup-steering`** — Now detects existing steering files and offers an enhancement flow instead of always running the bootstrap flow; metadata and documentation updated to reflect iterative use
+- **`/write-spec`** — Phase 1 now reads `retrospective.md` (when present) to apply defect-derived learnings when drafting acceptance criteria
+- **`/draft-issue`** — Interview questions now branch explicitly by issue type instead of adapting passively; workflow expanded from 6 steps to 8 steps (classification and investigation inserted as Steps 2–3); auto-mode references updated accordingly
 
 ## [2.4.0] - 2026-02-14
 
@@ -396,10 +426,10 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **Defect-specific spec handling** — Bug issues (detected via `bug` label) now use lighter, defect-focused template variants throughout the 3-phase spec process, replacing the heavyweight feature templates with reproduction steps, root cause analysis, and flat 2–4 task lists
-- **`/writing-specs`** — Defect Detection section: reads `bug` label from GitHub issue and routes all three phases to defect template variants; includes complexity escape hatch for architectural bugs
-- **`/creating-issues`** — Bug Report issue body template with reproduction steps, expected/actual behavior, environment table, and defect-focused acceptance criteria; expanded bug interview questions
-- **`/implementing-specs`** — Bug Fix Implementation guidance: follow fix strategy precisely, flat task execution, minimize change scope, regression test required
-- **`/verifying-specs`** — Bug Fix Verification guidance: reproduction check, `@regression` scenario validation, blast radius focus, minimal change audit
+- **`/write-spec`** — Defect Detection section: reads `bug` label from GitHub issue and routes all three phases to defect template variants; includes complexity escape hatch for architectural bugs
+- **`/draft-issue`** — Bug Report issue body template with reproduction steps, expected/actual behavior, environment table, and defect-focused acceptance criteria; expanded bug interview questions
+- **`/write-code`** — Bug Fix Implementation guidance: follow fix strategy precisely, flat task execution, minimize change scope, regression test required
+- **`/verify-code`** — Bug Fix Verification guidance: reproduction check, `@regression` scenario validation, blast radius focus, minimal change audit
 - **Templates** — Defect Requirements Variant (reproduction, expected vs actual, severity, lightweight FRs), Defect Design Variant (root cause analysis, fix strategy, blast radius, regression risk), Defect Tasks Variant (flat T001–T003: fix/test/verify), Defect Regression Scenarios (Gherkin with `@regression` tags)
 
 ## [2.1.8] - 2026-02-14
@@ -502,16 +532,16 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **All skills** — Remove deprecated "ultrathink" keyword lines (no functional effect; extended thinking is session-level)
-- **`/implementing-specs`** — Clarify auto-mode: Steps 1–3 are still required, only Step 4 (EnterPlanMode) is skipped
-- **`/writing-specs`** — Add Feature Name Convention section defining the `{feature-name}` algorithm (issue number + kebab-case slug)
-- **`/writing-specs`** — Add inline auto-mode conditionals at each Human Review Gate for unambiguous behavior
-- **`/implementing-specs`, `/verifying-specs`, `/creating-prs`** — Add feature-name fallback: use `Glob` to find specs if feature-name is ambiguous
-- **`/starting-issues`** — Specify auto-mode issue sort order: issue number ascending (oldest first)
-- **`/verifying-specs`** — Add standard Automation Mode section for consistency with other skills
-- **`/verifying-specs`** — Add fix-vs-defer heuristic: fix findings under ~20 lines; defer architectural changes
-- **`/creating-issues`** — Clarify auto-mode inference: read `product.md`, generate 3–5 Given/When/Then acceptance criteria
-- **`/creating-issues`** — Reword interview as adaptive questioning (skip answered topics, aim for 2–3 rounds)
-- **`/creating-prs`** — Add auto-mode conditional output (`Done. Awaiting orchestrator.`)
+- **`/write-code`** — Clarify auto-mode: Steps 1–3 are still required, only Step 4 (EnterPlanMode) is skipped
+- **`/write-spec`** — Add Feature Name Convention section defining the `{feature-name}` algorithm (issue number + kebab-case slug)
+- **`/write-spec`** — Add inline auto-mode conditionals at each Human Review Gate for unambiguous behavior
+- **`/write-code`, `/verify-code`, `/open-pr`** — Add feature-name fallback: use `Glob` to find specs if feature-name is ambiguous
+- **`/start-issue`** — Specify auto-mode issue sort order: issue number ascending (oldest first)
+- **`/verify-code`** — Add standard Automation Mode section for consistency with other skills
+- **`/verify-code`** — Add fix-vs-defer heuristic: fix findings under ~20 lines; defer architectural changes
+- **`/draft-issue`** — Clarify auto-mode inference: read `product.md`, generate 3–5 Given/When/Then acceptance criteria
+- **`/draft-issue`** — Reword interview as adaptive questioning (skip answered topics, aim for 2–3 rounds)
+- **`/open-pr`** — Add auto-mode conditional output (`Done. Awaiting orchestrator.`)
 - **OpenClaw prompt** — Spec validation gate uses glob instead of unresolved `{feature-name}` template variable
 - **OpenClaw prompt** — Merge step now verifies CI via `gh pr checks` before merging
 - **OpenClaw prompt** — Clarify retry count attribution: Step N precondition failure retries Step N-1 against N-1's cap
@@ -519,7 +549,7 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 
-- **`/beginning-dev`** skill — removed; use `/starting-issues` directly, then chain `/writing-specs` and `/implementing-specs` manually or via orchestrator
+- **`/beginning-dev`** skill — removed; use `/start-issue` directly, then chain `/write-spec` and `/write-code` manually or via orchestrator
 - Discord notification hooks (`on-stop.sh`, `on-notification.sh`, `_lib.sh`) — redundant with heartbeat-driven orchestration; the orchestrator already detects subprocess state via polling and posts its own Discord updates
 - `OPENCLAW_DISCORD_CHANNEL` requirement from automation prompt — no hooks consume it anymore
 
@@ -533,10 +563,10 @@ All notable changes to this project will be documented in this file.
 - Strengthen retry cap to 3 attempts with shared state tracking in `sdlc-state.json`
 - Add pre-retry checklist requiring root cause investigation before retrying failed steps
 - Explicitly prohibit combined multi-step `claude -p` sessions in both heartbeat and watchdog
-- Remove unused `EnterPlanMode` and `Skill` from `/writing-specs` allowed-tools — prevents unintended plan mode entry during spec writing
-- Remove unused `Skill` from `/implementing-specs` allowed-tools
+- Remove unused `EnterPlanMode` and `Skill` from `/write-spec` allowed-tools — prevents unintended plan mode entry during spec writing
+- Remove unused `Skill` from `/write-code` allowed-tools
 - Remove `Task` from architecture-reviewer agent tools — subagents cannot nest; agent now uses Read/Glob/Grep directly
-- Clarify `/verifying-specs` Step 4 to explicitly delegate to the `nmg-sdlc:architecture-reviewer` agent instead of generic Explore subagents
+- Clarify `/verify-code` Step 4 to explicitly delegate to the `nmg-sdlc:architecture-reviewer` agent instead of generic Explore subagents
 - Upgrade spec alignment PostToolUse hook from `prompt` to `agent` type so it can read spec files when checking for drift
 - Add top-level `description` to hooks.json
 - Fix `generating-prompt` skill's `Bash(cat * | *)` allowed-tools pattern to standard `Bash(cat:*)`
@@ -552,7 +582,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- `/beginning-dev` — Automation Mode: in auto-mode, runs only `/starting-issues` then stops; orchestrator handles remaining skills with `/clear` between steps
+- `/beginning-dev` — Automation Mode: in auto-mode, runs only `/start-issue` then stops; orchestrator handles remaining skills with `/clear` between steps
 
 ### Changed
 
@@ -596,10 +626,10 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **Automation Mode awareness in skills** — Skills now detect `.claude/auto-mode` and skip `AskUserQuestion` calls entirely, fixing the infinite retry loop caused by `exit 2` PreToolUse blocks. Previous hook-level fixes (1.5.1–1.5.3) couldn't solve this because Claude interprets a blocked tool as "I need this but couldn't get it" and retries — the block message is never treated as a tool response. Skills updated:
-  - **`/writing-specs`** — All 3 Human Review Gates skipped in automation mode
-  - **`/starting-issues`** — Issue selection and confirmation skipped when issue number provided
-  - **`/creating-issues`** — Interview and review steps skipped; uses argument as feature description
-  - **`/implementing-specs`** — Plan mode and approval gates skipped
+  - **`/write-spec`** — All 3 Human Review Gates skipped in automation mode
+  - **`/start-issue`** — Issue selection and confirmation skipped when issue number provided
+  - **`/draft-issue`** — Interview and review steps skipped; uses argument as feature description
+  - **`/write-code`** — Plan mode and approval gates skipped
 
 ## [1.5.3] - 2026-02-12
 
@@ -623,7 +653,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **`/starting-issues`** — New standalone skill: select a GitHub issue, create linked feature branch, set issue to In Progress
+- **`/start-issue`** — New standalone skill: select a GitHub issue, create linked feature branch, set issue to In Progress
 - **Automation hooks** — Four new hooks that let external agents (e.g., OpenClaw) drive the SDLC without human input, gated by a `.claude/auto-mode` flag file:
   - `PermissionRequest` → auto-allows all tool permissions
   - `PreToolUse` on `AskUserQuestion` → blocks questions and steers Claude to proceed with defaults
@@ -633,23 +663,23 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- **`/beginning-dev`** — Now delegates issue selection and branch setup to `/starting-issues` instead of handling inline
+- **`/beginning-dev`** — Now delegates issue selection and branch setup to `/start-issue` instead of handling inline
 - **README** — Added Automation Mode section documenting hooks, enable/disable, default behaviors, and OpenClaw example
 
 ## [1.3.1] - 2026-02-11
 
 ### Changed
 
-- **`/beginning-dev`** — Added context compaction handoffs between phases (writing-specs, implementing-specs) to free context window for each phase
+- **`/beginning-dev`** — Added context compaction handoffs between phases (write-spec, write-code) to free context window for each phase
 
 ## [1.3.0] - 2026-02-10
 
 ### Changed
 
-- **`/verifying-specs`** — No longer read-only; now fixes findings during verification before generating report
-- **`/verifying-specs`** — Added `Write`, `Edit`, and `Bash(git:*)` to allowed tools
-- **`/verifying-specs`** — Report restructured: "Issues Found" replaced with "Fixes Applied" and "Remaining Issues" sections
-- **`/verifying-specs`** — New Step 6 (Fix Findings) with prioritization, test-after-fix, re-verification, and deferral workflow
+- **`/verify-code`** — No longer read-only; now fixes findings during verification before generating report
+- **`/verify-code`** — Added `Write`, `Edit`, and `Bash(git:*)` to allowed tools
+- **`/verify-code`** — Report restructured: "Issues Found" replaced with "Fixes Applied" and "Remaining Issues" sections
+- **`/verify-code`** — New Step 6 (Fix Findings) with prioritization, test-after-fix, re-verification, and deferral workflow
 
 ## [1.2.1] - 2026-02-10
 
@@ -665,7 +695,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **`/beginning-dev`** — Pick a GitHub issue to work on, then automatically chain through `/writing-specs` and `/implementing-specs`
+- **`/beginning-dev`** — Pick a GitHub issue to work on, then automatically chain through `/write-spec` and `/write-code`
 
 ### Fixed
 
@@ -676,12 +706,12 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **nmg-sdlc plugin** — Stack-agnostic BDD spec-driven development toolkit
-- **`/creating-issues`** — Interview user, create groomed GitHub issue with BDD acceptance criteria
-- **`/writing-specs`** — Create requirements, design, and task specs from a GitHub issue (3-phase with human gates)
-- **`/implementing-specs`** — Read specs, enter plan mode, execute implementation tasks sequentially
-- **`/verifying-specs`** — Verify implementation against spec, architecture review, update GitHub issue with evidence
-- **`/creating-prs`** — Create pull request with spec-driven summary linking issue and specs
-- **`/setting-up-steering`** — One-time codebase scan to generate product, tech, and structure steering documents
+- **`/draft-issue`** — Interview user, create groomed GitHub issue with BDD acceptance criteria
+- **`/write-spec`** — Create requirements, design, and task specs from a GitHub issue (3-phase with human gates)
+- **`/write-code`** — Read specs, enter plan mode, execute implementation tasks sequentially
+- **`/verify-code`** — Verify implementation against spec, architecture review, update GitHub issue with evidence
+- **`/open-pr`** — Create pull request with spec-driven summary linking issue and specs
+- **`/setup-steering`** — One-time codebase scan to generate product, tech, and structure steering documents
 - **architecture-reviewer agent** — SOLID, security, performance, testability, error handling evaluation
 - **Verification checklists** — SOLID principles, security (OWASP), performance, testability, error handling, report template
 - **Spec templates** — Requirements, design, tasks, and Gherkin feature file templates

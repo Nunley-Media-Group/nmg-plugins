@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds a new Claude Code skill (`running-sdlc-loop`) to the nmg-sdlc plugin that orchestrates the full SDLC pipeline from within an active Claude Code session. Instead of reimplementing orchestration logic, the skill invokes the existing `sdlc-runner.mjs` script — the same deterministic orchestrator that OpenClaw uses — by unsetting the `CLAUDECODE` environment variable so it can spawn `claude -p` subprocesses.
+This feature adds a new Claude Code skill (`run-loop`) to the nmg-sdlc plugin that orchestrates the full SDLC pipeline from within an active Claude Code session. Instead of reimplementing orchestration logic, the skill invokes the existing `sdlc-runner.mjs` script — the deterministic SDLC orchestrator — by unsetting the `CLAUDECODE` environment variable so it can spawn `claude -p` subprocesses.
 
 The skill is a thin wrapper: it locates or generates a config file, then runs `CLAUDECODE="" node sdlc-runner.mjs --config <path>`. The runner already handles issue selection, phase sequencing, precondition/postcondition validation, retry logic, failure detection, and state management. This reuse avoids duplicating proven orchestration logic.
 
@@ -23,7 +23,7 @@ To support single-issue mode, the runner gains a new `--issue N` CLI flag that r
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│               running-sdlc-loop (SKILL.md)                  │
+│               run-loop (SKILL.md)                  │
 │                                                             │
 │  Step 1: Locate/generate sdlc-config.json                  │
 │  Step 2: Resolve runner path from config.pluginsPath        │
@@ -59,18 +59,18 @@ To support single-issue mode, the runner gains a new `--issue N` CLI flag that r
 ┌─────────────────────────────────────────────────────────────┐
 │  Claude Code sessions (one per step)                        │
 │  Each session loads nmg-sdlc plugin and invokes the         │
-│  appropriate skill (starting-issues, writing-specs, etc.)   │
+│  appropriate skill (start-issue, write-spec, etc.)   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
 
 ```
-1. User invokes /nmg-sdlc:running-sdlc-loop [#N]
+1. User invokes /nmg-sdlc:run-loop [#N]
 2. Skill checks for sdlc-config.json at project root
-3. If missing, invokes /generating-openclaw-config to create it
+3. If missing, invokes /init-config to create it
 4. Reads config to resolve pluginsPath
-5. Derives runner path: <pluginsPath>/openclaw/scripts/sdlc-runner.mjs
+5. Derives runner path: <pluginsPath>/scripts/sdlc-runner.mjs
 6. Builds command:
    - Loop mode:    CLAUDECODE="" node <runner> --config <config>
    - Single issue: CLAUDECODE="" node <runner> --config <config> --issue N
@@ -86,10 +86,9 @@ To support single-issue mode, the runner gains a new `--issue N` CLI flag that r
 
 ```yaml
 ---
-name: running-sdlc-loop
-description: "Run the full SDLC pipeline loop for automatable issues. Use when user says 'run SDLC loop', 'run the pipeline', 'process all issues', 'run SDLC for #N', or 'automate the milestone'. Do NOT use for individual phases (writing-specs, implementing-specs, etc.)."
+name: run-loop
+description: "Run the full SDLC pipeline loop for automatable issues. Use when user says 'run SDLC loop', 'run the pipeline', 'process all issues', 'run SDLC for #N', or 'automate the milestone'. Do NOT use for individual phases (write-spec, write-code, etc.)."
 argument-hint: "[#issue-number]"
-model: sonnet
 allowed-tools: Read, Glob, Grep, Bash(node:*), Bash(test:*), Bash(cat:*), Skill
 ---
 ```
@@ -104,16 +103,16 @@ allowed-tools: Read, Glob, Grep, Bash(node:*), Bash(test:*), Bash(cat:*), Skill
 | `Bash(node:*)` | Invoke the runner: `CLAUDECODE="" node sdlc-runner.mjs ...` |
 | `Bash(test:*)` | File existence checks (`test -f sdlc-config.json`) |
 | `Bash(cat:*)` | Read runner output / logs if needed |
-| `Skill` | Invoke `/generating-openclaw-config` if config is missing |
+| `Skill` | Invoke `/init-config` if config is missing |
 
-**Note**: The model is `sonnet` because the skill's own logic is lightweight (config resolution + runner invocation). The runner spawns its own Claude sessions with their own model settings from the config file.
+**Note**: The skill's own logic is lightweight (config resolution + runner invocation). The runner spawns its own Claude sessions with their own model settings from the config file.
 
 ### Arguments
 
 | Argument | Format | Behavior |
 |----------|--------|----------|
-| None | `/nmg-sdlc:running-sdlc-loop` | Loop mode — runner processes all automatable issues continuously |
-| Issue number | `/nmg-sdlc:running-sdlc-loop #107` or `107` | Single-issue mode — runner processes only this issue then exits |
+| None | `/nmg-sdlc:run-loop` | Loop mode — runner processes all automatable issues continuously |
+| Issue number | `/nmg-sdlc:run-loop #107` or `107` | Single-issue mode — runner processes only this issue then exits |
 
 ---
 
@@ -187,8 +186,8 @@ if (SINGLE_ISSUE_NUMBER) {
 
 The skill checks for config in this order:
 
-1. `sdlc-config.json` at project root (standard location from `/generating-openclaw-config`)
-2. If not found: invoke `Skill("nmg-sdlc:generating-openclaw-config")` to create it
+1. `sdlc-config.json` at project root (standard location from `/init-config`)
+2. If not found: invoke `Skill("nmg-sdlc:init-config")` to create it
 3. Re-read the newly created config
 
 ### Runner Path Derivation
@@ -202,12 +201,12 @@ From the config file:
 }
 ```
 
-Runner path = `<pluginsPath>/openclaw/scripts/sdlc-runner.mjs`
+Runner path = `<pluginsPath>/scripts/sdlc-runner.mjs`
 
 Verify the runner exists before invoking:
 
 ```bash
-test -f "<pluginsPath>/openclaw/scripts/sdlc-runner.mjs"
+test -f "<pluginsPath>/scripts/sdlc-runner.mjs"
 ```
 
 If missing, report error: "Runner script not found. Ensure nmg-plugins marketplace is cloned."
@@ -241,7 +240,7 @@ The runner **automatically creates `.claude/auto-mode`** on startup (line 1917-1
 | Option | Description | Pros | Cons | Decision |
 |--------|-------------|------|------|----------|
 | **A: Use Skill tool for in-session invocation** | Invoke each phase skill directly via Skill tool within the same session | Shared context; no subprocess spawning | Reimplements orchestration logic (preconditions, retries, state, soft failures); context window exhaustion over multiple issues; no CI monitoring or merge steps | Rejected — duplicates proven logic |
-| **B: Invoke sdlc-runner.mjs with CLAUDECODE=""** | Run the same runner script OpenClaw uses, unsetting CLAUDECODE to enable subprocess spawning | Reuses all existing orchestration; battle-tested retry/escalation/state logic; includes CI monitoring and merge; isolated contexts per step prevent exhaustion | Requires long Bash timeout; adds `--issue` flag to runner | **Selected** — maximizes reuse, minimizes risk |
+| **B: Invoke sdlc-runner.mjs with CLAUDECODE=""** | Run the existing runner script, unsetting CLAUDECODE to enable subprocess spawning | Reuses all existing orchestration; battle-tested retry/escalation/state logic; includes CI monitoring and merge; isolated contexts per step prevent exhaustion | Requires long Bash timeout; adds `--issue` flag to runner | **Selected** — maximizes reuse, minimizes risk |
 | **C: Use Task tool to spawn runner in background** | Run the runner via Task tool's background mode | Doesn't block the session | Task tool results are limited; harder to stream progress | Rejected — Bash with long timeout is simpler |
 
 ---
@@ -251,10 +250,10 @@ The runner **automatically creates `.claude/auto-mode`** on startup (line 1917-1
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
 | Bash timeout for long-running runner | Medium | High — runner killed mid-cycle | Use `run_in_background: true` or set timeout to maximum (600000ms) with clear documentation |
-| Config file missing or incorrect | Low | Medium — runner fails to start | Skill checks for config first and generates via `/generating-openclaw-config` if missing |
+| Config file missing or incorrect | Low | Medium — runner fails to start | Skill checks for config first and generates via `/init-config` if missing |
 | Runner path resolution fails | Low | High — skill can't invoke runner | Verify path exists before invocation; provide clear error message |
 | `CLAUDECODE=""` pattern breaks in future Claude Code versions | Low | High — subprocess spawning fails | Pattern is documented and used by exercise testing; would affect all testing too |
-| `--issue` flag introduces regressions in runner | Low | Medium | Runner has existing test suite in `openclaw/scripts/__tests__/`; add tests for new flag |
+| `--issue` flag introduces regressions in runner | Low | Medium | Runner has existing test suite in `scripts/__tests__/`; add tests for new flag |
 
 ---
 
@@ -274,9 +273,9 @@ The runner **automatically creates `.claude/auto-mode`** on startup (line 1917-1
 
 | File | Change | Purpose |
 |------|--------|---------|
-| `plugins/nmg-sdlc/skills/running-sdlc-loop/SKILL.md` | **New** | The skill definition — thin wrapper around runner invocation |
-| `openclaw/scripts/sdlc-runner.mjs` | **Modify** | Add `--issue N` CLI flag for single-issue mode |
-| `openclaw/scripts/__tests__/sdlc-runner.test.mjs` | **Modify** | Add tests for `--issue` flag behavior |
+| `plugins/nmg-sdlc/skills/run-loop/SKILL.md` | **New** | The skill definition — thin wrapper around runner invocation |
+| `scripts/sdlc-runner.mjs` | **Modify** | Add `--issue N` CLI flag for single-issue mode |
+| `scripts/__tests__/sdlc-runner.test.mjs` | **Modify** | Add tests for `--issue` flag behavior |
 | `README.md` | **Update** | Document new skill in skills reference |
 | `CHANGELOG.md` | **Update** | Add entry under `[Unreleased]` |
 

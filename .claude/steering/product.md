@@ -67,20 +67,20 @@ All feature development should align with these guidelines.
 ## Feature Prioritization
 
 ### Must Have (MVP)
-- Issue creation with BDD acceptance criteria (`/creating-issues`)
-- 3-phase spec writing: requirements, design, tasks (`/writing-specs`)
-- Spec-driven implementation with plan mode (`/implementing-specs`)
-- Verification against specs with architecture review (`/verifying-specs`)
-- PR creation linking issue and specs (`/creating-prs`)
-- Steering document bootstrapping (`/setting-up-steering`)
+- Issue creation with BDD acceptance criteria (`/draft-issue`)
+- 3-phase spec writing: requirements, design, tasks (`/write-spec`)
+- Spec-driven implementation with plan mode (`/write-code`)
+- Verification against specs with architecture review (`/verify-code`)
+- PR creation linking issue and specs (`/open-pr`)
+- Steering document bootstrapping (`/setup-steering`)
 
 ### Should Have
-- Issue branch linking and status management (`/starting-issues`)
+- Issue branch linking and status management (`/start-issue`)
 - Defect-specific spec templates (bug label detection)
-- Automation mode support (`/running-sdlc-loop`)
+- Automation mode support (`/run-loop`)
 
 ### Could Have
-- SDLC runner config generation (`/generating-sdlc-config`)
+- SDLC runner config generation (`/init-config`)
 
 ### Won't Have (Now)
 - Multi-repo orchestration
@@ -94,12 +94,12 @@ All feature development should align with these guidelines.
 ### Journey 1: Manual SDLC Cycle
 
 ```
-1. Developer runs /creating-issues to capture a feature need
-2. Runs /starting-issues #N to create branch and set status
-3. Runs /writing-specs #N — reviews requirements, design, tasks at each gate
-4. Runs /implementing-specs #N — approves plan, watches execution
-5. Runs /verifying-specs #N — reviews findings, confirms fixes
-6. Runs /creating-prs #N — reviews PR before submission
+1. Developer runs /draft-issue to capture a feature need
+2. Runs /start-issue #N to create branch and set status
+3. Runs /write-spec #N — reviews requirements, design, tasks at each gate
+4. Runs /write-code #N — approves plan, watches execution
+5. Runs /verify-code #N — reviews findings, confirms fixes
+6. Runs /open-pr #N — reviews PR before submission
 ```
 
 ### Journey 2: Automated SDLC Cycle (Runner)
@@ -119,15 +119,15 @@ This project uses its own SDLC toolkit to develop itself. The verification step 
 
 ```
 1. Developer creates issue for a skill enhancement
-2. Runs /writing-specs — spec defines expected skill behavior as ACs
-3. Runs /implementing-specs — modifies SKILL.md files and templates
-4. Runs /verifying-specs — must exercise the changed skill:
+2. Runs /write-spec — spec defines expected skill behavior as ACs
+3. Runs /write-code — modifies SKILL.md files and templates
+4. Runs /verify-code — must exercise the changed skill:
    a. Scaffold a disposable test project
    b. Load the modified plugin: claude --plugin-dir ./plugins/nmg-sdlc
    c. Invoke the changed skill against the test project
    d. For GitHub-integrated skills: evaluate what WOULD be created (dry-run)
    e. Confirm output matches spec ACs
-5. Runs /creating-prs — PR includes verification evidence
+5. Runs /open-pr — PR includes verification evidence
 ```
 
 The key difference from Journey 1: traditional "run tests" is replaced by "exercise the skill in Claude Code and evaluate the output."
@@ -136,7 +136,7 @@ The key difference from Journey 1: traditional "run tests" is replaced by "exerc
 
 ## Intent Verification
 
-Each product principle translates to a verifiable behavioral contract. `/verifying-specs` should check these when evaluating whether a change serves the product mission.
+Each product principle translates to a verifiable behavioral contract. `/verify-code` should check these when evaluating whether a change serves the product mission.
 
 ### Principle → Postcondition Mapping
 
@@ -154,22 +154,22 @@ Each product principle translates to a verifiable behavioral contract. `/verifyi
 The SDLC pipeline is a chain. Each skill's output is a contract with the next:
 
 ```
-/creating-issues
+/draft-issue
   Postcondition: GitHub issue exists with BDD acceptance criteria
   ↓ (issue # feeds into)
-/starting-issues #N
+/start-issue #N
   Postcondition: Feature branch exists, issue status = In Progress
   ↓ (branch context feeds into)
-/writing-specs #N
+/write-spec #N
   Postcondition: .claude/specs/{feature}/ contains requirements.md, design.md, tasks.md, feature.gherkin
   ↓ (spec files feed into)
-/implementing-specs #N
+/write-code #N
   Postcondition: Code changes implement all tasks
   ↓ (implementation feeds into)
-/verifying-specs #N
+/verify-code #N
   Postcondition: Verification report posted to issue; all ACs pass or deferred items documented
   ↓ (verified implementation feeds into)
-/creating-prs #N
+/open-pr #N
   Postcondition: PR created linking issue, specs, and verification report
 ```
 

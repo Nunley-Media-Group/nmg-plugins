@@ -16,7 +16,7 @@ nmg-sdlc Plugin
     └── Templates (spec, steering, checklist files)
 
 SDLC Runner (automation layer)
-    ├── running-sdlc-loop Skill (in-session)
+    ├── run-loop Skill (in-session)
     └── sdlc-runner.mjs (Node.js orchestrator)
         └── Spawns `claude -p` subprocesses per SDLC step
 ```
@@ -45,7 +45,7 @@ SDLC Runner (automation layer)
 
 ## Versioning
 
-The `VERSION` file at the project root is the single source of truth for the current version. Stack-specific files are kept in sync via `/creating-prs`.
+The `VERSION` file at the project root is the single source of truth for the current version. Stack-specific files are kept in sync via `/open-pr`.
 
 | File | Path | Notes |
 |------|------|-------|
@@ -54,7 +54,7 @@ The `VERSION` file at the project root is the single source of truth for the cur
 
 ### Version Bump Classification
 
-The `/creating-prs` skill and the `sdlc-runner.mjs` deterministic bump postcondition both read this table to classify version bumps. Modify this table to change the classification rules — no skill or script changes are needed.
+The `/open-pr` skill and the `sdlc-runner.mjs` deterministic bump postcondition both read this table to classify version bumps. Modify this table to change the classification rules — no skill or script changes are needed.
 
 | Label | Bump Type | Description |
 |-------|-----------|-------------|
@@ -265,7 +265,7 @@ Feature: [Feature name from issue title]
 claude --plugin-dir ./plugins/nmg-sdlc
 ```
 
-Then invoke each changed skill directly (e.g., `/nmg-sdlc:writing-specs #42`) and verify:
+Then invoke each changed skill directly (e.g., `/nmg-sdlc:write-spec #42`) and verify:
 - The skill loads without errors
 - Workflow steps execute in the expected order
 - Output artifacts (files, GitHub comments, PR bodies) match downstream skill expectations
@@ -287,7 +287,7 @@ When verifying SDLC skill changes, exercise them against a **disposable test pro
 
 #### Dry-Run Evaluation for GitHub-Integrated Skills
 
-For skills that create GitHub resources (`/creating-issues`, `/creating-prs`, `/starting-issues`):
+For skills that create GitHub resources (`/draft-issue`, `/open-pr`, `/start-issue`):
 
 | Instead of... | Do this... |
 |---------------|------------|
@@ -363,7 +363,7 @@ This tests the "no-questions" execution path only. Use the Agent SDK approach fo
 | Agent SDK exercise testing | `canUseTool` callback with programmatic answers | Skills with interactive gates | Full support — answers provided programmatically |
 | Promptfoo eval suite | Declarative YAML test cases with `ask_user_question` config | Skills, agents, templates | `first_option`, `random`, or `deny` modes |
 | Smoke test (`claude -p`) | `--disallowedTools AskUserQuestion` | Quick verification | Denied — tests fallback path only |
-| Spec verification | `/verifying-specs` skill — behavioral contract checking | All changes | N/A |
+| Spec verification | `/verify-code` skill — behavioral contract checking | All changes | N/A |
 | Architecture review | `architecture-reviewer` agent — 5 checklists scored 1–5 | Code structure, scripts | N/A |
 | Runner unit tests | Jest (`npm test` in `scripts/`) | `sdlc-runner.mjs` | N/A |
 | Structural validation | Verify `plugin.json`/`marketplace.json` schema, file existence | Plugin manifests | N/A |
@@ -373,18 +373,18 @@ This tests the "no-questions" execution path only. Use the Agent SDK approach fo
 
 ## Verification Strategy — Behavioral Contracts
 
-This project is prompt-based: skills are Markdown instructions that Claude Code executes. Traditional code quality metrics (test coverage, cyclomatic complexity) don't apply to most of the codebase. Instead, verification uses **Design by Contract** — each skill and component has preconditions, postconditions, invariants, and behavioral boundaries that `/verifying-specs` checks.
+This project is prompt-based: skills are Markdown instructions that Claude Code executes. Traditional code quality metrics (test coverage, cyclomatic complexity) don't apply to most of the codebase. Instead, verification uses **Design by Contract** — each skill and component has preconditions, postconditions, invariants, and behavioral boundaries that `/verify-code` checks.
 
 ### Self-Verification (Dogfooding)
 
-This project develops the SDLC toolkit itself. When `/verifying-specs` runs for changes to SDLC skills, it MUST go beyond static analysis:
+This project develops the SDLC toolkit itself. When `/verify-code` runs for changes to SDLC skills, it MUST go beyond static analysis:
 
 1. **Read the changed skill** — verify prompt quality (unambiguous, complete, correct tool refs)
 2. **Check behavioral contracts** — preconditions, postconditions, invariants per the tables below
 3. **Exercise the skill** — if feasible within the verification session, load the plugin and invoke the changed skill against a test project (see Testing Standards → Test Project Pattern)
 4. **Evaluate output** — for GitHub-integrated skills, evaluate what WOULD be created rather than creating real artifacts (see Testing Standards → Dry-Run Evaluation)
 
-If exercise testing is not feasible during automated verification (time or tool constraints), `/verifying-specs` should explicitly note this in the verification report and recommend manual exercise testing as a follow-up.
+If exercise testing is not feasible during automated verification (time or tool constraints), `/verify-code` should explicitly note this in the verification report and recommend manual exercise testing as a follow-up.
 
 ### Contract Framework
 
@@ -408,7 +408,7 @@ Every skill has implicit contracts. When verifying a skill change, check:
 - Output files created in the correct location and format
 - GitHub issue/PR updated with expected content
 - No orphaned files or partial state left behind
-- Downstream skills can consume the output (e.g., `/writing-specs` output feeds `/implementing-specs`)
+- Downstream skills can consume the output (e.g., `/write-spec` output feeds `/write-code`)
 
 #### Invariants (Throughout Execution)
 - Stack-agnostic: no project-specific technology hardcoded in skill instructions

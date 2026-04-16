@@ -22,18 +22,18 @@ nmg-plugins/
 │       ├── .claude-plugin/
 │       │   └── plugin.json       # Plugin manifest (name, version, description)
 │       ├── skills/               # Skill definitions (one dir per skill)
-│       │   ├── creating-issues/
-│       │   ├── creating-prs/
-│       │   ├── generating-sdlc-config/
-│       │   ├── implementing-specs/
-│       │   ├── running-retrospectives/
+│       │   ├── draft-issue/
+│       │   ├── open-pr/
+│       │   ├── init-config/
+│       │   ├── write-code/
+│       │   ├── run-retro/
 │       │   │   └── templates/    # Retrospective output template
-│       │   ├── setting-up-steering/
+│       │   ├── setup-steering/
 │       │   │   └── templates/    # Steering document templates
-│       │   ├── starting-issues/
-│       │   ├── verifying-specs/
+│       │   ├── start-issue/
+│       │   ├── verify-code/
 │       │   │   └── checklists/   # Architecture review checklists
-│       │   └── writing-specs/
+│       │   └── write-spec/
 │       │       └── templates/    # Spec document templates
 │       └── agents/
 │           └── architecture-reviewer.md  # Subagent for verification
@@ -94,16 +94,16 @@ Claude Code sessions via `claude -p`
 
 | Element | Convention | Example |
 |---------|------------|---------|
-| Skill directories | kebab-case | `writing-specs/`, `creating-issues/` |
-| Template directories | `templates/` inside skill dir | `writing-specs/templates/` |
-| Checklist directories | `checklists/` inside skill dir | `verifying-specs/checklists/` |
+| Skill directories | kebab-case | `write-spec/`, `draft-issue/` |
+| Template directories | `templates/` inside skill dir | `write-spec/templates/` |
+| Checklist directories | `checklists/` inside skill dir | `verify-code/checklists/` |
 | Agent files | kebab-case `.md` | `architecture-reviewer.md` |
 
 ### Files
 
 | Element | Convention | Example |
 |---------|------------|---------|
-| Skill definitions | `SKILL.md` (uppercase) | `writing-specs/SKILL.md` |
+| Skill definitions | `SKILL.md` (uppercase) | `write-spec/SKILL.md` |
 | Templates | kebab-case `.md` or `.gherkin` | `requirements.md`, `feature.gherkin` |
 | Plugin manifests | `plugin.json` or `marketplace.json` | `.claude-plugin/plugin.json` |
 | Scripts | kebab-case `.mjs` or `.sh` | `sdlc-runner.mjs` |
@@ -131,7 +131,7 @@ Claude Code sessions via `claude -p`
 | Element | Convention | Example |
 |---------|------------|---------|
 | Format | Conventional commits | `feat:`, `fix:`, `docs:`, `chore:` |
-| Scope | Optional, kebab-case | `feat(writing-specs): add defect template` |
+| Scope | Optional, kebab-case | `feat(write-spec): add defect template` |
 
 ---
 
@@ -200,7 +200,7 @@ import { parseArgs } from 'node:util';
 
 ## Architectural Invariants
 
-These are hard contracts that must never be violated. `/verifying-specs` should flag any change that breaks one.
+These are hard contracts that must never be violated. `/verify-code` should flag any change that breaks one.
 
 ### Skill Contracts
 

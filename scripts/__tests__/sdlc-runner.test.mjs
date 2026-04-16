@@ -834,7 +834,7 @@ describe('Same-issue loop detection', () => {
     mockFs.existsSync.mockReturnValue(true);
     mockFs.readFileSync.mockReturnValue('skill content');
 
-    const step = { ...STEPS[1], skill: 'starting-issues' };
+    const step = { ...STEPS[1], skill: 'start-issue' };
     const state = { ...defaultState() };
     const args = buildClaudeArgs(step, state);
 
@@ -2401,7 +2401,7 @@ describe('Step 7 prompt includes version bump mandate (#60)', () => {
     mockFs.existsSync.mockReturnValue(true);
     mockFs.readFileSync.mockReturnValue('skill content');
 
-    const step = { ...STEPS[6], skill: 'creating-prs' };
+    const step = { ...STEPS[6], skill: 'open-pr' };
     const state = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature' };
     const args = buildClaudeArgs(step, state);
 

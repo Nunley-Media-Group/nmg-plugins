@@ -13,7 +13,7 @@ The SDLC runner's success check (`sdlc-runner.mjs` line 1201) evaluates only `re
 
 The runner now uses `--output-format stream-json` (newline-delimited JSON events) and parses the final result via `extractResultFromStream()`, which `extractSessionId()` also uses to extract the `session_id` field. The `detectSoftFailure()` function uses `extractResultFromStream()` to check the `subtype` and `permission_denials` fields that indicate the step did not actually succeed.
 
-A contributing factor is that the `starting-issues` SKILL.md positions the Automation Mode instruction (lines 18–22) as a mid-page section. While the instruction is correct ("skip `AskUserQuestion` when `.claude/auto-mode` exists"), it's not prominent enough for reliable model compliance in headless pipe mode. Claude ignored the instruction and called `AskUserQuestion` repeatedly, each call denied, consuming all turns.
+A contributing factor is that the `start-issue` SKILL.md positions the Automation Mode instruction (lines 18–22) as a mid-page section. While the instruction is correct ("skip `AskUserQuestion` when `.claude/auto-mode` exists"), it's not prominent enough for reliable model compliance in headless pipe mode. Claude ignored the instruction and called `AskUserQuestion` repeatedly, each call denied, consuming all turns.
 
 ### Affected Code
 
@@ -22,7 +22,7 @@ A contributing factor is that the `starting-issues` SKILL.md positions the Autom
 | `openclaw/scripts/sdlc-runner.mjs` | 1201–1208 | Success path — assumes exit code 0 = step success, never parses JSON output |
 | `openclaw/scripts/sdlc-runner.mjs` | 379–385 | `extractSessionId()` — already parses JSON for `session_id` but ignores `subtype` and `permission_denials` |
 | `openclaw/scripts/sdlc-runner.mjs` | 957–1010 | `extractStateFromStep()` — reads `result.stdout` but only for issue/branch/PR extraction, not failure indicators |
-| `plugins/nmg-sdlc/skills/starting-issues/SKILL.md` | 18–22 | Automation Mode instruction — correct content but insufficient prominence |
+| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | 18–22 | Automation Mode instruction — correct content but insufficient prominence |
 
 ### Triggering Conditions
 
@@ -42,7 +42,7 @@ Add a `detectSoftFailure(stdout)` function that uses `extractResultFromStream()`
 
 To make the runner testable, refactor the module to guard the CLI bootstrap behind an `isMainModule` check and export all internal functions. Create a comprehensive Jest test suite under `openclaw/scripts/__tests__/` with mocked `node:child_process` and `node:fs` dependencies.
 
-For the `starting-issues` SKILL.md, add a bold critical callout at the top of the file (below frontmatter) and reinforce the directive inside Step 2 where `AskUserQuestion` is used.
+For the `start-issue` SKILL.md, add a bold critical callout at the top of the file (below frontmatter) and reinforce the directive inside Step 2 where `AskUserQuestion` is used.
 
 ### Changes
 
@@ -53,11 +53,11 @@ For the `starting-issues` SKILL.md, add a bold critical callout at the top of th
 | `openclaw/scripts/sdlc-runner.mjs` | Guard CLI bootstrap with `isMainModule` check; export internal functions | Enables importing functions for testing without triggering CLI execution |
 | `openclaw/scripts/__tests__/sdlc-runner.test.mjs` | Create comprehensive Jest test suite | Covers all core runner functionality per AC5 |
 | `openclaw/scripts/package.json` | Add Jest as dev dependency with ESM config | Required to run the test suite |
-| `plugins/nmg-sdlc/skills/starting-issues/SKILL.md` | Add prominent automation callout at top; reinforce in Step 2 | Increases model compliance for auto-mode behavior |
+| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | Add prominent automation callout at top; reinforce in Step 2 | Increases model compliance for auto-mode behavior |
 
 ### Blast Radius
 
-- **Direct impact**: `runStep()` success path in `sdlc-runner.mjs`, `starting-issues` SKILL.md
+- **Direct impact**: `runStep()` success path in `sdlc-runner.mjs`, `start-issue` SKILL.md
 - **Indirect impact**: All callers of `runStep()` (main loop, single-step mode) — they receive the same return values (`'ok'`, `'retry'`, `'escalated'`, etc.) so no interface change needed
 - **Risk level**: Low — the soft failure check is additive (new code path for a previously unhandled case), and the SKILL.md change is instructional text only
 

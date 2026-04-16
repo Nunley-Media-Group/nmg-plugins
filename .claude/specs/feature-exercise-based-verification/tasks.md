@@ -50,11 +50,11 @@ No setup tasks — this feature modifies existing Markdown files only. No migrat
 
 ## Phase 2: Skill Implementation
 
-These tasks modify `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` to add exercise-based verification as a conditional branch in Step 5.
+These tasks modify `plugins/nmg-sdlc/skills/verify-code/SKILL.md` to add exercise-based verification as a conditional branch in Step 5.
 
 ### T001: Add Plugin Change Detection to Step 5
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -68,7 +68,7 @@ These tasks modify `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` to add exe
 
 ### T002: Add Test Project Scaffolding Instructions
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/SKILL.md`
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:
@@ -83,7 +83,7 @@ These tasks modify `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` to add exe
 
 ### T003: Add Exercise Invocation Instructions (Agent SDK + Fallback)
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/SKILL.md`
 **Type**: Modify
 **Depends**: T002
 **Acceptance**:
@@ -102,7 +102,7 @@ These tasks modify `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` to add exe
 
 ### T004: Add Output Evaluation and Cleanup Instructions
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/SKILL.md`
 **Type**: Modify
 **Depends**: T003
 **Acceptance**:
@@ -118,7 +118,7 @@ These tasks modify `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` to add exe
 
 ### T005: Add Graceful Degradation Handling
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/SKILL.md`
 **Type**: Modify
 **Depends**: T003
 **Acceptance**:
@@ -137,7 +137,7 @@ These tasks modify `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` to add exe
 
 ### T006: Add Exercise Test Results Section to Report Template
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/checklists/report-template.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/checklists/report-template.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -156,7 +156,7 @@ These tasks modify `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` to add exe
 
 ### T007: Verify Step 5 ↔ Report Template Consistency
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md`, `plugins/nmg-sdlc/skills/verifying-specs/checklists/report-template.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/SKILL.md`, `plugins/nmg-sdlc/skills/verify-code/checklists/report-template.md`
 **Type**: Verify (review, no file changes expected)
 **Depends**: T001, T002, T003, T004, T005, T006
 **Acceptance**:
@@ -184,7 +184,7 @@ These tasks modify `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` to add exe
 - [ ] Includes happy path (AC1–AC3), alternative paths (AC4–AC5), error handling (AC8–AC9), and edge cases (AC10)
 - [ ] Scenarios are independent and self-contained
 
-**Notes**: This feature file serves as the verification criteria for exercise-based testing of the modified `/verifying-specs` skill itself (dogfooding).
+**Notes**: This feature file serves as the verification criteria for exercise-based testing of the modified `/verify-code` skill itself (dogfooding).
 
 ---
 
@@ -194,7 +194,7 @@ These tasks modify the exercise testing reference file to fix ESM module resolut
 
 ### T009: Replace SDK Availability Check with Path-Resolving Check
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md`
 **Type**: Modify
 **Depends**: T003
 **Acceptance**:
@@ -208,7 +208,7 @@ These tasks modify the exercise testing reference file to fix ESM module resolut
 
 ### T010: Update Exercise Script Template with Dynamic Import
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md`
 **Type**: Modify
 **Depends**: T009
 **Acceptance**:

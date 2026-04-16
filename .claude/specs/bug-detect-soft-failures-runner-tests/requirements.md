@@ -78,7 +78,7 @@ Always — any step that burns all turns without completing its goal will be mis
 
 ### AC4: Auto-Mode Instruction Is More Prominent
 
-**Given** the `starting-issues` SKILL.md
+**Given** the `start-issue` SKILL.md
 **When** Claude reads the skill in headless mode
 **Then** the Automation Mode instruction is positioned and formatted to maximize model compliance (e.g., moved above workflow, bolded critical directive, repeated in Step 2)
 
@@ -107,7 +107,7 @@ Always — any step that burns all turns without completing its goal will be mis
 | FR2 | Treat `error_max_turns` subtype as step failure regardless of exit code | Must |
 | FR3 | Treat non-empty `permission_denials` as step failure regardless of exit code | Must |
 | FR4 | Comprehensive Jest BDD test suite for all runner functionality | Must |
-| FR5 | Improve auto-mode instruction prominence in starting-issues SKILL.md | Should |
+| FR5 | Improve auto-mode instruction prominence in start-issue SKILL.md | Should |
 
 ---
 
@@ -117,7 +117,7 @@ Always — any step that burns all turns without completing its goal will be mis
 - Changes to failure loop detection logic (#33, working correctly)
 - Runner-level auto-selection of issues (bypassing the skill entirely)
 - Configurable soft failure patterns
-- Changes to any SDLC skills other than `starting-issues` (AC4 only)
+- Changes to any SDLC skills other than `start-issue` (AC4 only)
 
 ---
 

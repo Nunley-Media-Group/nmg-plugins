@@ -9,7 +9,7 @@
 
 ## User Story
 
-**As a** developer using the creating-issues skill
+**As a** developer using the draft-issue skill
 **I want** the skill to proactively classify the issue type (bug vs enhancement) and perform type-specific codebase investigation before drafting
 **So that** issues are created with richer context — current-state analysis for enhancements and root-cause investigation for bugs — improving quality of downstream spec writing and implementation
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-The creating-issues skill currently has type-specific interview guidance (feature vs bug vs enhancement) but it's passive — it adapts its questions based on what emerges during the interview rather than proactively branching the workflow. This means:
+The draft-issue skill currently has type-specific interview guidance (feature vs bug vs enhancement) but it's passive — it adapts its questions based on what emerges during the interview rather than proactively branching the workflow. This means:
 
 - For **enhancements**, issues are drafted without understanding the current state of the codebase, leading to specs that may miss existing patterns or capabilities.
 - For **bugs**, issues capture only what the user reports without investigating the codebase to identify root causes, leaving that work entirely to the spec/implementation phase.
@@ -32,12 +32,12 @@ By adding upfront classification and type-specific investigation steps, issues w
 
 ### AC1: Upfront Type Classification — Happy Path
 
-**Given** the user invokes `/creating-issues` (with or without an argument)
+**Given** the user invokes `/draft-issue` (with or without an argument)
 **When** the interview begins
 **Then** the very first question asks whether this is a bug or an enhancement/feature, before any other interview questions
 
 **Example**:
-- Given: User runs `/creating-issues "improve search performance"`
+- Given: User runs `/draft-issue "improve search performance"`
 - When: The skill begins the interview
 - Then: The first question presented is "Is this a bug or an enhancement/feature?" (via `AskUserQuestion`)
 
@@ -48,7 +48,7 @@ By adding upfront classification and type-specific investigation steps, issues w
 **Then** it explores existing specs in `.claude/specs/` for relevant areas and examines relevant source code to understand the current state, and includes a "Current State" summary section in the issue body
 
 **Example**:
-- Given: User classifies issue as "enhancement" for improving the writing-specs skill
+- Given: User classifies issue as "enhancement" for improving the write-spec skill
 - When: The skill investigates the codebase
 - Then: It reads existing specs related to the area, examines the current SKILL.md, and adds a "Current State" section describing what exists today
 
@@ -66,11 +66,11 @@ By adding upfront classification and type-specific investigation steps, issues w
 ### AC4: Automation Mode Unchanged
 
 **Given** the `.claude/auto-mode` file exists
-**When** the creating-issues skill is invoked
+**When** the draft-issue skill is invoked
 **Then** behavior is unchanged — automation mode does not add type-classification or investigation steps (auto-mode skips the interview entirely, so there is no classification step to add)
 
 **Example**:
-- Given: `.claude/auto-mode` exists and user runs `/creating-issues "add logging"`
+- Given: `.claude/auto-mode` exists and user runs `/draft-issue "add logging"`
 - When: The skill executes in auto-mode
 - Then: It follows the existing auto-mode path (skip interview, generate ACs from argument) with no changes
 
@@ -92,7 +92,7 @@ By adding upfront classification and type-specific investigation steps, issues w
 **Then** the issue body includes a "## Current State" section between "## Background" and "## Acceptance Criteria" summarizing what the codebase exploration found
 
 **Example**:
-- Given: Investigation found the creating-issues skill has passive type adaptation in Step 2
+- Given: Investigation found the draft-issue skill has passive type adaptation in Step 2
 - When: The issue body is drafted
 - Then: A "## Current State" section documents the current behavior, relevant code locations, and existing patterns
 
@@ -111,12 +111,12 @@ By adding upfront classification and type-specific investigation steps, issues w
 
 ```gherkin
 Feature: Upfront Issue Type Classification
-  As a developer using the creating-issues skill
+  As a developer using the draft-issue skill
   I want the skill to proactively classify the issue type and perform type-specific investigation
   So that issues are created with richer context for downstream SDLC phases
 
   Scenario: Upfront Type Classification — Happy Path
-    Given the user invokes "/creating-issues" with or without an argument
+    Given the user invokes "/draft-issue" with or without an argument
     When the interview begins
     Then the very first question asks whether this is a bug or an enhancement/feature
 
@@ -136,7 +136,7 @@ Feature: Upfront Issue Type Classification
 
   Scenario: Automation Mode Unchanged
     Given the ".claude/auto-mode" file exists
-    When the creating-issues skill is invoked
+    When the draft-issue skill is invoked
     Then behavior is unchanged from the current auto-mode path
 
   Scenario: Interview Flow Adapts After Classification
@@ -215,7 +215,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 ## Dependencies
 
 ### Internal Dependencies
-- [x] Creating-issues skill exists (`plugins/nmg-sdlc/skills/creating-issues/SKILL.md`)
+- [x] Creating-issues skill exists (`plugins/nmg-sdlc/skills/draft-issue/SKILL.md`)
 - [x] Steering documents exist (`.claude/steering/product.md`, `tech.md`, `structure.md`)
 
 ### External Dependencies
@@ -231,7 +231,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 
 - Changes to automation mode behavior (explicitly excluded per AC4)
 - Changes to the bug report or enhancement issue templates' structure (content is richer, but sections remain the same except for the new Current State / Root Cause Analysis sections)
-- Changes to other SDLC skills (writing-specs, implementing-specs, etc.)
+- Changes to other SDLC skills (write-spec, write-code, etc.)
 - Automated codebase investigation without user confirmation (bug path always confirms hypothesis)
 - Adding new labels or GitHub project integration
 

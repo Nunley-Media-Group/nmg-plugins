@@ -23,7 +23,7 @@
 
 ### T001: Add `--issue` CLI Flag Parsing and Validation
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -38,7 +38,7 @@
 
 ### T002: Modify Step 2 Prompt for Targeted Issue Selection
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:
@@ -50,7 +50,7 @@
 
 ### T003: Add Single-Cycle Exit and Escalation Behavior
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:
@@ -65,28 +65,28 @@
 
 ## Phase 2: Skill Creation
 
-### T004: Create `running-sdlc-loop/SKILL.md`
+### T004: Create `run-loop/SKILL.md`
 
-**File(s)**: `plugins/nmg-sdlc/skills/running-sdlc-loop/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/run-loop/SKILL.md`
 **Type**: Create
 **Depends**: T001, T002, T003
 **Acceptance**:
-- [ ] SKILL.md has correct YAML frontmatter: `name`, `description`, `argument-hint`, `model: sonnet`, `allowed-tools`
+- [ ] SKILL.md has correct YAML frontmatter: `name`, `description`, `argument-hint`, `allowed-tools`
 - [ ] Skill handles argument parsing: no argument = loop mode, `#N` or `N` = single-issue mode
-- [ ] Step 1: Checks for `sdlc-config.json` at project root; if missing, invokes `Skill("nmg-sdlc:generating-openclaw-config")` to create it
-- [ ] Step 2: Reads config to extract `pluginsPath`; derives runner path as `<pluginsPath>/openclaw/scripts/sdlc-runner.mjs`; verifies runner exists
+- [ ] Step 1: Checks for `sdlc-config.json` at project root; if missing, invokes `Skill("nmg-sdlc:init-config")` to create it
+- [ ] Step 2: Reads config to extract `pluginsPath`; derives runner path as `<pluginsPath>/scripts/sdlc-runner.mjs`; verifies runner exists
 - [ ] Step 3: Builds and executes command: `CLAUDECODE="" node <runner-path> --config <config-path>` (loop mode) or `CLAUDECODE="" node <runner-path> --config <config-path> --issue N` (single-issue mode)
 - [ ] Step 4: Reports runner output, exit code, and log path
 - [ ] Includes auto-mode section noting the runner creates/removes `.claude/auto-mode` automatically
 - [ ] Includes "Integration with SDLC Workflow" section
 - [ ] Cross-platform: uses POSIX-compatible commands only
-- [ ] References the OpenClaw `running-sdlc` skill pattern for log tailing
+- [ ] References the existing log tailing patterns
 
-**Notes**: Follow structure patterns from existing skills (e.g., `starting-issues/SKILL.md`). The OpenClaw `running-sdlc/SKILL.md` is the primary reference for runner invocation, path resolution, and log handling. The key differences: (1) `CLAUDECODE=""` prefix, (2) `--issue N` flag support, (3) no Discord channel resolution, (4) no `nohup` (runs in foreground, blocking until complete or Bash timeout).
+**Notes**: Follow structure patterns from existing skills (e.g., `start-issue/SKILL.md`). Key design choices: (1) `CLAUDECODE=""` prefix to enable subprocess spawning, (2) `--issue N` flag support for single-issue mode, (3) runs in foreground, blocking until complete or Bash timeout.
 
 ### T005: Validate SKILL.md with `/doing-skills-right`
 
-**File(s)**: `plugins/nmg-sdlc/skills/running-sdlc-loop/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/run-loop/SKILL.md`
 **Type**: Verify
 **Depends**: T004
 **Acceptance**:
@@ -109,7 +109,7 @@
 - [ ] New skill listed in the Skills Reference section
 - [ ] Description matches the skill's purpose (run full SDLC pipeline from within Claude Code)
 - [ ] Usage examples for both loop mode and single-issue mode
-- [ ] Differentiation from the OpenClaw `running-sdlc` skill explained
+- [ ] Usage examples for both loop mode and single-issue mode documented
 
 ### T007: Update CHANGELOG.md
 
@@ -127,7 +127,7 @@
 
 ### T008: Add Unit Tests for `--issue` Flag
 
-**File(s)**: `openclaw/scripts/__tests__/sdlc-runner.test.mjs`
+**File(s)**: `scripts/__tests__/sdlc-runner.test.mjs`
 **Type**: Modify
 **Depends**: T001, T002, T003
 **Acceptance**:

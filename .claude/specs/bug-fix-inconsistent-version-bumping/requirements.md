@@ -38,11 +38,11 @@ Intermittent (~50% of the time). In a batch of 6 consecutive issues (#114–#119
 | | Description |
 |---|-------------|
 | **Expected** | Every PR created by the SDLC runner includes a version bump commit that updates the `VERSION` file, `CHANGELOG.md`, and stack-specific version files (e.g., `Cargo.toml`) |
-| **Actual** | Approximately 50% of PRs are missing the version bump. The version bump is skipped non-deterministically depending on whether the `claude -p` subprocess follows the full `/creating-prs` skill workflow |
+| **Actual** | Approximately 50% of PRs are missing the version bump. The version bump is skipped non-deterministically depending on whether the `claude -p` subprocess follows the full `/open-pr` skill workflow |
 
 ### Error Output
 
-No error output — the version bump is silently skipped. The `/creating-prs` skill instructions (Steps 2–3) are delivered as appended system prompt text, but the runner's Step 7 prompt is generic:
+No error output — the version bump is silently skipped. The `/open-pr` skill instructions (Steps 2–3) are delivered as appended system prompt text, but the runner's Step 7 prompt is generic:
 
 ```
 "Create a pull request for branch ${branch} targeting main for issue #${issue}."
@@ -60,7 +60,7 @@ Under turn/time pressure, the LLM sometimes skips the version bumping steps and 
 
 **Given** the SDLC runner is processing an issue for a project with a `VERSION` file
 **When** the runner reaches the PR creation phase (Step 7)
-**Then** a deterministic step (before the `/creating-prs` skill) bumps the `VERSION` file, updates `CHANGELOG.md`, and updates stack-specific version files defined in `.claude/steering/tech.md`
+**Then** a deterministic step (before the `/open-pr` skill) bumps the `VERSION` file, updates `CHANGELOG.md`, and updates stack-specific version files defined in `.claude/steering/tech.md`
 
 **Example**:
 - Given: Project has `VERSION` containing `0.1.5`, `tech.md` lists `Cargo.toml:package.version`, issue has `bug` label
@@ -69,7 +69,7 @@ Under turn/time pressure, the LLM sometimes skips the version bumping steps and 
 
 ### AC2: Reinforced Skill Instructions (Defense-in-Depth)
 
-**Given** the `/creating-prs` skill is running in auto-mode
+**Given** the `/open-pr` skill is running in auto-mode
 **When** the LLM processes the skill instructions and the runner's Step 7 prompt
 **Then** both the skill text and the runner's Step 7 prompt explicitly state that version bumping is mandatory
 
@@ -91,7 +91,7 @@ Under turn/time pressure, the LLM sometimes skips the version bumping steps and 
 
 ### AC4: No Regression for Manual Workflow
 
-**Given** a developer runs `/creating-prs` interactively (no auto-mode)
+**Given** a developer runs `/open-pr` interactively (no auto-mode)
 **When** the skill reaches Step 2 (version bump)
 **Then** the existing interactive confirmation flow (`AskUserQuestion`) still works as before — the developer is prompted to confirm the version bump type and can override
 
@@ -105,7 +105,7 @@ Under turn/time pressure, the LLM sometimes skips the version bumping steps and 
 | FR2 | The deterministic step commits version changes with `chore: bump version to {new_version}` message format | Must |
 | FR3 | Add a postcondition check after PR creation (Step 7) that verifies `VERSION` changed vs `main`; retry the step if version was not bumped | Must |
 | FR4 | Strengthen the runner's Step 7 prompt to explicitly mention version bumping as mandatory (defense-in-depth alongside the deterministic step) | Should |
-| FR5 | Preserve the existing interactive version bump flow in `/creating-prs` for manual (non-auto-mode) use | Must |
+| FR5 | Preserve the existing interactive version bump flow in `/open-pr` for manual (non-auto-mode) use | Must |
 
 ---
 
@@ -114,7 +114,7 @@ Under turn/time pressure, the LLM sometimes skips the version bumping steps and 
 - Changing the version classification matrix (patch/minor/major logic) — that's defined in spec #41
 - Modifying how milestones trigger major bumps
 - Adding version bumping to non-PR steps (implementation, verification)
-- Refactoring the `/creating-prs` skill's version bump steps beyond adding "mandatory" language
+- Refactoring the `/open-pr` skill's version bump steps beyond adding "mandatory" language
 
 ---
 

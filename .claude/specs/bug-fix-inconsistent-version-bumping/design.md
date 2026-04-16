@@ -9,7 +9,7 @@
 
 ## Root Cause
 
-Version bumping in automated SDLC runs is non-deterministic because the version bump logic lives exclusively in the `/creating-prs` skill (Steps 2–3), which is delivered as appended system prompt text to a `claude -p` subprocess. The runner's Step 7 prompt (line 810 of `sdlc-runner.mjs`) is generic:
+Version bumping in automated SDLC runs is non-deterministic because the version bump logic lives exclusively in the `/open-pr` skill (Steps 2–3), which is delivered as appended system prompt text to a `claude -p` subprocess. The runner's Step 7 prompt (line 810 of `sdlc-runner.mjs`) is generic:
 
 ```
 "Create a pull request for branch ${branch} targeting main for issue #${issue}."
@@ -25,7 +25,7 @@ The runner has no postcondition validation for Step 7 — unlike steps 3, 6, and
 |------|-------|------|
 | `openclaw/scripts/sdlc-runner.mjs` | 810 | Step 7 prompt — generic, no mention of version bumping |
 | `openclaw/scripts/sdlc-runner.mjs` | 1369–1427 | Postcondition gates for steps 3, 4, 6, 8 — Step 7 has none |
-| `plugins/nmg-sdlc/skills/creating-prs/SKILL.md` | 40–87 | Steps 2–3 define version bumping but are LLM-discretionary |
+| `plugins/nmg-sdlc/skills/open-pr/SKILL.md` | 40–87 | Steps 2–3 define version bumping but are LLM-discretionary |
 
 ### Triggering Conditions
 
@@ -46,7 +46,7 @@ The fix uses a **defense-in-depth** strategy with three layers:
 
 2. **Reinforced prompt**: Strengthen the Step 7 prompt to explicitly mention version bumping as mandatory, reducing the chance the LLM skips it in the first place.
 
-3. **Preserved skill flow**: The `/creating-prs` skill's Steps 2–3 remain unchanged — they still handle version bumping for manual (interactive) use. When running in auto-mode under the runner, the deterministic postcondition acts as a safety net if the LLM skips the skill's version bump steps.
+3. **Preserved skill flow**: The `/open-pr` skill's Steps 2–3 remain unchanged — they still handle version bumping for manual (interactive) use. When running in auto-mode under the runner, the deterministic postcondition acts as a safety net if the LLM skips the skill's version bump steps.
 
 This approach was chosen over making the version bump a separate runner step (e.g., Step 6.5) because:
 - It preserves the existing step numbering and config schema
@@ -66,7 +66,7 @@ This approach was chosen over making the version bump a separate runner step (e.
 
 - **Direct impact**: `sdlc-runner.mjs` — Step 7 prompt text, new validation function, postcondition gate in `runStep()`
 - **Indirect impact**: Projects that use the SDLC runner will now always get version bumps on PR creation (which is the intended behavior per spec #41). Projects without a `VERSION` file are unaffected (the check is skipped).
-- **Risk level**: Low — the postcondition only activates when a `VERSION` file exists and the version wasn't bumped. The deterministic bump mirrors the exact same logic already in `/creating-prs` Steps 2–3.
+- **Risk level**: Low — the postcondition only activates when a `VERSION` file exists and the version wasn't bumped. The deterministic bump mirrors the exact same logic already in `/open-pr` Steps 2–3.
 
 ---
 
@@ -75,9 +75,9 @@ This approach was chosen over making the version bump a separate runner step (e.
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | Double version bump (LLM bumps in skill + runner bumps in postcondition) | Low | `validateVersionBump()` checks `git diff main -- VERSION` — if the LLM already bumped, the diff will show changes and the postcondition passes. No double bump. |
-| Deterministic bump uses wrong bump type | Low | Uses the same classification matrix as `/creating-prs` Step 2: `bug` → patch, `enhancement`/other → minor, last milestone issue → major |
-| Runner crashes if `VERSION` file has invalid content | Low | Guard: if `VERSION` doesn't contain valid semver, skip version bumping (same guard as `/creating-prs` Step 2) |
-| Manual workflow regression (AC4) | Very Low | No changes to `/creating-prs` SKILL.md — the skill's interactive flow via `AskUserQuestion` is untouched |
+| Deterministic bump uses wrong bump type | Low | Uses the same classification matrix as `/open-pr` Step 2: `bug` → patch, `enhancement`/other → minor, last milestone issue → major |
+| Runner crashes if `VERSION` file has invalid content | Low | Guard: if `VERSION` doesn't contain valid semver, skip version bumping (same guard as `/open-pr` Step 2) |
+| Manual workflow regression (AC4) | Very Low | No changes to `/open-pr` SKILL.md — the skill's interactive flow via `AskUserQuestion` is untouched |
 | Runner step config changes break existing configs | Very Low | No changes to step numbering or config schema — only prompt text and postcondition logic change |
 
 ---

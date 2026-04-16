@@ -10,7 +10,7 @@
 ## User Story
 
 **As a** developer working on the nmg-sdlc plugin
-**I want** `/verifying-specs` to exercise changed skills in Claude Code against a test project
+**I want** `/verify-code` to exercise changed skills in Claude Code against a test project
 **So that** skill changes are verified by actual invocation, not just static analysis of Markdown
 
 ---
@@ -19,7 +19,7 @@
 
 The nmg-sdlc plugin is a Claude Code plugin where skills are Markdown instructions (SKILL.md files), not executable code. Traditional test coverage checks — verifying `.feature` files and step definitions exist — are insufficient for plugin projects. The only way to truly verify a skill change is to load the plugin and invoke the skill against a real project.
 
-The steering docs (`tech.md`) already define the exercise-based verification strategy, test project scaffolding pattern, and dry-run evaluation approach, but `/verifying-specs` doesn't yet act on this guidance automatically. Skills that use `AskUserQuestion` require the Claude Agent SDK `canUseTool` callback (or Promptfoo's declarative wrapper) to test interactively; `claude -p` with `--disallowedTools AskUserQuestion` serves as a simpler fallback.
+The steering docs (`tech.md`) already define the exercise-based verification strategy, test project scaffolding pattern, and dry-run evaluation approach, but `/verify-code` doesn't yet act on this guidance automatically. Skills that use `AskUserQuestion` require the Claude Agent SDK `canUseTool` callback (or Promptfoo's declarative wrapper) to test interactively; `claude -p` with `--disallowedTools AskUserQuestion` serves as a simpler fallback.
 
 ---
 
@@ -29,12 +29,12 @@ The steering docs (`tech.md`) already define the exercise-based verification str
 
 ### AC1: Detect Plugin Changes
 
-**Given** `/verifying-specs` is running and has loaded the spec and diff
+**Given** `/verify-code` is running and has loaded the spec and diff
 **When** the changed files include SKILL.md files or agent definition `.md` files
 **Then** the skill flags the change as a "plugin change" requiring exercise-based verification
 
 **Example**:
-- Given: Diff includes `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md`
+- Given: Diff includes `plugins/nmg-sdlc/skills/verify-code/SKILL.md`
 - When: Step 5 begins plugin-change detection
 - Then: A flag is set indicating exercise-based verification is needed
 
@@ -48,7 +48,7 @@ The steering docs (`tech.md`) already define the exercise-based verification str
 - An initialized git repo (`git init` + initial commit)
 
 **Example**:
-- Given: Plugin change detected for `writing-specs` skill
+- Given: Plugin change detected for `write-spec` skill
 - When: Test project scaffolding runs
 - Then: `/tmp/nmg-sdlc-test-{timestamp}/` exists with steering docs, `src/index.js`, `README.md`, `.gitignore`, and a git history with one commit
 
@@ -64,7 +64,7 @@ The steering docs (`tech.md`) already define the exercise-based verification str
 
 **Example**:
 - Given: Test project at `/tmp/nmg-sdlc-test-1234/`
-- When: `writing-specs` skill is exercised via Agent SDK
+- When: `write-spec` skill is exercised via Agent SDK
 - Then: All `AskUserQuestion` calls receive the first option; output messages are captured for evaluation
 
 ### AC4: Fallback to `claude -p` When Agent SDK Unavailable
@@ -85,7 +85,7 @@ The steering docs (`tech.md`) already define the exercise-based verification str
 **Then** the skill generates the content that WOULD be created (title, body, labels, commands) without creating real GitHub artifacts, and evaluates this content against the spec's acceptance criteria
 
 **Example**:
-- Given: `creating-issues` skill is being exercised
+- Given: `draft-issue` skill is being exercised
 - When: The skill would normally run `gh issue create`
 - Then: The generated issue title, body, and labels are captured and evaluated against ACs without the actual GitHub API call
 
@@ -96,7 +96,7 @@ The steering docs (`tech.md`) already define the exercise-based verification str
 **Then** each AC from `requirements.md` is checked against the exercise output, marked Pass/Fail/Partial with evidence
 
 **Example**:
-- Given: Exercise of `writing-specs` produced output including file creation messages
+- Given: Exercise of `write-spec` produced output including file creation messages
 - When: AC evaluation runs
 - Then: Each AC gets a verdict: "AC1: Pass — requirements.md created at expected path" / "AC2: Fail — design.md missing"
 
@@ -136,7 +136,7 @@ The steering docs (`tech.md`) already define the exercise-based verification str
 
 ### AC10: Non-Plugin Projects Unchanged
 
-**Given** `/verifying-specs` is running in a non-plugin project (no SKILL.md or agent definition files in the diff)
+**Given** `/verify-code` is running in a non-plugin project (no SKILL.md or agent definition files in the diff)
 **When** Step 5 (Verify Test Coverage) executes
 **Then** the existing BDD test coverage verification behavior runs unchanged — checking `.feature` files, Gherkin scenarios, step definitions, and executing the test command from `tech.md`
 
@@ -180,11 +180,11 @@ The steering docs (`tech.md`) already define the exercise-based verification str
 ```gherkin
 Feature: Exercise-Based Verification for Plugin Projects
   As a developer working on the nmg-sdlc plugin
-  I want /verifying-specs to exercise changed skills against a test project
+  I want /verify-code to exercise changed skills against a test project
   So that skill changes are verified by actual invocation
 
   Scenario: Detect plugin changes in diff
-    Given /verifying-specs is running and has loaded the spec and diff
+    Given /verify-code is running and has loaded the spec and diff
     When the changed files include SKILL.md or agent definition files
     Then the skill flags the change as a plugin change requiring exercise-based verification
 
@@ -329,7 +329,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 ### Internal Dependencies
 - [x] Steering docs define exercise-based verification strategy (`tech.md` → Testing Standards)
 - [x] Test project scaffolding layout defined (`structure.md` → Test Project Scaffolding)
-- [x] Existing `/verifying-specs` skill with Step 5 test coverage verification
+- [x] Existing `/verify-code` skill with Step 5 test coverage verification
 - [x] OpenClaw runner's `claude -p` subprocess pattern (`sdlc-runner.mjs`) as reference
 
 ### External Dependencies
@@ -345,7 +345,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 ## Out of Scope
 
 - Creating a persistent test GitHub repository for exercise testing
-- Changes to any skill other than `/verifying-specs` and its report template
+- Changes to any skill other than `/verify-code` and its report template
 - Changes to the architecture-reviewer agent or its checklists
 - Automating exercise testing in CI/CD pipelines (future: Promptfoo integration)
 - Exercise testing for template-only changes (templates are verified via static analysis)

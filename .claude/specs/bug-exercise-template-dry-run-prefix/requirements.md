@@ -13,8 +13,8 @@
 
 ### Steps to Reproduce
 
-1. Have a skill with `disable-model-invocation: true` in its SKILL.md frontmatter (e.g., `creating-prs`)
-2. Run `/verifying-specs` on a change that includes that skill
+1. Have a skill with `disable-model-invocation: true` in its SKILL.md frontmatter (e.g., `open-pr`)
+2. Run `/verify-code` on a change that includes that skill
 3. Step 5c constructs the exercise prompt by prepending the dry-run prefix before the skill invocation: `"{dry-run-prefix}\n\n/{skill-name} {args}"`
 4. The nested Claude session receives the prompt and does NOT recognize the `/{skill-name}` as a skill invocation
 5. The model improvises instead of loading the SKILL.md instructions
@@ -67,7 +67,7 @@ No error is raised — the model silently improvises instead of loading the skil
 
 ### AC3: Non-disable-model-invocation Skills Still Work
 
-**Given** a skill WITHOUT `disable-model-invocation: true` (e.g., `creating-issues`)
+**Given** a skill WITHOUT `disable-model-invocation: true` (e.g., `draft-issue`)
 **When** the exercise template generates a dry-run prompt for that skill
 **Then** the skill invocation is still recognized and loaded
 **And** dry-run instructions are respected

@@ -44,7 +44,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T001: Add Auto-Mode to Creating-Issues
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Status**: Complete
@@ -55,7 +55,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T002: Add Auto-Mode to Starting-Issues
 
-**File(s)**: `plugins/nmg-sdlc/skills/starting-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/start-issue/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Status**: Complete
@@ -66,7 +66,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T003: Add Auto-Mode to Writing-Specs
 
-**File(s)**: `plugins/nmg-sdlc/skills/writing-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/write-spec/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Status**: Complete
@@ -77,7 +77,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T004: Add Auto-Mode to Implementing-Specs
 
-**File(s)**: `plugins/nmg-sdlc/skills/implementing-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/write-code/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Status**: Complete
@@ -88,7 +88,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T005: Add Auto-Mode to Verifying-Specs
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Status**: Complete
@@ -98,7 +98,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T006: Add Auto-Mode to Creating-PRs
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-prs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/open-pr/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Status**: Complete
@@ -139,7 +139,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T009: Add Automatable Question to Creating-Issues Interactive Mode
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 **Type**: Modify
 **Depends**: T001
 **Status**: Complete
@@ -152,7 +152,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T010: Update Creating-Issues Auto-Mode to Default Automatable
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 **Type**: Modify
 **Depends**: T009
 **Status**: Complete
@@ -165,7 +165,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T011: Add Label Auto-Creation and Postcondition Check to Creating-Issues Step 8
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 **Type**: Modify
 **Depends**: T009
 **Status**: Complete
@@ -180,7 +180,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T012: Add Automatable Label Filter to Starting-Issues Auto-Mode
 
-**File(s)**: `plugins/nmg-sdlc/skills/starting-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/start-issue/SKILL.md`
 **Type**: Modify
 **Depends**: T002
 **Status**: Complete
@@ -193,7 +193,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T013: Add Empty-Set Handling to Starting-Issues Auto-Mode
 
-**File(s)**: `plugins/nmg-sdlc/skills/starting-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/start-issue/SKILL.md`
 **Type**: Modify
 **Depends**: T012
 **Status**: Complete
@@ -207,7 +207,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T014: Add Automatable Indicator to Starting-Issues Interactive Mode
 
-**File(s)**: `plugins/nmg-sdlc/skills/starting-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/start-issue/SKILL.md`
 **Type**: Modify
 **Depends**: T002
 **Status**: Complete
@@ -221,14 +221,14 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T015: Verify Cross-Skill Consistency for Automatable Label
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`, `plugins/nmg-sdlc/skills/starting-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`, `plugins/nmg-sdlc/skills/start-issue/SKILL.md`
 **Type**: Verify
 **Depends**: T009, T010, T011, T012, T013, T014
 **Status**: Complete
 **Acceptance**:
 - [x] The label name `automatable` is consistent across both skills (no typos, no case differences)
 - [x] The `gh label create` command uses the exact color `0E8A16` and description `"Suitable for automated SDLC processing"`
-- [x] `/creating-issues` applies the label → `/starting-issues` filters by the same label
+- [x] `/draft-issue` applies the label → `/start-issue` filters by the same label
 - [x] Auto-mode behavior is documented consistently in both skills' Automation Mode sections
 
 ### T016: Add BDD Scenarios for Automatable Label Gate
@@ -270,7 +270,7 @@ T009, T010, T011, T012, T013, T014 ──▶ T015 ──▶ T016
 | Issue | Date | Summary |
 |-------|------|---------|
 | #11 | 2026-02-15 | Initial feature spec |
-| #71 | 2026-02-22 | Add Phase 4: automatable label gate — 8 tasks across creating-issues and starting-issues skills |
+| #71 | 2026-02-22 | Add Phase 4: automatable label gate — 8 tasks across draft-issue and start-issue skills |
 
 ## Validation Checklist
 

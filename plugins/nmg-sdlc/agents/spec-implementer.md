@@ -1,9 +1,9 @@
 ---
 name: spec-implementer
-description: "Execute implementation tasks from BDD specs. Reads specifications, steering documents, and tasks, then implements code changes sequentially. Auto-invoked by implementing-specs during the code phase."
+description: "Execute implementation tasks from BDD specs. Reads specifications, steering documents, and tasks, then implements code changes sequentially. Auto-invoked by write-code during the code phase."
 tools: Read, Glob, Grep, Write, Edit, Bash, WebFetch, WebSearch
 model: sonnet
-skills: implementing-specs
+skills: write-code
 ---
 
 # Spec Implementer Agent
@@ -12,7 +12,7 @@ Executes implementation tasks from BDD specifications. This agent handles the co
 
 ## When Auto-Invoked
 
-This agent is automatically invoked by `/implementing-specs` during Step 5 (Execute Tasks) via the Task tool. It can also be invoked manually for direct implementation work.
+This agent is automatically invoked by `/write-code` during Step 5 (Execute Tasks) via the Task tool. It can also be invoked manually for direct implementation work.
 
 ## Execution Process
 

@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature modifies the creating-issues skill (`plugins/nmg-sdlc/skills/creating-issues/SKILL.md`) to add upfront type classification and type-specific codebase investigation before the interview phase. The change is entirely within a single Markdown skill definition — no new files, templates, or code are required.
+This feature modifies the draft-issue skill (`plugins/nmg-sdlc/skills/draft-issue/SKILL.md`) to add upfront type classification and type-specific codebase investigation before the interview phase. The change is entirely within a single Markdown skill definition — no new files, templates, or code are required.
 
 The current 6-step workflow will be restructured to insert a classification step immediately after context gathering, followed by a type-specific investigation step. The existing interview, synthesis, review, and creation steps are then adapted to use the classified type. The skill's `allowed-tools` frontmatter already includes `Read`, `Glob`, and `Grep` (currently unused), so no frontmatter changes are needed for investigation capabilities.
 
@@ -22,7 +22,7 @@ The two issue body templates (feature/enhancement and bug report) will each gain
 ### Component Diagram
 
 ```
-creating-issues SKILL.md (single file modification)
+draft-issue SKILL.md (single file modification)
 ┌────────────────────────────────────────────────────────────────┐
 │  Step 1: Gather Context          (existing, minor update)      │
 │  Step 2: Classify Issue Type     (NEW — AskUserQuestion)       │
@@ -40,7 +40,7 @@ creating-issues SKILL.md (single file modification)
 ### Data Flow
 
 ```
-1. User invokes /creating-issues [optional argument]
+1. User invokes /draft-issue [optional argument]
 2. Step 1: Read argument + steering docs (existing)
 3. Step 2: AskUserQuestion → "Bug" or "Enhancement/Feature"
 4. Step 3: Based on classification:
@@ -190,7 +190,7 @@ Two branches based on classification result:
 #### Enhancement Path
 
 1. **Explore existing specs**: `Glob` for `.claude/specs/*/requirements.md` and read any that relate to the area the user described
-2. **Explore source code**: Use `Glob` and `Grep` to find files related to the enhancement area (e.g., if enhancing the creating-issues skill, find the SKILL.md, any templates, related hooks)
+2. **Explore source code**: Use `Glob` and `Grep` to find files related to the enhancement area (e.g., if enhancing the draft-issue skill, find the SKILL.md, any templates, related hooks)
 3. **Summarize findings**: Produce a "Current State" summary capturing:
    - What exists today (relevant code, patterns, specs)
    - How the current implementation works
@@ -300,10 +300,10 @@ Steps 6 (Review), 7 (Create Issue), and 8 (Output) are unchanged. The review ste
 | Layer | Type | Coverage |
 |-------|------|----------|
 | Skill definition | BDD (Gherkin) | All 7 acceptance criteria become scenarios |
-| Skill behavior | Manual testing | Install plugin locally, run `/creating-issues` for both bug and enhancement paths |
+| Skill behavior | Manual testing | Install plugin locally, run `/draft-issue` for both bug and enhancement paths |
 | Auto-mode | Manual testing | Verify auto-mode behavior unchanged with `.claude/auto-mode` present |
 
-Since nmg-plugins is a template/plugin repository (not a runtime application), verification is done through the `/verifying-specs` skill and manual testing via `/installing-locally`.
+Since nmg-plugins is a template/plugin repository (not a runtime application), verification is done through the `/verify-code` skill and manual testing via `/installing-locally`.
 
 ---
 

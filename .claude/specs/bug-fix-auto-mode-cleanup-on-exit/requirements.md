@@ -17,7 +17,7 @@
 2. Start the runner: the runner creates `.claude/auto-mode` in the target project
 3. Let it process at least one cycle, or stop it via SIGTERM/SIGINT
 4. Observe that `.claude/auto-mode` still exists in the target project directory
-5. Run any SDLC skill manually (e.g., `/writing-specs`, `/creating-issues`)
+5. Run any SDLC skill manually (e.g., `/write-spec`, `/draft-issue`)
 6. Interactive prompts (interviews, review gates, plan mode) are silently skipped
 
 ### Environment

@@ -32,25 +32,25 @@ Automation mode enables external agents (like OpenClaw) to drive the entire SDLC
 ### AC2: Writing-Specs Skips Human Review Gates
 
 **Given** automation mode is active
-**When** `/writing-specs` runs
+**When** `/write-spec` runs
 **Then** all 3 human review gates between phases are skipped automatically
 
 ### AC3: Implementing-Specs Skips Plan Mode
 
 **Given** automation mode is active
-**When** `/implementing-specs` runs
+**When** `/write-code` runs
 **Then** plan mode is skipped and implementation proceeds without approval
 
 ### AC4: Creating-Issues Infers Criteria
 
 **Given** automation mode is active
-**When** `/creating-issues` is invoked with a feature description
+**When** `/draft-issue` is invoked with a feature description
 **Then** it skips the interview and generates acceptance criteria from steering docs
 
 ### AC5: Starting-Issues Auto-Selects Oldest
 
 **Given** automation mode is active
-**When** `/starting-issues` runs without an issue number argument
+**When** `/start-issue` runs without an issue number argument
 **Then** it selects the oldest open issue automatically
 
 ### AC6: Skills Suppress Next-Step Suggestions
@@ -61,7 +61,7 @@ Automation mode enables external agents (like OpenClaw) to drive the entire SDLC
 
 ### AC7: Creating-Issues — Interactive Automatable Question
 
-**Given** a user is running `/creating-issues` in interactive mode (no `.claude/auto-mode`)
+**Given** a user is running `/draft-issue` in interactive mode (no `.claude/auto-mode`)
 **When** the issue draft is being prepared (during the interview phase)
 **Then** the user is asked "Is this issue suitable for automation?" with Yes/No options
 
@@ -79,44 +79,44 @@ Automation mode enables external agents (like OpenClaw) to drive the entire SDLC
 
 ### AC10: Creating-Issues — Auto-Mode Defaults to Automatable
 
-**Given** `/creating-issues` is running in auto-mode (`.claude/auto-mode` exists)
+**Given** `/draft-issue` is running in auto-mode (`.claude/auto-mode` exists)
 **When** the issue is created
 **Then** the `automatable` label is added automatically without prompting
 
 ### AC11: Starting-Issues — Auto-Mode Filters by Automatable Label
 
-**Given** `/starting-issues` is running in auto-mode
+**Given** `/start-issue` is running in auto-mode
 **When** it fetches issues from the milestone
 **Then** only issues with the `automatable` label are eligible for selection (via `--label automatable` filter on `gh issue list`)
 
 ### AC12: Starting-Issues — Non-Automatable Issues Invisible to Runner
 
 **Given** an open issue exists in the milestone WITHOUT the `automatable` label
-**When** `/starting-issues` runs in auto-mode
+**When** `/start-issue` runs in auto-mode
 **Then** the issue is not presented as a candidate and is skipped entirely
 
 ### AC13: Starting-Issues — Auto-Mode Empty Set When No Automatable Issues
 
-**Given** `/starting-issues` is running in auto-mode
+**Given** `/start-issue` is running in auto-mode
 **And** open issues exist in the milestone but none have the `automatable` label
 **When** the filtered issue list is retrieved
 **Then** the skill reports no eligible issues and exits gracefully (does not fall back to selecting non-automatable issues)
 
 ### AC14: Starting-Issues — Interactive Mode Shows Automatable Indicator
 
-**Given** `/starting-issues` is running in interactive mode
+**Given** `/start-issue` is running in interactive mode
 **When** issues are presented for selection
 **Then** each issue's description includes whether it has the `automatable` label (informational only, no filtering applied)
 
 ### AC15: Automatable Label Auto-Created If Missing
 
 **Given** the `automatable` label does not yet exist in the GitHub repository
-**When** `/creating-issues` attempts to apply it
+**When** `/draft-issue` attempts to apply it
 **Then** the label is created automatically via `gh label create "automatable" --description "Suitable for automated SDLC processing" --color "0E8A16"`
 
 ### AC16: Automatable Label Creation Verified
 
-**Given** `/creating-issues` has attempted to create and apply the `automatable` label
+**Given** `/draft-issue` has attempted to create and apply the `automatable` label
 **When** the issue creation completes
 **Then** the skill verifies the label is present on the created issue (postcondition check via `gh issue view` confirming the label exists, not just that the create command succeeded)
 
@@ -129,17 +129,17 @@ Automation mode enables external agents (like OpenClaw) to drive the entire SDLC
 | FR1 | `.claude/auto-mode` flag file detection in all SDLC skills | Must | Simple file existence check |
 | FR2 | Skip `AskUserQuestion` calls in auto-mode | Must | Prevents interactive prompts |
 | FR3 | Skip `EnterPlanMode` calls in auto-mode | Must | Prevents plan approval gates |
-| FR4 | Skip human review gates in `/writing-specs` | Must | All 3 phase gates |
-| FR5 | Auto-select issue in `/starting-issues` | Must | Oldest-first |
-| FR6 | Infer criteria in `/creating-issues` | Must | From steering docs |
+| FR4 | Skip human review gates in `/write-spec` | Must | All 3 phase gates |
+| FR5 | Auto-select issue in `/start-issue` | Must | Oldest-first |
+| FR6 | Infer criteria in `/draft-issue` | Must | From steering docs |
 | FR7 | Suppress next-step suggestions in all skills | Must | Outputs "Done. Awaiting orchestrator." |
-| FR8 | `/creating-issues` asks "Is this issue suitable for automation?" during the interview in interactive mode | Must | Added as part of the interview flow |
+| FR8 | `/draft-issue` asks "Is this issue suitable for automation?" during the interview in interactive mode | Must | Added as part of the interview flow |
 | FR9 | The `automatable` label is applied to GitHub issues when the user answers yes or when in auto-mode | Must | Applied alongside the type label |
-| FR10 | `/starting-issues` in auto-mode filters `gh issue list` to only include issues with the `automatable` label | Must | Uses `--label automatable` flag |
-| FR11 | `/starting-issues` in interactive mode shows the automatable status as an indicator in the issue list | Should | Informational only, no filtering |
+| FR10 | `/start-issue` in auto-mode filters `gh issue list` to only include issues with the `automatable` label | Must | Uses `--label automatable` flag |
+| FR11 | `/start-issue` in interactive mode shows the automatable status as an indicator in the issue list | Should | Informational only, no filtering |
 | FR12 | The `automatable` label is auto-created via `gh label create` if it doesn't exist in the repo | Must | Color `0E8A16` (green) |
-| FR13 | `/starting-issues` in auto-mode exits gracefully when no automatable issues exist | Must | Reports empty set, no fallback to unlabeled issues |
-| FR14 | `sdlc-runner.mjs` does not need changes — filtering happens at the `/starting-issues` skill level | Must | Runner script unchanged |
+| FR13 | `/start-issue` in auto-mode exits gracefully when no automatable issues exist | Must | Reports empty set, no fallback to unlabeled issues |
+| FR14 | `sdlc-runner.mjs` does not need changes — filtering happens at the `/start-issue` skill level | Must | Runner script unchanged |
 
 ---
 
@@ -201,8 +201,8 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - Custom automation profiles with per-skill overrides
 - Retroactively labeling existing issues as automatable
 - Adding automation-difficulty tiers (e.g., "simple automation" vs "complex automation")
-- Modifying `sdlc-runner.mjs` — filtering is handled entirely at the `/starting-issues` skill level
-- Modifying `/writing-specs`, `/implementing-specs`, or other downstream skills
+- Modifying `sdlc-runner.mjs` — filtering is handled entirely at the `/start-issue` skill level
+- Modifying `/write-spec`, `/write-code`, or other downstream skills
 
 ---
 
@@ -227,7 +227,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 | Issue | Date | Summary |
 |-------|------|---------|
 | #11 | 2026-02-15 | Initial feature spec |
-| #71 | 2026-02-22 | Add automatable label gate: question in `/creating-issues`, label filtering in `/starting-issues` auto-mode, label auto-creation, empty-set handling |
+| #71 | 2026-02-22 | Add automatable label gate: question in `/draft-issue`, label filtering in `/start-issue` auto-mode, label auto-creation, empty-set handling |
 
 ## Validation Checklist
 

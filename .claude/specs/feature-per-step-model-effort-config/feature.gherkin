@@ -116,17 +116,17 @@ Feature: Per-step model and effort level configuration
 
     Examples:
       | skill                    | model  |
-      | creating-issues          | sonnet |
-      | creating-prs             | sonnet |
+      | draft-issue          | sonnet |
+      | open-pr             | sonnet |
       | generating-openclaw-config | sonnet |
-      | implementing-specs       | opus   |
+      | write-code       | opus   |
       | installing-openclaw-skill | sonnet |
-      | migrating-projects       | opus   |
-      | running-retrospectives   | opus   |
-      | setting-up-steering      | opus   |
-      | starting-issues          | sonnet |
-      | verifying-specs          | sonnet |
-      | writing-specs            | opus   |
+      | migrate-project       | opus   |
+      | run-retro   | opus   |
+      | setup-steering      | opus   |
+      | start-issue          | sonnet |
+      | verify-code          | sonnet |
+      | write-spec            | opus   |
 
   # --- Writing-Specs Auto-Mode Fix ---
   # Added by issue #91
@@ -164,6 +164,6 @@ Feature: Per-step model and effort level configuration
 
   Scenario: Migration detects new config keys after plugin upgrade
     Given a project with an old-format sdlc-config.json lacking model and effort fields
-    When the user runs /migrating-projects after upgrading the plugin
+    When the user runs /migrate-project after upgrading the plugin
     Then the migration proposes adding the missing model and effort keys
     And existing config values are preserved

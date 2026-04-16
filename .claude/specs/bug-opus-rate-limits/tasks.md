@@ -18,7 +18,7 @@
 
 **Status**: Complete
 
-Removed `model:` field from all 12 SKILL.md files. Added `disable-model-invocation: true` to: `running-sdlc-loop`, `installing-openclaw-skill`, `generating-openclaw-config`, `running-retrospectives`.
+Removed `model:` field from all 12 SKILL.md files. Added `disable-model-invocation: true` to: `run-loop`, `installing-openclaw-skill`, `generating-openclaw-config`, `run-retro`.
 
 ---
 

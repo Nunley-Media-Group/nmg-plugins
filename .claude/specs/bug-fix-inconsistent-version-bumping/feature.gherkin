@@ -8,7 +8,7 @@
 Feature: Consistent version bumping in automated SDLC runs
   The SDLC runner previously skipped version bumps ~50% of the time during
   automated PR creation because the version bump logic was LLM-discretionary
-  (in the /creating-prs skill Steps 2-3) with no postcondition enforcement.
+  (in the /open-pr skill Steps 2-3) with no postcondition enforcement.
   This was fixed by adding a deterministic version bump postcondition gate
   to the runner, reinforcing the Step 7 prompt, and adding postcondition
   verification after PR creation.
@@ -49,7 +49,7 @@ Feature: Consistent version bumping in automated SDLC runs
 
   @regression
   Scenario: Manual workflow preserves interactive version bump confirmation
-    Given a developer runs /creating-prs interactively without auto-mode
+    Given a developer runs /open-pr interactively without auto-mode
     And a VERSION file exists with "2.3.1"
     And the issue has the "enhancement" label
     When the skill reaches Step 2 (version bump determination)

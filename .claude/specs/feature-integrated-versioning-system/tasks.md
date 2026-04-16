@@ -46,7 +46,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T001: Add Versioning Section to Tech.md Steering Template
 
-**File(s)**: `plugins/nmg-sdlc/skills/setting-up-steering/templates/tech.md`
+**File(s)**: `plugins/nmg-sdlc/skills/setup-steering/templates/tech.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -76,9 +76,9 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ## Phase 2: Skill Modifications
 
-### T003: Add Milestone Assignment to `/creating-issues`
+### T003: Add Milestone Assignment to `/draft-issue`
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -96,9 +96,9 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 **Notes**: See design.md §1 for detailed logic. The milestone query should use `gh api` not `gh milestone` (which doesn't exist).
 
-### T004: Add Version Bump Classification to `/creating-prs`
+### T004: Add Version Bump Classification to `/open-pr`
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-prs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/open-pr/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -107,18 +107,16 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Reads current version from `VERSION` file
 - [ ] Reads issue labels via `gh issue view #N --json labels`
 - [ ] Applies classification matrix: `bug` → patch, `enhancement` → minor, default → minor
-- [ ] Reads issue milestone via `gh issue view #N --json milestone`
-- [ ] If milestone is set: queries open issue count via `gh api` to detect milestone completion
-- [ ] If last open issue in milestone: overrides to major bump
-- [ ] Calculates new version string (patch: x.y.Z+1, minor: x.Y+1.0, major: X+1.0.0)
+- [ ] Calculates new version string (patch: x.y.Z+1, minor: x.Y+1.0)
+- [ ] Major bumps are available only via manual override in the confirmation prompt
 - [ ] Manual mode: presents classification to developer via `AskUserQuestion` with override options (Accept / Patch / Minor / Major)
 - [ ] Auto-mode: applies classified bump without confirmation
 
-**Notes**: See design.md §2 Step 1b. The milestone completion check counts open issues — if exactly 1 remains (the current issue), that triggers the major bump proposal.
+**Notes**: See design.md §2 Step 1b. Major bumps are manual-only — the developer overrides via the confirmation prompt.
 
-### T005: Add Version Artifact Updates to `/creating-prs`
+### T005: Add Version Artifact Updates to `/open-pr`
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-prs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/open-pr/SKILL.md`
 **Type**: Modify
 **Depends**: T004
 **Acceptance**:
@@ -136,9 +134,9 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 **Notes**: See design.md §2 Step 1c. The CHANGELOG update must preserve existing content — only structural changes (moving [Unreleased] entries to versioned heading).
 
-### T006: Add CHANGELOG Analysis to `/migrating-projects`
+### T006: Add CHANGELOG Analysis to `/migrate-project`
 
-**File(s)**: `plugins/nmg-sdlc/skills/migrating-projects/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/migrate-project/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -162,9 +160,9 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 **Notes**: See design.md §4 Step 6b. The reconciliation logic should be additive — never delete existing content, only restructure and fill gaps.
 
-### T007: Add VERSION Analysis to `/migrating-projects`
+### T007: Add VERSION Analysis to `/migrate-project`
 
-**File(s)**: `plugins/nmg-sdlc/skills/migrating-projects/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/migrate-project/SKILL.md`
 **Type**: Modify
 **Depends**: T006
 **Acceptance**:
@@ -201,7 +199,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Section follows the same format as the template from T001
 - [ ] Existing `tech.md` content is unchanged
 
-**Notes**: This makes nmg-plugins itself use the versioning system — `/creating-prs` will read this section to update `plugin.json` and `marketplace.json` automatically when bumping versions.
+**Notes**: This makes nmg-plugins itself use the versioning system — `/open-pr` will read this section to update `plugin.json` and `marketplace.json` automatically when bumping versions.
 
 ### T009: Update README.md with Versioning Documentation
 
@@ -211,9 +209,9 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Acceptance**:
 - [ ] Versioning system documented as a feature/capability
 - [ ] Explains `VERSION` file as single source of truth
-- [ ] Documents the version classification matrix (bug→patch, enhancement→minor, milestone→major)
+- [ ] Documents the version classification matrix (bug→patch, enhancement→minor, default→minor; major is manual)
 - [ ] Documents the `tech.md` Versioning section as the stack-specific bridge
-- [ ] Documents milestone assignment in `/creating-issues`
+- [ ] Documents milestone assignment in `/draft-issue`
 - [ ] Updated skill descriptions reflect new versioning capabilities
 - [ ] Existing README structure and content preserved
 
@@ -253,16 +251,16 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T012: Add Version Bump Classification Subsection to Tech.md Steering Template
 
-**File(s)**: `plugins/nmg-sdlc/skills/setting-up-steering/templates/tech.md`
+**File(s)**: `plugins/nmg-sdlc/skills/setup-steering/templates/tech.md`
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:
 - [ ] New `### Version Bump Classification` subsection exists under `## Versioning`, after the Path Syntax subsection
-- [ ] Subsection includes introductory text explaining that both `/creating-prs` and `sdlc-runner.mjs` read this table
+- [ ] Subsection includes introductory text explaining that both `/open-pr` and `sdlc-runner.mjs` read this table
 - [ ] Table has three columns: Label | Bump Type | Description
 - [ ] Default rows include `bug` → `patch` and `enhancement` → `minor`
 - [ ] Documents the default behavior: "if no label matches, bump type is minor"
-- [ ] Documents the milestone completion override: "last open issue in milestone → major"
+- [ ] Documents that major bumps are manual-only via developer override
 - [ ] Has `<!-- TODO: -->` placeholder consistent with existing template style
 - [ ] Existing template content is unchanged
 
@@ -280,11 +278,11 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Follows the same format as the template from T012
 - [ ] Existing `tech.md` content is unchanged
 
-**Notes**: This makes the nmg-plugins project itself use the shared classification matrix. Both `/creating-prs` and `sdlc-runner.mjs` will read this when running against this repo.
+**Notes**: This makes the nmg-plugins project itself use the shared classification matrix. Both `/open-pr` and `sdlc-runner.mjs` will read this when running against this repo.
 
-### T014: Update `/creating-prs` to Read Classification from Tech.md
+### T014: Update `/open-pr` to Read Classification from Tech.md
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-prs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/open-pr/SKILL.md`
 **Type**: Modify
 **Depends**: T012
 **Acceptance**:
@@ -300,7 +298,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T015: Update `sdlc-runner.mjs` to Read Classification from Tech.md
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T012
 **Acceptance**:
@@ -310,10 +308,10 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Builds a `Map<string, string>` (or equivalent) of label → bump type from parsed rows
 - [ ] Matches issue labels against the map; first match wins
 - [ ] Default to minor if no label matches any row
-- [ ] Milestone completion override (`isLastInMilestone` → major) still takes priority over label-based classification
+- [ ] Major bumps are not applied automatically — only patch and minor
 - [ ] Fallback: if the Version Bump Classification subsection is missing from tech.md, uses hardcoded defaults (`bug` → patch, else → minor)
 - [ ] Existing `performDeterministicVersionBump()` functionality beyond classification (VERSION file reading, stack-specific file updates, commit, push) is unchanged
-- [ ] Runner tests in `openclaw/scripts/__tests__/` are updated to cover the new parsing logic
+- [ ] Runner tests in `scripts/__tests__/` are updated to cover the new parsing logic
 
 **Notes**: See design.md "Consumer Changes §2". The regex to extract the subsection can be chained from the existing `## Versioning` extraction at line 1529. Parse only within that captured section for the `### Version Bump Classification` heading.
 
@@ -338,11 +336,11 @@ T001 (template) ─────────────────────�
                                                     └──▶ T012 (classification template)
 T002 (VERSION file) ─ (no deps)
 
-T003 (creating-issues) ─ (no deps) ─────────────────▶ T009, T010, T011
+T003 (draft-issue) ─ (no deps) ─────────────────▶ T009, T010, T011
 
-T004 (creating-prs bump) ─ (no deps) ───────────────▶ T005 (creating-prs artifacts)
+T004 (open-pr bump) ─ (no deps) ───────────────▶ T005 (open-pr artifacts)
                                                     └──▶ T009, T010, T011
-T005 (creating-prs artifacts) ──────────────────────▶ T009, T010, T011
+T005 (open-pr artifacts) ──────────────────────▶ T009, T010, T011
 
 T006 (migrating CHANGELOG) ─ (no deps) ────────────▶ T007 (migrating VERSION)
                                                     └──▶ T009, T010, T011
@@ -357,10 +355,10 @@ T011 (BDD feature) ─ depends on all impl tasks
 --- Phase 6 (Issue #87) ---
 
 T012 (classification template) ── (after T001) ────▶ T013 (this project's classification)
-                                                    ├──▶ T014 (creating-prs reads tech.md)
+                                                    ├──▶ T014 (open-pr reads tech.md)
                                                     └──▶ T015 (runner reads tech.md)
 T013 (this project's classification) ── (after T012)
-T014 (creating-prs reads tech.md) ── (after T012)
+T014 (open-pr reads tech.md) ── (after T012)
 T015 (runner reads tech.md) ── (after T012) ───────▶ T016 (BDD update)
 T016 (BDD update) ── (after T012, T014, T015)
 ```

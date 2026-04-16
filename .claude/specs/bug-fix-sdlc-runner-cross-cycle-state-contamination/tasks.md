@@ -30,7 +30,7 @@
 - [x] Warning logged if branch-based extraction fails (no silent fallback)
 - [x] Matches the same extraction pattern used by `detectAndHydrateState`
 
-**Notes**: The branch name is deterministic ground truth — `/starting-issues` always creates branches in `{number}-{slug}` format.
+**Notes**: The branch name is deterministic ground truth — `/start-issue` always creates branches in `{number}-{slug}` format.
 
 ### T002: Add working tree cleanup to step 1 prompt
 

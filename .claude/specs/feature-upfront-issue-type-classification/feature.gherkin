@@ -4,14 +4,14 @@
 # Issue: #21
 
 Feature: Upfront Issue Type Classification
-  As a developer using the creating-issues skill
+  As a developer using the draft-issue skill
   I want the skill to proactively classify the issue type and perform type-specific codebase investigation
   So that issues are created with richer context for downstream SDLC phases
 
   # --- Happy Path ---
 
   Scenario: Upfront Type Classification
-    Given the user invokes "/creating-issues" with or without an argument
+    Given the user invokes "/draft-issue" with or without an argument
     When the interview begins after gathering context
     Then the very first question asks whether this is a "Bug" or "Enhancement / Feature"
     And the question is presented via AskUserQuestion with descriptive options
@@ -53,7 +53,7 @@ Feature: Upfront Issue Type Classification
 
   Scenario: Automation Mode Unchanged
     Given the ".claude/auto-mode" file exists in the project directory
-    When the creating-issues skill is invoked
+    When the draft-issue skill is invoked
     Then the classification step is skipped
     And the investigation step is skipped
     And the interview step is skipped

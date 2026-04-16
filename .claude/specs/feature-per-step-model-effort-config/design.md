@@ -13,7 +13,7 @@ This feature adds per-step model and effort level configuration to three layers 
 
 At the **runner layer**, `sdlc-runner.mjs` gains per-step `model` and `effort` fields in the step config, resolving via a fallback chain (`step.field → config.field → default`). The `buildClaudeArgs()` function uses the resolved model for `--model` and sets `CLAUDE_CODE_EFFORT_LEVEL` in the subprocess environment. The implement step uses a single `runClaude()` invocation — the same as every other step — with the skill's auto-mode handling planning internally.
 
-At the **skill layer**, all SKILL.md files gain a `model` frontmatter field so Claude Code enforces the recommended model during manual invocation. The implementing-specs skill's existing auto-mode support (skips `EnterPlanMode`, designs internally, then executes) is relied upon — no changes to the skill itself.
+At the **skill layer**, all SKILL.md files gain a `model` frontmatter field so Claude Code enforces the recommended model during manual invocation. The write-code skill's existing auto-mode support (skips `EnterPlanMode`, designs internally, then executes) is relied upon — no changes to the skill itself.
 
 At the **documentation layer**, `sdlc-config.example.json` is updated with recommended per-step defaults (flat config for implement, no nested plan/code), and the README gains a model/effort recommendations table.
 
@@ -26,7 +26,7 @@ At the **documentation layer**, `sdlc-config.example.json` is updated with recom
 ```
 Manual User Path:
 ┌─────────────────────────────────────────────────────────┐
-│  /implementing-specs #N                                 │
+│  /write-code #N                                 │
 │  SKILL.md frontmatter: model: opus                      │
 │                                                         │
 │  ┌──────────────────────────────────────────────────┐   │
@@ -115,19 +115,19 @@ All Steps (including implement):
       "effort": "high",
       "maxTurns": 40,
       "timeoutMin": 15,
-      "skill": "writing-specs"
+      "skill": "write-spec"
     },
     "implement": {
       "model": "opus",
       "effort": "medium",
       "maxTurns": 100,
       "timeoutMin": 30,
-      "skill": "implementing-specs"
+      "skill": "write-code"
     },
     "createPR": {
       "maxTurns": 30,
       "timeoutMin": 5,
-      "skill": "creating-prs",
+      "skill": "open-pr",
       "model": "sonnet"
     }
   }
@@ -147,17 +147,17 @@ All SKILL.md files gain a `model` field:
 
 | Skill | Model | Rationale |
 |-------|-------|-----------|
-| `creating-issues` | `sonnet` | Structured interview, moderate reasoning |
-| `creating-prs` | `sonnet` | Template-driven PR creation |
+| `draft-issue` | `sonnet` | Structured interview, moderate reasoning |
+| `open-pr` | `sonnet` | Template-driven PR creation |
 | `generating-openclaw-config` | `sonnet` | Mechanical config generation |
-| `implementing-specs` | `opus` | Planning + execution needs deep reasoning |
+| `write-code` | `opus` | Planning + execution needs deep reasoning |
 | `installing-openclaw-skill` | `sonnet` | Mechanical file operations |
-| `migrating-projects` | `opus` | Complex project analysis |
-| `running-retrospectives` | `opus` | Pattern analysis across defects |
-| `setting-up-steering` | `opus` | Understanding project architecture |
-| `starting-issues` | `sonnet` | Mechanical branch creation |
-| `verifying-specs` | `sonnet` | Structured verification (architecture-reviewer agent already runs on opus) |
-| `writing-specs` | `opus` | Complex spec writing needs deep reasoning |
+| `migrate-project` | `opus` | Complex project analysis |
+| `run-retro` | `opus` | Pattern analysis across defects |
+| `setup-steering` | `opus` | Understanding project architecture |
+| `start-issue` | `sonnet` | Mechanical branch creation |
+| `verify-code` | `sonnet` | Structured verification (architecture-reviewer agent already runs on opus) |
+| `write-spec` | `opus` | Complex spec writing needs deep reasoning |
 
 ---
 
@@ -204,7 +204,7 @@ Add a "Model & Effort Recommendations" section with:
 | Option | Description | Pros | Cons | Decision |
 |--------|-------------|------|------|----------|
 | **A: Keep plan/code split, just change defaults** | Keep the two-subprocess architecture but change default models | Minimal code change | Unnecessary complexity; every other step uses single invocation; skill already handles plan internally | Rejected — unnecessary overhead |
-| **B: Single invocation, skill handles internally** | Remove runner split; rely on skill's auto-mode to plan then execute in one session | Consistent with all other steps; simpler runner code; fewer functions to maintain | Single model for both planning and coding (opus for both) | **Selected** — consistency and simplicity win; implementing-specs already has auto-mode support |
+| **B: Single invocation, skill handles internally** | Remove runner split; rely on skill's auto-mode to plan then execute in one session | Consistent with all other steps; simpler runner code; fewer functions to maintain | Single model for both planning and coding (opus for both) | **Selected** — consistency and simplicity win; write-code already has auto-mode support |
 | **C: Deprecation warning before removal** | Emit a warning when `plan`/`code` keys are detected, remove in next major version | Gradual migration path | Over-engineering for an internal tool with few users; adds code that will be immediately removed | Rejected — silent ignore is sufficient for an internal tool |
 
 ---
@@ -244,7 +244,7 @@ Add a "Model & Effort Recommendations" section with:
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
 | Existing configs with `plan`/`code` keys break on upgrade | Low | Medium | Silent ignore — `validateConfig()` skips unknown sub-objects; `resolveStepConfig()` only reads `step.model` and `step.effort` |
-| Single invocation for implement runs out of turns | Low | Medium | `maxTurns: 100` in example config is generous; implementing-specs skill is designed for single-session execution |
+| Single invocation for implement runs out of turns | Low | Medium | `maxTurns: 100` in example config is generous; write-code skill is designed for single-session execution |
 | Skill frontmatter `model` field silently ignored on older Claude Code versions | Low | Low | Document minimum Claude Code version; frontmatter is additive — no breakage if ignored |
 | Removing exported functions breaks downstream consumers | Low | High | Only the test file imports these functions; update tests in the same PR |
 

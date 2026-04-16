@@ -19,7 +19,7 @@
 
 ### T001: Fix the Defect
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -39,18 +39,18 @@
 **Acceptance**:
 - [ ] Gherkin scenarios cover AC1 (disable-model-invocation skill recognized), AC2 (dry-run instructions respected), and AC3 (non-disable-model-invocation skills unaffected)
 - [ ] All scenarios tagged `@regression`
-- [ ] Scenarios use concrete data from the reproduction steps (e.g., `creating-prs` as the affected skill)
+- [ ] Scenarios use concrete data from the reproduction steps (e.g., `open-pr` as the affected skill)
 
 ### T003: Verify No Regressions
 
-**File(s)**: `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md`, `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md`, `plugins/nmg-sdlc/skills/verify-code/SKILL.md`
 **Type**: Verify (no file changes)
 **Depends**: T001, T002
 **Acceptance**:
 - [ ] The SKILL.md references to exercise-testing.md still resolve correctly (step 5b–5e reference is intact)
 - [ ] The Agent SDK exercise script template still has valid JavaScript syntax after prompt restructuring
 - [ ] The `claude -p` fallback command is still syntactically valid
-- [ ] No other files in the verifying-specs skill reference the old "Dry-run prefix" label
+- [ ] No other files in the verify-code skill reference the old "Dry-run prefix" label
 
 ---
 

@@ -19,15 +19,15 @@ The bug is in the prompt construction instructions, not in any executable code. 
 
 | File | Lines | Role |
 |------|-------|------|
-| `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md` | 36 | Instruction to "prepend" dry-run prefix before the skill invocation |
-| `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md` | 38–39 | The dry-run prefix text block (labeled "Dry-run prefix") |
-| `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md` | 96 | The `{exercise-prompt}` definition that doesn't account for dry-run text ordering |
+| `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md` | 36 | Instruction to "prepend" dry-run prefix before the skill invocation |
+| `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md` | 38–39 | The dry-run prefix text block (labeled "Dry-run prefix") |
+| `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md` | 96 | The `{exercise-prompt}` definition that doesn't account for dry-run text ordering |
 
 ### Triggering Conditions
 
 - The changed skill has `disable-model-invocation: true` in its SKILL.md frontmatter
-- The skill is also GitHub-integrated (creating-prs, creating-issues, starting-issues), requiring dry-run mode
-- The intersection of these two conditions: currently only `creating-prs` (which has both `disable-model-invocation: true` AND is GitHub-integrated)
+- The skill is also GitHub-integrated (open-pr, draft-issue, start-issue), requiring dry-run mode
+- The intersection of these two conditions: currently only `open-pr` (which has both `disable-model-invocation: true` AND is GitHub-integrated)
 - The verifying agent follows the "prepend" instruction, placing dry-run text before `/{skill-name}`
 
 ---
@@ -49,14 +49,14 @@ This is a Markdown instruction change — no executable code is modified. The fi
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md` | Line 36: Change "prepend" to "append" and restructure the instruction to place dry-run text after the skill invocation | Ensures `/{skill-name}` is at prompt start for skill recognition |
-| `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md` | Lines 38–39: Rename "Dry-run prefix" to "Dry-run instructions" and prefix the text with "IMPORTANT:" | Clarifies the new position and ensures model treats it as a constraint |
-| `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md` | Line 96: Update `{exercise-prompt}` definition to show the composite format with skill invocation first | Makes the prompt structure explicit for the verifying agent |
+| `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md` | Line 36: Change "prepend" to "append" and restructure the instruction to place dry-run text after the skill invocation | Ensures `/{skill-name}` is at prompt start for skill recognition |
+| `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md` | Lines 38–39: Rename "Dry-run prefix" to "Dry-run instructions" and prefix the text with "IMPORTANT:" | Clarifies the new position and ensures model treats it as a constraint |
+| `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md` | Line 96: Update `{exercise-prompt}` definition to show the composite format with skill invocation first | Makes the prompt structure explicit for the verifying agent |
 
 ### Blast Radius
 
-- **Direct impact**: `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md` — the single file being modified
-- **Indirect impact**: Any verification run that exercises a GitHub-integrated skill will use the new prompt structure. This affects the behavior of step 5c in `/verifying-specs` for `creating-prs`, `creating-issues`, and `starting-issues`.
+- **Direct impact**: `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md` — the single file being modified
+- **Indirect impact**: Any verification run that exercises a GitHub-integrated skill will use the new prompt structure. This affects the behavior of step 5c in `/verify-code` for `open-pr`, `draft-issue`, and `start-issue`.
 - **Risk level**: Low — the change only reorders text within the exercise prompt. Skills without `disable-model-invocation` will continue to work because they recognize skill invocations anywhere in the prompt. Skills with `disable-model-invocation` will now also work because the invocation is at the start.
 
 ---

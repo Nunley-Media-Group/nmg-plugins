@@ -9,9 +9,9 @@
 
 ## Overview
 
-This feature extends `/verifying-specs` Step 5 (Verify Test Coverage) with a conditional branch: when the diff contains SKILL.md or agent definition files, it runs exercise-based verification instead of the standard BDD test coverage check. The exercise path scaffolds a disposable test project, invokes the changed skill using the Claude Agent SDK (with `canUseTool` for `AskUserQuestion` handling) or a `claude -p` fallback, evaluates the captured output against acceptance criteria, and reports the results in an extended verification report template.
+This feature extends `/verify-code` Step 5 (Verify Test Coverage) with a conditional branch: when the diff contains SKILL.md or agent definition files, it runs exercise-based verification instead of the standard BDD test coverage check. The exercise path scaffolds a disposable test project, invokes the changed skill using the Claude Agent SDK (with `canUseTool` for `AskUserQuestion` handling) or a `claude -p` fallback, evaluates the captured output against acceptance criteria, and reports the results in an extended verification report template.
 
-The design modifies two files: the `verifying-specs/SKILL.md` skill definition (adding exercise-based logic to Step 5) and the `checklists/report-template.md` (adding an "Exercise Test Results" section). All other files in the plugin remain unchanged.
+The design modifies two files: the `verify-code/SKILL.md` skill definition (adding exercise-based logic to Step 5) and the `checklists/report-template.md` (adding an "Exercise Test Results" section). All other files in the plugin remain unchanged.
 
 Key architectural decisions:
 1. **Conditional branching in Step 5** — plugin changes trigger exercise testing; non-plugin changes use existing BDD verification unchanged
@@ -27,7 +27,7 @@ Key architectural decisions:
 ### Component Diagram
 
 ```
-verifying-specs/SKILL.md
+verify-code/SKILL.md
 ├── Step 1-4: Load specs, issue, verify impl, arch review (UNCHANGED)
 ├── Step 5: Verify Test Coverage (MODIFIED — conditional branch)
 │   ├── [Non-plugin changes] → Existing BDD verification (UNCHANGED)
@@ -485,7 +485,7 @@ When exercise testing is **skipped** (graceful degradation), the section reads:
 | Cleanup | Exercise verification | Verify temp directory is deleted |
 | Non-plugin path | Exercise verification | Verify existing BDD behavior is unchanged |
 
-This feature is itself verified by exercise — the modified `/verifying-specs` skill will be exercised against a test project during its own verification step.
+This feature is itself verified by exercise — the modified `/verify-code` skill will be exercised against a test project during its own verification step.
 
 ---
 
@@ -507,9 +507,9 @@ This feature is itself verified by exercise — the modified `/verifying-specs` 
 
 | File | Change Type | Description |
 |------|-------------|-------------|
-| `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` | Modified | Add exercise-based verification branch to Step 5 |
-| `plugins/nmg-sdlc/skills/verifying-specs/references/exercise-testing.md` | Modified | Update SDK availability check and exercise script template with dynamic path resolution |
-| `plugins/nmg-sdlc/skills/verifying-specs/checklists/report-template.md` | Modified | Add Exercise Test Results section |
+| `plugins/nmg-sdlc/skills/verify-code/SKILL.md` | Modified | Add exercise-based verification branch to Step 5 |
+| `plugins/nmg-sdlc/skills/verify-code/references/exercise-testing.md` | Modified | Update SDK availability check and exercise script template with dynamic path resolution |
+| `plugins/nmg-sdlc/skills/verify-code/checklists/report-template.md` | Modified | Add Exercise Test Results section |
 
 ---
 

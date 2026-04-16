@@ -11,12 +11,12 @@
   },
   "steps": {
     "startCycle":   { "maxTurns": 5,   "timeoutMin": 5  },
-    "startIssue":   { "maxTurns": 15,  "timeoutMin": 5,  "skill": "starting-issues",        "model": "sonnet" },
-    "writeSpecs":   { "maxTurns": 40,  "timeoutMin": 15, "skill": "writing-specs",           "model": "opus",   "effort": "high" },
-    "implement":    { "maxTurns": 100, "timeoutMin": 30, "skill": "implementing-specs", "model": "opus",   "effort": "medium" },
-    "verify":       { "maxTurns": 60,  "timeoutMin": 20, "skill": "verifying-specs",         "model": "sonnet", "effort": "high" },
+    "startIssue":   { "maxTurns": 15,  "timeoutMin": 5,  "skill": "start-issue",        "model": "sonnet" },
+    "writeSpecs":   { "maxTurns": 40,  "timeoutMin": 15, "skill": "write-spec",           "model": "opus",   "effort": "high" },
+    "implement":    { "maxTurns": 100, "timeoutMin": 30, "skill": "write-code", "model": "opus",   "effort": "medium" },
+    "verify":       { "maxTurns": 60,  "timeoutMin": 20, "skill": "verify-code",         "model": "sonnet", "effort": "high" },
     "commitPush":   { "maxTurns": 10,  "timeoutMin": 5,                                      "model": "sonnet" },
-    "createPR":     { "maxTurns": 30,  "timeoutMin": 5,  "skill": "creating-prs",            "model": "sonnet" },
+    "createPR":     { "maxTurns": 30,  "timeoutMin": 5,  "skill": "open-pr",            "model": "sonnet" },
     "monitorCI":    { "maxTurns": 40,  "timeoutMin": 20,                                     "model": "sonnet" },
     "merge":        { "maxTurns": 5,   "timeoutMin": 5,                                      "model": "sonnet" }
   },

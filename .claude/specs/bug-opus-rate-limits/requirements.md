@@ -38,7 +38,7 @@ The fix is to remove the `model:` field entirely from all skills so they inherit
 **Then** no skill has a `model:` field — all skills inherit the session model
 
 ### AC2: Slash-command-only skills have disable-model-invocation
-**Given** skills only invoked via explicit slash commands (`/running-sdlc-loop`, `/installing-openclaw-skill`, `/generating-openclaw-config`, `/running-retrospectives`)
+**Given** skills only invoked via explicit slash commands (`/run-loop`, `/installing-openclaw-skill`, `/generating-openclaw-config`, `/run-retro`)
 **When** the plugin is loaded
 **Then** those skills have `disable-model-invocation: true`
 
@@ -49,10 +49,10 @@ The fix is to remove the `model:` field entirely from all skills so they inherit
 | ID | Requirement |
 |----|-------------|
 | FR1 | Remove `model:` field from all 12 SKILL.md files |
-| FR2 | Add `disable-model-invocation: true` to `running-sdlc-loop` |
+| FR2 | Add `disable-model-invocation: true` to `run-loop` |
 | FR3 | Add `disable-model-invocation: true` to `installing-openclaw-skill` |
 | FR4 | Add `disable-model-invocation: true` to `generating-openclaw-config` |
-| FR5 | Add `disable-model-invocation: true` to `running-retrospectives` |
+| FR5 | Add `disable-model-invocation: true` to `run-retro` |
 
 ---
 

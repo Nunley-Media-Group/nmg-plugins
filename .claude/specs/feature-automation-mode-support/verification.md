@@ -29,10 +29,10 @@
 | AC | Description | Status | Evidence |
 |----|-------------|--------|----------|
 | AC1 | Auto-mode flag enables headless operation | Pass | All SKILL.md files check `.claude/auto-mode` |
-| AC2 | Writing-specs skips review gates | Pass | `writing-specs/SKILL.md:29` — Automation Mode section |
-| AC3 | Implementing-specs skips plan mode | Pass | `implementing-specs/SKILL.md:20-22` — Skip EnterPlanMode |
-| AC4 | Creating-issues infers criteria | Pass | `creating-issues/SKILL.md:20-22` — Skip interview |
-| AC5 | Starting-issues auto-selects oldest | Pass | `starting-issues/SKILL.md:20-22` — Oldest-first |
+| AC2 | Writing-specs skips review gates | Pass | `write-spec/SKILL.md:29` — Automation Mode section |
+| AC3 | Implementing-specs skips plan mode | Pass | `write-code/SKILL.md:20-22` — Skip EnterPlanMode |
+| AC4 | Creating-issues infers criteria | Pass | `draft-issue/SKILL.md:20-22` — Skip interview |
+| AC5 | Starting-issues auto-selects oldest | Pass | `start-issue/SKILL.md:20-22` — Oldest-first |
 | AC6 | Skills suppress next-step suggestions | Pass | All skills output "Done. Awaiting orchestrator." |
 
 ---
@@ -151,12 +151,12 @@ None.
 
 | File | Issues | Notes |
 |------|--------|-------|
-| `plugins/nmg-sdlc/skills/creating-issues/SKILL.md` | 0 | Auto-mode section present |
-| `plugins/nmg-sdlc/skills/starting-issues/SKILL.md` | 0 | Auto-mode section present |
-| `plugins/nmg-sdlc/skills/writing-specs/SKILL.md` | 0 | Auto-mode section present |
-| `plugins/nmg-sdlc/skills/implementing-specs/SKILL.md` | 0 | Auto-mode section present |
-| `plugins/nmg-sdlc/skills/verifying-specs/SKILL.md` | 0 | Auto-mode section present |
-| `plugins/nmg-sdlc/skills/creating-prs/SKILL.md` | 0 | Auto-mode signal present |
+| `plugins/nmg-sdlc/skills/draft-issue/SKILL.md` | 0 | Auto-mode section present |
+| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | 0 | Auto-mode section present |
+| `plugins/nmg-sdlc/skills/write-spec/SKILL.md` | 0 | Auto-mode section present |
+| `plugins/nmg-sdlc/skills/write-code/SKILL.md` | 0 | Auto-mode section present |
+| `plugins/nmg-sdlc/skills/verify-code/SKILL.md` | 0 | Auto-mode section present |
+| `plugins/nmg-sdlc/skills/open-pr/SKILL.md` | 0 | Auto-mode signal present |
 
 ---
 

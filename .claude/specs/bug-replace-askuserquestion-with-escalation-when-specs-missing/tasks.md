@@ -19,24 +19,24 @@
 
 ### T001: Add auto-mode conditional to missing-specs error path
 
-**File(s)**: `plugins/nmg-sdlc/skills/implementing-specs/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/write-code/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
 - [ ] Step 2 ("Read Specs") missing-specs error path checks for `.claude/auto-mode` before prompting
-- [ ] When `.claude/auto-mode` exists: outputs escalation message identifying missing specs, naming `/writing-specs` as the prerequisite, ending with "Done. Awaiting orchestrator." — does NOT call `AskUserQuestion`
+- [ ] When `.claude/auto-mode` exists: outputs escalation message identifying missing specs, naming `/write-spec` as the prerequisite, ending with "Done. Awaiting orchestrator." — does NOT call `AskUserQuestion`
 - [ ] When `.claude/auto-mode` does NOT exist: calls `AskUserQuestion` to prompt user (preserves existing interactive behavior)
-- [ ] The auto-mode conditional follows the same pattern used in `/starting-issues` SKILL.md (lines 145–156)
+- [ ] The auto-mode conditional follows the same pattern used in `/start-issue` SKILL.md (lines 145–156)
 - [ ] No changes to any other part of the skill
 
-**Notes**: Replace the single-line instruction at line 59 (`If specs don't exist, prompt: "No specs found. Run '/writing-specs #N' first."`) with an explicit conditional block. Use the established pattern:
+**Notes**: Replace the single-line instruction at line 59 (`If specs don't exist, prompt: "No specs found. Run '/write-spec #N' first."`) with an explicit conditional block. Use the established pattern:
 
 ```
 If specs don't exist:
 
 **If `.claude/auto-mode` exists:** Output:
 \```
-No specs found for issue #N. The `/writing-specs` step must run first.
+No specs found for issue #N. The `/write-spec` step must run first.
 
 [Missing: list which spec files or directory are absent]
 
@@ -44,7 +44,7 @@ Done. Awaiting orchestrator.
 \```
 Then stop — do not proceed to subsequent steps.
 
-**If `.claude/auto-mode` does NOT exist:** Use `AskUserQuestion` to prompt: "No specs found. Run `/writing-specs #N` first."
+**If `.claude/auto-mode` does NOT exist:** Use `AskUserQuestion` to prompt: "No specs found. Run `/write-spec #N` first."
 ```
 
 ### T002: Add regression test scenarios
@@ -65,7 +65,7 @@ Then stop — do not proceed to subsequent steps.
 **Type**: Verify (no file changes)
 **Depends**: T001, T002
 **Acceptance**:
-- [ ] The implementing-specs skill's Automation Mode section (lines 20–23) remains unchanged
+- [ ] The write-code skill's Automation Mode section (lines 20–23) remains unchanged
 - [ ] The skill's Step 4 (EnterPlanMode) auto-mode guard remains unchanged
 - [ ] The skill's Step 5 (Execute Tasks) auto-mode behavior remains unchanged
 - [ ] The skill's Step 6 (Signal Completion) auto-mode output remains unchanged

@@ -60,7 +60,7 @@ The runner's `buildClaudeArgs()` function already supports per-step `maxTurns` a
 ### ~~AC3: Implementing-Specs Always Splits Into Planning and Coding Phases~~ (Superseded by AC10)
 
 ~~**Given** the runner reaches the implement step~~
-~~**When** it executes implementing-specs~~
+~~**When** it executes write-code~~
 ~~**Then** it always runs two separate `claude -p` subprocesses sequentially~~
 
 > **Superseded by AC10 (issue #91):** The implement step now uses a single `runClaude()` invocation, matching all other runner steps. The skill's auto-mode logic handles planning internally.
@@ -85,8 +85,8 @@ The runner's `buildClaudeArgs()` function already supports per-step `maxTurns` a
 **Then** the `model` frontmatter field enforces the recommended model for that skill's execution
 
 **Example**:
-- Given: `writing-specs/SKILL.md` has `model: opus` in frontmatter
-- When: a user manually runs `/nmg-sdlc:writing-specs`
+- Given: `write-spec/SKILL.md` has `model: opus` in frontmatter
+- When: a user manually runs `/nmg-sdlc:write-spec`
 - Then: Claude Code uses the Opus model for that session regardless of the session's default model
 
 ### AC7: README Documents Model/Effort Recommendations
@@ -153,7 +153,7 @@ The runner's `buildClaudeArgs()` function already supports per-step `maxTurns` a
 ### AC15: Writing-Specs Auto-Mode Always Amends Existing Spec
 
 **Given** `.claude/auto-mode` exists
-**And** the writing-specs spec discovery step finds one or more matching feature specs
+**And** the write-spec spec discovery step finds one or more matching feature specs
 **When** the skill decides whether to amend or create a new spec
 **Then** it skips the `AskUserQuestion` prompt entirely and proceeds directly in amendment mode (amend the top-scored existing spec)
 **And** the decision does not depend on option ordering in any `AskUserQuestion` call
@@ -231,7 +231,7 @@ Feature: Per-step model and effort level configuration
 | FR1 | Add per-step `model` field to runner step config with global fallback | Must | `step.model \|\| config.model \|\| 'opus'` |
 | FR2 | Add per-step `effort` field to runner step config with global fallback | Must | `step.effort \|\| config.effort \|\| undefined` |
 | FR3 | Set `CLAUDE_CODE_EFFORT_LEVEL` env var on `claude` subprocess when effort is configured | Must | Only set when a value is resolved; omit entirely when no effort is configured |
-| ~~FR4~~ | ~~Always split implementing-specs into plan + code phases~~ | ~~Must~~ | Superseded by FR11 |
+| ~~FR4~~ | ~~Always split write-code into plan + code phases~~ | ~~Must~~ | Superseded by FR11 |
 | FR5 | Update `sdlc-config.example.json` with per-step model/effort defaults | Must | Match the recommendations matrix from the issue |
 | FR6 | Add `model` frontmatter to all SKILL.md files | Must | Enforced by Claude Code at runtime for manual users |
 | FR7 | Add model/effort recommendations table to README | Should | Helps users understand and customize the defaults |
@@ -245,7 +245,7 @@ Feature: Per-step model and effort level configuration
 | FR15 | Simplify Step 4 prompt in `buildClaudeArgs()` to remove "Do NOT call EnterPlanMode" instruction | Must | Skill handles auto-mode internally |
 | FR16 | Update `validateConfig()` to stop validating `plan`/`code` sub-objects (ignore gracefully) | Should | Legacy configs should not break |
 | FR17 | Increase `createPR` step default `maxTurns` to 30 in `sdlc-config.example.json` | Must | PR creation needs more turns for version bumping |
-| FR18 | Fix writing-specs auto-mode spec discovery to skip `AskUserQuestion` and directly amend | Must | Current instruction says "auto-select Option 1" which is fragile; should skip the prompt entirely |
+| FR18 | Fix write-spec auto-mode spec discovery to skip `AskUserQuestion` and directly amend | Must | Current instruction says "auto-select Option 1" which is fragile; should skip the prompt entirely |
 
 ---
 
@@ -266,7 +266,7 @@ Feature: Per-step model and effort level configuration
 - [x] `sdlc-runner.mjs` — existing `buildClaudeArgs()` and step config merging infrastructure
 - [x] `sdlc-config.example.json` — existing config template
 - [x] All `SKILL.md` files — existing skill definitions (11 skills)
-- [x] `implementing-specs/SKILL.md` — already has auto-mode support (line 22)
+- [x] `write-code/SKILL.md` — already has auto-mode support (line 22)
 
 ### External Dependencies
 - [x] Claude Code CLI `--model` flag — already supported
@@ -285,7 +285,7 @@ Feature: Per-step model and effort level configuration
 - Per-skill effort in SKILL.md frontmatter (not supported by Claude Code — effort is session-level via env var)
 - Changes to the architecture-reviewer agent's model declaration (already hardcoded to Opus)
 - Per-step temperature or max-token configuration
-- Changes to `implementing-specs` SKILL.md itself (its auto-mode logic is already correct)
+- Changes to `write-code` SKILL.md itself (its auto-mode logic is already correct)
 - Changes to the plugin manifest model field
 
 ---
@@ -301,7 +301,7 @@ Feature: Per-step model and effort level configuration
 | Issue | Date | Summary |
 |-------|------|---------|
 | #77 | 2026-02-22 | Initial feature spec |
-| #91 | 2026-02-23 | Replace plan/code phase split with single implementing-specs invocation; supersede AC3/FR4; add AC10–AC15, FR11–FR18; increase createPR maxTurns to 30; fix writing-specs auto-mode spec discovery |
+| #91 | 2026-02-23 | Replace plan/code phase split with single write-code invocation; supersede AC3/FR4; add AC10–AC15, FR11–FR18; increase createPR maxTurns to 30; fix write-spec auto-mode spec discovery |
 
 ---
 

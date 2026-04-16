@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `.claude/specs/feature-implementing-specs-skill/`
+**Related Spec**: `.claude/specs/feature-write-code-skill/`
 
 ---
 
@@ -14,10 +14,10 @@
 ### Steps to Reproduce
 
 1. Set up `.claude/auto-mode` in the project directory
-2. Start work on an issue without running `/writing-specs` first
-3. OpenClaw runner invokes `/implementing-specs #N` (step 4 — code)
+2. Start work on an issue without running `/write-spec` first
+3. OpenClaw runner invokes `/write-code #N` (step 4 — code)
 4. The skill reaches Step 2 ("Read Specs"), finds no spec files
-5. The skill calls `AskUserQuestion` to suggest running `/writing-specs #N` first
+5. The skill calls `AskUserQuestion` to suggest running `/write-spec #N` first
 6. In headless mode, the `AskUserQuestion` prompt goes nowhere and the session hangs
 
 ### Environment
@@ -39,7 +39,7 @@ Always — 100% reproducible when specs are missing and auto-mode is active.
 
 | | Description |
 |---|-------------|
-| **Expected** | When specs are missing and `.claude/auto-mode` exists, the skill outputs an escalation message (e.g., "No specs found... Done. Awaiting orchestrator.") and exits cleanly, allowing the runner's bounce-back mechanism to retry the previous step (writing-specs) |
+| **Expected** | When specs are missing and `.claude/auto-mode` exists, the skill outputs an escalation message (e.g., "No specs found... Done. Awaiting orchestrator.") and exits cleanly, allowing the runner's bounce-back mechanism to retry the previous step (write-spec) |
 | **Actual** | The skill calls `AskUserQuestion` regardless of auto-mode, causing the headless session to hang on a prompt that will never be answered |
 
 ### Error Output
@@ -59,7 +59,7 @@ Eventually the runner's per-step timeout fires and kills the session.
 
 **Given** specs are missing for the target issue (no spec directory or missing files)
 **And** `.claude/auto-mode` exists in the project directory
-**When** `/implementing-specs` is invoked
+**When** `/write-code` is invoked
 **Then** the skill outputs an escalation message ending with "Done. Awaiting orchestrator."
 **And** the skill does NOT call `AskUserQuestion`
 
@@ -67,8 +67,8 @@ Eventually the runner's per-step timeout fires and kills the session.
 
 **Given** specs are missing for the target issue
 **And** `.claude/auto-mode` does NOT exist in the project directory
-**When** `/implementing-specs` is invoked
-**Then** the skill calls `AskUserQuestion` to prompt the user to run `/writing-specs #N` first
+**When** `/write-code` is invoked
+**Then** the skill calls `AskUserQuestion` to prompt the user to run `/write-spec #N` first
 **And** no escalation message is output
 
 ### AC3: Escalation message contains actionable context
@@ -76,7 +76,7 @@ Eventually the runner's per-step timeout fires and kills the session.
 **Given** specs are missing in auto-mode
 **When** the skill outputs an escalation message
 **Then** the message includes which spec files are missing or that no spec directory was found
-**And** the message names the prerequisite step (`/writing-specs`)
+**And** the message names the prerequisite step (`/write-spec`)
 **And** the message ends with the runner-expected sentinel: "Done. Awaiting orchestrator."
 
 ---
@@ -93,7 +93,7 @@ Eventually the runner's per-step timeout fires and kills the session.
 
 ## Out of Scope
 
-- Automatically running `/writing-specs` as a recovery step within the skill
+- Automatically running `/write-spec` as a recovery step within the skill
 - Adding auto-mode checks to other `AskUserQuestion` calls in the skill (the skill's Automation Mode section already documents the global auto-mode contract; only this specific missing-specs error path is affected)
 - Changes to the runner's precondition validation or bounce-back logic
 

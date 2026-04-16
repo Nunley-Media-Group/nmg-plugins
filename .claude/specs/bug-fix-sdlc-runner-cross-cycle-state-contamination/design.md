@@ -34,7 +34,7 @@ The `detectAndHydrateState` function (line 214) already correctly extracted issu
 
 ### Approach
 
-Replace the fragile regex-on-output approach with deterministic branch-name extraction, matching the pattern already used by `detectAndHydrateState`. After step 2 completes, the runner checks which branch git is on (`git rev-parse --abbrev-ref HEAD`), then extracts the issue number from the branch name pattern `{number}-{slug}`. This is deterministic because `/starting-issues` always creates branches in this format.
+Replace the fragile regex-on-output approach with deterministic branch-name extraction, matching the pattern already used by `detectAndHydrateState`. After step 2 completes, the runner checks which branch git is on (`git rev-parse --abbrev-ref HEAD`), then extracts the issue number from the branch name pattern `{number}-{slug}`. This is deterministic because `/start-issue` always creates branches in this format.
 
 For working tree cleanup, add `git clean -fd && git checkout -- .` to step 1's prompt so that the working tree is pristine before each new cycle begins.
 
@@ -60,7 +60,7 @@ For working tree cleanup, add `git clean -fd && git checkout -- .` to step 1's p
 |------|------------|------------|
 | Branch extraction fails if step 2 doesn't create a branch (e.g., Claude errors out) | Low | Warning logged; `currentIssue` stays null, which triggers existing error handling in `preconditionsMet` |
 | `git clean -fd` removes intentional untracked files | Very Low | Step 1 always starts from main; no intentional untracked files should exist at cycle boundaries |
-| Branch name doesn't follow `{number}-{slug}` pattern | Very Low | `/starting-issues` always creates branches in this format; `detectAndHydrateState` relies on the same assumption |
+| Branch name doesn't follow `{number}-{slug}` pattern | Very Low | `/start-issue` always creates branches in this format; `detectAndHydrateState` relies on the same assumption |
 
 ---
 

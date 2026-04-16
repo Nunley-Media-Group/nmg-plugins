@@ -43,7 +43,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T001: Update auto-mode section and step numbering scaffold
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -60,7 +60,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T002: Add Step 2 — Classify Issue Type
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:
@@ -71,7 +71,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T003: Add Step 3 — Investigate Codebase
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 **Type**: Modify
 **Depends**: T002
 **Acceptance**:
@@ -83,7 +83,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T004: Modify Step 4 — Type-adapted interview questions
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:
@@ -95,7 +95,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T005: Modify Step 5 — Add new sections to issue body templates
 
-**File(s)**: `plugins/nmg-sdlc/skills/creating-issues/SKILL.md`
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 **Type**: Modify
 **Depends**: T003
 **Acceptance**:
