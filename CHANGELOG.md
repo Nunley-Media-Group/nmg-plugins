@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.3.1] - 2026-04-15
+
+### Fixed
+
+- **`sdlc-runner.mjs`** — Fixed `ReferenceError: Cannot access 'LOG_DIR' before initialization` TDZ bug: `LOG_DIR`, `MAX_LOG_DISK_BYTES`, and `ORCHESTRATION_LOG` were declared with `let` after their first assignment inside the `if (isMainModule)` block; moved declarations to join the other module-level variables
+- **Tests** — Removed stale `performs major bump when last issue in milestone` test that tested removed major-bump functionality
+
 ## [4.3.0] - 2026-04-15
 
 ### Changed

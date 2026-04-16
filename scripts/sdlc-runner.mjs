@@ -45,6 +45,9 @@ let CLEANUP_PATTERNS = [];
 let STATE_PATH = '';
 let configPath = '';
 let configSteps = {};
+let LOG_DIR = '';
+let MAX_LOG_DISK_BYTES = 500 * 1024 * 1024;
+let ORCHESTRATION_LOG = '';
 
 if (isMainModule) {
   const { values: args } = parseArgs({
@@ -139,10 +142,6 @@ function resolveLogDir(cfg, projectPath) {
   if (cfg.logDir) return path.resolve(cfg.logDir);
   return path.join(os.tmpdir(), 'sdlc-logs', path.basename(projectPath));
 }
-
-let LOG_DIR = '';
-let MAX_LOG_DISK_BYTES = 500 * 1024 * 1024;
-let ORCHESTRATION_LOG = '';
 
 // Failure loop detection — in-memory, not persisted to state file
 const MAX_CONSECUTIVE_ESCALATIONS = 2;

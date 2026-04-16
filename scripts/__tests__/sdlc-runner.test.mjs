@@ -2102,27 +2102,6 @@ describe('performDeterministicVersionBump (#60)', () => {
     expect(writeCall[1]).toBe('1.3.0\n');
   });
 
-  it('performs major bump when last issue in milestone', () => {
-    mockFs.existsSync.mockImplementation((p) => {
-      if (p.endsWith('VERSION')) return true;
-      return false;
-    });
-    mockFs.readFileSync.mockReturnValue('1.2.3\n');
-    mockExecSync.mockImplementation((cmd) => {
-      if (cmd.includes('issue view') && cmd.includes('labels')) return 'enhancement';
-      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":{"title":"v2"}}';
-      if (cmd.includes('api repos')) return '[{"title":"v2","open_issues":1}]';
-      return '';
-    });
-
-    const result = performDeterministicVersionBump({ currentIssue: 42 });
-    expect(result).toBe(true);
-
-    const writeCall = mockFs.writeFileSync.mock.calls.find(c => c[0].endsWith('VERSION'));
-    expect(writeCall).toBeDefined();
-    expect(writeCall[1]).toBe('2.0.0\n');
-  });
-
   it('commits with correct message format', () => {
     mockFs.existsSync.mockImplementation((p) => {
       if (p.endsWith('VERSION')) return true;
