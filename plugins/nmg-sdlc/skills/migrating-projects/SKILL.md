@@ -476,5 +476,5 @@ Run this skill periodically after plugin updates to keep project files current:
          ↓
 /migrating-projects (after plugin updates)
          ↓
-/creating-issues  →  /writing-specs  →  /implementing-specs  →  /verifying-specs  →  /creating-prs
+/creating-issues  →  /starting-issues  →  /writing-specs  →  /implementing-specs  →  /verifying-specs  →  /creating-prs
 ```

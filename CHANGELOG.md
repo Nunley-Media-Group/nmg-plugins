@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.2.1] - 2026-04-15
+
+### Fixed
+
+- **All SDLC skills** — Every step now outputs the next slash command to guide users through the workflow; `/creating-issues` was incorrectly pointing to `/writing-specs` instead of `/starting-issues`, and `/starting-issues` had no next-step guidance at all
+- **All SDLC skills** — "Integration with SDLC Workflow" diagrams updated to include `/starting-issues` in the chain (was omitted from 6 of 9 skills)
+
 ## [4.2.0] - 2026-04-15
 
 ### Improved

@@ -272,6 +272,9 @@ Branch: [branch-name]
 Milestone: [milestone or "none"]
 Labels: [labels or "none"]
 Status: In Progress
+
+[If `.claude/auto-mode` does NOT exist]: Next step: Run `/writing-specs #N` to create specifications for this issue.
+[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 This summary serves as the handoff contract for downstream skills like `/writing-specs` and `/implementing-specs`.
@@ -281,9 +284,6 @@ This summary serves as the handoff contract for downstream skills like `/writing
 ## Integration with SDLC Workflow
 
 ```
-Standalone:
-/starting-issues #N  →  /writing-specs #N  →  /implementing-specs #N
-
-Full Workflow:
 /creating-issues  →  /starting-issues #N  →  /writing-specs #N  →  /implementing-specs #N  →  /verifying-specs #N  →  /creating-prs #N
+                          ▲ You are here
 ```

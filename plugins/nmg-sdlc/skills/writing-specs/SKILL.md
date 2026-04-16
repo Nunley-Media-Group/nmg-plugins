@@ -492,8 +492,8 @@ Specs written to (or amended in) `.claude/specs/{feature-name}/`:
 ## Integration with SDLC Workflow
 
 ```
-/creating-issues  →  /writing-specs #N  →  /implementing-specs #N  →  /verifying-specs #N  →  /creating-prs #N
-                          ▲ You are here
+/creating-issues  →  /starting-issues #N  →  /writing-specs #N  →  /implementing-specs #N  →  /verifying-specs #N  →  /creating-prs #N
+                                                  ▲ You are here
 ```
 
 ## References

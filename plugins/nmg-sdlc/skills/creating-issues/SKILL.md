@@ -319,7 +319,7 @@ URL: [issue URL]
 Labels: [labels applied]
 [If automatable label verification failed]: Warning: automatable label was not applied — verify manually.
 
-[If `.claude/auto-mode` does NOT exist]: Next step: Run `/writing-specs #N` to create specifications for this issue.
+[If `.claude/auto-mode` does NOT exist]: Next step: Run `/starting-issues #N` to create a feature branch and begin working on this issue.
 [If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
 ```
 
@@ -334,6 +334,6 @@ Labels: [labels applied]
 ## Integration with SDLC Workflow
 
 ```
-/creating-issues  →  /writing-specs #N  →  /implementing-specs #N  →  /verifying-specs #N  →  /creating-prs #N
+/creating-issues  →  /starting-issues #N  →  /writing-specs #N  →  /implementing-specs #N  →  /verifying-specs #N  →  /creating-prs #N
      ▲ You are here
 ```

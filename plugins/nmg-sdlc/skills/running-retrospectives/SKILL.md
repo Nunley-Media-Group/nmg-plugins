@@ -286,10 +286,10 @@ State saved to .claude/steering/retrospective-state.json
 ## Integration with SDLC Workflow
 
 ```
-/creating-issues  →  /writing-specs #N  →  /implementing-specs #N  →  /verifying-specs #N  →  /creating-prs #N
-                          ▲                                                                         │
-                          │                                                                         ▼
-                          └──── reads retrospective.md ◄──── /running-retrospectives ◄──── defect specs
+/creating-issues  →  /starting-issues #N  →  /writing-specs #N  →  /implementing-specs #N  →  /verifying-specs #N  →  /creating-prs #N
+                                                   ▲                                                                         │
+                                                   │                                                                         ▼
+                                                   └──── reads retrospective.md ◄──── /running-retrospectives ◄──── defect specs
 ```
 
 The retrospective skill sits outside the main linear pipeline. It is invoked periodically (not per-issue) and feeds learnings back into the spec-writing step.

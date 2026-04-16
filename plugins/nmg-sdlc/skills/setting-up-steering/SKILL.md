@@ -212,5 +212,5 @@ This is a setup and maintenance step. Run it once to bootstrap, then again whene
 ```
 /setting-up-steering (bootstrap or enhance)
          ↓
-/creating-issues  →  /writing-specs #N  →  /implementing-specs #N  →  /verifying-specs #N  →  /creating-prs #N
+/creating-issues  →  /starting-issues #N  →  /writing-specs #N  →  /implementing-specs #N  →  /verifying-specs #N  →  /creating-prs #N
 ```
