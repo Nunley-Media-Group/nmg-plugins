@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `.claude/specs/feature-openclaw-runner-operations/`
+**Related Spec**: `.claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/`
 
 ---
 
@@ -26,8 +26,8 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.3.0) |
-| **Component** | `openclaw/scripts/sdlc-runner.mjs` |
-| **Runner mode** | Autonomous (OpenClaw orchestrated) |
+| **Component** | `scripts/sdlc-runner.mjs` |
+| **Runner mode** | Autonomous (runner-orchestrated) |
 | **Node.js** | v24+ (ESM) |
 
 ### Frequency

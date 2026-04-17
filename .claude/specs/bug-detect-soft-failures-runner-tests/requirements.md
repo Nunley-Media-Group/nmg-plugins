@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude (nmg-sdlc)
 **Severity**: High
-**Related Spec**: `.claude/specs/feature-openclaw-runner-operations/` (defective spec — success check only examines exit code)
+**Related Spec**: `.claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/` (defective spec — success check only examines exit code)
 
 ---
 

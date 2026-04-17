@@ -25,7 +25,7 @@
 
 ### T001: Add config validation function
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -39,7 +39,7 @@
 
 ### T002: Add step config resolution helper
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -51,7 +51,7 @@
 
 ### T003: Add implement sub-step resolution helper
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T002
 **Acceptance**:
@@ -68,7 +68,7 @@
 
 ### T004: Update config loading to read global effort
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:
@@ -79,7 +79,7 @@
 
 ### T005: Update `buildClaudeArgs()` and `runClaude()` for per-step model and effort
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T002, T004
 **Acceptance**:
@@ -91,7 +91,7 @@
 
 ### T006: Implement `runImplementStep()` for plan/code split
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T003, T005
 **Acceptance**:
@@ -109,14 +109,14 @@
 
 ### T007: Wire `runImplementStep()` into `runStep()`
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T006
 **Acceptance**:
 - [x] `runStep()` delegates step 4 (implement) to `runImplementStep()` instead of calling `runClaude()` directly
 - [x] All post-step logic (soft failure detection, state extraction, auto-commit, validation gates) still runs after the code phase completes
 - [x] Step log for the implement step captures both phases
-- [x] Discord status updates reflect the two-phase execution (e.g., "Starting Step 4: implement (plan phase)...")
+- [x] Status notifications to the orchestration log reflect the two-phase execution (e.g., "Starting Step 4: implement (plan phase)...")
 
 > **Note**: Superseded by T017 (issue #91) — step 4 special case is removed.
 
@@ -129,9 +129,8 @@
 **File(s)**:
 - `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 - `plugins/nmg-sdlc/skills/open-pr/SKILL.md`
-- `plugins/nmg-sdlc/skills/generating-openclaw-config/SKILL.md`
+- `plugins/nmg-sdlc/skills/init-config/SKILL.md`
 - `plugins/nmg-sdlc/skills/write-code/SKILL.md`
-- `plugins/nmg-sdlc/skills/installing-openclaw-skill/SKILL.md`
 - `plugins/nmg-sdlc/skills/migrate-project/SKILL.md`
 - `plugins/nmg-sdlc/skills/run-retro/SKILL.md`
 - `plugins/nmg-sdlc/skills/setup-steering/SKILL.md`
@@ -178,7 +177,7 @@
 
 ### T011: Update `sdlc-config.example.json` with per-step model/effort defaults
 
-**File(s)**: `openclaw/scripts/sdlc-config.example.json`
+**File(s)**: `scripts/sdlc-config.example.json`
 **Type**: Modify
 **Depends**: T003
 **Acceptance**:
@@ -199,7 +198,7 @@
 - [x] New "Model & Effort Recommendations" section added
 - [x] Table lists all skills/steps with recommended model and effort
 - [x] Documents the implement plan/code split
-- [x] Explains skill frontmatter `model` (manual users) vs runner config `model`/`effort` (OpenClaw)
+- [x] Explains skill frontmatter `model` (manual users) vs runner config `model`/`effort` (SDLC runner)
 - [x] Instructions for overriding defaults via runner config
 
 ### T013: Update CHANGELOG.md with feature entries
@@ -217,7 +216,7 @@
 
 ### T014: Add unit tests for new runner functions
 
-**File(s)**: `openclaw/scripts/__tests__/sdlc-runner.test.mjs`
+**File(s)**: `scripts/__tests__/sdlc-runner.test.mjs`
 **Type**: Modify
 **Depends**: T001, T002, T003, T005, T006, T007
 **Acceptance**:
@@ -246,7 +245,7 @@
 
 ### T016: Remove `resolveImplementPhaseConfig()` and update `validateConfig()`
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None (reverses T003)
 **Acceptance**:
@@ -258,7 +257,7 @@
 
 ### T017: Remove `runImplementStep()` and simplify `runStep()`
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T016
 **Acceptance**:
@@ -270,7 +269,7 @@
 
 ### T018: Update `sdlc-config.example.json`
 
-**File(s)**: `openclaw/scripts/sdlc-config.example.json`
+**File(s)**: `scripts/sdlc-config.example.json`
 **Type**: Modify
 **Depends**: T017
 **Acceptance**:
@@ -281,7 +280,7 @@
 
 ### T019: Update tests for removed functions
 
-**File(s)**: `openclaw/scripts/__tests__/sdlc-runner.test.mjs`
+**File(s)**: `scripts/__tests__/sdlc-runner.test.mjs`
 **Type**: Modify
 **Depends**: T016, T017
 **Acceptance**:

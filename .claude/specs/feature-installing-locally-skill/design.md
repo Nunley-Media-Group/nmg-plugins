@@ -9,9 +9,9 @@
 
 ## Overview
 
-The `/installing-locally` skill is a comprehensive 7-step installation workflow that serves as the primary deployment mechanism for the nmg-plugins marketplace. It pulls the latest marketplace repo, discovers plugins from `marketplace.json`, syncs each plugin to a versioned cache directory via `rsync`, updates `installed_plugins.json` with version and SHA tracking, syncs the OpenClaw running-sdlc skill, restarts the OpenClaw gateway, and reports results.
+The `/installing-locally` skill is a 5-step installation workflow that serves as the primary deployment mechanism for the nmg-plugins marketplace. It pulls the latest marketplace repo, discovers plugins from `marketplace.json`, syncs each plugin to a versioned cache directory via `rsync`, updates `installed_plugins.json` with version and SHA tracking, and reports results.
 
-This is a repo-level skill (in `.claude/skills/`, not inside any plugin) because its purpose is to install the plugins themselves — it wouldn't make sense for it to be part of a plugin that needs to be installed. It handles version tracking (preserving `installedAt`, updating `lastUpdated`), version mismatch warnings (marketplace.json vs plugin.json), and non-fatal error handling for the OpenClaw gateway restart.
+This is a repo-level skill (in `.claude/skills/`, not inside any plugin) because its purpose is to install the plugins themselves — it wouldn't make sense for it to be part of a plugin that needs to be installed. It handles version tracking (preserving `installedAt`, updating `lastUpdated`) and version mismatch warnings (marketplace.json vs plugin.json).
 
 ---
 
@@ -27,16 +27,14 @@ This is a repo-level skill (in `.claude/skills/`, not inside any plugin) because
 │  Step 2: Read marketplace.json → discover plugins │
 │  Step 3: rsync each plugin → versioned cache      │
 │  Step 4: Update installed_plugins.json            │
-│  Step 5: Copy OpenClaw skill files                │
-│  Step 6: Restart OpenClaw gateway                 │
-│  Step 7: Report results                           │
+│  Step 5: Report results                           │
 └──────────────────────────────────────────────────┘
-         │                    │
-         ▼                    ▼
-┌─────────────────┐  ┌──────────────────────┐
-│ ~/.claude/       │  │ ~/.openclaw/          │
-│ plugins/         │  │ skills/running-sdlc/  │
-│  ├── cache/      │  └──────────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│ ~/.claude/       │
+│ plugins/         │
+│  ├── cache/      │
 │  └── installed_  │
 │     plugins.json │
 └─────────────────┘
@@ -50,9 +48,7 @@ This is a repo-level skill (in `.claude/skills/`, not inside any plugin) because
 3. For each plugin: rsync source → ~/.claude/plugins/cache/{plugin}/{version}/
 4. chmod +x hook scripts
 5. Update installed_plugins.json with version, path, SHA, timestamps
-6. Copy OpenClaw skill files to ~/.openclaw/skills/running-sdlc/
-7. Restart OpenClaw gateway (non-fatal)
-8. Report summary with versions and paths
+6. Report summary with versions and paths
 ```
 
 ---
@@ -171,7 +167,7 @@ FeatureScreen
 
 | File | Type | Purpose |
 |------|------|---------|
-| `.claude/skills/installing-locally/SKILL.md` | Create | Repo-level skill with 7-step workflow |
+| `.claude/skills/installing-locally/SKILL.md` | Create | Repo-level skill with 5-step workflow |
 
 ---
 
@@ -204,7 +200,7 @@ FeatureScreen
 
 | Layer | Type | Coverage |
 |-------|------|----------|
-| Plugin Installation | BDD | Scenarios for plugin sync and OpenClaw sync |
+| Plugin Installation | BDD | Scenarios for plugin sync |
 | Registry Update | Manual | Verify installed_plugins.json accuracy |
 
 ---

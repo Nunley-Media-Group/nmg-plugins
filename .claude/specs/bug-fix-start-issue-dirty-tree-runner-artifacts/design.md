@@ -25,9 +25,9 @@ The runner's own `validatePreconditions()` case 2 correctly filters `RUNNER_ARTI
 
 | File | Lines | Role |
 |------|-------|------|
-| `openclaw/scripts/sdlc-runner.mjs` | ~582 | `RUNNER_ARTIFACTS` constant |
-| `openclaw/scripts/sdlc-runner.mjs` | ~588-608 | `ensureRunnerArtifactsGitignored()` — adds to .gitignore but doesn't untrack |
-| `openclaw/scripts/sdlc-runner.mjs` | ~1931-1932 | `main()` — calls ensureRunnerArtifactsGitignored() |
+| `scripts/sdlc-runner.mjs` | ~582 | `RUNNER_ARTIFACTS` constant |
+| `scripts/sdlc-runner.mjs` | ~588-608 | `ensureRunnerArtifactsGitignored()` — adds to .gitignore but doesn't untrack |
+| `scripts/sdlc-runner.mjs` | ~1931-1932 | `main()` — calls ensureRunnerArtifactsGitignored() |
 | `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | ~147-180 | Step 4 precondition — raw git status check |
 
 ---
@@ -46,8 +46,8 @@ Two complementary fixes:
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `openclaw/scripts/sdlc-runner.mjs` | Add `untrackRunnerArtifactsIfTracked()` function after `ensureRunnerArtifactsGitignored()` | Self-heals projects where artifacts were committed before gitignore fix |
-| `openclaw/scripts/sdlc-runner.mjs` | Call `untrackRunnerArtifactsIfTracked()` in `main()` after `ensureRunnerArtifactsGitignored()` | Must run after gitignore is set up so untracked files stay out |
+| `scripts/sdlc-runner.mjs` | Add `untrackRunnerArtifactsIfTracked()` function after `ensureRunnerArtifactsGitignored()` | Self-heals projects where artifacts were committed before gitignore fix |
+| `scripts/sdlc-runner.mjs` | Call `untrackRunnerArtifactsIfTracked()` in `main()` after `ensureRunnerArtifactsGitignored()` | Must run after gitignore is set up so untracked files stay out |
 | `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | Update Step 4 to filter `.claude/sdlc-state.json` and `.claude/auto-mode` from `git status` output | Prevents skill from aborting on runner artifacts even if runner fix hasn't run yet |
 
 ### Blast Radius

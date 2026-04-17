@@ -23,8 +23,8 @@ The runner has no postcondition validation for Step 7 — unlike steps 3, 6, and
 
 | File | Lines | Role |
 |------|-------|------|
-| `openclaw/scripts/sdlc-runner.mjs` | 810 | Step 7 prompt — generic, no mention of version bumping |
-| `openclaw/scripts/sdlc-runner.mjs` | 1369–1427 | Postcondition gates for steps 3, 4, 6, 8 — Step 7 has none |
+| `scripts/sdlc-runner.mjs` | 810 | Step 7 prompt — generic, no mention of version bumping |
+| `scripts/sdlc-runner.mjs` | 1369–1427 | Postcondition gates for steps 3, 4, 6, 8 — Step 7 has none |
 | `plugins/nmg-sdlc/skills/open-pr/SKILL.md` | 40–87 | Steps 2–3 define version bumping but are LLM-discretionary |
 
 ### Triggering Conditions
@@ -57,10 +57,10 @@ This approach was chosen over making the version bump a separate runner step (e.
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `openclaw/scripts/sdlc-runner.mjs` (line 810) | Add explicit version bump mandate to Step 7 prompt | Defense-in-depth: LLM is told to bump versions (AC2) |
-| `openclaw/scripts/sdlc-runner.mjs` (new function ~line 1260) | Add `validateVersionBump()` function | Postcondition check: detects missing version bump (AC3) |
-| `openclaw/scripts/sdlc-runner.mjs` (new function ~line 1260) | Add `performDeterministicVersionBump()` function | Recovery: performs the version bump if missing (AC1) |
-| `openclaw/scripts/sdlc-runner.mjs` (after line 1427) | Add Step 7 postcondition gate calling `validateVersionBump()` and `performDeterministicVersionBump()` | Integrates the postcondition into the step execution flow (AC1/AC3) |
+| `scripts/sdlc-runner.mjs` (line 810) | Add explicit version bump mandate to Step 7 prompt | Defense-in-depth: LLM is told to bump versions (AC2) |
+| `scripts/sdlc-runner.mjs` (new function ~line 1260) | Add `validateVersionBump()` function | Postcondition check: detects missing version bump (AC3) |
+| `scripts/sdlc-runner.mjs` (new function ~line 1260) | Add `performDeterministicVersionBump()` function | Recovery: performs the version bump if missing (AC1) |
+| `scripts/sdlc-runner.mjs` (after line 1427) | Add Step 7 postcondition gate calling `validateVersionBump()` and `performDeterministicVersionBump()` | Integrates the postcondition into the step execution flow (AC1/AC3) |
 
 ### Blast Radius
 
@@ -75,7 +75,7 @@ This approach was chosen over making the version bump a separate runner step (e.
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | Double version bump (LLM bumps in skill + runner bumps in postcondition) | Low | `validateVersionBump()` checks `git diff main -- VERSION` — if the LLM already bumped, the diff will show changes and the postcondition passes. No double bump. |
-| Deterministic bump uses wrong bump type | Low | Uses the same classification matrix as `/open-pr` Step 2: `bug` → patch, `enhancement`/other → minor, last milestone issue → major |
+| Deterministic bump uses wrong bump type | Low | Uses the same classification matrix as `/open-pr` Step 2: `bug` → patch, `enhancement`/other → minor. Major bumps are manual only — the runner never applies them automatically (per v4.3.0). |
 | Runner crashes if `VERSION` file has invalid content | Low | Guard: if `VERSION` doesn't contain valid semver, skip version bumping (same guard as `/open-pr` Step 2) |
 | Manual workflow regression (AC4) | Very Low | No changes to `/open-pr` SKILL.md — the skill's interactive flow via `AskUserQuestion` is untouched |
 | Runner step config changes break existing configs | Very Low | No changes to step numbering or config schema — only prompt text and postcondition logic change |

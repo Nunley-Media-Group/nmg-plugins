@@ -8,7 +8,7 @@
 Feature: Escalation instead of AskUserQuestion when specs missing in auto-mode
   The /write-code skill previously called AskUserQuestion when spec
   files were not found, regardless of whether auto-mode was active. In headless
-  sessions (OpenClaw runner), this caused the session to hang indefinitely.
+  sessions (SDLC runner), this caused the session to hang indefinitely.
   This was fixed by adding an auto-mode conditional to the missing-specs error
   path: output an escalation message in auto-mode, preserve AskUserQuestion
   in interactive mode.

@@ -7,7 +7,7 @@
 @regression
 Feature: /migrate-project auto-mode support
   The /migrate-project skill previously lacked any auto-mode awareness,
-  causing headless OpenClaw sessions to hang indefinitely when the skill
+  causing headless runner sessions to hang indefinitely when the skill
   called AskUserQuestion with no user present.
   This was fixed by adding auto-mode guards that auto-apply non-destructive
   changes and skip destructive operations with a summary.
@@ -66,7 +66,7 @@ Feature: /migrate-project auto-mode support
     Then the output includes a "Skipped Operations (Auto-Mode)" section
     And the section contains a structured table with columns "Operation Type", "Affected Paths", and "Reason"
     And each skipped operation has an entry in the table
-    And the runner can parse this output to report skipped operations to Discord
+    And the runner can parse this output to surface skipped operations in its status log
 
   # --- Related Behavior Still Works ---
 

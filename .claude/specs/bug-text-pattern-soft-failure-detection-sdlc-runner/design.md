@@ -19,9 +19,9 @@ The existing `matchErrorPattern()` function _does_ scan raw text output, but it 
 
 | File | Lines | Role |
 |------|-------|------|
-| `openclaw/scripts/sdlc-runner.mjs` | 1061–1079 | `detectSoftFailure()` — only checks JSON fields, never scans raw text |
-| `openclaw/scripts/sdlc-runner.mjs` | 1036–1051 | `matchErrorPattern()` / `IMMEDIATE_ESCALATION_PATTERNS` — existing text scanning, but only used in the failure path |
-| `openclaw/scripts/sdlc-runner.mjs` | 1669–1676 | Call site in `runStep()` — calls `detectSoftFailure(result.stdout)` and posts Discord on match |
+| `scripts/sdlc-runner.mjs` | 1061–1079 | `detectSoftFailure()` — only checks JSON fields, never scans raw text |
+| `scripts/sdlc-runner.mjs` | 1036–1051 | `matchErrorPattern()` / `IMMEDIATE_ESCALATION_PATTERNS` — existing text scanning, but only used in the failure path |
+| `scripts/sdlc-runner.mjs` | 1669–1676 | Call site in `runStep()` — calls `detectSoftFailure(result.stdout)` and writes a `[STATUS]` line on match |
 
 ### Triggering Conditions
 
@@ -39,7 +39,7 @@ The existing `matchErrorPattern()` function _does_ scan raw text output, but it 
 
 Add text-pattern scanning to `detectSoftFailure()`. After the existing JSON checks (which remain unchanged), if no JSON-based soft failure is found, scan the raw stdout string against a new constant array of regex patterns representing known text-based failure indicators. If any pattern matches, return a soft failure result with a `text_pattern:` reason prefix.
 
-The patterns are defined as a module-level constant array (`TEXT_FAILURE_PATTERNS`) for maintainability, following the same pattern as the existing `IMMEDIATE_ESCALATION_PATTERNS` and `BENIGN_DENIED_TOOLS` constants. Each entry includes a regex and a human-readable label used in the reason string and Discord messages.
+The patterns are defined as a module-level constant array (`TEXT_FAILURE_PATTERNS`) for maintainability, following the same pattern as the existing `IMMEDIATE_ESCALATION_PATTERNS` and `BENIGN_DENIED_TOOLS` constants. Each entry includes a regex and a human-readable label used in the reason string and `[STATUS]` log lines.
 
 The function signature and return type remain unchanged — callers already handle `{ isSoftFailure: true, reason: string }` — so no changes are needed at the call site in `runStep()` or in `handleFailure()`.
 
@@ -47,15 +47,15 @@ The function signature and return type remain unchanged — callers already hand
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `openclaw/scripts/sdlc-runner.mjs` | Add `TEXT_FAILURE_PATTERNS` constant array near existing `IMMEDIATE_ESCALATION_PATTERNS` (~line 1036) | Centralizes text patterns for maintainability; follows existing code pattern |
-| `openclaw/scripts/sdlc-runner.mjs` | Extend `detectSoftFailure()` to scan raw `stdout` against `TEXT_FAILURE_PATTERNS` after JSON checks (~line 1077) | Core fix — detects text-based failures that JSON inspection misses |
-| `openclaw/scripts/__tests__/sdlc-runner.test.mjs` | Add test cases for text-pattern soft failure detection | Regression prevention — ensures new and existing detection paths are covered |
+| `scripts/sdlc-runner.mjs` | Add `TEXT_FAILURE_PATTERNS` constant array near existing `IMMEDIATE_ESCALATION_PATTERNS` (~line 1036) | Centralizes text patterns for maintainability; follows existing code pattern |
+| `scripts/sdlc-runner.mjs` | Extend `detectSoftFailure()` to scan raw `stdout` against `TEXT_FAILURE_PATTERNS` after JSON checks (~line 1077) | Core fix — detects text-based failures that JSON inspection misses |
+| `scripts/__tests__/sdlc-runner.test.mjs` | Add test cases for text-pattern soft failure detection | Regression prevention — ensures new and existing detection paths are covered |
 
 ### Blast Radius
 
 - **Direct impact**: `detectSoftFailure()` function — gains an additional code path that returns `isSoftFailure: true` for text pattern matches
-- **Indirect impact**: `runStep()` (line ~1671) — will now trigger the soft failure path for text-based failures (same as JSON failures). `handleFailure()` will be called, which triggers retry/escalation. `postDiscord()` will include the `text_pattern:` reason.
-- **Risk level**: Low — the new code path only fires when a known text pattern is found AND no JSON soft failure was detected. The return type is identical to existing soft failure returns. All downstream handling (retry, escalation, Discord) is unchanged.
+- **Indirect impact**: `runStep()` (line ~1671) — will now trigger the soft failure path for text-based failures (same as JSON failures). `handleFailure()` will be called, which triggers retry/escalation. The `[STATUS]` log line for the soft failure will include the `text_pattern:` reason.
+- **Risk level**: Low — the new code path only fires when a known text pattern is found AND no JSON soft failure was detected. The return type is identical to existing soft failure returns. All downstream handling (retry, escalation, status logging) is unchanged.
 
 ---
 

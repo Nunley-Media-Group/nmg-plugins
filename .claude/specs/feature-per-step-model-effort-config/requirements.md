@@ -9,7 +9,7 @@
 
 ## User Story
 
-**As a** developer or OpenClaw automation agent running the SDLC workflow
+**As a** developer or SDLC automation agent running the SDLC workflow
 **I want** per-step model and effort level configuration
 **So that** each SDLC phase uses the optimal model for its task — high-reasoning models for planning and spec writing, efficient models for mechanical work — balancing quality and cost
 
@@ -168,7 +168,7 @@ The runner's `buildClaudeArgs()` function already supports per-step `maxTurns` a
 
 ```gherkin
 Feature: Per-step model and effort level configuration
-  As a developer or OpenClaw automation agent
+  As a developer or SDLC automation agent
   I want per-step model and effort level configuration
   So that each SDLC phase uses the optimal model for its task
 

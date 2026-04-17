@@ -20,7 +20,7 @@
 
 ### T001: Implement platform-aware process tree helpers and rewrite `cleanupProcesses()`
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -56,7 +56,7 @@
 
 ### T002: Add `lastClaudePid` tracking in `runClaude()`
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:

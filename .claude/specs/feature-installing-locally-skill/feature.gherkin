@@ -17,13 +17,3 @@ Feature: Installing Locally Skill
     Given a plugin has skills, hooks, and agents
     When installation runs
     Then all skill directories, hook configurations, and agent definitions are copied
-
-  Scenario: OpenClaw skill is synced
-    Given the OpenClaw running-sdlc skill exists in the repo
-    When "/installing-locally" runs
-    Then the skill is synced to "~/.openclaw/skills/running-sdlc/"
-
-  Scenario: Gateway is restarted after sync
-    Given the OpenClaw skill is synced
-    When the sync completes
-    Then the OpenClaw gateway is restarted

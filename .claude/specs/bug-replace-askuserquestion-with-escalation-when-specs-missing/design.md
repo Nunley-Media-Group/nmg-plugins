@@ -17,7 +17,7 @@ The word "prompt" causes Claude to use `AskUserQuestion`, which is the correct b
 
 Other skills (e.g., `/start-issue` lines 145–156) handle auto-mode error paths explicitly by outputting an escalation message ending with "Done. Awaiting orchestrator." and then exiting. The `/write-code` skill's missing-specs path simply lacks this pattern.
 
-The runner (`openclaw/scripts/sdlc-runner.mjs`) already validates spec preconditions before running step 4 (lines 781–803) — it checks for all 4 spec files. When preconditions fail, the runner retries the previous step (write-spec). But when preconditions pass initially and the skill itself discovers missing specs at a more granular level (e.g., wrong directory resolved, partial specs), the skill's `AskUserQuestion` call causes a hang instead of a clean exit that the runner can handle.
+The runner (`scripts/sdlc-runner.mjs`) already validates spec preconditions before running step 4 (lines 781–803) — it checks for all 4 spec files. When preconditions fail, the runner retries the previous step (write-spec). But when preconditions pass initially and the skill itself discovers missing specs at a more granular level (e.g., wrong directory resolved, partial specs), the skill's `AskUserQuestion` call causes a hang instead of a clean exit that the runner can handle.
 
 ### Affected Code
 
@@ -28,7 +28,7 @@ The runner (`openclaw/scripts/sdlc-runner.mjs`) already validates spec precondit
 
 ### Triggering Conditions
 
-- `.claude/auto-mode` exists (headless automation via OpenClaw)
+- `.claude/auto-mode` exists (headless automation via the SDLC runner)
 - Spec files are missing or the spec directory cannot be found for the target issue
 - The runner's precondition check passes (e.g., a spec directory exists but is incomplete, or a different feature's specs are found) but the skill's own check fails
 - Claude follows the specific "prompt" instruction over the general "do not call AskUserQuestion" guidance

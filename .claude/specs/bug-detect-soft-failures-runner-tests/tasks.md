@@ -21,7 +21,7 @@
 
 ### T001: Add Soft Failure Detection to the Runner
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -39,7 +39,7 @@
 
 ### T002: Refactor Runner for Testability
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:
@@ -55,7 +55,7 @@
 
 ### T003: Create Comprehensive Jest Test Suite
 
-**File(s)**: `openclaw/scripts/package.json`, `openclaw/scripts/__tests__/sdlc-runner.test.mjs`
+**File(s)**: `scripts/package.json`, `scripts/__tests__/sdlc-runner.test.mjs`
 **Type**: Create
 **Depends**: T002
 **Acceptance**:
@@ -78,7 +78,7 @@
 - [ ] All tests pass with `npm test` (or `npx jest`)
 - [ ] Tests tagged/organized by functional area
 
-**Notes**: Use `jest.unstable_mockModule()` for ESM module mocking. Structure tests with `describe` blocks per functional area. Use `beforeEach` to reset module-level state via the exported reset helper. For `spawn`-based functions (`runClaude`, `postDiscord`), mock the spawn return value with event emitters.
+**Notes**: Use `jest.unstable_mockModule()` for ESM module mocking. Structure tests with `describe` blocks per functional area. Use `beforeEach` to reset module-level state via the exported reset helper. For `spawn`-based functions (e.g., `runClaude`), mock the spawn return value with event emitters.
 
 ---
 
@@ -99,11 +99,11 @@
 
 ### T005: Verify No Regressions
 
-**File(s)**: existing test files, `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: existing test files, `scripts/sdlc-runner.mjs`
 **Type**: Verify (no file changes)
 **Depends**: T001, T002, T003, T004
 **Acceptance**:
-- [ ] All Jest tests pass (`npm test` in `openclaw/scripts/`)
+- [ ] All Jest tests pass (`npm test` in `scripts/`)
 - [ ] Script still runs correctly as CLI (`node sdlc-runner.mjs --help` exits 0)
 - [ ] No side effects in related code paths (per blast radius from design.md)
 - [ ] `start-issue` SKILL.md manual-mode workflow is unchanged

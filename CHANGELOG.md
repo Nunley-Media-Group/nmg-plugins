@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0] - 2026-04-16
+
+### Changed
+
+- Rewrote ~40 historical specs in `.claude/specs/` to remove stale references to OpenClaw integration (removed in v4.1.0) and Discord posting, replace `openclaw/scripts/` paths with `scripts/`, drop references to the renamed/removed `generating-openclaw-config` and `installing-openclaw-skill` skills, resolve dangling `feature-openclaw-runner-operations` cross-references, and align automatic-major-bump descriptions with the v4.3.0 manual-only behavior
+- Removed the legacy `postDiscord()` pass-through from `scripts/sdlc-runner.mjs`; status notifications now go directly through `log()` as `[STATUS]` lines (behavior unchanged)
+
 ## [5.0.0] - 2026-04-16
 
 ### Changed (BREAKING)

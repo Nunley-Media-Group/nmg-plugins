@@ -55,20 +55,13 @@ Feature: Project Migration Skill
     Then the new "Risk Assessment" section is detected as missing from existing specs
     And the skill proposes adding it without any code changes to the skill itself
 
-  Scenario: OpenClaw config migration merges missing keys
+  Scenario: Config migration merges missing keys
     Given a project with an "sdlc-config.json" missing the "cleanup" key and a new "merge" step
     And the latest "sdlc-config.example.json" template includes both
     When I run "/migrate-project"
     Then the "cleanup" key is added with template default values
     And the "merge" step is added to the "steps" object
-    And existing user values for "projectPath" and "discordChannelId" are preserved
-
-  Scenario: OpenClaw skill version check warns when outdated
-    Given the OpenClaw "running-sdlc" skill is installed at "~/.openclaw/skills/running-sdlc/"
-    And the installed SKILL.md differs from the source in the marketplace clone
-    When I run "/migrate-project"
-    Then a warning is displayed indicating the installed skill is outdated
-    And the warning suggests running "/installing-openclaw-skill" to update
+    And existing user values for "projectPath" are preserved
 
   # --- Edge Cases ---
 

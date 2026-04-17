@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude (spec agent)
 **Severity**: High
-**Related Spec**: `.claude/specs/feature-openclaw-runner-operations/`
+**Related Spec**: `.claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/`
 
 ---
 
@@ -24,7 +24,7 @@
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.3.0) |
 | **Version / Commit** | Current main branch |
-| **Component** | `openclaw/scripts/sdlc-runner.mjs`, lines 529–561 (`cleanupProcesses()`) |
+| **Component** | `scripts/sdlc-runner.mjs`, lines 529–561 (`cleanupProcesses()`) |
 | **Configuration** | `cleanup.processPatterns: ["--remote-debugging-port"]` |
 
 ### Frequency

@@ -1,4 +1,4 @@
-# File: openclaw/scripts/__tests__/sdlc-runner.test.mjs
+# File: scripts/__tests__/sdlc-runner.test.mjs
 #
 # Generated from: .claude/specs/38-detect-soft-failures-runner-tests/requirements.md
 # Issue: #38

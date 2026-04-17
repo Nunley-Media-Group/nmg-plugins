@@ -5,7 +5,7 @@
 **Status**: Approved
 **Author**: Claude (regenerated)
 **Severity**: Critical
-**Related Spec**: `.claude/specs/feature-openclaw-runner-operations/`
+**Related Spec**: `.claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/`
 
 ---
 
@@ -54,7 +54,7 @@ Always — occurs whenever the previous issue's number appears before the new is
 
 ## Root Cause
 
-Two issues in `openclaw/scripts/sdlc-runner.mjs` combine to produce this defect:
+Two issues in `scripts/sdlc-runner.mjs` combine to produce this defect:
 
 1. **Fragile issue number extraction** — `extractStateFromStep` uses `output.match(/#(\d+)/)` to extract the selected issue number after step 2. This regex matches the **first** `#N` pattern anywhere in the entire JSON stdout blob (including conversation transcript, tool calls, and system prompt content). If a previously-completed issue number appears before the newly-selected one, `state.currentIssue` gets poisoned.
 

@@ -20,7 +20,7 @@
 
 ### T001: Add centralized `removeAutoMode()` helper
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -33,7 +33,7 @@
 
 ### T002: Call `removeAutoMode()` at all five exit paths
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:

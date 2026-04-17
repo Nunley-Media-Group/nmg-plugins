@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Mixed (Critical x1, High x1, Medium x3, Low x1)
-**Related Spec**: `.claude/specs/feature-openclaw-runner-operations/`
+**Related Spec**: `.claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/`
 
 ---
 
@@ -30,7 +30,7 @@ Each finding has distinct reproduction steps documented in the individual sectio
 ### Frequency
 
 - F1 (currentProcess): Always — SIGTERM handler never kills subprocess
-- F2 (Atomics.wait): Always — every Discord retry blocks the event loop
+- F2 (Atomics.wait): Always — every status-notification retry blocks the event loop
 - F3 (shell escaping): Conditional — only with adversarial commit messages (defense-in-depth)
 - F4 (merged PR checkout): Conditional — only when working tree is dirty at merged-PR detection
 - F5 (silent retry reset): Conditional — only when `--resume` is passed but state file is missing
@@ -47,12 +47,12 @@ Each finding has distinct reproduction steps documented in the individual sectio
 | **Expected** | SIGTERM handler kills the active Claude subprocess, preventing orphaned processes |
 | **Actual** | `currentProcess` is declared at line 1161 but never assigned in `runClaude()` (line 747); SIGTERM handler at line 1170 always sees `null`, so orphaned `claude` processes continue consuming API quota |
 
-### F2 — High: `Atomics.wait()` blocks event loop in Discord retry
+### F2 — High: `Atomics.wait()` blocks event loop in status-notification retry
 
 | | Description |
 |---|-------------|
-| **Expected** | Discord retry backoff pauses without blocking the event loop, allowing signal handlers to fire |
-| **Actual** | `Atomics.wait()` at line 384 is a synchronous blocking sleep (2–4s per retry) that freezes the entire event loop; signal handlers cannot fire during this window |
+| **Expected** | Status-notification retry backoff pauses without blocking the event loop, allowing signal handlers to fire |
+| **Actual** | `Atomics.wait()` at line 384 is a synchronous blocking sleep (2–4s per retry) that freezes the entire event loop; signal handlers cannot fire during this window. (Historical: the retry loop itself was removed in v4.1.0; the fix to `sleep()` remains the in-use non-blocking pattern.) |
 
 ### F3 — Medium: Incomplete shell escaping in `autoCommitIfDirty`
 
@@ -95,9 +95,9 @@ Each finding has distinct reproduction steps documented in the individual sectio
 **Then** the active subprocess is killed via SIGTERM
 **And** `currentProcess` is set to the spawned process during execution and cleared on close
 
-### AC2: Discord retry uses non-blocking sleep (F2)
+### AC2: Status-notification retry uses non-blocking sleep (F2)
 
-**Given** a Discord post fails and enters the retry loop
+**Given** a status-notification post fails and enters the retry loop
 **When** the retry backoff delay elapses
 **Then** the delay uses `await sleep(backoff)` (async, non-blocking)
 **And** the event loop remains responsive during the retry delay
@@ -146,7 +146,7 @@ Each finding has distinct reproduction steps documented in the individual sectio
 | ID | Requirement | Priority |
 |----|-------------|----------|
 | FR1 | Assign `currentProcess = proc` in `runClaude()` after spawning; clear on process close | Must |
-| FR2 | Replace `Atomics.wait()` in `postDiscord` retry with `await sleep(backoff)` | Must |
+| FR2 | Replace `Atomics.wait()` in the status-notification retry with `await sleep(backoff)` | Must |
 | FR3 | Use `shellEscape()` or `execFileSync` argument array for commit messages in `autoCommitIfDirty` | Must |
 | FR4 | Wrap `git checkout main` / `git pull` in `detectAndHydrateState` merged-PR path with try-catch | Must |
 | FR5 | Log a warning when `--resume` is passed but state file is missing | Must |
@@ -156,8 +156,8 @@ Each finding has distinct reproduction steps documented in the individual sectio
 
 ## Out of Scope
 
-- Refactoring `postDiscord` beyond the `Atomics.wait` fix (e.g., restructuring retry logic)
-- Adding new Discord notification messages
+- Refactoring the status-notification path beyond the `Atomics.wait` fix (e.g., restructuring retry logic)
+- Adding new status-notification messages
 - Changing the step timeout mechanism beyond removing the unused `AbortController`
 - Adding new CLI arguments or configuration options
 - Rewriting `autoCommitIfDirty` beyond the escaping fix

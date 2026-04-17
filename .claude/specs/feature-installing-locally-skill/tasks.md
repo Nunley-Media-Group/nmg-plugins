@@ -63,11 +63,10 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Status**: Complete
 **Acceptance**:
 - [x] SKILL.md with valid frontmatter
-- [x] 7-step workflow documented (pull, discover, sync, update, OpenClaw, restart, report)
+- [x] 5-step workflow documented (pull, discover, sync, update, report)
 - [x] Key paths table documenting all relevant directories
 - [x] Version tracking with installedAt/lastUpdated
 - [x] Version mismatch warning logic
-- [x] Non-fatal gateway restart handling
 
 ---
 
@@ -93,7 +92,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T002
 **Status**: Complete
 **Acceptance**:
-- [x] All 4 acceptance criteria have corresponding scenarios
+- [x] All 2 acceptance criteria have corresponding scenarios
 
 ---
 

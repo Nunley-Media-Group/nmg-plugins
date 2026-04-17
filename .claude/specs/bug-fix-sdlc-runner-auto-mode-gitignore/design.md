@@ -19,12 +19,12 @@ There are four `git('add -A')` call sites, and only one (`autoCommitIfDirty` at 
 
 | File | Lines | Role |
 |------|-------|------|
-| `openclaw/scripts/sdlc-runner.mjs` | 477 | `RUNNER_ARTIFACTS` constant — lists the files to protect |
-| `openclaw/scripts/sdlc-runner.mjs` | 490-521 | `autoCommitIfDirty()` — filters artifacts from dirty check but `git add -A` still stages them |
-| `openclaw/scripts/sdlc-runner.mjs` | 977-990 | `handleFailure()` — unconditional `git add -A` before retry |
-| `openclaw/scripts/sdlc-runner.mjs` | 1033-1041 | `escalate()` — unconditional `git add -A` before escalation |
-| `openclaw/scripts/sdlc-runner.mjs` | 1269-1277 | Signal handler — unconditional `git add -A` on shutdown |
-| `openclaw/scripts/sdlc-runner.mjs` | 1433-1440 | `main()` — creates `.claude/auto-mode` without ensuring gitignore coverage |
+| `scripts/sdlc-runner.mjs` | 477 | `RUNNER_ARTIFACTS` constant — lists the files to protect |
+| `scripts/sdlc-runner.mjs` | 490-521 | `autoCommitIfDirty()` — filters artifacts from dirty check but `git add -A` still stages them |
+| `scripts/sdlc-runner.mjs` | 977-990 | `handleFailure()` — unconditional `git add -A` before retry |
+| `scripts/sdlc-runner.mjs` | 1033-1041 | `escalate()` — unconditional `git add -A` before escalation |
+| `scripts/sdlc-runner.mjs` | 1269-1277 | Signal handler — unconditional `git add -A` on shutdown |
+| `scripts/sdlc-runner.mjs` | 1433-1440 | `main()` — creates `.claude/auto-mode` without ensuring gitignore coverage |
 
 ### Triggering Conditions
 
@@ -52,8 +52,8 @@ This approach is idempotent (safe to call multiple times) and preserves existing
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `openclaw/scripts/sdlc-runner.mjs` | Add `ensureRunnerArtifactsGitignored()` function near line 477 (after `RUNNER_ARTIFACTS`) | Centralizes the gitignore check next to the artifact list it references |
-| `openclaw/scripts/sdlc-runner.mjs` | Call `ensureRunnerArtifactsGitignored()` in `main()` before auto-mode creation (before line 1434) | Ensures artifacts are gitignored before any are created |
+| `scripts/sdlc-runner.mjs` | Add `ensureRunnerArtifactsGitignored()` function near line 477 (after `RUNNER_ARTIFACTS`) | Centralizes the gitignore check next to the artifact list it references |
+| `scripts/sdlc-runner.mjs` | Call `ensureRunnerArtifactsGitignored()` in `main()` before auto-mode creation (before line 1434) | Ensures artifacts are gitignored before any are created |
 
 ### Blast Radius
 

@@ -96,7 +96,7 @@ Feature: Spec Retrospective Skill
 
 
 Feature: Retrospective State Tracking and Deduplication
-  As a spec author (human or OpenClaw automation agent)
+  As a spec author (human or SDLC automation agent)
   I want the retrospectives skill to track analyzed defect specs and skip unchanged ones
   So that retrospective runs are efficient and never produce duplicate learnings
 

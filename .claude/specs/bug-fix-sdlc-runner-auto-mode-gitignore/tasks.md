@@ -19,7 +19,7 @@
 
 ### T001: Fix the Defect
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -49,11 +49,11 @@
 
 ### T003: Verify No Regressions
 
-**File(s)**: Existing test files, `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: Existing test files, `scripts/sdlc-runner.mjs`
 **Type**: Verify (no file changes)
 **Depends**: T001, T002
 **Acceptance**:
-- [ ] Existing runner tests still pass (`npm test` in `openclaw/scripts/`)
+- [ ] Existing runner tests still pass (`npm test` in `scripts/`)
 - [ ] `autoCommitIfDirty()` behavior is unchanged — still filters artifacts and uses `git add -A`
 - [ ] `removeAutoMode()` behavior is unchanged — still deletes the file on cleanup
 - [ ] Signal handler, escalation handler, and failure handler still commit/push dirty work

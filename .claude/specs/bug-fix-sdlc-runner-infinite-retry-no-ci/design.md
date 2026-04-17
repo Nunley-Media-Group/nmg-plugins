@@ -25,8 +25,8 @@ Step 9 (`merge`) has an identical vulnerability: it instructs Claude to "verify 
 
 | File | Lines | Role |
 |------|-------|------|
-| `openclaw/scripts/sdlc-runner.mjs` | 700–714 | Step 8 prompt — CI monitoring with polling loop |
-| `openclaw/scripts/sdlc-runner.mjs` | 716 | Step 9 prompt — CI precondition before merge |
+| `scripts/sdlc-runner.mjs` | 700–714 | Step 8 prompt — CI monitoring with polling loop |
+| `scripts/sdlc-runner.mjs` | 716 | Step 9 prompt — CI precondition before merge |
 
 ### Triggering Conditions
 
@@ -51,8 +51,8 @@ For Step 9: Add a clause that recognizes "no checks reported" as equivalent to "
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `openclaw/scripts/sdlc-runner.mjs` (lines 700–714) | Add a "Step 0" to the monitorCI prompt: if `gh pr checks` outputs "no checks reported", treat as passing and exit with code 0 | Short-circuits the polling loop when no CI is configured |
-| `openclaw/scripts/sdlc-runner.mjs` (line 716) | Extend the merge prompt to also accept "no checks reported" as a passing condition | Prevents merge from being blocked when no CI exists |
+| `scripts/sdlc-runner.mjs` (lines 700–714) | Add a "Step 0" to the monitorCI prompt: if `gh pr checks` outputs "no checks reported", treat as passing and exit with code 0 | Short-circuits the polling loop when no CI is configured |
+| `scripts/sdlc-runner.mjs` (line 716) | Extend the merge prompt to also accept "no checks reported" as a passing condition | Prevents merge from being blocked when no CI exists |
 
 ### Blast Radius
 

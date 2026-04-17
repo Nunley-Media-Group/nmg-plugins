@@ -19,7 +19,7 @@
 
 ### T001: Fix the Defect
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -59,11 +59,11 @@
 
 ### T003: Verify No Regressions
 
-**File(s)**: existing test files, `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: existing test files, `scripts/sdlc-runner.mjs`
 **Type**: Verify (no file changes)
 **Depends**: T001, T002
 **Acceptance**:
-- [ ] Existing runner tests still pass (`npm test` in `openclaw/scripts/`)
+- [ ] Existing runner tests still pass (`npm test` in `scripts/`)
 - [ ] Step numbering is unchanged (STEP_KEYS array, STEPS mapping)
 - [ ] Config schema is unchanged (sdlc-config.example.json)
 - [ ] `/open-pr` SKILL.md is unmodified (AC4 — manual workflow preserved)

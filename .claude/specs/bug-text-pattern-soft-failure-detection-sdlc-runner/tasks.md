@@ -19,7 +19,7 @@
 
 ### T001: Add Text-Pattern Scanning to `detectSoftFailure()`
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -34,7 +34,7 @@
 - [ ] `TEXT_FAILURE_PATTERNS` is exported for testability (added to the existing `export {}` block)
 - [ ] No unrelated changes included in the diff
 
-**Notes**: Follow the fix strategy from design.md. The constant array should use the same structural pattern as `IMMEDIATE_ESCALATION_PATTERNS` (array of regexes), but with an added label for human-readable Discord messages. Example structure:
+**Notes**: Follow the fix strategy from design.md. The constant array should use the same structural pattern as `IMMEDIATE_ESCALATION_PATTERNS` (array of regexes), but with an added label for human-readable `[STATUS]` log messages. Example structure:
 ```javascript
 const TEXT_FAILURE_PATTERNS = [
   { pattern: /EnterPlanMode/i, label: 'EnterPlanMode' },
@@ -44,7 +44,7 @@ const TEXT_FAILURE_PATTERNS = [
 
 ### T002: Add Regression Tests for Text-Pattern Soft Failure Detection
 
-**File(s)**: `openclaw/scripts/__tests__/sdlc-runner.test.mjs`
+**File(s)**: `scripts/__tests__/sdlc-runner.test.mjs`
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:
@@ -58,13 +58,13 @@ const TEXT_FAILURE_PATTERNS = [
 
 ### T003: Verify No Regressions in Existing Soft Failure and Success Paths
 
-**File(s)**: `openclaw/scripts/__tests__/sdlc-runner.test.mjs`
+**File(s)**: `scripts/__tests__/sdlc-runner.test.mjs`
 **Type**: Verify (no file changes)
 **Depends**: T001, T002
 **Acceptance**:
 - [ ] All existing `detectSoftFailure` tests pass (JSON-based: `error_max_turns`, `permission_denials`, benign denials)
-- [ ] All existing runner tests pass (`npm test` in `openclaw/scripts/`)
-- [ ] No side effects in `runStep()`, `handleFailure()`, or `postDiscord()` — these functions are unchanged
+- [ ] All existing runner tests pass (`npm test` in `scripts/`)
+- [ ] No side effects in `runStep()`, `handleFailure()`, or the status-logging call sites — these functions are unchanged
 
 ---
 

@@ -20,7 +20,7 @@ Feature: Silent commitPush failure causing retry loop
     When the post-step push validation gate runs
     Then the step is marked as failed
     And the runner logs "Push validation failed after Step 6"
-    And the runner posts a Discord message identifying the push validation failure
+    And the runner writes a [STATUS] diagnostic line to the orchestration log identifying the push validation failure
     And the runner retries step 6
 
   @regression

@@ -24,7 +24,7 @@
 
 | Factor | Value |
 |--------|-------|
-| **Component** | `openclaw/scripts/sdlc-runner.mjs` |
+| **Component** | `scripts/sdlc-runner.mjs` |
 | **Version** | Current (`main` branch) |
 | **Runtime** | Node.js v24+ (ESM) |
 | **Configuration** | Any valid SDLC runner config targeting a project with `.claude/` directory |

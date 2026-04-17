@@ -9,3 +9,6 @@
 sdlc-config.json
 .claude/sdlc-state.json
 .claude/auto-mode
+
+# Node dependencies
+node_modules/

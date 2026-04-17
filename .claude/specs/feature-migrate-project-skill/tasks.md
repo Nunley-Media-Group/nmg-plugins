@@ -70,15 +70,14 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Acceptance**:
 - [x] SKILL.md follows the standard skill structure (title, When to Use, Workflow steps, Integration with SDLC Workflow)
 - [x] Skill is not user-invocable with arguments (no `$ARGUMENTS` — operates on current project)
-- [x] Step 1: Resolve template paths — locate `setup-steering/templates/`, `write-spec/templates/`, `openclaw/scripts/sdlc-config.example.json` from the installed plugin
+- [x] Step 1: Resolve template paths — locate `setup-steering/templates/`, `write-spec/templates/`, `scripts/sdlc-config.example.json` from the installed plugin
 - [x] Step 2: Scan project files — use `Glob` to find steering docs, spec files, and `sdlc-config.json`
 - [x] Step 3: Analyze steering docs — read each template, extract headings from the code block, compare against existing steering docs, identify missing `##`-level sections
 - [x] Step 4: Analyze spec files — for each spec directory, detect variant (feature vs defect) by checking first `#` heading, compare against correct template variant, identify missing `##`-level sections
-- [x] Step 5: Analyze OpenClaw config — read `sdlc-config.json` and template, identify missing keys at root and `steps` level
-- [x] Step 6: Check OpenClaw skill version — compare `~/.openclaw/skills/running-sdlc/` against source in marketplace clone
-- [x] Step 7: Present findings — display per-file summary of proposed additions for interactive review
-- [x] Step 8: Apply changes — if approved, use `Edit` to insert missing sections at correct positions; for JSON config, merge missing keys
-- [x] Step 9: Output summary — report all changes made
+- [x] Step 5: Analyze config — read `sdlc-config.json` and template, identify missing keys at root and `steps` level
+- [x] Step 6: Present findings — display per-file summary of proposed additions for interactive review
+- [x] Step 7: Apply changes — if approved, use `Edit` to insert missing sections at correct positions; for JSON config, merge missing keys
+- [x] Step 8: Output summary — report all changes made
 - [x] No auto-mode support (skill is always interactive)
 - [x] Heading extraction instructions explain how to parse template code blocks (content between ` ```markdown ` and ` ``` `)
 - [x] Insertion logic instructions explain positioning (insert after the predecessor section in template order)
@@ -485,7 +484,7 @@ T010 ──┬──▶ T011 ──▶ T012 ──▶ T013 ──▶ T014 ──
 
 | Issue | Date | Summary |
 |-------|------|---------|
-| #25 | 2026-02-15 | Initial task breakdown: migration skill for steering docs, specs, and OpenClaw config (6 tasks) |
+| #25 | 2026-02-15 | Initial task breakdown: migration skill for steering docs, specs, and SDLC config (6 tasks) |
 | #72 | 2026-02-22 | Added 19 tasks for feature-centric spec management: templates, write-spec amendment flow, migrate-project consolidation, downstream skill updates |
 | #95 | 2026-02-25 | Added 5 tasks for config value drift detection: value comparison, approval flow, auto-mode reporting, BDD scenarios |
 

@@ -13,7 +13,7 @@
 
 ### Steps to Reproduce
 
-1. Have a bug issue for a component that was originally built from a feature spec (e.g., `cleanupProcesses()` from spec `feature-openclaw-runner-operations`)
+1. Have a bug issue for a component that was originally built from a feature spec (e.g., `cleanupProcesses()` from spec `feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code`)
 2. Run `/write-spec #N` on the bug issue
 3. Observe the **Related Spec** field in the generated `requirements.md`
 
@@ -54,7 +54,7 @@ Always — the agent has no search step, so it consistently defaults to N/A when
 **Example**:
 - Given: Issue #55 describes bugs in `cleanupProcesses()` and references `sdlc-runner.mjs`
 - When: The agent globs `.claude/specs/*/requirements.md` and greps for "cleanup" or "process" keywords
-- Then: It finds `.claude/specs/feature-openclaw-runner-operations/requirements.md` as a match
+- Then: It finds `.claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/requirements.md` as a match
 
 ### AC2: Related Spec field is populated when a match is found
 
@@ -63,9 +63,9 @@ Always — the agent has no search step, so it consistently defaults to N/A when
 **Then** it populates the **Related Spec** field with the path to the matching spec directory
 
 **Example**:
-- Given: `.claude/specs/feature-openclaw-runner-operations/` exists and matches the bug's keywords
+- Given: `.claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/` exists and matches the bug's keywords
 - When: The search finds this spec
-- Then: The **Related Spec** field is set to `.claude/specs/feature-openclaw-runner-operations/`
+- Then: The **Related Spec** field is set to `.claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/`
 
 ### AC3: No false linkage when no related spec exists
 

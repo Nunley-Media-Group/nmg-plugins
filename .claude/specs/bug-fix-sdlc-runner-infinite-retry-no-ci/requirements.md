@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `.claude/specs/feature-openclaw-runner-operations/`
+**Related Spec**: `.claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/`
 
 ---
 
@@ -25,7 +25,7 @@
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.3.0) |
 | **Version / Commit** | nmg-plugins v2.12.3 (commit 58e8ecf) |
-| **Runner** | `openclaw/scripts/sdlc-runner.mjs` |
+| **Runner** | `scripts/sdlc-runner.mjs` |
 | **Configuration** | Any repo without `.github/workflows/` or other CI integrations |
 
 ### Frequency

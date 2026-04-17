@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude (nmg-sdlc)
 **Severity**: High
-**Related Spec**: `.claude/specs/feature-openclaw-runner-operations/`
+**Related Spec**: `.claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/`
 
 ---
 
@@ -26,7 +26,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | Any (cross-platform runner) |
-| **Runner version** | `openclaw/scripts/sdlc-runner.mjs` (current main) |
+| **Runner version** | `scripts/sdlc-runner.mjs` (current main) |
 | **Model** | Any model used with the runner |
 | **Configuration** | Any config that triggers a skill producing text-based error output |
 
@@ -83,15 +83,15 @@ Always — any step that produces a text-based failure message on stdout/stderr 
 - When: The runner evaluates the exit-code-0 path
 - Then: `handleFailure()` is called (same as `error_max_turns` or `permission_denials`)
 
-### AC3: Discord Status Messages Include Detected Patterns
+### AC3: Status Log Lines Include Detected Patterns
 
 **Given** a text-pattern soft failure is detected
-**When** the runner posts a Discord status message about the failure
+**When** the runner writes a `[STATUS]` line about the failure to the orchestration log
 **Then** the message includes the matched pattern text for debugging visibility
 
 **Example**:
 - Given: Pattern `EnterPlanMode` matched in step 3 output
-- When: Discord message is sent
+- When: The `[STATUS]` line is written
 - Then: Message reads "Step 3 (writeSpecs) soft failure: text_pattern: EnterPlanMode"
 
 ### AC4: Failure Pattern List Is Maintainable
@@ -120,7 +120,7 @@ Always — any step that produces a text-based failure message on stdout/stderr 
 |----|-------------|----------|
 | FR1 | Add regex scan of stdout/stderr for configurable list of known text failure patterns in `detectSoftFailure()` | Must |
 | FR2 | Treat text-pattern matches as soft failures with the same `{ isSoftFailure: true, reason: '...' }` return format | Must |
-| FR3 | Include detected pattern text in Discord status messages (via existing `postDiscord()` call for soft failures) | Should |
+| FR3 | Include detected pattern text in the `[STATUS]` log line emitted for soft failures | Should |
 | FR4 | Define failure patterns as a named constant array at module level for easy maintenance | Should |
 | FR5 | Export the new text pattern scanning function for testability | Should |
 

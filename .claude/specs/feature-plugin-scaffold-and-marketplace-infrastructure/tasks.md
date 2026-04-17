@@ -77,7 +77,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Status**: Complete
 **Acceptance**:
 - [x] SKILL.md exists with valid frontmatter (name, description, allowed-tools)
-- [x] Documents complete 7-step workflow (pull, discover, sync, update, OpenClaw, restart, report)
+- [x] Documents complete 5-step workflow (pull, discover, sync, update, report)
 - [x] Handles marketplace index reading and plugin discovery
 - [x] Uses `rsync` for idempotent file sync
 

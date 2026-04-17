@@ -27,7 +27,7 @@ The core algorithm is **heading-based section diffing for Markdown files** and *
     ├── Step 1: Locate Templates
     │   ├── Steering templates:  setup-steering/templates/*.md
     │   ├── Spec templates:      write-spec/templates/*.md
-    │   └── Config template:     openclaw/scripts/sdlc-config.example.json
+    │   └── Config template:     scripts/sdlc-config.example.json
     │
     ├── Step 2: Scan Project Files
     │   ├── Steering docs:       .claude/steering/*.md
@@ -41,11 +41,8 @@ The core algorithm is **heading-based section diffing for Markdown files** and *
     ├── Step 4: Present Changes (Interactive Review Gate)
     │   └── Per-file summary of proposed additions
     │
-    ├── Step 5: Apply Changes
-    │   └── Insert missing sections / merge missing keys
-    │
-    └── Step 6: OpenClaw Skill Version Check
-        └── Compare ~/.openclaw/skills/running-sdlc/ against source
+    └── Step 5: Apply Changes
+        └── Insert missing sections / merge missing keys
 ```
 
 ### Data Flow
@@ -225,13 +222,6 @@ For each user-selected drifted value:
 3. Preserve JSON formatting (2-space indentation per project JSON standards)
 4. Re-read the file to verify the update
 
-### OpenClaw Skill Version Check
-
-1. **Read installed files** at `~/.openclaw/skills/running-sdlc/`
-2. **Read source files** at `openclaw/skills/running-sdlc/` in the marketplace clone
-3. **Compare content** — If any file differs, warn the user and suggest running `/installing-openclaw-skill`
-4. **If not installed** — Skip with a note that OpenClaw skill is not installed locally
-
 ### Gherkin Files (feature.gherkin)
 
 Gherkin files in `.claude/specs/*/feature.gherkin` are **excluded from section migration**. Unlike Markdown specs, Gherkin files contain project-specific scenarios that are not structurally comparable to the template. The template is a placeholder guide, not a structural standard. Migration of Gherkin files would risk corrupting hand-written test scenarios.
@@ -243,7 +233,7 @@ Templates are resolved at runtime from the installed plugin directory. The skill
 ```
 plugins/nmg-sdlc/skills/setup-steering/templates/*.md  → steering templates
 plugins/nmg-sdlc/skills/write-spec/templates/*.md         → spec templates
-openclaw/scripts/sdlc-config.example.json                    → config template
+scripts/sdlc-config.example.json                    → config template
 ```
 
 The skill uses `${CLAUDE_PLUGIN_ROOT}` or resolves paths relative to the skill's own location within the plugin directory tree.
@@ -294,7 +284,7 @@ The skill uses `${CLAUDE_PLUGIN_ROOT}` or resolves paths relative to the skill's
 | Variant detection | BDD | Feature vs defect templates applied correctly |
 | JSON config diffing | BDD | Missing keys merged, existing values preserved |
 | Edge cases | BDD | Already up-to-date, missing files, no project files |
-| OpenClaw check | BDD | Outdated skill detected and reported |
+| Config drift check | BDD | Outdated skill detected and reported |
 | Spec discovery | BDD | Related specs found by keyword matching |
 | Amendment fidelity | BDD | Sequential numbering preserved; no content loss during amendment |
 | Consolidation | BDD | Legacy dirs merged into feature-prefixed dir correctly |
@@ -450,7 +440,7 @@ Added to the bottom of `requirements.md` (before Validation Checklist), to `desi
 
 ### New Step 4b: Detect Legacy Spec Directories
 
-Between current Step 4a (Related Spec validation) and Step 5 (OpenClaw config):
+Between current Step 4a (Related Spec validation) and Step 5 (config):
 
 1. Run `Glob` for `.claude/specs/*/requirements.md`
 2. For each spec directory, classify by naming pattern:

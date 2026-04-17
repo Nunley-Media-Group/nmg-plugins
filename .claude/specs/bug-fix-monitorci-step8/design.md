@@ -21,9 +21,9 @@ Step 8 (`monitorCI`) has four compounding issues that create a deterministic ret
 
 | File | Lines | Role |
 |------|-------|------|
-| `openclaw/scripts/sdlc-runner.mjs` | 546 | Step 8 prompt — permissive "report and exit" wording |
-| `openclaw/scripts/sdlc-runner.mjs` | 954-978 | Post-step validation area — Step 3 has a gate, Step 8 does not |
-| `openclaw/scripts/sdlc-config.example.json` | 14 | Step 8 defaults — `maxTurns: 20`, `timeoutMin: 10` (too low) |
+| `scripts/sdlc-runner.mjs` | 546 | Step 8 prompt — permissive "report and exit" wording |
+| `scripts/sdlc-runner.mjs` | 954-978 | Post-step validation area — Step 3 has a gate, Step 8 does not |
+| `scripts/sdlc-config.example.json` | 14 | Step 8 defaults — `maxTurns: 20`, `timeoutMin: 10` (too low) |
 
 ### Triggering Conditions
 
@@ -51,9 +51,9 @@ Three changes, all in the same two files, address all four root causes:
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `openclaw/scripts/sdlc-runner.mjs:546` | Rewrite Step 8 prompt — explicit fix loop instructions, non-zero exit for unfixable failures, spec-deviation guard | Addresses root causes #2 (no guidance) and #3 (permissive prompt) |
-| `openclaw/scripts/sdlc-runner.mjs:978` (after) | Add `validateCI()` function and call it after Step 8 exits with code 0, matching `validateSpecs` gate pattern | Addresses root cause #1 (no validation gate) |
-| `openclaw/scripts/sdlc-config.example.json:14` | Change `monitorCI` defaults to `maxTurns: 40, timeoutMin: 20` | Addresses root cause #4 (insufficient resources) |
+| `scripts/sdlc-runner.mjs:546` | Rewrite Step 8 prompt — explicit fix loop instructions, non-zero exit for unfixable failures, spec-deviation guard | Addresses root causes #2 (no guidance) and #3 (permissive prompt) |
+| `scripts/sdlc-runner.mjs:978` (after) | Add `validateCI()` function and call it after Step 8 exits with code 0, matching `validateSpecs` gate pattern | Addresses root cause #1 (no validation gate) |
+| `scripts/sdlc-config.example.json:14` | Change `monitorCI` defaults to `maxTurns: 40, timeoutMin: 20` | Addresses root cause #4 (insufficient resources) |
 
 ### Blast Radius
 

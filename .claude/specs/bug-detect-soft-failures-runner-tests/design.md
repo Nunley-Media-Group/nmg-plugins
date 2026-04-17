@@ -19,9 +19,9 @@ A contributing factor is that the `start-issue` SKILL.md positions the Automatio
 
 | File | Lines | Role |
 |------|-------|------|
-| `openclaw/scripts/sdlc-runner.mjs` | 1201–1208 | Success path — assumes exit code 0 = step success, never parses JSON output |
-| `openclaw/scripts/sdlc-runner.mjs` | 379–385 | `extractSessionId()` — already parses JSON for `session_id` but ignores `subtype` and `permission_denials` |
-| `openclaw/scripts/sdlc-runner.mjs` | 957–1010 | `extractStateFromStep()` — reads `result.stdout` but only for issue/branch/PR extraction, not failure indicators |
+| `scripts/sdlc-runner.mjs` | 1201–1208 | Success path — assumes exit code 0 = step success, never parses JSON output |
+| `scripts/sdlc-runner.mjs` | 379–385 | `extractSessionId()` — already parses JSON for `session_id` but ignores `subtype` and `permission_denials` |
+| `scripts/sdlc-runner.mjs` | 957–1010 | `extractStateFromStep()` — reads `result.stdout` but only for issue/branch/PR extraction, not failure indicators |
 | `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | 18–22 | Automation Mode instruction — correct content but insufficient prominence |
 
 ### Triggering Conditions
@@ -40,7 +40,7 @@ A contributing factor is that the `start-issue` SKILL.md positions the Automatio
 
 Add a `detectSoftFailure(stdout)` function that uses `extractResultFromStream()` to parse the stream-json output and checks for two soft failure indicators: `subtype: "error_max_turns"` and non-empty `permission_denials`. Insert this check immediately after the `exitCode === 0` check in `runStep()`, before state extraction. If a soft failure is detected, route to `handleFailure()` as if the step had returned a non-zero exit code.
 
-To make the runner testable, refactor the module to guard the CLI bootstrap behind an `isMainModule` check and export all internal functions. Create a comprehensive Jest test suite under `openclaw/scripts/__tests__/` with mocked `node:child_process` and `node:fs` dependencies.
+To make the runner testable, refactor the module to guard the CLI bootstrap behind an `isMainModule` check and export all internal functions. Create a comprehensive Jest test suite under `scripts/__tests__/` with mocked `node:child_process` and `node:fs` dependencies.
 
 For the `start-issue` SKILL.md, add a bold critical callout at the top of the file (below frontmatter) and reinforce the directive inside Step 2 where `AskUserQuestion` is used.
 
@@ -48,11 +48,11 @@ For the `start-issue` SKILL.md, add a bold critical callout at the top of the fi
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `openclaw/scripts/sdlc-runner.mjs` | Add `detectSoftFailure(stdout)` function | Parses JSON output for `subtype: "error_max_turns"` and `permission_denials` |
-| `openclaw/scripts/sdlc-runner.mjs` | Insert soft failure check in `runStep()` after line 1201 | Routes soft failures to `handleFailure()` instead of advancing |
-| `openclaw/scripts/sdlc-runner.mjs` | Guard CLI bootstrap with `isMainModule` check; export internal functions | Enables importing functions for testing without triggering CLI execution |
-| `openclaw/scripts/__tests__/sdlc-runner.test.mjs` | Create comprehensive Jest test suite | Covers all core runner functionality per AC5 |
-| `openclaw/scripts/package.json` | Add Jest as dev dependency with ESM config | Required to run the test suite |
+| `scripts/sdlc-runner.mjs` | Add `detectSoftFailure(stdout)` function | Parses JSON output for `subtype: "error_max_turns"` and `permission_denials` |
+| `scripts/sdlc-runner.mjs` | Insert soft failure check in `runStep()` after line 1201 | Routes soft failures to `handleFailure()` instead of advancing |
+| `scripts/sdlc-runner.mjs` | Guard CLI bootstrap with `isMainModule` check; export internal functions | Enables importing functions for testing without triggering CLI execution |
+| `scripts/__tests__/sdlc-runner.test.mjs` | Create comprehensive Jest test suite | Covers all core runner functionality per AC5 |
+| `scripts/package.json` | Add Jest as dev dependency with ESM config | Required to run the test suite |
 | `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | Add prominent automation callout at top; reinforce in Step 2 | Increases model compliance for auto-mode behavior |
 
 ### Blast Radius

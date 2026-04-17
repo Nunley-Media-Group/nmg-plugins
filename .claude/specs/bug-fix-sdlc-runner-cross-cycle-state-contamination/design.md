@@ -19,8 +19,8 @@ The `detectAndHydrateState` function (line 214) already correctly extracted issu
 
 | File | Lines | Role |
 |------|-------|------|
-| `openclaw/scripts/sdlc-runner.mjs` | ~1102-1131 | `extractStateFromStep` — post-step state extraction, specifically the step 2 handler |
-| `openclaw/scripts/sdlc-runner.mjs` | ~798 | Step 1 prompt — `buildClaudeArgs` function, missing working tree cleanup commands |
+| `scripts/sdlc-runner.mjs` | ~1102-1131 | `extractStateFromStep` — post-step state extraction, specifically the step 2 handler |
+| `scripts/sdlc-runner.mjs` | ~798 | Step 1 prompt — `buildClaudeArgs` function, missing working tree cleanup commands |
 
 ### Triggering Conditions
 
@@ -42,9 +42,9 @@ For working tree cleanup, add `git clean -fd && git checkout -- .` to step 1's p
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `openclaw/scripts/sdlc-runner.mjs` (`extractStateFromStep`, step 2 handler) | Replace regex-on-output with branch name extraction via `git rev-parse --abbrev-ref HEAD` + `branch.match(/^(\d+)-/)` | Branch name is deterministic ground truth; conversation output is unreliable |
-| `openclaw/scripts/sdlc-runner.mjs` (`extractStateFromStep`, step 2 handler) | Remove regex fallback entirely; log warning if branch extraction fails | Prevents silent fallback to the fragile regex path |
-| `openclaw/scripts/sdlc-runner.mjs` (`buildClaudeArgs`, step 1 prompt) | Add `git clean -fd && git checkout -- .` to step 1's prompt | Ensures working tree is clean at cycle start, preventing file carryover |
+| `scripts/sdlc-runner.mjs` (`extractStateFromStep`, step 2 handler) | Replace regex-on-output with branch name extraction via `git rev-parse --abbrev-ref HEAD` + `branch.match(/^(\d+)-/)` | Branch name is deterministic ground truth; conversation output is unreliable |
+| `scripts/sdlc-runner.mjs` (`extractStateFromStep`, step 2 handler) | Remove regex fallback entirely; log warning if branch extraction fails | Prevents silent fallback to the fragile regex path |
+| `scripts/sdlc-runner.mjs` (`buildClaudeArgs`, step 1 prompt) | Add `git clean -fd && git checkout -- .` to step 1's prompt | Ensures working tree is clean at cycle start, preventing file carryover |
 
 ### Blast Radius
 
