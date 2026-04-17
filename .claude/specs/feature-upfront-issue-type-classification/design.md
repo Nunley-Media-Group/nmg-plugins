@@ -179,7 +179,7 @@ Insert immediately after Step 1 (Gather Context). Uses `AskUserQuestion` with tw
 | Bug | "Bug" | "Something is broken or behaving incorrectly" |
 | Enhancement/Feature | "Enhancement / Feature" | "New capability or improvement to existing behavior" |
 
-**Auto-mode bypass**: This step is skipped entirely. Auto-mode already skips the interview (Step 2 in current skill → Step 4 in new skill), so classification is not needed. The existing auto-mode instructions are updated to reference the new step numbers.
+**Unattended-mode bypass**: This step is skipped entirely. Unattended-mode already skips the interview (Step 2 in current skill → Step 4 in new skill), so classification is not needed. The existing unattended-mode instructions are updated to reference the new step numbers.
 
 **If argument provides a clear signal** (e.g., user said "fix the broken X" or "add Y feature"), the skill should still ask the classification question — the argument seeds the interview, not the classification.
 
@@ -301,7 +301,7 @@ Steps 6 (Review), 7 (Create Issue), and 8 (Output) are unchanged. The review ste
 |-------|------|----------|
 | Skill definition | BDD (Gherkin) | All 7 acceptance criteria become scenarios |
 | Skill behavior | Manual testing | Install plugin locally, run `/draft-issue` for both bug and enhancement paths |
-| Auto-mode | Manual testing | Verify auto-mode behavior unchanged with `.claude/auto-mode` present |
+| Unattended-mode | Manual testing | Verify unattended-mode behavior unchanged with `.claude/unattended-mode` present |
 
 Since nmg-plugins is a template/plugin repository (not a runtime application), verification is done through the `/verify-code` skill and manual testing via `/installing-locally`.
 
@@ -313,7 +313,7 @@ Since nmg-plugins is a template/plugin repository (not a runtime application), v
 |------|------------|--------|------------|
 | Investigation adds excessive latency to issue creation | Medium | Low | Scope investigation to targeted Glob/Grep (not exhaustive scans); set expectation in skill text |
 | Bug investigation hypothesis is wrong | Medium | Low | Always confirm with user before including; clearly label as hypothesis |
-| Auto-mode regression | Low | High | Auto-mode section explicitly skips new steps; test both paths |
+| Unattended-mode regression | Low | High | Unattended-mode section explicitly skips new steps; test both paths |
 | Existing issue creation quality regresses | Low | Medium | Steps 6–8 unchanged; only new content is additive (new sections) |
 
 ---

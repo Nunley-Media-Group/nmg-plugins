@@ -1,4 +1,4 @@
-# Root Cause Analysis: migrate-project Respects auto-mode Despite Spec Excluding It
+# Root Cause Analysis: migrate-project Respects unattended-mode Despite Spec Excluding It
 
 **Issue**: #46
 **Date**: 2026-02-16
@@ -9,27 +9,27 @@
 
 ## Root Cause
 
-The bug is a prompt-level priority conflict in the `migrate-project` SKILL.md. Claude learns the auto-mode pattern from other skills in the same plugin session. Skills like `write-spec`, `write-code`, and `verify-code` all follow a consistent pattern: a prominent **Automation Mode** section near the top of the skill declares that `.claude/auto-mode` pre-approves all review gates and instructs Claude not to call `AskUserQuestion`.
+The bug is a prompt-level priority conflict in the `migrate-project` SKILL.md. Claude learns the unattended-mode pattern from other skills in the same plugin session. Skills like `write-spec`, `write-code`, and `verify-code` all follow a consistent pattern: a prominent **Unattended Mode** section near the top of the skill declares that `.claude/unattended-mode` pre-approves all review gates and instructs Claude not to call `AskUserQuestion`.
 
-The `migrate-project` skill lacks this structural pattern. Instead, it communicates the auto-mode exemption in two ways:
+The `migrate-project` skill lacks this structural pattern. Instead, it communicates the unattended-mode exemption in two ways:
 
-1. **Line 222** — A bold note after the `AskUserQuestion` code block: `**This skill does not support auto-mode.** Always present findings and wait for user approval.`
+1. **Line 222** — A bold note after the `AskUserQuestion` code block: `**This skill does not support unattended-mode.** Always present findings and wait for user approval.`
 2. **Line 279** — A Key Rules entry: `5. **Always interactive** — Present findings and wait for approval before applying`
 
-Both are buried in the workflow step body and Key Rules list, respectively — neither appears near the top of the skill in the prominent position where Claude has been trained (by the other skills) to look for auto-mode instructions. When Claude loads the plugin and reads the skill, it may apply the auto-mode pattern it learned from other skills before reaching the override text deep in the workflow.
+Both are buried in the workflow step body and Key Rules list, respectively — neither appears near the top of the skill in the prominent position where Claude has been trained (by the other skills) to look for unattended-mode instructions. When Claude loads the plugin and reads the skill, it may apply the unattended-mode pattern it learned from other skills before reaching the override text deep in the workflow.
 
 ### Affected Code
 
 | File | Lines | Role |
 |------|-------|------|
-| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` | 213–222 | Step 9 review gate with auto-mode exemption note |
+| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` | 213–222 | Step 9 review gate with unattended-mode exemption note |
 | `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` | 279 | Key Rules item stating always-interactive |
 
 ### Triggering Conditions
 
-- `.claude/auto-mode` file exists in the project directory
-- Claude has loaded the nmg-sdlc plugin (which includes other skills with prominent auto-mode sections)
-- Claude encounters the `AskUserQuestion` call in Step 9 and skips it based on the auto-mode pattern learned from other skills
+- `.claude/unattended-mode` file exists in the project directory
+- Claude has loaded the nmg-sdlc plugin (which includes other skills with prominent unattended-mode sections)
+- Claude encounters the `AskUserQuestion` call in Step 9 and skips it based on the unattended-mode pattern learned from other skills
 - The exemption note at line 222 is either not reached in time or not weighted heavily enough to override the pattern
 
 ---
@@ -38,9 +38,9 @@ Both are buried in the workflow step body and Key Rules list, respectively — n
 
 ### Approach
 
-Add an explicit **Automation Mode** section near the top of the SKILL.md, in the same structural position and format used by other skills (after the "When to Use" section, before the workflow steps). This section will use the same heading and formatting convention but with the opposite instruction: **always interactive, regardless of auto-mode**.
+Add an explicit **Unattended Mode** section near the top of the SKILL.md, in the same structural position and format used by other skills (after the "When to Use" section, before the workflow steps). This section will use the same heading and formatting convention but with the opposite instruction: **always interactive, regardless of unattended-mode**.
 
-This works because Claude prioritizes instructions that appear early in the prompt and match established structural patterns. By placing the auto-mode exemption in the exact location where Claude expects auto-mode instructions, the override becomes impossible to miss.
+This works because Claude prioritizes instructions that appear early in the prompt and match established structural patterns. By placing the unattended-mode exemption in the exact location where Claude expects unattended-mode instructions, the override becomes impossible to miss.
 
 The existing notes at lines 222 and 279 will be preserved as reinforcement, but the primary fix is the new top-level section.
 
@@ -48,16 +48,16 @@ The existing notes at lines 222 and 279 will be preserved as reinforcement, but 
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` | Add `## Automation Mode` section after `## When to Use` (before `## What Gets Analyzed`) | Places the auto-mode exemption in the structurally expected position — same heading, same location as other skills — but with explicit override instructions |
+| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` | Add `## Unattended Mode` section after `## When to Use` (before `## What Gets Analyzed`) | Places the unattended-mode exemption in the structurally expected position — same heading, same location as other skills — but with explicit override instructions |
 
 The new section content:
 
 ```markdown
-## Automation Mode
+## Unattended Mode
 
-**This skill is ALWAYS interactive — `.claude/auto-mode` does NOT apply.**
+**This skill is ALWAYS interactive — `.claude/unattended-mode` does NOT apply.**
 
-Even if `.claude/auto-mode` exists in the project directory, this skill MUST present proposed changes via `AskUserQuestion` and wait for user approval before modifying any files. Migration is a sensitive operation that requires human review.
+Even if `.claude/unattended-mode` exists in the project directory, this skill MUST present proposed changes via `AskUserQuestion` and wait for user approval before modifying any files. Migration is a sensitive operation that requires human review.
 
 Do NOT skip the review gate in Step 9. Do NOT apply changes without explicit user approval.
 ```
@@ -65,7 +65,7 @@ Do NOT skip the review gate in Step 9. Do NOT apply changes without explicit use
 ### Blast Radius
 
 - **Direct impact**: Only `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` is modified
-- **Indirect impact**: None — no other skills reference or depend on migrate-project' auto-mode handling. The change adds a section; it doesn't modify any existing content that other skills consume.
+- **Indirect impact**: None — no other skills reference or depend on migrate-project' unattended-mode handling. The change adds a section; it doesn't modify any existing content that other skills consume.
 - **Risk level**: Low
 
 ---
@@ -74,7 +74,7 @@ Do NOT skip the review gate in Step 9. Do NOT apply changes without explicit use
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Other skills accidentally become always-interactive | Low | The change is scoped to migrate-project' SKILL.md only; no shared auto-mode mechanism is modified |
+| Other skills accidentally become always-interactive | Low | The change is scoped to migrate-project' SKILL.md only; no shared unattended-mode mechanism is modified |
 | The new section contradicts existing text in the skill | Low | The existing notes at lines 222 and 279 already say the same thing — the new section reinforces them |
 | Claude ignores the new section due to conflicting signals | Low | The section uses the same structural pattern Claude recognizes from other skills, maximizing salience |
 

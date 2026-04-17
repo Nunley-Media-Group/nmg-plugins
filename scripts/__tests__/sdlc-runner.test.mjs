@@ -71,7 +71,7 @@ const {
   readState,
   writeState,
   updateState,
-  removeAutoMode,
+  removeUnattendedMode,
   ensureRunnerArtifactsGitignored,
   runClaude,
   cleanupProcesses,
@@ -260,8 +260,8 @@ describe('Text-pattern soft failure detection', () => {
     expect(result.reason).toBe('text_pattern: EnterPlanMode');
   });
 
-  it('detects AskUserQuestion auto-mode text pattern as soft failure (AC1)', () => {
-    const stdout = 'AskUserQuestion called in auto-mode — this skill does not support auto-mode';
+  it('detects AskUserQuestion unattended-mode text pattern as soft failure (AC1)', () => {
+    const stdout = 'AskUserQuestion called in unattended-mode — this skill does not support unattended-mode';
     const result = detectSoftFailure(stdout);
     expect(result.isSoftFailure).toBe(true);
     expect(result.reason).toContain('text_pattern:');
@@ -349,7 +349,7 @@ describe('Precondition validation', () => {
 
   it('step 2 (startIssue) ignores runner artifacts in dirty check', () => {
     mockGitMulti({
-      'status --porcelain': '?? .claude/sdlc-state.json\n?? .claude/auto-mode',
+      'status --porcelain': '?? .claude/sdlc-state.json\n?? .claude/unattended-mode',
       'rev-parse --abbrev-ref HEAD': 'main',
     });
     const result = validatePreconditions(STEPS[1], defaultState());
@@ -916,22 +916,22 @@ describe('State hydration', () => {
   });
 });
 
-describe('Auto-mode lifecycle', () => {
-  it('RUNNER_ARTIFACTS includes auto-mode and state file', () => {
+describe('Unattended-mode lifecycle', () => {
+  it('RUNNER_ARTIFACTS includes unattended-mode and state file', () => {
     expect(RUNNER_ARTIFACTS).toContain('.claude/sdlc-state.json');
-    expect(RUNNER_ARTIFACTS).toContain('.claude/auto-mode');
+    expect(RUNNER_ARTIFACTS).toContain('.claude/unattended-mode');
   });
 
-  it('removeAutoMode calls unlinkSync for .claude/auto-mode', () => {
-    removeAutoMode();
+  it('removeUnattendedMode calls unlinkSync for .claude/unattended-mode', () => {
+    removeUnattendedMode();
     expect(mockFs.unlinkSync).toHaveBeenCalledWith(
-      expect.stringContaining('auto-mode')
+      expect.stringContaining('unattended-mode')
     );
   });
 
   it('autoCommitIfDirty ignores runner artifacts in dirty check', () => {
     mockExecSync.mockImplementation((cmd) => {
-      if (cmd.includes('status --porcelain')) return '?? .claude/sdlc-state.json\n?? .claude/auto-mode';
+      if (cmd.includes('status --porcelain')) return '?? .claude/sdlc-state.json\n?? .claude/unattended-mode';
       return '';
     });
 
@@ -975,14 +975,14 @@ describe('ensureRunnerArtifactsGitignored (#57)', () => {
 
     const call = gitignoreAppend();
     expect(call).toBeDefined();
-    expect(call[1]).toContain('.claude/auto-mode');
+    expect(call[1]).toContain('.claude/unattended-mode');
     expect(call[1]).toContain('.claude/sdlc-state.json');
     expect(call[1]).toContain('# SDLC runner artifacts');
   });
 
   it('does not duplicate entries already in .gitignore', () => {
     mockFs.readFileSync.mockImplementation((p) => {
-      if (p.endsWith('.gitignore')) return 'node_modules/\n.claude/auto-mode\n.claude/sdlc-state.json\n';
+      if (p.endsWith('.gitignore')) return 'node_modules/\n.claude/unattended-mode\n.claude/sdlc-state.json\n';
       return '{}';
     });
 
@@ -1005,7 +1005,7 @@ describe('ensureRunnerArtifactsGitignored (#57)', () => {
 
     const call = gitignoreAppend();
     expect(call).toBeDefined();
-    expect(call[1]).toContain('.claude/auto-mode');
+    expect(call[1]).toContain('.claude/unattended-mode');
     expect(call[1]).toContain('.claude/sdlc-state.json');
   });
 
@@ -1023,7 +1023,7 @@ describe('ensureRunnerArtifactsGitignored (#57)', () => {
 
   it('only appends entries that are missing (partial match)', () => {
     mockFs.readFileSync.mockImplementation((p) => {
-      if (p.endsWith('.gitignore')) return '.claude/auto-mode\n';
+      if (p.endsWith('.gitignore')) return '.claude/unattended-mode\n';
       return '{}';
     });
 
@@ -1032,7 +1032,7 @@ describe('ensureRunnerArtifactsGitignored (#57)', () => {
     const call = gitignoreAppend();
     expect(call).toBeDefined();
     expect(call[1]).toContain('.claude/sdlc-state.json');
-    expect(call[1]).not.toContain('.claude/auto-mode');
+    expect(call[1]).not.toContain('.claude/unattended-mode');
   });
 
   it('re-throws non-ENOENT read errors', () => {
@@ -1921,7 +1921,7 @@ describe('Consolidated commit paths use autoCommitIfDirty', () => {
 
     // Only runner artifacts dirty — autoCommitIfDirty should skip
     mockExecSync.mockImplementation((cmd) => {
-      if (cmd.includes('status --porcelain')) return '?? .claude/sdlc-state.json\n?? .claude/auto-mode';
+      if (cmd.includes('status --porcelain')) return '?? .claude/sdlc-state.json\n?? .claude/unattended-mode';
       return '';
     });
 
@@ -1947,7 +1947,7 @@ describe('Consolidated commit paths use autoCommitIfDirty', () => {
 
     // Only runner artifacts dirty
     mockExecSync.mockImplementation((cmd) => {
-      if (cmd.includes('status --porcelain')) return '?? .claude/auto-mode';
+      if (cmd.includes('status --porcelain')) return '?? .claude/unattended-mode';
       return '';
     });
 

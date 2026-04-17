@@ -145,12 +145,12 @@ The versioning system must be stack-agnostic (a core product principle) — it p
 
 ### AC10: Auto-Mode Compatibility
 
-**Given** `.claude/auto-mode` exists in the project
-**When** `/draft-issue` runs in auto-mode
+**Given** `.claude/unattended-mode` exists in the project
+**When** `/draft-issue` runs in unattended-mode
 **Then** the milestone defaults to the current major version without prompting, and `/open-pr` auto-determines and applies the version bump without confirmation (patch or minor only; major bumps require manual override)
 
 **Example**:
-- Given: auto-mode enabled, VERSION is `2.3.1`, issue has `enhancement` label
+- Given: unattended-mode enabled, VERSION is `2.3.1`, issue has `enhancement` label
 - When: `/draft-issue` runs → `/open-pr` runs
 - Then: Milestone auto-set to "v2"; version auto-bumped to `2.4.0` with no prompts
 
@@ -273,8 +273,8 @@ Feature: Integrated Versioning System
     Then it sets VERSION to the latest versioned CHANGELOG heading
     Or falls back to latest git tag or "0.1.0"
 
-  Scenario: Auto-mode skips all prompts
-    Given .claude/auto-mode exists in the project
+  Scenario: Unattended-mode skips all prompts
+    Given .claude/unattended-mode exists in the project
     When /draft-issue and /open-pr run
     Then milestone defaults without prompting
     And version bump applies without confirmation
@@ -315,7 +315,7 @@ Feature: Integrated Versioning System
 | FR9a | `/migrate-project` generates `CHANGELOG.md` from scratch when none exists, using conventional commit parsing and git tags for version grouping | Must | Maps feat→Added, fix→Fixed, chore→Changed, etc. |
 | FR9b | `/migrate-project` updates an existing `CHANGELOG.md` to conform to Keep a Changelog template — restructures entries into categories, adds missing version headings from git tags, ensures `[Unreleased]` section, preserves manual entries | Must | Reconciles existing content with git history |
 | FR10 | `/migrate-project` creates or updates `VERSION` file to match the latest versioned heading in the generated/updated CHANGELOG; falls back to latest git tag or `0.1.0` if no headings exist | Must | VERSION always reflects CHANGELOG state |
-| FR11 | Auto-mode: milestone defaults to current major version; patch and minor version bumps are fully automatic with no confirmation; major bumps are not applied automatically | Must | Consistent with auto-mode pattern |
+| FR11 | Unattended-mode: milestone defaults to current major version; patch and minor version bumps are fully automatic with no confirmation; major bumps are not applied automatically | Must | Consistent with unattended-mode pattern |
 | FR12 | `/setup-steering` tech.md template includes the new Versioning section | Must | Template update |
 | FR13 | Version Bump Classification subsection in tech.md Versioning section defines label→bump mappings in a parseable table format (Label \| Bump Type \| Description columns) | Must | Single source of truth for classification |
 | FR14 | `/open-pr` reads classification matrix from `tech.md` Version Bump Classification table instead of using an inline matrix | Must | Replaces hardcoded table in SKILL.md Step 2 |
@@ -403,7 +403,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 |--------|--------|-------------|
 | Version consistency | VERSION file, CHANGELOG, and stack-specific files always in sync after `/open-pr` | Verify all version references match after PR creation |
 | Milestone adoption | All new issues created via `/draft-issue` have a milestone assigned | Check milestone assignment rate on issues |
-| Automation reliability | Auto-mode completes versioning without manual intervention | SDLC runner full-cycle success rate |
+| Automation reliability | Unattended-mode completes versioning without manual intervention | SDLC runner full-cycle success rate |
 
 ---
 

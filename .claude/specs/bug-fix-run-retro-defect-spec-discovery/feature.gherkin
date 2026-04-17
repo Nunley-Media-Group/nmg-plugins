@@ -29,8 +29,8 @@ Feature: Retrospective defect-spec discovery and Related Spec link validation
 
   @regression
   Scenario: AC2 - Cross-defect Related Spec chain resolution
-    Given a defect spec at ".claude/specs/57-fix-auto-mode-gitignore/" whose Related Spec points to ".claude/specs/17-fix-auto-mode-cleanup-on-exit/"
-    And ".claude/specs/17-fix-auto-mode-cleanup-on-exit/" is also a defect spec with Related Spec pointing to ".claude/specs/11-automation-mode-support/"
+    Given a defect spec at ".claude/specs/57-fix-unattended-mode-gitignore/" whose Related Spec points to ".claude/specs/17-fix-unattended-mode-cleanup-on-exit/"
+    And ".claude/specs/17-fix-unattended-mode-cleanup-on-exit/" is also a defect spec with Related Spec pointing to ".claude/specs/11-automation-mode-support/"
     And ".claude/specs/11-automation-mode-support/" is a feature spec with heading "# Requirements:"
     When "/run-retro" resolves the Related Spec chain in Step 2
     Then the skill follows the chain from spec 57 to spec 17 to spec 11
@@ -69,15 +69,15 @@ Feature: Retrospective defect-spec discovery and Related Spec link validation
 
   @regression
   Scenario: AC6 - write-spec filters defect specs from Related Spec search
-    Given "/write-spec" is processing a defect issue about "auto-mode cleanup"
-    And the keyword search returns both defect spec ".claude/specs/17-fix-auto-mode-cleanup-on-exit/" and feature spec ".claude/specs/11-automation-mode-support/"
+    Given "/write-spec" is processing a defect issue about "unattended-mode cleanup"
+    And the keyword search returns both defect spec ".claude/specs/17-fix-unattended-mode-cleanup-on-exit/" and feature spec ".claude/specs/11-automation-mode-support/"
     When Phase 1 Step 7 filters the results
     Then only the feature spec ".claude/specs/11-automation-mode-support/" is considered as a candidate
     And the defect spec is excluded because its heading starts with "# Defect Report:"
 
   @regression
   Scenario: AC7 - write-spec finds root feature spec through defect chains
-    Given "/write-spec" is processing a defect issue about "auto-mode"
+    Given "/write-spec" is processing a defect issue about "unattended-mode"
     And the keyword search only matches defect specs with no direct feature spec match
     And the matched defect spec has a Related Spec pointing to feature spec ".claude/specs/11-automation-mode-support/"
     When Phase 1 Step 7 follows the defect spec's Related Spec link

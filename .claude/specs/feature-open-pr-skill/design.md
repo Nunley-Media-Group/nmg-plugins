@@ -198,7 +198,7 @@ FeatureScreen
 
 | Layer | Type | Coverage |
 |-------|------|----------|
-| PR Creation | BDD | Scenarios for issue linking, spec references, auto-mode |
+| PR Creation | BDD | Scenarios for issue linking, spec references, unattended-mode |
 
 ---
 

@@ -1,4 +1,4 @@
-# Defect Report: SDLC runner not deleting auto-mode on exit
+# Defect Report: SDLC runner not deleting unattended-mode on exit
 
 **Issue**: #17
 **Date**: 2026-02-15
@@ -14,9 +14,9 @@
 ### Steps to Reproduce
 
 1. Configure the SDLC runner with a valid `sdlc-config.json`
-2. Start the runner: the runner creates `.claude/auto-mode` in the target project
+2. Start the runner: the runner creates `.claude/unattended-mode` in the target project
 3. Let it process at least one cycle, or stop it via SIGTERM/SIGINT
-4. Observe that `.claude/auto-mode` still exists in the target project directory
+4. Observe that `.claude/unattended-mode` still exists in the target project directory
 5. Run any SDLC skill manually (e.g., `/write-spec`, `/draft-issue`)
 6. Interactive prompts (interviews, review gates, plan mode) are silently skipped
 
@@ -39,8 +39,8 @@ Always — 100% reproducible on every exit path.
 
 | | Description |
 |---|-------------|
-| **Expected** | When the SDLC runner stops for any reason, `.claude/auto-mode` is deleted so subsequent manual skill usage works interactively |
-| **Actual** | `.claude/auto-mode` persists after runner exit on all five exit paths: graceful shutdown (SIGTERM/SIGINT), escalation, no-more-issues completion, fatal crash, and single-step mode exit |
+| **Expected** | When the SDLC runner stops for any reason, `.claude/unattended-mode` is deleted so subsequent manual skill usage works interactively |
+| **Actual** | `.claude/unattended-mode` persists after runner exit on all five exit paths: graceful shutdown (SIGTERM/SIGINT), escalation, no-more-issues completion, fatal crash, and single-step mode exit |
 
 ### Error Output
 
@@ -52,41 +52,41 @@ No error output — the bug is a silent omission. The symptom is that SDLC skill
 
 **IMPORTANT: Each criterion becomes a Gherkin BDD test scenario.**
 
-### AC1: Auto-mode cleaned up on graceful shutdown
+### AC1: Unattended-mode cleaned up on graceful shutdown
 
-**Given** the SDLC runner is running with `.claude/auto-mode` present in the target project
+**Given** the SDLC runner is running with `.claude/unattended-mode` present in the target project
 **When** the runner receives SIGTERM or SIGINT
-**Then** the `.claude/auto-mode` file is deleted before the process exits
+**Then** the `.claude/unattended-mode` file is deleted before the process exits
 
-### AC2: Auto-mode cleaned up on escalation
+### AC2: Unattended-mode cleaned up on escalation
 
 **Given** the SDLC runner escalates due to exhausted retries or an unrecoverable error
 **When** the escalation handler completes
-**Then** the `.claude/auto-mode` file is deleted in the target project
+**Then** the `.claude/unattended-mode` file is deleted in the target project
 
-### AC3: Auto-mode cleaned up when no issues remain
+### AC3: Unattended-mode cleaned up when no issues remain
 
 **Given** the SDLC runner finds no more open issues in the project
 **When** the runner exits the main loop
-**Then** the `.claude/auto-mode` file is deleted
+**Then** the `.claude/unattended-mode` file is deleted
 
-### AC4: Auto-mode cleaned up on fatal crash
+### AC4: Unattended-mode cleaned up on fatal crash
 
 **Given** the SDLC runner encounters an unhandled exception
 **When** the fatal error handler runs
-**Then** the `.claude/auto-mode` file is deleted (best effort)
+**Then** the `.claude/unattended-mode` file is deleted (best effort)
 
-### AC5: Auto-mode cleaned up on single-step exit
+### AC5: Unattended-mode cleaned up on single-step exit
 
 **Given** the SDLC runner is invoked in single-step mode
 **When** the single step completes (success or failure)
-**Then** the `.claude/auto-mode` file is deleted before the process exits
+**Then** the `.claude/unattended-mode` file is deleted before the process exits
 
-### AC6: No regression — auto-mode still active during execution
+### AC6: No regression — unattended-mode still active during execution
 
 **Given** the SDLC runner is actively processing steps
 **When** a skill is invoked via `claude -p` subprocess
-**Then** `.claude/auto-mode` still exists and the skill operates in headless mode
+**Then** `.claude/unattended-mode` still exists and the skill operates in headless mode
 
 ---
 
@@ -94,7 +94,7 @@ No error output — the bug is a silent omission. The symptom is that SDLC skill
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR1 | Delete `.claude/auto-mode` on all runner exit paths (graceful shutdown, escalation, completion, crash, single-step) | Must |
+| FR1 | Delete `.claude/unattended-mode` on all runner exit paths (graceful shutdown, escalation, completion, crash, single-step) | Must |
 | FR2 | Centralize cleanup in a single helper function to avoid missing future exit paths | Should |
 | FR3 | Cleanup must be best-effort and non-fatal — never mask the original exit reason | Must |
 
@@ -102,9 +102,9 @@ No error output — the bug is a silent omission. The symptom is that SDLC skill
 
 ## Out of Scope
 
-- Changing how auto-mode is created (the runner should still create it on startup)
-- Modifying how skills detect auto-mode (flag-file approach is correct)
-- Adding auto-mode cleanup to the `running-sdlc` SKILL.md `stop` command (the runner's own exit paths should handle it)
+- Changing how unattended-mode is created (the runner should still create it on startup)
+- Modifying how skills detect unattended-mode (flag-file approach is correct)
+- Adding unattended-mode cleanup to the `running-sdlc` SKILL.md `stop` command (the runner's own exit paths should handle it)
 - Refactoring exit paths beyond adding the cleanup call
 
 ---

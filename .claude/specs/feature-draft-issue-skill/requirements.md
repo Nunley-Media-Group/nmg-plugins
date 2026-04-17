@@ -17,7 +17,7 @@
 
 ## Background
 
-The `/draft-issue` skill conducts an adaptive interview (2-3 rounds, skipping already-answered topics) to understand a feature need, then creates a GitHub issue with a standardized body: User Story, Background, Given/When/Then acceptance criteria, Functional Requirements table, and Out of Scope section. This format directly feeds the downstream `/write-spec` skill, ensuring specs are grounded in well-defined requirements. In automation mode, the skill skips the interview and infers acceptance criteria from steering docs and the provided feature description.
+The `/draft-issue` skill conducts an adaptive interview (2-3 rounds, skipping already-answered topics) to understand a feature need, then creates a GitHub issue with a standardized body: User Story, Background, Given/When/Then acceptance criteria, Functional Requirements table, and Out of Scope section. This format directly feeds the downstream `/write-spec` skill, ensuring specs are grounded in well-defined requirements. In unattended mode, the skill skips the interview and infers acceptance criteria from steering docs and the provided feature description.
 
 ---
 
@@ -25,7 +25,7 @@ The `/draft-issue` skill conducts an adaptive interview (2-3 rounds, skipping al
 
 ### AC1: Interactive Interview Gathers Requirements
 
-**Given** I invoke `/draft-issue` without automation mode
+**Given** I invoke `/draft-issue` without unattended mode
 **When** the skill starts
 **Then** it asks adaptive questions about the feature need, skipping topics I've already addressed
 
@@ -41,9 +41,9 @@ The `/draft-issue` skill conducts an adaptive interview (2-3 rounds, skipping al
 **When** I indicate it's a defect
 **Then** the issue uses the bug report template with reproduction steps, expected/actual behavior, and environment table
 
-### AC4: Automation Mode Skips Interview
+### AC4: Unattended Mode Skips Interview
 
-**Given** automation mode is active (`.claude/auto-mode` exists)
+**Given** unattended mode is active (`.claude/unattended-mode` exists)
 **When** I invoke `/draft-issue` with a feature description argument
 **Then** the skill skips the interview and infers 3-5 acceptance criteria from steering docs
 
@@ -57,7 +57,7 @@ The `/draft-issue` skill conducts an adaptive interview (2-3 rounds, skipping al
 | FR2 | GitHub issue creation via `gh issue create` with BDD-formatted body | Must | Structured template |
 | FR3 | User Story, Background, Acceptance Criteria, Functional Requirements, Out of Scope sections | Must | Standard issue format |
 | FR4 | Bug report template variant with reproduction steps and severity | Must | Triggered by bug type |
-| FR5 | Automation mode support that skips interview and infers criteria | Must | Reads `.claude/auto-mode` |
+| FR5 | Automation mode support that skips interview and infers criteria | Must | Reads `.claude/unattended-mode` |
 
 ---
 
@@ -106,7 +106,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 
 ### Internal Dependencies
 - [x] Plugin scaffold (#2)
-- [x] Steering documents (from `/setup-steering`, #3) for automation mode context
+- [x] Steering documents (from `/setup-steering`, #3) for unattended mode context
 
 ### External Dependencies
 - [x] `gh` CLI for GitHub issue creation

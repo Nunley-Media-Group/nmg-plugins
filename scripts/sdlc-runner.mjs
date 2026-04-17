@@ -546,7 +546,7 @@ function gh(args, cwd = PROJECT_PATH) {
 }
 
 // Runner-managed files that should not count as "dirty" working tree
-const RUNNER_ARTIFACTS = ['.claude/sdlc-state.json', '.claude/auto-mode'];
+const RUNNER_ARTIFACTS = ['.claude/sdlc-state.json', '.claude/unattended-mode'];
 
 /**
  * Ensure each RUNNER_ARTIFACTS entry is listed in the target project's .gitignore.
@@ -594,10 +594,10 @@ function untrackRunnerArtifactsIfTracked() {
   }
 }
 
-function removeAutoMode() {
+function removeUnattendedMode() {
   try {
-    fs.unlinkSync(path.join(PROJECT_PATH, '.claude', 'auto-mode'));
-    log('Removed .claude/auto-mode flag');
+    fs.unlinkSync(path.join(PROJECT_PATH, '.claude', 'unattended-mode'));
+    log('Removed .claude/unattended-mode flag');
   } catch { /* best effort — file may not exist */ }
 }
 
@@ -1059,7 +1059,7 @@ const BENIGN_DENIED_TOOLS = new Set(['EnterPlanMode', 'ExitPlanMode', 'AskUserQu
 // used in the soft-failure reason string and status log messages.
 const TEXT_FAILURE_PATTERNS = [
   { pattern: /EnterPlanMode/i, label: 'EnterPlanMode' },
-  { pattern: /AskUserQuestion.*auto-mode/i, label: 'AskUserQuestion in auto-mode' },
+  { pattern: /AskUserQuestion.*unattended-mode/i, label: 'AskUserQuestion in unattended-mode' },
 ];
 
 function detectSoftFailure(stdout) {
@@ -1213,18 +1213,18 @@ async function escalate(step, reason, output = '') {
 
   // In single-issue mode, exit immediately on escalation — no next cycle
   if (SINGLE_ISSUE_NUMBER) {
-    removeAutoMode();
+    removeUnattendedMode();
     process.exit(1);
   }
 
-  // Reset state for next cycle (keep auto-mode flag — the runner is still running
+  // Reset state for next cycle (keep unattended-mode flag — the runner is still running
   // and will start a fresh cycle; removing the flag causes skills to run interactively)
   updateState({ currentStep: 0, lastCompletedStep: 0 });
 }
 
 /**
  * Halt the runner due to a detected failure loop.
- * Does NOT call removeAutoMode(), updateState(), or git checkout —
+ * Does NOT call removeUnattendedMode(), updateState(), or git checkout —
  * preserves all state for manual inspection.
  */
 async function haltFailureLoop(loopType, details) {
@@ -1686,7 +1686,7 @@ function handleSignal(signal) {
   // Mark signalShutdown so detectAndHydrateState knows the auto-push was WIP,
   // not a completed step 6.
   updateState({ runnerPid: null, signalShutdown: true });
-  removeAutoMode();
+  removeUnattendedMode();
   process.exit(0);
 }
 
@@ -1866,13 +1866,13 @@ async function main() {
   // Self-heal: untrack runner artifacts that were committed before gitignore was in place
   untrackRunnerArtifactsIfTracked();
 
-  // Ensure auto-mode flag exists
-  const autoModePath = path.join(PROJECT_PATH, '.claude', 'auto-mode');
-  if (!fs.existsSync(autoModePath)) {
-    const dir = path.dirname(autoModePath);
+  // Ensure unattended-mode flag exists
+  const unattendedModePath = path.join(PROJECT_PATH, '.claude', 'unattended-mode');
+  if (!fs.existsSync(unattendedModePath)) {
+    const dir = path.dirname(unattendedModePath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(autoModePath, '');
-    log('Created .claude/auto-mode flag');
+    fs.writeFileSync(unattendedModePath, '');
+    log('Created .claude/unattended-mode flag');
   }
 
   // Detect in-progress work from git state (runs on every startup)
@@ -1923,13 +1923,13 @@ async function main() {
     const step = STEPS[SINGLE_STEP - 1];
     if (!step) {
       console.error(`Invalid step number: ${SINGLE_STEP}`);
-      removeAutoMode();
+      removeUnattendedMode();
       process.exit(1);
     }
     state = readState();
     const result = await runStep(step, state);
     log(`Single step result: ${result}`);
-    removeAutoMode();
+    removeUnattendedMode();
     process.exit(result === 'ok' ? 0 : 1);
   }
 
@@ -1940,7 +1940,7 @@ async function main() {
       log('No more open issues. All done!');
       log('[STATUS] No more open issues in the project. SDLC runner complete.');
       updateState({ currentStep: 0 });
-      removeAutoMode();
+      removeUnattendedMode();
       break;
     }
 
@@ -2008,7 +2008,7 @@ async function main() {
         consecutiveEscalations = 0;
         if (SINGLE_ISSUE_NUMBER) {
           log(`Single-issue mode: issue #${SINGLE_ISSUE_NUMBER} complete. Exiting.`);
-          removeAutoMode();
+          removeUnattendedMode();
           break; // Exit the for loop
         }
       }
@@ -2035,7 +2035,7 @@ if (isMainModule) {
   main().catch((err) => {
     log(`Fatal error: ${err.message}`);
     log(`[STATUS] SDLC runner crashed: ${err.message}`);
-    removeAutoMode();
+    removeUnattendedMode();
     process.exit(1);
   });
 }
@@ -2122,7 +2122,7 @@ export {
   writeState,
   updateState,
   runClaude,
-  removeAutoMode,
+  removeUnattendedMode,
   ensureRunnerArtifactsGitignored,
   cleanupProcesses,
   getChildPids,

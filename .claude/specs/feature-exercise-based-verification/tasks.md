@@ -163,7 +163,7 @@ These tasks modify `plugins/nmg-sdlc/skills/verify-code/SKILL.md` to add exercis
 - [ ] Step 7 (Generate Verification Report) references the new Exercise Test Results section
 - [ ] All data captured during sub-steps 5a–5e has a corresponding field in the report template
 - [ ] The existing report sections (Test Coverage, Fixes Applied, Remaining Issues) still work with exercise findings
-- [ ] Auto-mode behavior is consistent: no `AskUserQuestion` calls in the exercise path when `.claude/auto-mode` exists
+- [ ] Unattended-mode behavior is consistent: no `AskUserQuestion` calls in the exercise path when `.claude/unattended-mode` exists
 - [ ] Cross-reference between Step 5 exercise output and Step 7 report generation is clear
 
 **Notes**: This is a review task to ensure the skill and template are consistent. Make minor edits if gaps are found.

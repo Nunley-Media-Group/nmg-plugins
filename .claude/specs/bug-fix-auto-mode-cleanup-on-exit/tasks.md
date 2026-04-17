@@ -1,4 +1,4 @@
-# Tasks: SDLC runner not deleting auto-mode on exit
+# Tasks: SDLC runner not deleting unattended-mode on exit
 
 **Issue**: #17
 **Date**: 2026-02-15
@@ -25,7 +25,7 @@
 **Depends**: None
 **Acceptance**:
 - [ ] `removeAutoMode()` function defined near the `RUNNER_ARTIFACTS` constant (~line 360)
-- [ ] Uses `fs.unlinkSync()` on `path.join(PROJECT_PATH, '.claude', 'auto-mode')`
+- [ ] Uses `fs.unlinkSync()` on `path.join(PROJECT_PATH, '.claude', 'unattended-mode')`
 - [ ] Wrapped in try-catch — swallows errors silently (best-effort, non-fatal per FR3)
 - [ ] Logs deletion via `log()` on success for observability
 
@@ -42,13 +42,13 @@
 - [ ] Called in the no-more-issues path before `break` (~line 1071) — fixes AC3
 - [ ] Called in `main().catch()` before `process.exit(1)` (~line 1129) — fixes AC4
 - [ ] Called in single-step mode before `process.exit()` (~line 1060) — fixes AC5
-- [ ] Auto-mode creation at startup (~line 1004) is NOT modified — AC6 preserved
+- [ ] Unattended-mode creation at startup (~line 1004) is NOT modified — AC6 preserved
 
-**Notes**: Each call site is a single line: `removeAutoMode();`. Place it as late as possible in each path (right before the exit action) to maximize the window where auto-mode is active during execution.
+**Notes**: Each call site is a single line: `removeAutoMode();`. Place it as late as possible in each path (right before the exit action) to maximize the window where unattended-mode is active during execution.
 
 ### T003: Add regression test (Gherkin feature file)
 
-**File(s)**: `.claude/specs/17-fix-auto-mode-cleanup-on-exit/feature.gherkin`
+**File(s)**: `.claude/specs/17-fix-unattended-mode-cleanup-on-exit/feature.gherkin`
 **Type**: Create
 **Depends**: T001, T002
 **Acceptance**:
@@ -63,7 +63,7 @@
 **Type**: Verify
 **Depends**: T001, T002, T003
 **Acceptance**:
-- [ ] Auto-mode file is still created at startup (creation code untouched)
+- [ ] Unattended-mode file is still created at startup (creation code untouched)
 - [ ] `RUNNER_ARTIFACTS` constant is unchanged
 - [ ] No other behavior in `handleSignal()`, `escalate()`, or `main()` is altered
 - [ ] The diff contains only the new helper function and the 5 call-site additions

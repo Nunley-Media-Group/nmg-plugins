@@ -24,6 +24,6 @@ Feature: Creating PRs Skill
     Then it summarizes what was built, key decisions, and verification status
 
   Scenario: Automation mode outputs completion signal
-    Given automation mode is active
+    Given unattended mode is active
     When the PR is created
     Then the skill outputs "Done. Awaiting orchestrator."

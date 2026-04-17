@@ -80,7 +80,7 @@ Always — any step that burns all turns without completing its goal will be mis
 
 **Given** the `start-issue` SKILL.md
 **When** Claude reads the skill in headless mode
-**Then** the Automation Mode instruction is positioned and formatted to maximize model compliance (e.g., moved above workflow, bolded critical directive, repeated in Step 2)
+**Then** the Unattended Mode instruction is positioned and formatted to maximize model compliance (e.g., moved above workflow, bolded critical directive, repeated in Step 2)
 
 ### AC5: Comprehensive Jest BDD Test Suite Covers All Runner Functionality
 
@@ -94,7 +94,7 @@ Always — any step that burns all turns without completing its goal will be mis
 - Consecutive escalation detection and halt
 - Same-issue loop detection (escalated issues set)
 - State hydration from git/filesystem (`detectAndHydrateState`)
-- Auto-mode file lifecycle (creation, removal, exclusion from dirty checks)
+- Unattended-mode file lifecycle (creation, removal, exclusion from dirty checks)
 - Soft failure detection (error_max_turns, permission_denials)
 
 ---
@@ -107,7 +107,7 @@ Always — any step that burns all turns without completing its goal will be mis
 | FR2 | Treat `error_max_turns` subtype as step failure regardless of exit code | Must |
 | FR3 | Treat non-empty `permission_denials` as step failure regardless of exit code | Must |
 | FR4 | Comprehensive Jest BDD test suite for all runner functionality | Must |
-| FR5 | Improve auto-mode instruction prominence in start-issue SKILL.md | Should |
+| FR5 | Improve unattended-mode instruction prominence in start-issue SKILL.md | Should |
 
 ---
 

@@ -27,7 +27,7 @@
 - [x] For tracked artifacts, runs `git rm --cached` to untrack
 - [x] For non-tracked artifacts, silently skips (no error)
 - [x] Logs when an artifact is untracked
-- [x] Called in `main()` after `ensureRunnerArtifactsGitignored()` and before auto-mode creation
+- [x] Called in `main()` after `ensureRunnerArtifactsGitignored()` and before unattended-mode creation
 - [x] Uses existing `git()` helper for commands
 
 ### T002: Update start-issue skill dirty-tree check
@@ -36,7 +36,7 @@
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
-- [x] Step 4 precondition instructs filtering `.claude/sdlc-state.json` and `.claude/auto-mode` from `git status --porcelain` output
+- [x] Step 4 precondition instructs filtering `.claude/sdlc-state.json` and `.claude/unattended-mode` from `git status --porcelain` output
 - [x] Filtering happens before the clean/dirty evaluation
 - [x] Real dirty files (source code, config, etc.) still trigger the abort
 

@@ -24,9 +24,9 @@ Feature: Text-pattern soft failure detection in SDLC runner
     Then it returns isSoftFailure true with reason "text_pattern: EnterPlanMode"
 
   @regression
-  Scenario: Text failure pattern "AskUserQuestion in auto-mode" detected as soft failure
+  Scenario: Text failure pattern "AskUserQuestion in unattended-mode" detected as soft failure
     Given a step exits with code 0
-    And the stdout contains "AskUserQuestion called in auto-mode"
+    And the stdout contains "AskUserQuestion called in unattended-mode"
     And the JSON output has no error_max_turns or permission_denials
     When detectSoftFailure processes the output
     Then it returns isSoftFailure true with reason containing "text_pattern:"

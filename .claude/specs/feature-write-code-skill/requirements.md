@@ -17,7 +17,7 @@
 
 ## Background
 
-The `/write-code` skill bridges the gap between specification and code. It reads the requirements, design, and tasks specs from `.claude/specs/{feature-name}/`, enters plan mode to design the implementation approach (getting user approval before writing code), then executes each task from the tasks spec sequentially. The skill uses Glob to locate spec files when the feature name is ambiguous. In automation mode, plan mode is skipped and approval gates are bypassed. For bug fixes, the skill follows the fix strategy precisely, minimizes change scope, and requires a regression test.
+The `/write-code` skill bridges the gap between specification and code. It reads the requirements, design, and tasks specs from `.claude/specs/{feature-name}/`, enters plan mode to design the implementation approach (getting user approval before writing code), then executes each task from the tasks spec sequentially. The skill uses Glob to locate spec files when the feature name is ambiguous. In unattended mode, plan mode is skipped and approval gates are bypassed. For bug fixes, the skill follows the fix strategy precisely, minimizes change scope, and requires a regression test.
 
 ---
 
@@ -47,9 +47,9 @@ The `/write-code` skill bridges the gap between specification and code. It reads
 **When** implementation begins
 **Then** the skill follows the fix strategy precisely, minimizes change scope, and includes a regression test
 
-### AC5: Automation Mode Skips Plan Approval
+### AC5: Unattended Mode Skips Plan Approval
 
-**Given** automation mode is active
+**Given** unattended mode is active
 **When** the skill runs
 **Then** plan mode is skipped and tasks execute without approval gates
 
@@ -63,7 +63,7 @@ The `/write-code` skill bridges the gap between specification and code. It reads
 | FR2 | Enter plan mode with implementation approach for user approval | Must | Via EnterPlanMode tool |
 | FR3 | Sequential task execution following the tasks spec order | Must | One task at a time |
 | FR4 | Glob-based spec file discovery when feature name is ambiguous | Must | Fallback discovery |
-| FR5 | Automation mode support skipping plan mode and approval gates | Must | `.claude/auto-mode` check |
+| FR5 | Automation mode support skipping plan mode and approval gates | Must | `.claude/unattended-mode` check |
 | FR6 | Bug fix mode with minimal change scope and regression test requirement | Must | Defect spec handling |
 
 ---

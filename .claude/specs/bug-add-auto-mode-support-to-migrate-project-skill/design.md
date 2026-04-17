@@ -9,28 +9,28 @@
 
 ## Root Cause
 
-The `/migrate-project` skill was written before auto-mode was introduced as a project-wide convention. When the feature-migration-skill spec (#25/#72) was created, the Automation Mode section was intentionally set to "ALWAYS interactive" because migration was considered too sensitive for automation. However, this blanket prohibition is overly conservative: not all migration operations are destructive. Non-destructive operations like adding missing template sections to existing files, updating frontmatter format, correcting Related Spec links, and adding missing JSON config keys are safe to auto-apply. Only spec directory consolidation/merges (which delete legacy directories and restructure content) are truly destructive.
+The `/migrate-project` skill was written before unattended-mode was introduced as a project-wide convention. When the feature-migration-skill spec (#25/#72) was created, the Unattended Mode section was intentionally set to "ALWAYS interactive" because migration was considered too sensitive for automation. However, this blanket prohibition is overly conservative: not all migration operations are destructive. Non-destructive operations like adding missing template sections to existing files, updating frontmatter format, correcting Related Spec links, and adding missing JSON config keys are safe to auto-apply. Only spec directory consolidation/merges (which delete legacy directories and restructure content) are truly destructive.
 
-The skill has zero auto-mode awareness — it never checks for `.claude/auto-mode` and always calls `AskUserQuestion` at three points in the workflow:
+The skill has zero unattended-mode awareness — it never checks for `.claude/unattended-mode` and always calls `AskUserQuestion` at three points in the workflow:
 
 1. **Step 4d** — Per-group consolidation approval (destructive: merges/renames/deletes directories)
 2. **Step 9 Part A** — Per-section steering doc approval via `multiSelect` (non-destructive: adds sections)
 3. **Step 9 Part B** — Batch approval for remaining changes + per-group consolidation approval (mixed: non-destructive changes + destructive consolidations)
 
-Every other skill in the pipeline (`/write-spec`, `/write-code`, `/verify-code`, `/open-pr`, `/draft-issue`, `/start-issue`) checks for `.claude/auto-mode` and branches behavior accordingly. This skill was overlooked.
+Every other skill in the pipeline (`/write-spec`, `/write-code`, `/verify-code`, `/open-pr`, `/draft-issue`, `/start-issue`) checks for `.claude/unattended-mode` and branches behavior accordingly. This skill was overlooked.
 
 ### Affected Code
 
 | File | Lines | Role |
 |------|-------|------|
-| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` | 21–27 | "Automation Mode" section — explicitly declares "ALWAYS interactive" |
+| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` | 21–27 | "Unattended Mode" section — explicitly declares "ALWAYS interactive" |
 | `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` | 169–179 | Step 4d — consolidation approval via `AskUserQuestion` |
 | `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` | 293–379 | Step 9 — two-part approval gate, all via `AskUserQuestion` |
-| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` | 380–392 | Step 10 — apply changes (no auto-mode branch) |
+| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` | 380–392 | Step 10 — apply changes (no unattended-mode branch) |
 
 ### Triggering Conditions
 
-- `.claude/auto-mode` exists in the project directory
+- `.claude/unattended-mode` exists in the project directory
 - `/migrate-project` is invoked (e.g., by SDLC runner during a headless SDLC cycle)
 - Any migration finding is detected (steering doc sections, spec frontmatter, config keys, etc.)
 - The skill hits any `AskUserQuestion` call and hangs indefinitely because no user is present
@@ -41,7 +41,7 @@ Every other skill in the pipeline (`/write-spec`, `/write-code`, `/verify-code`,
 
 ### Approach
 
-Add auto-mode awareness to `/migrate-project` SKILL.md following the established pattern from other skills. The fix classifies every migration operation as either **non-destructive** (safe to auto-apply) or **destructive** (must be skipped in auto-mode), then branches behavior at each `AskUserQuestion` call site.
+Add unattended-mode awareness to `/migrate-project` SKILL.md following the established pattern from other skills. The fix classifies every migration operation as either **non-destructive** (safe to auto-apply) or **destructive** (must be skipped in unattended-mode), then branches behavior at each `AskUserQuestion` call site.
 
 This is a minimal fix to the Markdown skill instructions — no scripts or runtime code need to change. The changes modify prompt instructions that Claude follows, not executable code.
 
@@ -65,11 +65,11 @@ This is a minimal fix to the Markdown skill instructions — no scripts or runti
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` lines 21–27 | Rewrite "Automation Mode" section to describe the dual behavior: auto-apply non-destructive, skip destructive with summary | Establishes the auto-mode contract for this skill |
-| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Step 4d (lines 169–179) | Add auto-mode guard: when `.claude/auto-mode` exists, skip consolidation entirely and record each group as a skipped operation | Prevents destructive merges/renames/deletes in headless mode |
-| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Step 9 (lines 293–379) | Add auto-mode branch: skip both Part A and Part B approval prompts; auto-select all non-destructive changes; skip any remaining destructive changes | Eliminates all `AskUserQuestion` calls in auto-mode |
-| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Step 10 (lines 380–392) | Add auto-mode output section: after applying changes, emit a machine-readable "Skipped Operations" block listing each skipped destructive operation with type, paths, and reason | Enables the runner to surface skipped operations in its status log |
-| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Key Rules | Update rule 5 to reflect conditional interactivity; add a new rule about auto-mode behavior | Keeps the Key Rules section consistent with the updated workflow |
+| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` lines 21–27 | Rewrite "Unattended Mode" section to describe the dual behavior: auto-apply non-destructive, skip destructive with summary | Establishes the unattended-mode contract for this skill |
+| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Step 4d (lines 169–179) | Add unattended-mode guard: when `.claude/unattended-mode` exists, skip consolidation entirely and record each group as a skipped operation | Prevents destructive merges/renames/deletes in headless mode |
+| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Step 9 (lines 293–379) | Add unattended-mode branch: skip both Part A and Part B approval prompts; auto-select all non-destructive changes; skip any remaining destructive changes | Eliminates all `AskUserQuestion` calls in unattended-mode |
+| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Step 10 (lines 380–392) | Add unattended-mode output section: after applying changes, emit a machine-readable "Skipped Operations" block listing each skipped destructive operation with type, paths, and reason | Enables the runner to surface skipped operations in its status log |
+| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Key Rules | Update rule 5 to reflect conditional interactivity; add a new rule about unattended-mode behavior | Keeps the Key Rules section consistent with the updated workflow |
 
 ### Blast Radius
 
@@ -83,9 +83,9 @@ This is a minimal fix to the Markdown skill instructions — no scripts or runti
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Interactive mode behavior changes | Low | AC4 explicitly requires all existing interactive behavior to be preserved unchanged; the auto-mode branch only activates when `.claude/auto-mode` exists |
+| Interactive mode behavior changes | Low | AC4 explicitly requires all existing interactive behavior to be preserved unchanged; the unattended-mode branch only activates when `.claude/unattended-mode` exists |
 | Non-destructive operations misclassified as destructive (or vice versa) | Low | The operation classification table is explicit; all directory-level operations (consolidation, renames, deletes) are destructive; all content additions are non-destructive |
-| Declined sections not persisted in auto-mode | Low | FR7 explicitly states `.claude/migration-exclusions.json` is not written to in auto-mode (nothing is declined); existing exclusions from prior interactive runs are still respected during analysis |
+| Declined sections not persisted in unattended-mode | Low | FR7 explicitly states `.claude/migration-exclusions.json` is not written to in unattended-mode (nothing is declined); existing exclusions from prior interactive runs are still respected during analysis |
 | Machine-readable output format breaks runner parsing | Low | The output is informational — the runner surfaces it in its status log but does not parse it for control flow decisions |
 
 ---
@@ -94,8 +94,8 @@ This is a minimal fix to the Markdown skill instructions — no scripts or runti
 
 | Option | Description | Why Not Selected |
 |--------|-------------|------------------|
-| Auto-apply everything (including consolidation) | Apply all changes including destructive operations in auto-mode | Consolidation deletes directories and merges content — too risky for unattended execution; could lose data if the merge logic produces incorrect results |
-| Skip entire skill in auto-mode | Have the skill immediately exit with "Migration requires interactive mode" | Misses the opportunity to auto-apply safe, non-destructive changes that keep project files current |
+| Auto-apply everything (including consolidation) | Apply all changes including destructive operations in unattended-mode | Consolidation deletes directories and merges content — too risky for unattended execution; could lose data if the merge logic produces incorrect results |
+| Skip entire skill in unattended-mode | Have the skill immediately exit with "Migration requires interactive mode" | Misses the opportunity to auto-apply safe, non-destructive changes that keep project files current |
 
 ---
 

@@ -91,7 +91,7 @@ Unidirectional: specs + git state → PR body → `gh pr create`.
 | AC1 — Issue link | Yes | N/A | Yes |
 | AC2 — Spec references | Yes | N/A | Yes |
 | AC3 — Summary | Yes | N/A | Yes |
-| AC4 — Auto-mode signal | Yes | N/A | Yes |
+| AC4 — Unattended-mode signal | Yes | N/A | Yes |
 
 ### Coverage Summary
 

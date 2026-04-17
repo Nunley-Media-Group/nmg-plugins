@@ -23,10 +23,10 @@ Feature: Git working tree cleanliness check in /start-issue
     And no new branch is created
 
   @regression
-  Scenario: Auto-mode escalation for dirty working tree
+  Scenario: Unattended-mode escalation for dirty working tree
     Given the working tree has staged changes
-    And .claude/auto-mode exists in the project directory
-    When /start-issue is invoked in auto-mode
+    And .claude/unattended-mode exists in the project directory
+    When /start-issue is invoked in unattended-mode
     Then the dirty working tree is reported as an escalation reason
     And no new branch is created
     And the output is parseable by the sdlc-runner as an escalation

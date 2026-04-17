@@ -24,9 +24,9 @@ Create BDD specifications from a GitHub issue through three phases: requirements
 - When starting implementation of an existing issue
 - When requirements need to be formalized before coding
 
-## Automation Mode
+## Unattended Mode
 
-If the file `.claude/auto-mode` exists in the project directory, all Human Review Gates in this workflow are **pre-approved**. Do NOT call `AskUserQuestion` at any gate — proceed directly from each phase to the next without stopping for user input.
+If the file `.claude/unattended-mode` exists in the project directory, all Human Review Gates in this workflow are **pre-approved**. Do NOT call `AskUserQuestion` at any gate — proceed directly from each phase to the next without stopping for user input.
 
 ## Feature Name Convention
 
@@ -100,7 +100,7 @@ If any label is `bug`, this is a **defect issue**. All three phases use the **De
    - Present to the user via `AskUserQuestion`:
      - Option 1: "Amend existing spec: `feature-{slug}`" (with brief description from heading/user story)
      - Option 2: "Create new spec" (derives new `feature-{slug}` from current issue title)
-   - **If auto-mode** (`.claude/auto-mode` exists): skip AskUserQuestion entirely and proceed directly in amendment mode (amend the top-scored existing spec)
+   - **If unattended mode** (`.claude/unattended-mode` exists): skip AskUserQuestion entirely and proceed directly in amendment mode (amend the top-scored existing spec)
 7. **If no candidates found**: proceed to create new spec without prompting
 
 The result of this step determines whether subsequent phases operate in **amendment mode** (modifying an existing spec) or **creation mode** (writing a new spec from scratch).
@@ -181,9 +181,9 @@ Write to (or amend) `.claude/specs/{feature-name}/requirements.md`
 
 ### Human Review Gate
 
-**[If `.claude/auto-mode` exists]:** Gate is pre-approved — proceed immediately to Phase 2.
+**[If `.claude/unattended-mode` exists]:** Gate is pre-approved — proceed immediately to Phase 2.
 
-**[If `.claude/auto-mode` does NOT exist]:** Present an inline summary of what was written so the user can evaluate without opening the file. Structure it exactly like this:
+**[If `.claude/unattended-mode` does NOT exist]:** Present an inline summary of what was written so the user can evaluate without opening the file. Structure it exactly like this:
 
 ---
 
@@ -256,9 +256,9 @@ Write to (or amend) `.claude/specs/{feature-name}/design.md`
 
 ### Human Review Gate
 
-**[If `.claude/auto-mode` exists]:** Gate is pre-approved — proceed immediately to Phase 3.
+**[If `.claude/unattended-mode` exists]:** Gate is pre-approved — proceed immediately to Phase 3.
 
-**[If `.claude/auto-mode` does NOT exist]:** Present an inline summary of the design so the user can evaluate without opening the file. Structure it exactly like this:
+**[If `.claude/unattended-mode` does NOT exist]:** Present an inline summary of the design so the user can evaluate without opening the file. Structure it exactly like this:
 
 ---
 
@@ -357,9 +357,9 @@ Write to (or amend):
 
 ### Human Review Gate
 
-**[If `.claude/auto-mode` exists]:** Gate is pre-approved — proceed immediately to output.
+**[If `.claude/unattended-mode` exists]:** Gate is pre-approved — proceed immediately to output.
 
-**[If `.claude/auto-mode` does NOT exist]:** Present an inline summary of the task breakdown so the user can evaluate without opening the file. Structure it exactly like this:
+**[If `.claude/unattended-mode` does NOT exist]:** Present an inline summary of the task breakdown so the user can evaluate without opening the file. Structure it exactly like this:
 
 ---
 
@@ -425,8 +425,8 @@ Specs written to (or amended in) `.claude/specs/{feature-name}/`:
 - tasks.md — Phased implementation tasks
 - feature.gherkin — BDD test scenarios
 
-[If `.claude/auto-mode` does NOT exist]: Next step: Run `/write-code #N` to plan and execute implementation.
-[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
+[If `.claude/unattended-mode` does NOT exist]: Next step: Run `/write-code #N` to plan and execute implementation.
+[If `.claude/unattended-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ---

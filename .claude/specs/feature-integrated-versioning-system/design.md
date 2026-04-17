@@ -202,7 +202,7 @@ Step 2b: Assign Milestone
    - Options: "v{major} (current)" as default, with text input for a different number
    - Accept a single number (e.g., "3") → normalize to "v3"
 
-3. [Auto-mode] Default to "v{major}" without prompting
+3. [Unattended-mode] Default to "v{major}" without prompting
 
 4. Check if milestone "v{N}" exists:
    gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title=="v{N}") | .number'
@@ -215,7 +215,7 @@ Step 2b: Assign Milestone
    gh issue create ... --milestone "v{N}"
 ```
 
-**Affected auto-mode section**: Add milestone defaulting (read VERSION → v{major}) to the auto-mode path that currently skips Steps 2-4.
+**Affected unattended-mode section**: Add milestone defaulting (read VERSION → v{major}) to the unattended-mode path that currently skips Steps 2-4.
 
 ### 2. `/open-pr` — Version Bumping & Artifact Updates
 
@@ -250,7 +250,7 @@ Step 2b: Assign Milestone
    - "Version bump: {current} → {new} ({bump_type}). Override?"
    - Options: "Accept {bump_type}", "Patch", "Minor", "Major"
 
-7. [Auto-mode] Apply classified bump without confirmation (patch or minor only)
+7. [Unattended-mode] Apply classified bump without confirmation (patch or minor only)
 ```
 
 **Step 1c: Update Version Artifacts**
@@ -547,7 +547,7 @@ This ensures backwards compatibility for projects that haven't migrated their te
 | Milestone API changes in `gh` CLI | Low | Medium | Use stable `gh api` REST endpoints, not experimental CLI subcommands |
 | Stack-specific file updates corrupt non-JSON files | Medium | High | Path syntax is well-defined; TOML support uses dot-notation same as JSON; skill reads full file before writing |
 | VERSION file doesn't exist on first `/open-pr` run | High (expected) | Low | Skill checks for VERSION existence and skips versioning gracefully if absent |
-| Developer forgets to manually apply major bump | Low | Medium | Milestone tracking and release notes serve as reminders; auto-mode only applies patch/minor |
+| Developer forgets to manually apply major bump | Low | Medium | Milestone tracking and release notes serve as reminders; unattended-mode only applies patch/minor |
 
 ---
 
@@ -575,7 +575,7 @@ Before moving to TASKS phase:
 - [x] Architecture follows existing project patterns (skills are Markdown prompts, not code)
 - [x] All skill modifications documented with insertion points and logic
 - [x] Template changes specified (tech.md Versioning section)
-- [x] Auto-mode handling specified for each skill
+- [x] Unattended-mode handling specified for each skill
 - [x] Alternatives were considered and documented
 - [x] Risks identified with mitigations
 - [x] Testing strategy defined (BDD + contract verification)

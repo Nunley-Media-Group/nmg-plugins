@@ -29,7 +29,7 @@
 
 ### Frequency
 
-Always — the rename instructions in Steps 4b–4e exist in the SKILL.md (added by #72) but are insufficiently explicit for Claude to execute reliably, and auto-mode incorrectly classifies simple renames as destructive operations.
+Always — the rename instructions in Steps 4b–4e exist in the SKILL.md (added by #72) but are insufficiently explicit for Claude to execute reliably, and unattended-mode incorrectly classifies simple renames as destructive operations.
 
 ---
 
@@ -37,8 +37,8 @@ Always — the rename instructions in Steps 4b–4e exist in the SKILL.md (added
 
 | | Description |
 |---|-------------|
-| **Expected** | `/migrate-project` detects legacy `{issue#}-{slug}/` spec directories and renames them to `feature-{slug}/` or `bug-{slug}/` based on spec type, with interactive confirmation in manual mode and automatic application for non-destructive solo renames in auto-mode |
-| **Actual** | Steps 4b–4e instructions lack explicit tool usage for directory operations (no `git mv` specified), auto-mode classifies all rename operations as destructive (skipping them), and the clustering algorithm at Step 4c does not clearly separate solo renames from multi-spec consolidation |
+| **Expected** | `/migrate-project` detects legacy `{issue#}-{slug}/` spec directories and renames them to `feature-{slug}/` or `bug-{slug}/` based on spec type, with interactive confirmation in manual mode and automatic application for non-destructive solo renames in unattended-mode |
+| **Actual** | Steps 4b–4e instructions lack explicit tool usage for directory operations (no `git mv` specified), unattended-mode classifies all rename operations as destructive (skipping them), and the clustering algorithm at Step 4c does not clearly separate solo renames from multi-spec consolidation |
 
 ### Error Output
 
@@ -61,7 +61,7 @@ No error — the skill either silently skips the rename step or fails to execute
 ### AC2: Interactive Rename Confirmation
 
 **Given** legacy spec directories are detected
-**And** `.claude/auto-mode` does NOT exist
+**And** `.claude/unattended-mode` does NOT exist
 **When** the skill presents rename proposals
 **Then** each rename is presented to the user via `AskUserQuestion` with options to approve or skip
 **And** approved renames execute using `git mv` to rename the directory
@@ -71,11 +71,11 @@ No error — the skill either silently skips the rename step or fails to execute
 ### AC3: Auto-Mode Applies Non-Destructive Renames
 
 **Given** legacy spec directories are detected
-**And** `.claude/auto-mode` exists
+**And** `.claude/unattended-mode` exists
 **When** `/migrate-project` is invoked
 **Then** solo directory renames (single directory → `feature-{slug}/` or `bug-{slug}/`) are applied automatically as non-destructive operations
 **And** multi-spec consolidation (merging multiple directories) remains classified as destructive and is skipped with a "Skipped Operations" entry
-**And** the auto-mode section of the SKILL.md explicitly distinguishes solo renames (non-destructive) from consolidation (destructive)
+**And** the unattended-mode section of the SKILL.md explicitly distinguishes solo renames (non-destructive) from consolidation (destructive)
 
 ### AC4: Cross-Reference Updates After Rename
 
@@ -96,7 +96,7 @@ No error — the skill either silently skips the rename step or fails to execute
 | FR2 | Determine correct prefix (`feature-` or `bug-`) from the spec's first `# ` heading (`# Requirements:` → feature, `# Defect Report:` → bug), consistent with existing Step 4c logic | Must |
 | FR3 | Execute directory renames using `git mv` (within the skill's `Bash(git:*)` allowed tools) with per-directory user confirmation in interactive mode | Must |
 | FR4 | Update `**Related Spec**` cross-references in other spec files after rename, using `Grep` to discover and `Edit` to update, with chain resolution for defect-to-defect traversal | Must |
-| FR5 | Reclassify solo directory renames as non-destructive in auto-mode (auto-applied), while keeping multi-spec consolidation as destructive (skipped) | Should |
+| FR5 | Reclassify solo directory renames as non-destructive in unattended-mode (auto-applied), while keeping multi-spec consolidation as destructive (skipped) | Should |
 
 ---
 

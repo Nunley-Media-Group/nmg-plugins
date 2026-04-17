@@ -63,16 +63,16 @@ By adding upfront classification and type-specific investigation steps, issues w
 - When: The skill investigates the bug
 - Then: It searches for the hook implementation, traces the logic, hypothesizes the root cause, asks the user "Does this root cause analysis look correct?", and includes it in the issue
 
-### AC4: Automation Mode Unchanged
+### AC4: Unattended Mode Unchanged
 
-**Given** the `.claude/auto-mode` file exists
+**Given** the `.claude/unattended-mode` file exists
 **When** the draft-issue skill is invoked
-**Then** behavior is unchanged — automation mode does not add type-classification or investigation steps (auto-mode skips the interview entirely, so there is no classification step to add)
+**Then** behavior is unchanged — unattended mode does not add type-classification or investigation steps (unattended-mode skips the interview entirely, so there is no classification step to add)
 
 **Example**:
-- Given: `.claude/auto-mode` exists and user runs `/draft-issue "add logging"`
-- When: The skill executes in auto-mode
-- Then: It follows the existing auto-mode path (skip interview, generate ACs from argument) with no changes
+- Given: `.claude/unattended-mode` exists and user runs `/draft-issue "add logging"`
+- When: The skill executes in unattended-mode
+- Then: It follows the existing unattended-mode path (skip interview, generate ACs from argument) with no changes
 
 ### AC5: Interview Flow Adapts After Classification
 
@@ -134,10 +134,10 @@ Feature: Upfront Issue Type Classification
     And confirms findings with the user
     And includes the analysis in the issue body
 
-  Scenario: Automation Mode Unchanged
-    Given the ".claude/auto-mode" file exists
+  Scenario: Unattended Mode Unchanged
+    Given the ".claude/unattended-mode" file exists
     When the draft-issue skill is invoked
-    Then behavior is unchanged from the current auto-mode path
+    Then behavior is unchanged from the current unattended-mode path
 
   Scenario: Interview Flow Adapts After Classification
     Given the issue type has been classified
@@ -164,7 +164,7 @@ Feature: Upfront Issue Type Classification
 | FR1 | Add upfront bug/enhancement/feature classification as the first interview question using `AskUserQuestion` | Must | Before any other interview questions |
 | FR2 | Enhancement path: explore existing specs in `.claude/specs/` and relevant source code; include "Current State" summary in issue body | Must | Uses Glob, Grep, Read tools |
 | FR3 | Bug path: search codebase, trace code paths, form root cause hypothesis, confirm with user via `AskUserQuestion` | Must | Present findings as hypothesis for user confirmation |
-| FR4 | Preserve existing automation mode behavior unchanged | Must | Auto-mode skips interview; no classification needed |
+| FR4 | Preserve existing unattended mode behavior unchanged | Must | Unattended-mode skips interview; no classification needed |
 | FR5 | Adapt remaining interview questions based on classified type | Should | Bug → reproduction-focused; Enhancement → improvement-focused |
 | FR6 | Include "Current State" section in enhancement issue body template | Must | Placed between Background and Acceptance Criteria |
 | FR7 | Include "Root Cause Analysis" section in bug issue body template | Must | Placed between Background and Acceptance Criteria |
@@ -229,7 +229,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 
 ## Out of Scope
 
-- Changes to automation mode behavior (explicitly excluded per AC4)
+- Changes to unattended mode behavior (explicitly excluded per AC4)
 - Changes to the bug report or enhancement issue templates' structure (content is richer, but sections remain the same except for the new Current State / Root Cause Analysis sections)
 - Changes to other SDLC skills (write-spec, write-code, etc.)
 - Automated codebase investigation without user confirmation (bug path always confirms hypothesis)

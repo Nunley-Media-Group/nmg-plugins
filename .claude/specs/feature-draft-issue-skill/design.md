@@ -199,7 +199,7 @@ FeatureScreen
 
 | Layer | Type | Coverage |
 |-------|------|----------|
-| Issue Creation | BDD | Scenarios for feature, bug, and auto-mode |
+| Issue Creation | BDD | Scenarios for feature, bug, and unattended-mode |
 | Template Output | Manual | Verify issue body matches expected format |
 
 ---

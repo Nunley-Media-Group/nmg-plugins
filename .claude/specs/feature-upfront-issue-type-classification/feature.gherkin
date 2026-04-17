@@ -49,15 +49,15 @@ Feature: Upfront Issue Type Classification
     And the section contains the hypothesis and relevant code references
     And the section includes the user's confirmation status
 
-  # --- Auto-mode ---
+  # --- Unattended-mode ---
 
-  Scenario: Automation Mode Unchanged
-    Given the ".claude/auto-mode" file exists in the project directory
+  Scenario: Unattended Mode Unchanged
+    Given the ".claude/unattended-mode" file exists in the project directory
     When the draft-issue skill is invoked
     Then the classification step is skipped
     And the investigation step is skipped
     And the interview step is skipped
-    And issue creation follows the existing auto-mode path unchanged
+    And issue creation follows the existing unattended-mode path unchanged
 
   # --- Interview Adaptation ---
 

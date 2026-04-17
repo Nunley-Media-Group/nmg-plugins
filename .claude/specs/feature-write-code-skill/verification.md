@@ -32,7 +32,7 @@
 | AC2 | Plan mode gets approval before coding | Pass | `SKILL.md:74-89` — Step 4: Design Implementation Approach |
 | AC3 | Tasks execute sequentially | Pass | `SKILL.md:91-103` — Step 5: Execute Tasks |
 | AC4 | Bug fixes follow fix strategy | Pass | `SKILL.md:106-112` — Bug Fix Implementation section |
-| AC5 | Automation mode skips plan approval | Pass | `SKILL.md:20-22` — Automation Mode section |
+| AC5 | Automation mode skips plan approval | Pass | `SKILL.md:20-22` — Unattended Mode section |
 
 ---
 
@@ -95,7 +95,7 @@ Linear: specs → steering docs → plan mode → task execution → completion 
 | AC2 — Plan mode | Yes | N/A | Yes |
 | AC3 — Sequential tasks | Yes | N/A | Yes |
 | AC4 — Bug fix | Yes | N/A | Yes |
-| AC5 — Auto-mode | Yes | N/A | Yes |
+| AC5 — Unattended-mode | Yes | N/A | Yes |
 
 ### Coverage Summary
 

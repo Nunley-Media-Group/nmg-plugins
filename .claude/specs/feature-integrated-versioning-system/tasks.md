@@ -90,7 +90,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Checks for existing milestone via `gh api repos/{owner}/{repo}/milestones`
 - [ ] Creates milestone via `gh api --method POST` if it doesn't exist
 - [ ] Passes milestone to `gh issue create` via `--milestone` flag in Step 7
-- [ ] Auto-mode: defaults to current major version milestone without prompting
+- [ ] Unattended-mode: defaults to current major version milestone without prompting
 - [ ] Subsequent step numbers are renumbered to account for the insertion
 - [ ] Existing skill functionality is preserved
 
@@ -110,7 +110,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Calculates new version string (patch: x.y.Z+1, minor: x.Y+1.0)
 - [ ] Major bumps are available only via manual override in the confirmation prompt
 - [ ] Manual mode: presents classification to developer via `AskUserQuestion` with override options (Accept / Patch / Minor / Major)
-- [ ] Auto-mode: applies classified bump without confirmation
+- [ ] Unattended-mode: applies classified bump without confirmation
 
 **Notes**: See design.md §2 Step 1b. Major bumps are manual-only — the developer overrides via the confirmation prompt.
 
@@ -291,7 +291,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] The instruction specifies: match issue labels against the Label column, use the corresponding Bump Type
 - [ ] Documents the fallback: if the subsection is missing, default to `bug` → patch, everything else → minor
 - [ ] The milestone completion override (Step 2 item 4) remains unchanged
-- [ ] Version calculation, user confirmation, and auto-mode behavior are unchanged
+- [ ] Version calculation, user confirmation, and unattended-mode behavior are unchanged
 - [ ] Existing skill functionality beyond classification lookup is preserved
 
 **Notes**: See design.md "Consumer Changes §1" for the updated step text. The key change is replacing 3 lines of inline table with a reference to the steering document.

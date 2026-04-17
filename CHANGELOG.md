@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [5.2.0] - 2026-04-17
+
+### Changed
+
+- **Renamed `.claude/auto-mode` to `.claude/unattended-mode` plugin-wide** (issue #118) — Claude Code v2.1.83 introduced a native "Auto Mode" permission feature that injects an "Auto mode is active" system-reminder into the model context, creating a lexical overlap with the plugin's own headless-execution flag. Renaming the plugin's flag to `.claude/unattended-mode` (a well-established sysadmin term for non-interactive execution) eliminates the overlap and makes the two conditions independently addressable. No behavior change — the flag continues to signal headless operation to all SDLC skills; only the path string changes.
+
+  **Migration:** If you previously created `.claude/auto-mode` manually to enable headless mode, rename or recreate it as `.claude/unattended-mode`. Users who run the pipeline only via `/run-loop` or `sdlc-runner.mjs` do not need to take action — the runner creates and removes the flag automatically.
+
 ## [5.1.0] - 2026-04-16
 
 ### Changed

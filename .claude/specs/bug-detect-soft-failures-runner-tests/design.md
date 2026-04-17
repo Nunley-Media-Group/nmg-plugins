@@ -13,7 +13,7 @@ The SDLC runner's success check (`sdlc-runner.mjs` line 1201) evaluates only `re
 
 The runner now uses `--output-format stream-json` (newline-delimited JSON events) and parses the final result via `extractResultFromStream()`, which `extractSessionId()` also uses to extract the `session_id` field. The `detectSoftFailure()` function uses `extractResultFromStream()` to check the `subtype` and `permission_denials` fields that indicate the step did not actually succeed.
 
-A contributing factor is that the `start-issue` SKILL.md positions the Automation Mode instruction (lines 18–22) as a mid-page section. While the instruction is correct ("skip `AskUserQuestion` when `.claude/auto-mode` exists"), it's not prominent enough for reliable model compliance in headless pipe mode. Claude ignored the instruction and called `AskUserQuestion` repeatedly, each call denied, consuming all turns.
+A contributing factor is that the `start-issue` SKILL.md positions the Unattended Mode instruction (lines 18–22) as a mid-page section. While the instruction is correct ("skip `AskUserQuestion` when `.claude/unattended-mode` exists"), it's not prominent enough for reliable model compliance in headless pipe mode. Claude ignored the instruction and called `AskUserQuestion` repeatedly, each call denied, consuming all turns.
 
 ### Affected Code
 
@@ -22,7 +22,7 @@ A contributing factor is that the `start-issue` SKILL.md positions the Automatio
 | `scripts/sdlc-runner.mjs` | 1201–1208 | Success path — assumes exit code 0 = step success, never parses JSON output |
 | `scripts/sdlc-runner.mjs` | 379–385 | `extractSessionId()` — already parses JSON for `session_id` but ignores `subtype` and `permission_denials` |
 | `scripts/sdlc-runner.mjs` | 957–1010 | `extractStateFromStep()` — reads `result.stdout` but only for issue/branch/PR extraction, not failure indicators |
-| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | 18–22 | Automation Mode instruction — correct content but insufficient prominence |
+| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | 18–22 | Unattended Mode instruction — correct content but insufficient prominence |
 
 ### Triggering Conditions
 
@@ -53,7 +53,7 @@ For the `start-issue` SKILL.md, add a bold critical callout at the top of the fi
 | `scripts/sdlc-runner.mjs` | Guard CLI bootstrap with `isMainModule` check; export internal functions | Enables importing functions for testing without triggering CLI execution |
 | `scripts/__tests__/sdlc-runner.test.mjs` | Create comprehensive Jest test suite | Covers all core runner functionality per AC5 |
 | `scripts/package.json` | Add Jest as dev dependency with ESM config | Required to run the test suite |
-| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | Add prominent automation callout at top; reinforce in Step 2 | Increases model compliance for auto-mode behavior |
+| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | Add prominent automation callout at top; reinforce in Step 2 | Increases model compliance for unattended-mode behavior |
 
 ### Blast Radius
 
@@ -70,7 +70,7 @@ For the `start-issue` SKILL.md, add a bold critical callout at the top of the fi
 | Normal exit-code-0 success treated as failure | Low | `detectSoftFailure()` checks specific fields (`subtype`, `permission_denials`); `subtype: "success"` with no denials passes through unchanged. AC3 regression test validates this. |
 | JSON parse failure on non-JSON output | Low | Wrap parsing in try/catch — if stdout isn't valid JSON, treat as non-soft-failure (preserve current behavior). Steps that don't produce JSON still work. |
 | Refactoring for exports breaks CLI execution | Low | Guard is `isMainModule` at the end of the file; all function definitions remain unchanged. Test verifies CLI still launches correctly. |
-| Starting-issues auto-mode change affects manual mode | None | The added callout only applies when `.claude/auto-mode` exists; manual-mode workflow is unchanged. |
+| Starting-issues unattended-mode change affects manual mode | None | The added callout only applies when `.claude/unattended-mode` exists; manual-mode workflow is unchanged. |
 
 ---
 

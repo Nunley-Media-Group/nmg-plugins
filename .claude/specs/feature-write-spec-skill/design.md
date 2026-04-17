@@ -9,7 +9,7 @@
 
 ## Overview
 
-The `/write-spec` skill is the specification engine of the nmg-sdlc workflow. It reads a GitHub issue and produces four spec documents through a 3-phase process: SPECIFY (requirements.md), PLAN (design.md), and TASKS (tasks.md + feature.gherkin). Each phase has a human review gate that can be bypassed in automation mode.
+The `/write-spec` skill is the specification engine of the nmg-sdlc workflow. It reads a GitHub issue and produces four spec documents through a 3-phase process: SPECIFY (requirements.md), PLAN (design.md), and TASKS (tasks.md + feature.gherkin). Each phase has a human review gate that can be bypassed in unattended mode.
 
 The skill includes a comprehensive template system with four template files in `plugins/nmg-sdlc/skills/write-spec/templates/`. Each template has a primary (feature) variant and a defect variant, selected based on the presence of a `bug` label on the GitHub issue. The feature name used for the spec directory follows a deterministic algorithm: issue number + kebab-case slug of the title.
 
@@ -56,11 +56,11 @@ The skill serves as the bridge between issue definition and implementation — i
 2. Skill reads GitHub issue via gh issue view
 3. Skill checks for bug label (defect detection)
 4. Phase 1: Read steering/product.md → generate requirements.md from template
-5. Human review gate (skip in auto-mode)
+5. Human review gate (skip in unattended-mode)
 6. Phase 2: Read steering/tech.md, structure.md → generate design.md from template
-7. Human review gate (skip in auto-mode)
+7. Human review gate (skip in unattended-mode)
 8. Phase 3: Generate tasks.md and feature.gherkin from templates
-9. Human review gate (skip in auto-mode)
+9. Human review gate (skip in unattended-mode)
 10. Output summary with file paths
 ```
 

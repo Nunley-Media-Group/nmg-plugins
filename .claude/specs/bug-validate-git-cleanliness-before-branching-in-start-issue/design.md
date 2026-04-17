@@ -25,7 +25,7 @@ The `sdlc-runner.mjs` orchestrator has its own precondition checks at the runner
 
 - The working tree has staged changes (from a failed `git commit`, a partial `git add`, etc.)
 - OR the working tree has unstaged modifications (edited files not yet staged)
-- AND `/start-issue` is invoked (either interactively or via auto-mode)
+- AND `/start-issue` is invoked (either interactively or via unattended-mode)
 - The skill reaches Step 4 and proceeds to `gh issue develop` without checking tree cleanliness
 
 ---
@@ -36,7 +36,7 @@ The `sdlc-runner.mjs` orchestrator has its own precondition checks at the runner
 
 Add a precondition check at the very beginning of Step 4 (before the existing `git branch --show-current` check) that runs `git status --porcelain` and inspects the output. If the output is non-empty, the skill aborts with an error message that lists the dirty files.
 
-For auto-mode, the error output follows the escalation pattern used elsewhere in the skill (e.g., the "No automatable issues found" exit): a structured message that the `sdlc-runner.mjs` can parse as a reason for escalation.
+For unattended-mode, the error output follows the escalation pattern used elsewhere in the skill (e.g., the "No automatable issues found" exit): a structured message that the `sdlc-runner.mjs` can parse as a reason for escalation.
 
 This is a Markdown-only change — the SKILL.md file is a prompt, not executable code. The fix adds a new subsection to Step 4 with clear instructions for Claude to follow.
 
@@ -44,7 +44,7 @@ This is a Markdown-only change — the SKILL.md file is a prompt, not executable
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | Add a "Working Tree Check" subsection at the beginning of Step 4, before the existing branch check. Instructions: run `git status --porcelain`, if output is non-empty abort with error listing dirty files. In auto-mode, format as escalation. | Addresses the root cause — no cleanliness guard before branching |
+| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | Add a "Working Tree Check" subsection at the beginning of Step 4, before the existing branch check. Instructions: run `git status --porcelain`, if output is non-empty abort with error listing dirty files. In unattended-mode, format as escalation. | Addresses the root cause — no cleanliness guard before branching |
 
 ### Blast Radius
 
@@ -59,7 +59,7 @@ This is a Markdown-only change — the SKILL.md file is a prompt, not executable
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | False positive: skill aborts on a clean tree | Very Low | `git status --porcelain` produces no output on a clean tree — the check is well-defined |
-| Auto-mode escalation format mismatch with runner expectations | Low | Use the same output pattern already established in the skill ("Done. Awaiting orchestrator." for successful exits, structured error message for failures) |
+| Unattended-mode escalation format mismatch with runner expectations | Low | Use the same output pattern already established in the skill ("Done. Awaiting orchestrator." for successful exits, structured error message for failures) |
 | POSIX compatibility of `git status --porcelain` | Very Low | `--porcelain` is a stable, cross-platform git flag designed for script consumption |
 
 ---

@@ -17,7 +17,7 @@
 
 ## Background
 
-The `/write-spec` skill reads a GitHub issue and generates three specification documents through sequential phases: (1) Requirements spec — captures what needs to be built with acceptance criteria and functional requirements, (2) Design spec — defines the technical approach with architecture decisions and component design, and (3) Tasks spec — breaks the design into ordered implementation tasks with file-level granularity and Gherkin feature scenarios. Each phase has a human review gate (skipped in automation mode) where the developer can request changes before proceeding. Specs are written to `.claude/specs/{feature-name}/` using a naming algorithm derived from the issue number and title. For bug issues (detected via `bug` label), all three phases use lighter defect-focused templates.
+The `/write-spec` skill reads a GitHub issue and generates three specification documents through sequential phases: (1) Requirements spec — captures what needs to be built with acceptance criteria and functional requirements, (2) Design spec — defines the technical approach with architecture decisions and component design, and (3) Tasks spec — breaks the design into ordered implementation tasks with file-level granularity and Gherkin feature scenarios. Each phase has a human review gate (skipped in unattended mode) where the developer can request changes before proceeding. Specs are written to `.claude/specs/{feature-name}/` using a naming algorithm derived from the issue number and title. For bug issues (detected via `bug` label), all three phases use lighter defect-focused templates.
 
 ---
 
@@ -43,7 +43,7 @@ The `/write-spec` skill reads a GitHub issue and generates three specification d
 
 ### AC4: Human Review Gates Pause Between Phases
 
-**Given** I am not in automation mode
+**Given** I am not in unattended mode
 **When** a phase completes
 **Then** the skill pauses for human review before proceeding to the next phase
 
@@ -110,7 +110,7 @@ The `/write-spec` skill reads a GitHub issue and generates three specification d
 | ID | Requirement | Priority | Notes |
 |----|-------------|----------|-------|
 | FR1 | 3-phase spec generation: requirements, design, tasks | Must | Sequential with review gates |
-| FR2 | Human review gates between phases (skippable in auto-mode) | Must | AskUserQuestion at each gate |
+| FR2 | Human review gates between phases (skippable in unattended-mode) | Must | AskUserQuestion at each gate |
 | FR3 | Specs written to `.claude/specs/{feature-name}/` directory | Must | Consistent naming |
 | FR4 | Feature name algorithm: issue number + kebab-case title slug | Must | Matches branch name format |
 | FR5 | Gherkin feature scenarios in the tasks phase | Must | `feature.gherkin` output |

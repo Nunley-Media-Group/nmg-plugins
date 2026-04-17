@@ -31,7 +31,7 @@
 | AC1 | Interactive interview gathers requirements | Pass | `plugins/nmg-sdlc/skills/draft-issue/SKILL.md:38-58` — Step 2 adaptive interview |
 | AC2 | Issue body follows BDD template | Pass | `SKILL.md:66-119` — Feature/enhancement template with Given/When/Then |
 | AC3 | Bug report uses defect template | Pass | `SKILL.md:125-175` — Bug report template with reproduction steps |
-| AC4 | Automation mode skips interview | Pass | `SKILL.md:20-22` — Auto-mode section with criteria inference |
+| AC4 | Automation mode skips interview | Pass | `SKILL.md:20-22` — Unattended-mode section with criteria inference |
 
 ---
 
@@ -92,7 +92,7 @@ Unidirectional: steering docs → interview → template → `gh issue create`.
 | AC1 — Interview | Yes | N/A | Yes |
 | AC2 — BDD template | Yes | N/A | Yes |
 | AC3 — Bug report | Yes | N/A | Yes |
-| AC4 — Auto-mode | Yes | N/A | Yes |
+| AC4 — Unattended-mode | Yes | N/A | Yes |
 
 ### Coverage Summary
 

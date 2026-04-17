@@ -63,7 +63,7 @@ The runner's `buildClaudeArgs()` function already supports per-step `maxTurns` a
 ~~**When** it executes write-code~~
 ~~**Then** it always runs two separate `claude -p` subprocesses sequentially~~
 
-> **Superseded by AC10 (issue #91):** The implement step now uses a single `runClaude()` invocation, matching all other runner steps. The skill's auto-mode logic handles planning internally.
+> **Superseded by AC10 (issue #91):** The implement step now uses a single `runClaude()` invocation, matching all other runner steps. The skill's unattended-mode logic handles planning internally.
 
 ### AC4: Backward Compatibility Preserved
 
@@ -117,7 +117,7 @@ The runner's `buildClaudeArgs()` function already supports per-step `maxTurns` a
 
 **Given** the runner reaches Step 4 (implement)
 **When** it executes the implement step
-**Then** it calls `runClaude()` once (like all other steps), using the skill's auto-mode to handle planning and execution internally
+**Then** it calls `runClaude()` once (like all other steps), using the skill's unattended-mode to handle planning and execution internally
 **And** the `runImplementStep()` function is no longer called
 **And** the `resolveImplementPhaseConfig()` function is no longer used
 
@@ -140,8 +140,8 @@ The runner's `buildClaudeArgs()` function already supports per-step `maxTurns` a
 ### AC12: Runner Prompt Simplified
 
 **Given** the runner builds the prompt for Step 4
-**When** `.claude/auto-mode` is active
-**Then** the prompt no longer includes "Do NOT call EnterPlanMode" (the skill handles this via its own auto-mode detection)
+**When** `.claude/unattended-mode` is active
+**Then** the prompt no longer includes "Do NOT call EnterPlanMode" (the skill handles this via its own unattended-mode detection)
 
 ### AC13: Backward Compatibility — Legacy plan/code Config
 
@@ -152,7 +152,7 @@ The runner's `buildClaudeArgs()` function already supports per-step `maxTurns` a
 
 ### AC15: Writing-Specs Auto-Mode Always Amends Existing Spec
 
-**Given** `.claude/auto-mode` exists
+**Given** `.claude/unattended-mode` exists
 **And** the write-spec spec discovery step finds one or more matching feature specs
 **When** the skill decides whether to amend or create a new spec
 **Then** it skips the `AskUserQuestion` prompt entirely and proceeds directly in amendment mode (amend the top-scored existing spec)
@@ -215,8 +215,8 @@ Feature: Per-step model and effort level configuration
     When the createPR step configuration is read
     Then maxTurns is 30
 
-  Scenario: Writing-specs auto-mode always amends existing spec
-    Given auto-mode is active
+  Scenario: Writing-specs unattended-mode always amends existing spec
+    Given unattended-mode is active
     And spec discovery finds a matching existing feature spec
     When the skill decides whether to amend or create
     Then it proceeds directly in amendment mode without calling AskUserQuestion
@@ -242,10 +242,10 @@ Feature: Per-step model and effort level configuration
 | FR12 | Remove `resolveImplementPhaseConfig()` function | Must | No longer needed without plan/code split |
 | FR13 | Update default model to `opus` and effort to `medium` for the implement step in `sdlc-config.example.json` | Must | Flat config, no nested `plan`/`code` objects |
 | FR14 | Remove nested `plan`/`code` config from `sdlc-config.example.json` | Must | Simplify to flat step config |
-| FR15 | Simplify Step 4 prompt in `buildClaudeArgs()` to remove "Do NOT call EnterPlanMode" instruction | Must | Skill handles auto-mode internally |
+| FR15 | Simplify Step 4 prompt in `buildClaudeArgs()` to remove "Do NOT call EnterPlanMode" instruction | Must | Skill handles unattended-mode internally |
 | FR16 | Update `validateConfig()` to stop validating `plan`/`code` sub-objects (ignore gracefully) | Should | Legacy configs should not break |
 | FR17 | Increase `createPR` step default `maxTurns` to 30 in `sdlc-config.example.json` | Must | PR creation needs more turns for version bumping |
-| FR18 | Fix write-spec auto-mode spec discovery to skip `AskUserQuestion` and directly amend | Must | Current instruction says "auto-select Option 1" which is fragile; should skip the prompt entirely |
+| FR18 | Fix write-spec unattended-mode spec discovery to skip `AskUserQuestion` and directly amend | Must | Current instruction says "auto-select Option 1" which is fragile; should skip the prompt entirely |
 
 ---
 
@@ -266,7 +266,7 @@ Feature: Per-step model and effort level configuration
 - [x] `sdlc-runner.mjs` — existing `buildClaudeArgs()` and step config merging infrastructure
 - [x] `sdlc-config.example.json` — existing config template
 - [x] All `SKILL.md` files — existing skill definitions (11 skills)
-- [x] `write-code/SKILL.md` — already has auto-mode support (line 22)
+- [x] `write-code/SKILL.md` — already has unattended-mode support (line 22)
 
 ### External Dependencies
 - [x] Claude Code CLI `--model` flag — already supported
@@ -285,14 +285,14 @@ Feature: Per-step model and effort level configuration
 - Per-skill effort in SKILL.md frontmatter (not supported by Claude Code — effort is session-level via env var)
 - Changes to the architecture-reviewer agent's model declaration (already hardcoded to Opus)
 - Per-step temperature or max-token configuration
-- Changes to `write-code` SKILL.md itself (its auto-mode logic is already correct)
+- Changes to `write-code` SKILL.md itself (its unattended-mode logic is already correct)
 - Changes to the plugin manifest model field
 
 ---
 
 ## Open Questions
 
-- [x] Should the implement split be opt-in or always-on? **Decision (issue #77)**: Always-on — the split is mandatory. **Reversed by issue #91**: The split is removed; a single invocation is used. The skill's auto-mode handles planning internally.
+- [x] Should the implement split be opt-in or always-on? **Decision (issue #77)**: Always-on — the split is mandatory. **Reversed by issue #91**: The split is removed; a single invocation is used. The skill's unattended-mode handles planning internally.
 
 ---
 
@@ -301,7 +301,7 @@ Feature: Per-step model and effort level configuration
 | Issue | Date | Summary |
 |-------|------|---------|
 | #77 | 2026-02-22 | Initial feature spec |
-| #91 | 2026-02-23 | Replace plan/code phase split with single write-code invocation; supersede AC3/FR4; add AC10–AC15, FR11–FR18; increase createPR maxTurns to 30; fix write-spec auto-mode spec discovery |
+| #91 | 2026-02-23 | Replace plan/code phase split with single write-code invocation; supersede AC3/FR4; add AC10–AC15, FR11–FR18; increase createPR maxTurns to 30; fix write-spec unattended-mode spec discovery |
 
 ---
 

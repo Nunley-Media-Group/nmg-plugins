@@ -168,7 +168,7 @@
 - [x] Step 5 is restructured: instead of executing tasks inline, it delegates to the `spec-implementer` agent via the Task tool
 - [x] The Task tool prompt includes: the implementation plan, task list contents, spec file paths, steering doc paths, and working directory context
 - [x] Step 6 receives the agent's completion summary and formats the final output
-- [x] Auto-mode behavior preserved: in auto-mode, Step 4 still skips `EnterPlanMode` and designs internally, then delegates to the agent
+- [x] Unattended-mode behavior preserved: in unattended-mode, Step 4 still skips `EnterPlanMode` and designs internally, then delegates to the agent
 - [x] Bug fix implementation path preserved: the agent receives the same defect-specific instructions
 
 ---
@@ -300,15 +300,15 @@
 - [ ] `CHANGELOG.md` has entries under `[Unreleased]` for: removal of plan/code split, simplified implement step, createPR maxTurns increase
 - [ ] `README.md` model/effort recommendations table is updated: implement step shows single invocation with `opus`/`medium` (no plan/code split mention)
 
-### T021: Fix write-spec auto-mode spec discovery
+### T021: Fix write-spec unattended-mode spec discovery
 
 **File(s)**: `plugins/nmg-sdlc/skills/write-spec/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
-- [ ] In the Spec Discovery section, step 6's auto-mode instruction is changed from "auto-select Option 1 (amend existing) without prompting" to: "skip `AskUserQuestion` entirely and proceed directly in amendment mode (amend the top-scored existing spec)"
-- [ ] The instruction makes clear that in auto-mode, no `AskUserQuestion` call is made at all — the skill goes straight to amendment mode
-- [ ] The non-auto-mode path (presenting the `AskUserQuestion` with amend vs create options) is unchanged
+- [ ] In the Spec Discovery section, step 6's unattended-mode instruction is changed from "auto-select Option 1 (amend existing) without prompting" to: "skip `AskUserQuestion` entirely and proceed directly in amendment mode (amend the top-scored existing spec)"
+- [ ] The instruction makes clear that in unattended-mode, no `AskUserQuestion` call is made at all — the skill goes straight to amendment mode
+- [ ] The non-unattended-mode path (presenting the `AskUserQuestion` with amend vs create options) is unchanged
 
 ---
 
@@ -338,7 +338,7 @@ T021 (independent — write-spec fix)
 | Issue | Date | Summary |
 |-------|------|---------|
 | #77 | 2026-02-22 | Initial feature spec: T001–T015 across 5 phases |
-| #91 | 2026-02-23 | Phase 6 (T016–T021): remove plan/code split, simplify implement step, increase createPR maxTurns, fix write-spec auto-mode spec discovery |
+| #91 | 2026-02-23 | Phase 6 (T016–T021): remove plan/code split, simplify implement step, increase createPR maxTurns, fix write-spec unattended-mode spec discovery |
 
 ---
 

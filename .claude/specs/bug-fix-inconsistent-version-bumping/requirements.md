@@ -25,7 +25,7 @@
 | **OS / Platform** | macOS (Darwin 25.3.0) |
 | **Version / Commit** | nmg-sdlc 2.12.5 |
 | **Browser / Runtime** | Node.js v24+ (sdlc-runner.mjs) |
-| **Configuration** | SDLC runner in auto-mode; chrome-cli project (Rust/Cargo) |
+| **Configuration** | SDLC runner in unattended-mode; chrome-cli project (Rust/Cargo) |
 
 ### Frequency
 
@@ -69,7 +69,7 @@ Under turn/time pressure, the LLM sometimes skips the version bumping steps and 
 
 ### AC2: Reinforced Skill Instructions (Defense-in-Depth)
 
-**Given** the `/open-pr` skill is running in auto-mode
+**Given** the `/open-pr` skill is running in unattended-mode
 **When** the LLM processes the skill instructions and the runner's Step 7 prompt
 **Then** both the skill text and the runner's Step 7 prompt explicitly state that version bumping is mandatory
 
@@ -91,7 +91,7 @@ Under turn/time pressure, the LLM sometimes skips the version bumping steps and 
 
 ### AC4: No Regression for Manual Workflow
 
-**Given** a developer runs `/open-pr` interactively (no auto-mode)
+**Given** a developer runs `/open-pr` interactively (no unattended-mode)
 **When** the skill reaches Step 2 (version bump)
 **Then** the existing interactive confirmation flow (`AskUserQuestion`) still works as before — the developer is prompted to confirm the version bump type and can override
 
@@ -105,7 +105,7 @@ Under turn/time pressure, the LLM sometimes skips the version bumping steps and 
 | FR2 | The deterministic step commits version changes with `chore: bump version to {new_version}` message format | Must |
 | FR3 | Add a postcondition check after PR creation (Step 7) that verifies `VERSION` changed vs `main`; retry the step if version was not bumped | Must |
 | FR4 | Strengthen the runner's Step 7 prompt to explicitly mention version bumping as mandatory (defense-in-depth alongside the deterministic step) | Should |
-| FR5 | Preserve the existing interactive version bump flow in `/open-pr` for manual (non-auto-mode) use | Must |
+| FR5 | Preserve the existing interactive version bump flow in `/open-pr` for manual (non-unattended-mode) use | Must |
 
 ---
 

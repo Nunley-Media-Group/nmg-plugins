@@ -274,7 +274,7 @@ Feature: Exercise-Based Verification for Plugin Projects
 | FR8 | Existing Step 5 behavior preserved when no plugin changes detected | Must | Non-plugin projects use standard BDD verification |
 | FR9 | Fallback to `claude -p` with `--disallowedTools AskUserQuestion` when Agent SDK unavailable | Should | Note fallback in report |
 | FR10 | Graceful degradation when exercise testing is infeasible | Should | Report skipped with reason + manual follow-up recommendation |
-| FR11 | Auto-mode support (non-interactive exercise, suppress verbose output) | Should | Consistent with existing auto-mode pattern |
+| FR11 | Unattended-mode support (non-interactive exercise, suppress verbose output) | Should | Consistent with existing unattended-mode pattern |
 | FR12 | Exercise script must dynamically resolve the Agent SDK path before importing, rather than relying on standard ESM bare-specifier resolution | Must | Bare `import "pkg"` only searches `node_modules` hierarchy; SDK may be elsewhere |
 | FR13 | SDK resolution must check known installation locations (npx cache, global `node_modules`, local `node_modules`) without requiring `NODE_PATH` | Must | `NODE_PATH` is ignored by ESM; resolution must be explicit |
 | FR14 | Module resolution approach must not create or depend on filesystem symlinks | Must | Per `structure.md` cross-platform contracts — symlinks require elevated privileges on Windows |

@@ -77,7 +77,7 @@ The nmg-sdlc toolkit provides individual skills for each SDLC phase (`/draft-iss
 
 **Given** the SKILL.md for this new skill has been written
 **When** the implementer runs `/doing-skills-right` against it
-**Then** all required structural elements (frontmatter, allowed-tools, auto-mode section, integration section) are present and the skill passes the best-practice review
+**Then** all required structural elements (frontmatter, allowed-tools, unattended-mode section, integration section) are present and the skill passes the best-practice review
 
 ### AC6: State Isolation Between Loop Iterations
 
@@ -109,9 +109,9 @@ The nmg-sdlc toolkit provides individual skills for each SDLC phase (`/draft-iss
 
 **Given** the runner is launched by the skill
 **When** the runner starts
-**Then** it creates `.claude/auto-mode` automatically (if not already present)
-**And** each `claude -p` subprocess detects `.claude/auto-mode` and suppresses interactive prompts
-**And** `.claude/auto-mode` is removed when the runner exits
+**Then** it creates `.claude/unattended-mode` automatically (if not already present)
+**And** each `claude -p` subprocess detects `.claude/unattended-mode` and suppresses interactive prompts
+**And** `.claude/unattended-mode` is removed when the runner exits
 
 ### Generated Gherkin Preview
 
@@ -161,8 +161,8 @@ Feature: Running SDLC Loop
     When the loop evaluates success
     Then it verifies the phase's expected postcondition artifact or state change
 
-  Scenario: Auto-mode propagation
-    Given ".claude/auto-mode" exists
+  Scenario: Unattended-mode propagation
+    Given ".claude/unattended-mode" exists
     When the loop invokes phase skills
     Then each phase skill suppresses interactive prompts independently
     And the loop skill itself never calls AskUserQuestion
@@ -175,8 +175,8 @@ Feature: Running SDLC Loop
 | ID | Requirement | Priority | Notes |
 |----|-------------|----------|-------|
 | FR1 | Skill accepts optional issue number argument; when omitted, runner loops all automatable issues | Must | Argument via `$ARGUMENTS`; maps to `--issue N` runner flag |
-| FR2 | Runner creates `.claude/auto-mode` on startup and removes it on exit; phase skills detect it independently | Must | Runner already does this; no skill-level auto-mode management needed |
-| FR3 | Runner selects issues via `gh issue list` (sorted oldest first) in `claude -p` subprocesses | Must | Existing runner behavior; `/start-issue` auto-mode pattern |
+| FR2 | Runner creates `.claude/unattended-mode` on startup and removes it on exit; phase skills detect it independently | Must | Runner already does this; no skill-level unattended-mode management needed |
+| FR3 | Runner selects issues via `gh issue list` (sorted oldest first) in `claude -p` subprocesses | Must | Existing runner behavior; `/start-issue` unattended-mode pattern |
 | FR4 | Skill invokes `sdlc-runner.mjs` with `CLAUDECODE=""` to enable subprocess spawning | Must | Phase sequence handled by runner: startCycle -> startIssue -> writeSpecs -> implement -> verify -> commitPush -> createPR -> monitorCI -> merge |
 | FR5 | Runner manages state via `sdlc-state.json` with per-step tracking, retry counts, and cycle detection | Must | Existing runner behavior; no duplicate state management in skill |
 | FR6 | On pipeline failure, runner escalates with issue number, failed step, and retry history; in single-issue mode (`--issue`), exits with code 1 | Must | Existing escalation for loop mode; new exit behavior for `--issue` mode |
@@ -233,7 +233,7 @@ Feature: Running SDLC Loop
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| Full-loop completion | Processes all automatable issues in a milestone without manual intervention | Invoke in auto-mode against a milestone with 2+ automatable issues |
+| Full-loop completion | Processes all automatable issues in a milestone without manual intervention | Invoke in unattended-mode against a milestone with 2+ automatable issues |
 | Single-issue completion | Produces a PR from a single issue invocation | Invoke with a specific issue number and confirm PR creation |
 | Failure isolation | Failure in one phase produces a clear diagnostic without corrupting state | Trigger a failure scenario and verify clean halt |
 | Skill validation | SKILL.md passes `/doing-skills-right` review | Run `/doing-skills-right` post-implementation |

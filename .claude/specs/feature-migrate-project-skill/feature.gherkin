@@ -237,8 +237,8 @@ Feature: Project Migration Skill
 
   # --- Auto-Mode ---
 
-  Scenario: Auto-mode skips interactive confirmations in write-spec
-    Given ".claude/auto-mode" exists in the project directory
+  Scenario: Unattended-mode skips interactive confirmations in write-spec
+    Given ".claude/unattended-mode" exists in the project directory
     And "/write-spec #71" finds a matching spec "feature-dark-mode"
     When the spec discovery step runs
     Then amendment is auto-approved without calling AskUserQuestion
@@ -280,8 +280,8 @@ Feature: Project Migration Skill
     And "sdlc-config.json" has "maxRetriesPerStep" still set to 2
     And JSON formatting is preserved with 2-space indentation
 
-  Scenario: Auto-mode reports drift but does not apply value updates
-    Given ".claude/auto-mode" exists in the project directory
+  Scenario: Unattended-mode reports drift but does not apply value updates
+    Given ".claude/unattended-mode" exists in the project directory
     And a project's "sdlc-config.json" has "steps.createPR.maxTurns" set to 15
     And the template default is 30
     When I run "/migrate-project"

@@ -28,7 +28,7 @@
 - [ ] Enhancement flow's "Summarize findings" step (now item 4) includes a bullet for relevant technical/architectural constraints from steering docs
 - [ ] Bug flow's "Form hypothesis" step (now item 4) accounts for constraints from steering docs when formulating the root cause hypothesis
 - [ ] Step 1 (`product.md` reading) is unchanged
-- [ ] Auto-mode note ("This step is skipped") remains unchanged
+- [ ] Unattended-mode note ("This step is skipped") remains unchanged
 - [ ] No unrelated changes included in the diff
 
 **Notes**: Follow the fix strategy from design.md. The new sub-step should instruct Claude to read both documents (if they exist) and note any constraints relevant to the enhancement/bug area. Use conditional language ("if it exists") since not all projects will have all three steering docs.
@@ -54,7 +54,7 @@
 - [ ] Step 1 still instructs reading `product.md` for product context
 - [ ] Step 3 Enhancement flow still explores specs and source code (items 1 and 2 unchanged)
 - [ ] Step 3 Bug flow still searches code and traces paths (items 1 and 2 unchanged)
-- [ ] Auto-mode note is preserved
+- [ ] Unattended-mode note is preserved
 - [ ] No side effects in related code paths (per blast radius from design.md)
 
 ---

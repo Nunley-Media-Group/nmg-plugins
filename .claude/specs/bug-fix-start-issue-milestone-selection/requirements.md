@@ -65,7 +65,7 @@ No error — the skill eventually works, but wastes agent turns iterating throug
 
 **Given** multiple milestones have open issues
 **When** the filtered milestone list contains more than one entry
-**Then** the user is presented with the filtered milestones to choose from (or in auto-mode, the milestone with the lowest version/name is selected)
+**Then** the user is presented with the filtered milestones to choose from (or in unattended-mode, the milestone with the lowest version/name is selected)
 
 ### AC4: No Regression — No Open Milestones Falls Back Gracefully
 
@@ -82,7 +82,7 @@ No error — the skill eventually works, but wastes agent turns iterating throug
 | FR1 | Fetch milestones with `open_issues` metadata using `gh api` with appropriate `--jq` filter, not just titles | Must |
 | FR2 | Filter milestones to those with `open_issues > 0` before attempting issue lookup | Must |
 | FR3 | Auto-select when only one viable milestone exists | Should |
-| FR4 | Present filtered list when multiple viable milestones exist; in auto-mode, select first alphabetically | Should |
+| FR4 | Present filtered list when multiple viable milestones exist; in unattended-mode, select first alphabetically | Should |
 | FR5 | Graceful fallback when no milestones have open issues or no milestones exist | Must |
 
 ---

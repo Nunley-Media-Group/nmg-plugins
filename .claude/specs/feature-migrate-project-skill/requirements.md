@@ -231,11 +231,11 @@ The migration skill should be **self-updating by design**: it reads the latest t
 
 ### AC24: Auto-Mode Compatibility
 
-**Given** `.claude/auto-mode` exists in the project directory
+**Given** `.claude/unattended-mode` exists in the project directory
 **When** `/write-spec` finds a matching existing spec
 **Then** the skill auto-approves the amendment (no `AskUserQuestion` prompt for spec match confirmation)
 
-> **Note**: `/migrate-project` is intentionally excluded from auto-mode for consolidation steps. Migration is a destructive, irreversible operation (it deletes legacy directories and merges content), so it always requires human confirmation regardless of `.claude/auto-mode`. The existing automation mode section in `/migrate-project` pre-dates this feature and correctly enforces this safety constraint.
+> **Note**: `/migrate-project` is intentionally excluded from unattended-mode for consolidation steps. Migration is a destructive, irreversible operation (it deletes legacy directories and merges content), so it always requires human confirmation regardless of `.claude/unattended-mode`. The existing unattended mode section in `/migrate-project` pre-dates this feature and correctly enforces this safety constraint.
 
 <!-- From issue #95 -->
 
@@ -270,9 +270,9 @@ The migration skill should be **self-updating by design**: it reads the latest t
 
 ### AC29: Auto-Mode Reports Drift but Does Not Apply Updates
 
-**Given** `.claude/auto-mode` exists
+**Given** `.claude/unattended-mode` exists
 **When** `/migrate-project` runs and finds config value drift
-**Then** the drift is included in the summary output but no values are automatically changed (value updates require explicit user approval even in auto-mode, as they may represent intentional customizations)
+**Then** the drift is included in the summary output but no values are automatically changed (value updates require explicit user approval even in unattended-mode, as they may represent intentional customizations)
 
 ---
 
@@ -293,12 +293,12 @@ The migration skill should be **self-updating by design**: it reads the latest t
 | FR11 | Scan project root for `sdlc-config.json` and compare against `scripts/sdlc-config.example.json` | Must | JSON key-level diffing |
 | FR12 | Merge missing config keys and new step definitions while preserving user-set values (projectPath, pluginsPath, custom timeouts) | Must | |
 | FR14 | `/write-spec` must search existing `feature-` prefixed spec directories for related features before creating a new spec | Must | Uses keyword extraction from issue title, then Grep over spec content |
-| FR15 | When a match is found, the user must be asked to confirm amendment vs new spec creation (unless auto-mode) | Must | Present top match with spec name and brief content summary |
+| FR15 | When a match is found, the user must be asked to confirm amendment vs new spec creation (unless unattended-mode) | Must | Present top match with spec name and brief content summary |
 | FR16 | Spec directories must be prefixed with `feature-` or `bug-` followed by the issue title slug (no issue number) | Must | Slug algorithm: lowercase, replace spaces/special chars with hyphens, collapse consecutive hyphens |
 | FR17 | Spec frontmatter must support tracking multiple contributing issue numbers with a `**Issues**` field | Must | Format: `**Issues**: #42, #71, #85` |
 | FR18 | Each spec must include a Change History section tracking which issue contributed what | Should | Table format: issue number, date, summary |
 | FR19 | `/migrate-project` must detect and propose consolidation of related legacy specs | Must | Keyword analysis across requirements and design content |
-| FR20 | All consolidation actions in `/migrate-project` must require explicit user confirmation (unless auto-mode) | Must | Each group approved individually |
+| FR20 | All consolidation actions in `/migrate-project` must require explicit user confirmation (unless unattended-mode) | Must | Each group approved individually |
 | FR21 | Amended specs must preserve all existing content and append new requirements/design/tasks | Must | No removal or replacement of existing content |
 | FR22 | Keyword matching for related spec detection should extract meaningful terms from issue title (filtering stop words) and search spec requirements and design content | Should | Score by hit count; present top matches |
 | FR23 | `/migrate-project` must update `**Related Spec**` fields in defect specs when consolidating their referenced feature specs | Must | Chain resolution with cycle detection |
@@ -309,7 +309,7 @@ The migration skill should be **self-updating by design**: it reads the latest t
 | FR28 | Report drifted values with current vs template default in migration summary under a "Config Value Drift" section | Must | Side-by-side display: `key: current → template` |
 | FR29 | Present per-value `AskUserQuestion multiSelect` for drift update approval in interactive mode | Must | Each drifted value is an individually selectable option |
 | FR30 | Apply approved drift updates using `Edit` tool, preserving JSON formatting | Must | Only selected values are updated; declined values untouched |
-| FR31 | Auto-mode: report drift in summary only, skip approval and application of value updates | Must | Value updates may represent intentional customizations |
+| FR31 | Unattended-mode: report drift in summary only, skip approval and application of value updates | Must | Value updates may represent intentional customizations |
 | FR32 | Skip comparison for keys present in project config but absent from template (user additions) | Should | Custom keys are user extensions, not drift candidates |
 
 ---
@@ -391,7 +391,7 @@ The migration skill should be **self-updating by design**: it reads the latest t
 
 ## Out of Scope
 
-- **Auto-mode support** — this skill is always interactive; migration is sensitive enough to require human review
+- **Unattended-mode support** — this skill is always interactive; migration is sensitive enough to require human review
 - **Version tracking / incremental migrations** — always migrates to current standards in one shot
 - **Migrating CLAUDE.md or hook configurations** — those are project-owned, not template-driven
 - **Creating missing files** — the skill updates existing files, not bootstrapping new ones (use `/setup-steering` or `/write-spec` for that)
@@ -433,7 +433,7 @@ The migration skill should be **self-updating by design**: it reads the latest t
 - [x] How should defect vs feature spec variants be detected? — Check for `# Defect Report:` heading in existing `requirements.md` or fall back to `gh issue view` label check
 - [x] Should the `**Issue**` field be renamed to `**Issues**` in existing templates? — Yes, for feature specs; defect specs keep singular `**Issue**` since they're per-bug
 - [x] How should the amendment handle conflicting design decisions between original and new issue? — Append new sections; human review gate resolves conflicts
-- [x] Should auto-mode auto-approve consolidation in `/migrate-project`? — No; migration is destructive and always requires human confirmation
+- [x] Should unattended-mode auto-approve consolidation in `/migrate-project`? — No; migration is destructive and always requires human confirmation
 
 ---
 
@@ -443,7 +443,7 @@ The migration skill should be **self-updating by design**: it reads the latest t
 |-------|------|---------|
 | #25 | 2026-02-15 | Initial feature spec: migration skill for steering docs, specs, and SDLC config |
 | #72 | 2026-02-22 | Added feature-centric spec management: spec discovery, amendment flow, naming convention changes, consolidation logic |
-| #95 | 2026-02-25 | Added config value drift detection to /migrate-project Step 5: value comparison, per-value approval, auto-mode reporting |
+| #95 | 2026-02-25 | Added config value drift detection to /migrate-project Step 5: value comparison, per-value approval, unattended-mode reporting |
 
 ---
 

@@ -193,7 +193,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - Automatic re-generation when the codebase changes
 - Integration with external documentation systems
 - Multi-repo project steering
-- Auto-mode support for the enhancement flow (interactive only)
+- Unattended-mode support for the enhancement flow (interactive only)
 - A menu of predefined enhancement options (the question is open-ended)
 - Automatic detection of what needs updating (e.g., drift between code and steering docs)
 - Multi-round conversation beyond the initial question and implementation

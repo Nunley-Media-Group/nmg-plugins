@@ -66,7 +66,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [x] Documents 6-step workflow (gather context, interview, synthesize, review, create, output)
 - [x] Includes feature/enhancement template with BDD acceptance criteria
 - [x] Includes bug report template variant
-- [x] Documents automation mode behavior
+- [x] Documents unattended mode behavior
 
 ---
 
