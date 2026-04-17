@@ -1,4 +1,4 @@
-# Verification Report: Automation Mode Support
+# Verification Report: Unattended Mode Support
 
 **Date**: 2026-02-15
 **Issue**: #11
@@ -28,8 +28,8 @@
 
 | AC | Description | Status | Evidence |
 |----|-------------|--------|----------|
-| AC1 | Auto-mode flag enables headless operation | Pass | All SKILL.md files check `.claude/auto-mode` |
-| AC2 | Writing-specs skips review gates | Pass | `write-spec/SKILL.md:29` — Automation Mode section |
+| AC1 | Unattended-mode flag enables headless operation | Pass | All SKILL.md files check `.claude/unattended-mode` |
+| AC2 | Writing-specs skips review gates | Pass | `write-spec/SKILL.md:29` — Unattended Mode section |
 | AC3 | Implementing-specs skips plan mode | Pass | `write-code/SKILL.md:20-22` — Skip EnterPlanMode |
 | AC4 | Creating-issues infers criteria | Pass | `draft-issue/SKILL.md:20-22` — Skip interview |
 | AC5 | Starting-issues auto-selects oldest | Pass | `start-issue/SKILL.md:20-22` — Oldest-first |
@@ -58,35 +58,35 @@
 
 | Principle | Score (1-5) | Notes |
 |-----------|-------------|-------|
-| Single Responsibility | 5 | Auto-mode is a single cross-cutting concern |
-| Open/Closed | 5 | Skills are extended with auto-mode without changing core logic |
+| Single Responsibility | 5 | Unattended-mode is a single cross-cutting concern |
+| Open/Closed | 5 | Skills are extended with unattended-mode without changing core logic |
 | Liskov Substitution | N/A | No inheritance |
-| Interface Segregation | 5 | Each skill handles only its own auto-mode behavior |
+| Interface Segregation | 5 | Each skill handles only its own unattended-mode behavior |
 | Dependency Inversion | 5 | Skills depend on abstract flag file, not orchestrator details |
 
 ### Layer Separation
 
-Clean cross-cutting pattern: flag file → per-skill behavior modification. No coupling between skills' auto-mode implementations.
+Clean cross-cutting pattern: flag file → per-skill behavior modification. No coupling between skills' unattended-mode implementations.
 
 ### Dependency Flow
 
-Each skill independently checks the flag file. No inter-skill dependencies for auto-mode.
+Each skill independently checks the flag file. No inter-skill dependencies for unattended-mode.
 
 ---
 
 ## Security Assessment
 
-- [x] Auto-mode requires local file creation (no remote activation)
+- [x] Unattended-mode requires local file creation (no remote activation)
 - [x] All-or-nothing prevents partial automation confusion
-- [x] No elevated permissions in auto-mode
+- [x] No elevated permissions in unattended-mode
 
 ---
 
 ## Performance Assessment
 
 - [x] File existence check is sub-millisecond
-- [x] Skipping interactive steps makes auto-mode faster
-- [x] No additional overhead when auto-mode is inactive
+- [x] Skipping interactive steps makes unattended-mode faster
+- [x] No additional overhead when unattended-mode is inactive
 
 ---
 
@@ -132,7 +132,7 @@ None.
 - Skill-level awareness avoids the infinite retry loops that plagued the hook-based approach
 - Simple flag file pattern is easy to understand and test
 - Consistent "Done. Awaiting orchestrator." signal provides clean handoff for external agents
-- Each skill's Automation Mode section documents exactly what changes, making behavior transparent
+- Each skill's Unattended Mode section documents exactly what changes, making behavior transparent
 
 ---
 
@@ -151,12 +151,12 @@ None.
 
 | File | Issues | Notes |
 |------|--------|-------|
-| `plugins/nmg-sdlc/skills/draft-issue/SKILL.md` | 0 | Auto-mode section present |
-| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | 0 | Auto-mode section present |
-| `plugins/nmg-sdlc/skills/write-spec/SKILL.md` | 0 | Auto-mode section present |
-| `plugins/nmg-sdlc/skills/write-code/SKILL.md` | 0 | Auto-mode section present |
-| `plugins/nmg-sdlc/skills/verify-code/SKILL.md` | 0 | Auto-mode section present |
-| `plugins/nmg-sdlc/skills/open-pr/SKILL.md` | 0 | Auto-mode signal present |
+| `plugins/nmg-sdlc/skills/draft-issue/SKILL.md` | 0 | Unattended-mode section present |
+| `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | 0 | Unattended-mode section present |
+| `plugins/nmg-sdlc/skills/write-spec/SKILL.md` | 0 | Unattended-mode section present |
+| `plugins/nmg-sdlc/skills/write-code/SKILL.md` | 0 | Unattended-mode section present |
+| `plugins/nmg-sdlc/skills/verify-code/SKILL.md` | 0 | Unattended-mode section present |
+| `plugins/nmg-sdlc/skills/open-pr/SKILL.md` | 0 | Unattended-mode signal present |
 
 ---
 
@@ -164,4 +164,4 @@ None.
 
 **Ready for PR**
 
-Feature has been implemented, verified, and merged. Auto-mode support is consistent across all 6 SDLC skills.
+Feature has been implemented, verified, and merged. Unattended-mode support is consistent across all 6 SDLC skills.

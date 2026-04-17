@@ -26,7 +26,7 @@ All feature development should align with these guidelines.
 
 | Characteristic | Implication |
 |----------------|-------------|
-| Headless execution | Skills must detect `.claude/auto-mode` and skip interactive prompts |
+| Headless execution | Skills must detect `.claude/unattended-mode` and skip interactive prompts |
 | Deterministic orchestration | Runner script drives steps sequentially with preconditions |
 | Log-based reporting | Status updates flow to console and log files |
 
@@ -47,7 +47,7 @@ All feature development should align with these guidelines.
 | Stack-agnostic | Never assume a specific language, framework, or tool — let steering docs provide specifics |
 | OS-agnostic | Must work on macOS, Windows, and Linux — no platform-specific assumptions |
 | Process over tooling | Provide the workflow structure; project steering provides the technical details |
-| Human gates by default | Interactive review at each phase; auto-mode is opt-in for automation |
+| Human gates by default | Interactive review at each phase; unattended mode is opt-in for automation |
 | Spec as source of truth | All implementation and verification traces back to spec documents |
 | Dogfooding | The SDLC develops itself — changes to skills are verified by exercising them in Claude Code |
 
@@ -107,7 +107,7 @@ All feature development should align with these guidelines.
 ```
 1. Runner picks oldest open issue from milestone
 2. Runs each skill sequentially via claude -p subprocesses
-3. Auto-approves all gates (auto-mode enabled)
+3. Auto-approves all gates (unattended mode enabled)
 4. Logs status updates at each step
 5. Creates PR, monitors CI, merges on green
 6. Loops to next issue
@@ -145,7 +145,7 @@ Each product principle translates to a verifiable behavioral contract. `/verify-
 | **Stack-agnostic** | Skills must not contain language, framework, or tool-specific instructions | Grep changed skill files for technology names (e.g., "React", "Python", "npm") that aren't Claude Code tool names |
 | **OS-agnostic** | No platform-specific paths, commands, or assumptions | Grep for hardcoded separators, Bash-only syntax, macOS/Windows/Linux-specific commands |
 | **Spec as source of truth** | Every implementation change traces to a requirement in the spec | Each modified file must map to a task in `tasks.md` or an AC in `requirements.md` |
-| **Human gates by default** | Interactive approval exists at every decision point | Skills contain `AskUserQuestion` at gates, guarded by auto-mode check |
+| **Human gates by default** | Interactive approval exists at every decision point | Skills contain `AskUserQuestion` at gates, guarded by unattended-mode check |
 | **Process over tooling** | Skills define workflow structure; project details live in steering docs | Skills reference steering docs for conventions, not hardcode them |
 | **Dogfooding** | Skill changes are verified by exercise, not just by reading | Changed skills must be loaded via `claude --plugin-dir` and invoked against a test project |
 

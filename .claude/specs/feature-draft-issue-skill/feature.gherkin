@@ -11,7 +11,7 @@ Feature: Creating Issues Skill
   # --- Happy Path ---
 
   Scenario: Interactive interview gathers requirements
-    Given I invoke "/draft-issue" without automation mode
+    Given I invoke "/draft-issue" without unattended mode
     When the skill starts
     Then it asks adaptive questions about the feature need
     And it skips topics I've already addressed
@@ -30,10 +30,10 @@ Feature: Creating Issues Skill
     Then the issue uses the bug report template
     And it includes reproduction steps, expected/actual behavior, and environment table
 
-  # --- Automation Mode ---
+  # --- Unattended Mode ---
 
   Scenario: Automation mode skips interview
-    Given automation mode is active with ".claude/auto-mode" file present
+    Given unattended mode is active with ".claude/unattended-mode" file present
     When I invoke "/draft-issue" with a feature description argument
     Then the skill skips the interview
     And it infers 3-5 acceptance criteria from steering docs

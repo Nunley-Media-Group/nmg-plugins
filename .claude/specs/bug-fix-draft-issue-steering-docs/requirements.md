@@ -82,7 +82,7 @@ Always — the skill never reads `tech.md` or `structure.md` in any code path du
 - Changing which steering docs Step 1 reads (product context gathering is separate from technical investigation)
 - Adding new steering document types beyond the existing three
 - Changes to the write-spec or other skills (even if they have similar gaps)
-- Auto-mode flow changes (auto-mode skips Step 3 entirely)
+- Unattended-mode flow changes (unattended-mode skips Step 3 entirely)
 
 ---
 

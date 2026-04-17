@@ -94,12 +94,12 @@ Feature: Integrated Versioning System
 
   # --- Auto-Mode ---
 
-  Scenario: AC10 - Auto-mode compatibility
-    Given .claude/auto-mode exists in the project
+  Scenario: AC10 - Unattended-mode compatibility
+    Given .claude/unattended-mode exists in the project
     And the VERSION file contains "2.3.1"
-    When /draft-issue runs in auto-mode
+    When /draft-issue runs in unattended-mode
     Then the milestone defaults to "v2" without prompting
-    When /open-pr runs in auto-mode for an enhancement issue
+    When /open-pr runs in unattended-mode for an enhancement issue
     Then the version bump to "2.4.0" is applied without confirmation
 
   # --- Edge Cases ---

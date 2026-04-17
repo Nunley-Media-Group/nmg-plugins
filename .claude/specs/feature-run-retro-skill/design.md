@@ -190,7 +190,7 @@ FeatureScreen
 
 | File | Purpose |
 |------|---------|
-| `plugins/nmg-sdlc/skills/run-retro/SKILL.md` | Skill definition — workflow, automation mode, integration |
+| `plugins/nmg-sdlc/skills/run-retro/SKILL.md` | Skill definition — workflow, unattended mode, integration |
 | `plugins/nmg-sdlc/skills/run-retro/templates/retrospective.md` | Template for the output steering document |
 
 ### Modified Files
@@ -367,7 +367,7 @@ The retrospective doc is optional because:
 {
   "version": 1,
   "specs": {
-    ".claude/specs/17-fix-auto-mode-cleanup-on-exit/requirements.md": {
+    ".claude/specs/17-fix-unattended-mode-cleanup-on-exit/requirements.md": {
       "hash": "a1b2c3d4e5f6...",
       "lastAnalyzed": "2026-02-22"
     },

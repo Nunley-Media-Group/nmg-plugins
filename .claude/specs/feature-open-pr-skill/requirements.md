@@ -17,7 +17,7 @@
 
 ## Background
 
-The `/open-pr` skill creates a GitHub pull request using `gh pr create` with a body that references the originating GitHub issue, links to the spec files in `.claude/specs/{feature-name}/`, and summarizes the implementation based on the tasks spec and verification report. The PR title and body are structured to give reviewers immediate context about what was built and why. In automation mode, the skill outputs a completion signal for the orchestrator instead of suggesting next steps.
+The `/open-pr` skill creates a GitHub pull request using `gh pr create` with a body that references the originating GitHub issue, links to the spec files in `.claude/specs/{feature-name}/`, and summarizes the implementation based on the tasks spec and verification report. The PR title and body are structured to give reviewers immediate context about what was built and why. In unattended mode, the skill outputs a completion signal for the orchestrator instead of suggesting next steps.
 
 ---
 
@@ -41,9 +41,9 @@ The `/open-pr` skill creates a GitHub pull request using `gh pr create` with a b
 **When** the PR body is generated
 **Then** it summarizes what was built, key decisions, and verification status
 
-### AC4: Automation Mode Outputs Completion Signal
+### AC4: Unattended Mode Outputs Completion Signal
 
-**Given** automation mode is active
+**Given** unattended mode is active
 **When** the PR is created
 **Then** the skill outputs `Done. Awaiting orchestrator.` instead of suggesting next steps
 

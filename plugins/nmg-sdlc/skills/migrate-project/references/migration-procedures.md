@@ -75,7 +75,7 @@ For the `sdlc-config.json`:
 
 ### Config value drift updates
 
-For each user-selected drifted value from Step 9 Part C (interactive mode only; this section is skipped entirely in auto-mode):
+For each user-selected drifted value from Step 9 Part C (interactive mode only; this section is skipped entirely in unattended mode):
 
 1. Read the current `sdlc-config.json`
 2. For each selected drifted value, locate the key in the JSON and use `Edit` to replace the old value with the template default value

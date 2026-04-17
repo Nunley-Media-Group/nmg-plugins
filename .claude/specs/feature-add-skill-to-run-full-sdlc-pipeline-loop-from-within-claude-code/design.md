@@ -97,7 +97,7 @@ allowed-tools: Read, Glob, Grep, Bash(node:*), Bash(test:*), Bash(cat:*), Skill
 
 | Tool | Purpose |
 |------|---------|
-| `Read` | Read config file, check auto-mode |
+| `Read` | Read config file, check unattended-mode |
 | `Glob` | Find config files |
 | `Grep` | Search config for paths |
 | `Bash(node:*)` | Invoke the runner: `CLAUDECODE="" node sdlc-runner.mjs ...` |
@@ -227,11 +227,11 @@ This is a known and documented pattern (see memory: "Exercise Testing Skills" se
 
 ## Auto-Mode Behavior
 
-The runner **automatically creates `.claude/auto-mode`** on startup (line 1917-1923 of `sdlc-runner.mjs`). This means:
+The runner **automatically creates `.claude/unattended-mode`** on startup (line 1917-1923 of `sdlc-runner.mjs`). This means:
 
-- The skill does NOT need to manage auto-mode — the runner handles it
-- The runner removes auto-mode on exit (`removeAutoMode()`)
-- Phase skills inside the runner's `claude -p` subprocesses will detect auto-mode and skip interactive prompts
+- The skill does NOT need to manage unattended-mode — the runner handles it
+- The runner removes unattended-mode on exit (`removeAutoMode()`)
+- Phase skills inside the runner's `claude -p` subprocesses will detect unattended-mode and skip interactive prompts
 
 ---
 
@@ -262,7 +262,7 @@ The runner **automatically creates `.claude/auto-mode`** on startup (line 1917-1
 | Layer | Type | Coverage |
 |-------|------|----------|
 | SKILL.md | Prompt quality review | Unambiguous instructions, correct tool refs, complete workflow paths |
-| SKILL.md | `/doing-skills-right` validation | Frontmatter, allowed-tools, auto-mode, integration section (AC5) |
+| SKILL.md | `/doing-skills-right` validation | Frontmatter, allowed-tools, unattended-mode, integration section (AC5) |
 | `sdlc-runner.mjs` | Unit tests (Jest) | New `--issue` flag behavior: single-cycle exit, prompt modification, escalation exit |
 | Feature | Exercise testing | Load plugin, invoke skill against a test project; verify runner starts and processes issue |
 | Integration | End-to-end | Process 1 issue in single-issue mode, verify PR created; process 2+ in loop mode |

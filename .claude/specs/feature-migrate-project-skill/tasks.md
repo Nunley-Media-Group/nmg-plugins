@@ -78,7 +78,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [x] Step 6: Present findings — display per-file summary of proposed additions for interactive review
 - [x] Step 7: Apply changes — if approved, use `Edit` to insert missing sections at correct positions; for JSON config, merge missing keys
 - [x] Step 8: Output summary — report all changes made
-- [x] No auto-mode support (skill is always interactive)
+- [x] No unattended-mode support (skill is always interactive)
 - [x] Heading extraction instructions explain how to parse template code blocks (content between ` ```markdown ` and ` ``` `)
 - [x] Insertion logic instructions explain positioning (insert after the predecessor section in template order)
 - [x] Variant detection instructions explain how to identify feature vs defect specs
@@ -206,7 +206,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [x] Describes search: `Glob` for `.claude/specs/feature-*/requirements.md`
 - [x] Describes scoring: `Grep` each keyword against each candidate, count hits, rank
 - [x] Describes presentation: top match(es) shown to user via `AskUserQuestion` with options "Amend existing" / "Create new spec"
-- [x] Auto-mode behavior specified: auto-select "Amend existing" when match found
+- [x] Unattended-mode behavior specified: auto-select "Amend existing" when match found
 - [x] No-match behavior specified: proceed directly to create new spec
 
 ### T012: Modify Phase 1 SPECIFY — Add Amendment Path
@@ -290,7 +290,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [x] Step 4c describes proposed feature name derivation: most descriptive slug, prefixed with `feature-`
 - [x] Step 4c handles solo specs: single legacy spec → simple rename to `feature-{slug}` (or `bug-{slug}`)
 - [x] Step 4d "Present Consolidation Candidates" describes user confirmation via `AskUserQuestion` per group
-- [x] Step 4d includes auto-mode note: **this skill is always interactive — auto-mode does NOT apply**
+- [x] Step 4d includes unattended-mode note: **this skill is always interactive — unattended-mode does NOT apply**
 
 ### T019: Add Step 4e — Apply Consolidation
 
@@ -374,7 +374,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [x] Uses Given/When/Then format
 - [x] Scenarios are independent and self-contained
 - [x] Feature file is valid Gherkin syntax
-- [x] Includes scenarios for: spec discovery (happy path, no match, rejection), naming convention, multi-issue tracking, amendment content preservation, migrate-project consolidation, defect cross-reference updates, downstream compatibility, auto-mode
+- [x] Includes scenarios for: spec discovery (happy path, no match, rejection), naming convention, multi-issue tracking, amendment content preservation, migrate-project consolidation, defect cross-reference updates, downstream compatibility, unattended-mode
 
 ---
 
@@ -414,10 +414,10 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Type**: Modify
 **Depends**: T027
 **Acceptance**:
-- [x] Automation Mode section updated: drift is reported in summary but NOT applied when `.claude/auto-mode` exists
+- [x] Unattended Mode section updated: drift is reported in summary but NOT applied when `.claude/unattended-mode` exists
 - [x] Drift values are NOT recorded in the "Skipped Operations" block (they are informational, not deferred destructive operations)
-- [x] The "Non-destructive" and "Destructive" classification lists mention config value drift as neither — it is an informational-only category in auto-mode
-- [x] Step 9 auto-mode path skips Part C (no approval prompt, no application)
+- [x] The "Non-destructive" and "Destructive" classification lists mention config value drift as neither — it is an informational-only category in unattended-mode
+- [x] Step 9 unattended-mode path skips Part C (no approval prompt, no application)
 
 ### T029: Add Drift Update Application to Step 10
 
@@ -445,7 +445,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [x] Scenarios appended at the end of the existing feature file
 - [x] Tagged with `# Added by issue #95` comment
 - [x] Uses Given/When/Then format
-- [x] Covers: drift detection, nested step values, per-value approval, approved/declined updates, auto-mode behavior
+- [x] Covers: drift detection, nested step values, per-value approval, approved/declined updates, unattended-mode behavior
 
 ---
 
@@ -486,7 +486,7 @@ T010 ──┬──▶ T011 ──▶ T012 ──▶ T013 ──▶ T014 ──
 |-------|------|---------|
 | #25 | 2026-02-15 | Initial task breakdown: migration skill for steering docs, specs, and SDLC config (6 tasks) |
 | #72 | 2026-02-22 | Added 19 tasks for feature-centric spec management: templates, write-spec amendment flow, migrate-project consolidation, downstream skill updates |
-| #95 | 2026-02-25 | Added 5 tasks for config value drift detection: value comparison, approval flow, auto-mode reporting, BDD scenarios |
+| #95 | 2026-02-25 | Added 5 tasks for config value drift detection: value comparison, approval flow, unattended-mode reporting, BDD scenarios |
 
 ---
 

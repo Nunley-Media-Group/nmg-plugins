@@ -66,7 +66,7 @@ If a `VERSION` file exists in the project root, determine the appropriate versio
      - "Major ({current} → {major_version})"
    ```
 
-> **Auto-mode**: Apply the classified bump without confirmation. Do not call `AskUserQuestion`.
+> **Unattended-mode**: Apply the classified bump without confirmation. Do not call `AskUserQuestion`.
 
 ### Step 3: Update Version Artifacts
 
@@ -184,8 +184,8 @@ Issue: Closes #N
 [If specs-found]: The PR links to specs at .claude/specs/{feature}/ and will close issue #N when merged.
 [If specs-not-found]: The PR extracts acceptance criteria from the issue body and will close issue #N when merged.
 
-[If `.claude/auto-mode` does NOT exist]: Next step: Wait for CI to pass, then merge the PR to close issue #N. After merging, you can start the next issue with `/draft-issue` (for new work) or `/start-issue` (to pick up an existing issue).
-[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
+[If `.claude/unattended-mode` does NOT exist]: Next step: Wait for CI to pass, then merge the PR to close issue #N. After merging, you can start the next issue with `/draft-issue` (for new work) or `/start-issue` (to pick up an existing issue).
+[If `.claude/unattended-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ---

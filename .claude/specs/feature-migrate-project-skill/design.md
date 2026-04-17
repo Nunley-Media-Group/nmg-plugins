@@ -207,9 +207,9 @@ options:
   - ...one option per drifted value
 ```
 
-**Auto-mode behavior:**
+**Unattended-mode behavior:**
 
-When `.claude/auto-mode` exists, config value drift is:
+When `.claude/unattended-mode` exists, config value drift is:
 - **Reported** in the summary output (so the orchestrator/user can see it)
 - **NOT applied** — value updates are skipped without recording as "skipped operations" (they are informational, not deferred destructive operations)
 - Rationale: drifted values may be intentional customizations (e.g., a project deliberately set lower `maxTurns` for cost control). Automatic updates could break working configurations.
@@ -290,7 +290,7 @@ The skill uses `${CLAUDE_PLUGIN_ROOT}` or resolves paths relative to the skill's
 | Consolidation | BDD | Legacy dirs merged into feature-prefixed dir correctly |
 | Config value drift detection | BDD | Drifted scalar values detected for root and step keys |
 | Config drift per-value approval | BDD | User selects which drifts to update; declined values preserved |
-| Config drift auto-mode | BDD | Drift reported but not applied when auto-mode enabled |
+| Config drift unattended-mode | BDD | Drift reported but not applied when unattended-mode enabled |
 
 ---
 
@@ -306,10 +306,10 @@ The skill uses `${CLAUDE_PLUGIN_ROOT}` or resolves paths relative to the skill's
 | Keyword matching produces false positives (unrelated specs matched) | Medium | Low | Human confirmation gate; user can reject match and create new spec |
 | Keyword matching misses related spec (false negative) | Medium | Medium | User can manually specify which spec to amend; keywords are extractable from issue title which should share terminology |
 | Amendment corrupts existing spec content | Low | High | Amendments write full file content atomically (not partial edits); Change History provides audit trail |
-| Legacy migration removes specs that shouldn't be consolidated | Low | High | Every consolidation requires explicit user confirmation; auto-mode does not apply to destructive consolidation |
+| Legacy migration removes specs that shouldn't be consolidated | Low | High | Every consolidation requires explicit user confirmation; unattended-mode does not apply to destructive consolidation |
 | Branch name no longer matches spec directory | Medium | Low | Updated path resolution algorithm checks `**Issues**` frontmatter first, falls back to slug matching |
 | Defect spec cross-references break during consolidation | Medium | Medium | Chain resolution with cycle detection (already proven in current migrate-project Step 4a) |
-| Drift detection flags intentional customizations | High | Low | Per-value selection lets users decline updates; auto-mode never auto-applies value changes |
+| Drift detection flags intentional customizations | High | Low | Per-value selection lets users decline updates; unattended-mode never auto-applies value changes |
 | Drift detection misses nested values | Low | Medium | Recursive comparison for `steps.*` sub-keys; complex objects (arrays) excluded from comparison to avoid false positives |
 | JSON formatting corrupted during drift update | Low | Medium | Use `Edit` to replace individual values; re-read file to verify after each update |
 
@@ -357,7 +357,7 @@ This section is added between "Defect Detection" and "Phase 1: SPECIFY". It runs
    - Present to user via `AskUserQuestion`:
      - Option 1: "Amend existing spec: `feature-{slug}`" (with brief description)
      - Option 2: "Create new spec" (derives new `feature-{slug}` from current issue title)
-   - If auto-mode: select Option 1 (amend) automatically
+   - If unattended-mode: select Option 1 (amend) automatically
 7. If no candidates found: proceed to create new spec
 
 ### Amendment Flow: Phase 1 — SPECIFY
@@ -471,7 +471,7 @@ For each group (and solo migration candidates):
 3. Use `AskUserQuestion` for each group:
    - Option 1: "Consolidate into `feature-{slug}/`"
    - Option 2: "Skip — leave as-is"
-   - **Auto-mode does NOT apply** — migration is always interactive (destructive operation: directories are deleted; requires human confirmation)
+   - **Unattended-mode does NOT apply** — migration is always interactive (destructive operation: directories are deleted; requires human confirmation)
 
 ### New Step 4e: Apply Consolidation
 
@@ -671,7 +671,7 @@ Same changes as write-code (equivalent section).
 |-------|------|---------|
 | #25 | 2026-02-15 | Initial design: migration skill with heading-based section diffing |
 | #72 | 2026-02-22 | Added feature-centric spec management design: spec discovery, amendment flow, consolidation steps, path resolution algorithm |
-| #95 | 2026-02-25 | Added config value drift detection design: value comparison algorithm, per-value approval flow, auto-mode reporting behavior |
+| #95 | 2026-02-25 | Added config value drift detection design: value comparison algorithm, per-value approval flow, unattended-mode reporting behavior |
 
 ---
 

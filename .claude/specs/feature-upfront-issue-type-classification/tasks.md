@@ -41,13 +41,13 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ## Phase 1: Setup
 
-### T001: Update auto-mode section and step numbering scaffold
+### T001: Update unattended-mode section and step numbering scaffold
 
 **File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
-- [ ] Auto-mode section references new step numbers (skip Steps 2, 3, 4 instead of just Step 2; skip Step 6 instead of Step 4)
+- [ ] Unattended-mode section references new step numbers (skip Steps 2, 3, 4 instead of just Step 2; skip Step 6 instead of Step 4)
 - [ ] Existing Steps 2–6 renumbered to Steps 4–8 to make room for new Steps 2 and 3
 - [ ] All internal step references updated to match new numbering
 - [ ] No content changes yet — just structural renumbering
@@ -67,7 +67,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] New "### Step 2: Classify Issue Type" section inserted after Step 1
 - [ ] Uses `AskUserQuestion` with two options: "Bug" and "Enhancement / Feature"
 - [ ] Includes descriptions for each option ("Something is broken or behaving incorrectly" / "New capability or improvement to existing behavior")
-- [ ] Notes that auto-mode skips this step
+- [ ] Notes that unattended-mode skips this step
 
 ### T003: Add Step 3 — Investigate Codebase
 
@@ -79,7 +79,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Enhancement sub-path: Glob for `.claude/specs/*/requirements.md`, Grep/Read relevant source code, produce "Current State" summary
 - [ ] Bug sub-path: Grep for related code, Read and trace paths, form root cause hypothesis, confirm with user via `AskUserQuestion`
 - [ ] Graceful fallback if investigation finds nothing relevant
-- [ ] Notes that auto-mode skips this step
+- [ ] Notes that unattended-mode skips this step
 
 ### T004: Modify Step 4 — Type-adapted interview questions
 

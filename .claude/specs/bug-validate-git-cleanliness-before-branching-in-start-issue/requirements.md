@@ -65,7 +65,7 @@ which is the core problem.
 ### AC2: Auto-Mode Escalation for Dirty Tree
 
 **Given** the working tree has uncommitted changes
-**And** `.claude/auto-mode` exists
+**And** `.claude/unattended-mode` exists
 **When** `/start-issue` is invoked
 **Then** the dirty working tree is reported as an escalation reason (not a silent abort)
 **And** no branch is created
@@ -91,7 +91,7 @@ which is the core problem.
 |----|-------------|----------|
 | FR1 | Run `git status --porcelain` as a precondition check before `gh issue develop` (Step 4 of the skill) | Must |
 | FR2 | Abort with clear error listing dirty files if the tree is not clean | Must |
-| FR3 | In auto-mode, report the dirty tree as an escalation reason rather than silently aborting | Should |
+| FR3 | In unattended-mode, report the dirty tree as an escalation reason rather than silently aborting | Should |
 
 ---
 

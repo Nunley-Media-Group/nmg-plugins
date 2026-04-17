@@ -64,10 +64,10 @@ Feature: Running SDLC Loop
     And checks out main and pulls latest before starting the next cycle
     And the issue number is determined from the branch name after step 2 (ground truth)
 
-  Scenario: Auto-mode propagation
+  Scenario: Unattended-mode propagation
     Given the runner is launched by the skill
     When the runner starts
-    Then it creates ".claude/auto-mode" automatically
-    And each phase skill running in claude -p subprocesses detects auto-mode
+    Then it creates ".claude/unattended-mode" automatically
+    And each phase skill running in claude -p subprocesses detects unattended-mode
     And all interactive prompts are suppressed throughout the pipeline
-    And auto-mode is removed when the runner exits
+    And unattended-mode is removed when the runner exits

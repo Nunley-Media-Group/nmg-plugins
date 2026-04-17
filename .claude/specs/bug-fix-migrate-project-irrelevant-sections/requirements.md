@@ -120,7 +120,7 @@ All three sections contain placeholder content ([convention], [example]) that ad
 
 - Changes to the steering templates themselves
 - Changes to `/setup-steering` behavior
-- Auto-mode support for this skill (it's always interactive by design)
+- Unattended-mode support for this skill (it's always interactive by design)
 - Relevance filtering for spec files (only steering docs are affected)
 - Refactoring beyond the minimal fix scope
 

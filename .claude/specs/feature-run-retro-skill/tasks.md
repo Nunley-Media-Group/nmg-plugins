@@ -67,7 +67,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [x] `name: run-retro` matches directory name
 - [x] `allowed-tools` includes Read, Glob, Grep, Write, Edit, Bash(gh:*)
 - [x] Includes "When to Use" section
-- [x] Includes "Automation Mode" section (checks `.claude/auto-mode`)
+- [x] Includes "Unattended Mode" section (checks `.claude/unattended-mode`)
 - [x] Includes numbered workflow steps matching design.md data flow
 - [x] Step 1: Scan for defect specs via Glob + Grep for `Severity:` field
 - [x] Step 2: Filter to specs with `Related Spec:` field
@@ -202,7 +202,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [x] Step 9 summary includes spec partition breakdown: total, new, modified, skipped (unchanged), removed (deleted)
 - [x] Step 9 summary includes learning source breakdown: new vs. carried forward
 - [x] Step 9 mentions state file output path (`.claude/steering/retrospective-state.json`)
-- [x] Auto-mode variant of summary is also updated
+- [x] Unattended-mode variant of summary is also updated
 
 ### T012: Update Graceful Handling Table
 

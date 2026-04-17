@@ -17,25 +17,25 @@ Update existing project files (steering docs, specs, runner configs) to the late
 - When steering docs or specs were created with an older plugin version
 - To check whether project files are up to date with current standards
 
-## Automation Mode
+## Unattended Mode
 
-If the file `.claude/auto-mode` exists in the project directory, this skill applies **non-destructive changes automatically** and **skips destructive operations** (which require interactive approval). Do NOT call `AskUserQuestion` in auto-mode.
+If the file `.claude/unattended-mode` exists in the project directory, this skill applies **non-destructive changes automatically** and **skips destructive operations** (which require interactive approval). Do NOT call `AskUserQuestion` in unattended mode.
 
-**Non-destructive (auto-applied in auto-mode):** Steering doc section additions, spec file section additions, Related Spec link corrections, legacy frontmatter migration (`Issue` → `Issues`, Change History additions), runner config key additions, CHANGELOG.md fixes, VERSION file creation/update, legacy directory renames — solo (Steps 4d–4e).
+**Non-destructive (auto-applied in unattended mode):** Steering doc section additions, spec file section additions, Related Spec link corrections, legacy frontmatter migration (`Issue` → `Issues`, Change History additions), runner config key additions, CHANGELOG.md fixes, VERSION file creation/update, legacy directory renames — solo (Steps 4d–4e).
 
-**Destructive (skipped in auto-mode):** Spec directory consolidation, legacy directory deletes (Steps 4b–4e). For each skipped operation, record it in a "Skipped Operations" list to output at Step 9.
+**Destructive (skipped in unattended mode):** Spec directory consolidation, legacy directory deletes (Steps 4b–4e). For each skipped operation, record it in a "Skipped Operations" list to output at Step 9.
 
-**Informational only (reported but not applied in auto-mode):** Config value drift (Step 5 sub-step 6). Drifted values are included in the migration summary for visibility but are NOT automatically updated and are NOT recorded in the "Skipped Operations" block. Value updates may represent intentional customizations and require explicit per-value user approval in interactive mode.
+**Informational only (reported but not applied in unattended mode):** Config value drift (Step 5 sub-step 6). Drifted values are included in the migration summary for visibility but are NOT automatically updated and are NOT recorded in the "Skipped Operations" block. Value updates may represent intentional customizations and require explicit per-value user approval in interactive mode.
 
-**In auto-mode:**
+**In unattended mode:**
 - Step 4d: For solo renames (`feature-` or `bug-` targets), auto-apply `git mv`, frontmatter updates, and cross-reference updates without `AskUserQuestion`. For consolidation groups, skip `AskUserQuestion` and record each group as a skipped operation. Proceed to Step 4f
 - Step 8 Part A: Auto-select all proposed steering doc sections (equivalent to selecting all)
 - Step 8 Part B: Auto-approve all non-destructive changes; skip any destructive operations (record them as skipped)
 - Step 8 Part C: Skip entirely — do not prompt for config value drift updates; drift is reported in the summary only
-- Step 9: After applying changes, emit a machine-readable "Skipped Operations (Auto-Mode)" section
-- Do NOT write to `.claude/migration-exclusions.json` (nothing is declined in auto-mode)
+- Step 9: After applying changes, emit a machine-readable "Skipped Operations (Unattended-Mode)" section
+- Do NOT write to `.claude/migration-exclusions.json` (nothing is declined in unattended mode)
 
-**When `.claude/auto-mode` does NOT exist**, all existing interactive behavior is preserved unchanged — present all findings via `AskUserQuestion` as described in Step 8.
+**When `.claude/unattended-mode` does NOT exist**, all existing interactive behavior is preserved unchanged — present all findings via `AskUserQuestion` as described in Step 8.
 
 ## What Gets Analyzed
 
@@ -58,7 +58,7 @@ VERSION                        — Single source of truth for project version (p
 
 ## Workflow
 
-**Before Step 1:** Check whether `.claude/auto-mode` exists in the project root. Set an auto-mode flag for the entire session. This flag determines behavior at Step 4d, Step 8, and Step 9 — check it once here rather than re-reading the file at each branch point.
+**Before Step 1:** Check whether `.claude/unattended-mode` exists in the project root. Set an unattended-mode flag for the entire session. This flag determines behavior at Step 4d, Step 8, and Step 9 — check it once here rather than re-reading the file at each branch point.
 
 ### Step 1: Resolve Template Paths
 
@@ -185,12 +185,12 @@ For each group (and solo migration candidates):
 1. Show the source directories and proposed target name
 2. Show a brief summary of each source spec's content (first heading, issue number, status)
 
-**If `.claude/auto-mode` exists:** Handle solo renames and consolidation groups differently:
+**If `.claude/unattended-mode` exists:** Handle solo renames and consolidation groups differently:
    - **Solo renames** (type: `"rename"` or `"rename-bug"` — single directory → `feature-{slug}/` or `bug-{slug}/`): These are non-destructive. Execute the rename automatically — proceed to Step 4e to apply `git mv`, frontmatter updates, and cross-reference updates without `AskUserQuestion`. Do NOT record solo renames as skipped operations.
    - **Consolidation groups** (type: `"consolidation"` — multiple directories merged into one): These are destructive. Skip `AskUserQuestion` and record each group as a skipped operation (affected paths: source directories, reason: "Destructive operation requires interactive approval").
    After processing all groups, proceed to Step 4f.
 
-**If `.claude/auto-mode` does NOT exist:** Use `AskUserQuestion` for each group:
+**If `.claude/unattended-mode` does NOT exist:** Use `AskUserQuestion` for each group:
    - Option 1: "Consolidate into `feature-{slug}/`" (or "Rename to `feature-{slug}/`" / "Rename to `bug-{slug}/`" for solo specs)
    - Option 2: "Skip — leave as-is"
 
@@ -350,9 +350,9 @@ And stop here.
 
 Otherwise, proceed to approval. The approval flow has three parts:
 
-**If `.claude/auto-mode` exists:** Skip Part A, Part B, and Part C approval prompts. Auto-select all proposed steering doc sections (equivalent to selecting all). Auto-approve all non-destructive changes (including solo directory renames already applied in Step 4d). Any remaining destructive operations (consolidations, legacy directory deletes) that were not already recorded in Step 4d should be recorded as skipped operations now. Config value drift is reported in the summary but NOT applied — skip Part C entirely (value updates may represent intentional customizations). Proceed directly to Step 9.
+**If `.claude/unattended-mode` exists:** Skip Part A, Part B, and Part C approval prompts. Auto-select all proposed steering doc sections (equivalent to selecting all). Auto-approve all non-destructive changes (including solo directory renames already applied in Step 4d). Any remaining destructive operations (consolidations, legacy directory deletes) that were not already recorded in Step 4d should be recorded as skipped operations now. Config value drift is reported in the summary but NOT applied — skip Part C entirely (value updates may represent intentional customizations). Proceed directly to Step 9.
 
-**If `.claude/auto-mode` does NOT exist:** Follow the interactive approval flow below.
+**If `.claude/unattended-mode` does NOT exist:** Follow the interactive approval flow below.
 
 #### Part A: Steering doc sections (per-section approval)
 
@@ -429,19 +429,19 @@ Follow the detailed apply procedures in [references/migration-procedures.md](ref
 3. **Markdown files** — Insert missing sections after their predecessor heading using `Edit`. Add `---` separator matching file style. Re-read to verify.
 4. **Related Spec corrections** — Replace `**Related Spec**:` lines with resolved feature spec paths.
 5. **JSON config** — Add missing keys only; never overwrite existing values.
-6. **Config value drift updates** — For each user-selected drifted value from Part C (interactive mode only; skipped in auto-mode):
+6. **Config value drift updates** — For each user-selected drifted value from Part C (interactive mode only; skipped in unattended mode):
    - Read the current `sdlc-config.json`
    - Use `Edit` to replace the old value with the template default value, matching the exact JSON formatting (2-space indentation)
    - Re-read the file after each update to verify the change was applied correctly
    - Preserve all other values — only the explicitly selected values are updated
-7. **Persist declined sections** — If NOT in auto-mode, save unselected steering doc sections to `.claude/migration-exclusions.json`. In auto-mode, skip this step (nothing is declined).
+7. **Persist declined sections** — If NOT in unattended mode, save unselected steering doc sections to `.claude/migration-exclusions.json`. In unattended mode, skip this step (nothing is declined).
 8. **Output summary** — Report changes applied (including any drift updates), declined, skipped, and filtered sections with recommendations.
-9. **Skipped Operations (Auto-Mode)** — If running in auto-mode and any destructive operations were skipped, emit a machine-readable block after the output summary:
+9. **Skipped Operations (Unattended-Mode)** — If running in unattended mode and any destructive operations were skipped, emit a machine-readable block after the output summary:
 
 ```
-## Skipped Operations (Auto-Mode)
+## Skipped Operations (Unattended-Mode)
 
-The following destructive operations were skipped because `.claude/auto-mode` is active.
+The following destructive operations were skipped because `.claude/unattended-mode` is active.
 Run `/migrate-project` interactively to apply them.
 
 | Operation Type | Affected Paths | Reason |
@@ -457,10 +457,10 @@ If no destructive operations were skipped, omit this section entirely.
 
 1. **Never modify existing content** — Only insert new sections or add new keys
 2. **Never create files** — Only update files that already exist (exceptions: `CHANGELOG.md`, `VERSION`, and `.claude/migration-exclusions.json` may be created if missing)
-3. **Never overwrite values** — For JSON, only add keys that are absent. Exception: config value drift updates are applied only with explicit per-value user approval (Step 8 Part C); in auto-mode, value updates are never applied
+3. **Never overwrite values** — For JSON, only add keys that are absent. Exception: config value drift updates are applied only with explicit per-value user approval (Step 8 Part C); in unattended mode, value updates are never applied
 4. **Skip `feature.gherkin`** — These are generated, not templated
-5. **Interactive by default** — When `.claude/auto-mode` is absent, present findings with per-section approval for steering docs and wait for user selection before applying
-6. **Auto-mode aware** — When `.claude/auto-mode` exists: auto-apply all non-destructive changes (section additions, frontmatter updates, config keys, changelog fixes, solo directory renames); skip all destructive operations (consolidations, legacy directory deletes) and report them in a machine-readable "Skipped Operations" block
+5. **Interactive by default** — When `.claude/unattended-mode` is absent, present findings with per-section approval for steering docs and wait for user selection before applying
+6. **Unattended-mode aware** — When `.claude/unattended-mode` exists: auto-apply all non-destructive changes (section additions, frontmatter updates, config keys, changelog fixes, solo directory renames); skip all destructive operations (consolidations, legacy directory deletes) and report them in a machine-readable "Skipped Operations" block
 7. **Self-updating** — Read templates at runtime; never hardcode template content
 8. **Filter irrelevant sections** — Use codebase analysis (Relevance Heuristic Table) to exclude steering doc sections with no evidence of relevance; persist user declines in `.claude/migration-exclusions.json` (interactive mode only)
 9. **Conservative defaults** — When a missing section's heading does not match any keyword in the heuristic table, include it in the proposal and let the user decide

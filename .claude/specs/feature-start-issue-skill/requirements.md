@@ -17,7 +17,7 @@
 
 ## Background
 
-The `/start-issue` skill was extracted from the earlier `/beginning-dev` skill to provide standalone issue selection and branch setup. It lists open GitHub issues, lets the developer select one (or accepts an issue number argument in auto-mode), creates a feature branch linked to the issue via `gh issue develop`, and updates the issue status to "In Progress" in any associated GitHub Project. In automation mode, issues are sorted by number ascending (oldest first) and selected automatically without user confirmation.
+The `/start-issue` skill was extracted from the earlier `/beginning-dev` skill to provide standalone issue selection and branch setup. It lists open GitHub issues, lets the developer select one (or accepts an issue number argument in unattended-mode), creates a feature branch linked to the issue via `gh issue develop`, and updates the issue status to "In Progress" in any associated GitHub Project. In unattended mode, issues are sorted by number ascending (oldest first) and selected automatically without user confirmation.
 
 ---
 
@@ -41,9 +41,9 @@ The `/start-issue` skill was extracted from the earlier `/beginning-dev` skill t
 **When** the issue is linked
 **Then** the issue status is set to "In Progress" in any associated GitHub Project
 
-### AC4: Automation Mode Auto-Selects Oldest Issue
+### AC4: Unattended Mode Auto-Selects Oldest Issue
 
-**Given** automation mode is active
+**Given** unattended mode is active
 **When** `/start-issue` runs
 **Then** it selects the oldest open issue (lowest number) without user confirmation
 
@@ -55,7 +55,7 @@ The `/start-issue` skill was extracted from the earlier `/beginning-dev` skill t
 
 ### AC6: Diagnostic Context in Zero-Result Auto-Mode Output
 
-**Given** `/start-issue` finds zero automatable issues in auto-mode
+**Given** `/start-issue` finds zero automatable issues in unattended-mode
 **When** the result is returned
 **Then** it additionally queries the total open issue count (without the `automatable` label filter, in the same milestone scope)
 **And** includes it in the output (e.g., "No automatable issues found (N open issues exist without the automatable label)")
@@ -81,9 +81,9 @@ The `/start-issue` skill was extracted from the earlier `/beginning-dev` skill t
 | FR1 | List open GitHub issues for interactive selection | Must | Via AskUserQuestion |
 | FR2 | Feature branch creation linked via `gh issue develop` | Must | Creates and checks out branch |
 | FR3 | Issue status update to "In Progress" in GitHub Projects | Must | Via GraphQL API |
-| FR4 | Automation mode with oldest-first issue selection | Must | `.claude/auto-mode` check |
+| FR4 | Automation mode with oldest-first issue selection | Must | `.claude/unattended-mode` check |
 | FR5 | Direct issue number argument support | Must | Skips selection steps |
-| FR6 | Query total open issue count (same scope, without label filter) when automatable count is zero in auto-mode | Must | Second `gh issue list` without `--label` |
+| FR6 | Query total open issue count (same scope, without label filter) when automatable count is zero in unattended-mode | Must | Second `gh issue list` without `--label` |
 | FR7 | Include total open issue count in zero-result diagnostic output | Must | Enhances the "No automatable issues found" message |
 | FR8 | Suggest checking label assignment when open issues > 0 but automatable = 0 | Should | Actionable guidance for operators |
 
@@ -173,7 +173,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 | Issue | Date | Summary |
 |-------|------|---------|
 | #10 | 2026-02-15 | Initial feature spec |
-| #89 | 2026-02-25 | Add diagnostics for zero automatable issues in auto-mode: open issue count, label suggestion |
+| #89 | 2026-02-25 | Add diagnostics for zero automatable issues in unattended-mode: open issue count, label suggestion |
 
 ## Validation Checklist
 

@@ -15,9 +15,9 @@ Interview the user to understand their need, then create a well-groomed GitHub i
 - The user has an idea but hasn't formalized it yet
 - You need a trackable GitHub issue before writing specs
 
-## Automation Mode
+## Unattended Mode
 
-If the file `.claude/auto-mode` exists in the project directory:
+If the file `.claude/unattended-mode` exists in the project directory:
 - Skip Steps 2, 4, 5, and 5b (classification, investigation, interview, and automatable question) — use the provided argument as the feature description. Read `.claude/steering/product.md` for product context. Generate 3–5 Given/When/Then acceptance criteria covering the happy path, one alternative path, and one error case.
 - **Run Step 3 (Assign Milestone)** non-interactively — read VERSION, default to `v{major}`, do not call `AskUserQuestion`.
 - Apply the `automatable` label automatically (skip the automatable question).
@@ -43,7 +43,7 @@ Options:
 - **Bug** — "Something is broken or behaving incorrectly"
 - **Enhancement / Feature** — "New capability or improvement to existing behavior"
 
-> **Auto-mode**: This step is skipped. Classification is not needed when the interview is skipped.
+> **Unattended-mode**: This step is skipped. Classification is not needed when the interview is skipped.
 
 ### Step 3: Assign Milestone
 
@@ -64,7 +64,7 @@ Assign the issue to a version milestone so work is grouped by release.
    If milestone creation fails (e.g., permission denied, API error), proceed without milestone assignment and note the failure in the output.
 4. **Record the milestone** for use in Step 8 (Create the Issue).
 
-> **Auto-mode**: Read VERSION and default to `v{major}` without prompting. Create the milestone if it does not exist.
+> **Unattended-mode**: Read VERSION and default to `v{major}` without prompting. Create the milestone if it does not exist.
 
 ### Step 4: Investigate Codebase
 
@@ -101,7 +101,7 @@ If no relevant code or specs are found, note that this appears to be a greenfiel
 
 If investigation is inconclusive, note what is known and proceed with the user's description alone.
 
-> **Auto-mode**: This step is skipped.
+> **Unattended-mode**: This step is skipped.
 
 ### Step 5: Interview the User
 
@@ -144,7 +144,7 @@ options:
 
 Record the answer for use in Step 8 — if "Yes", the `automatable` label will be applied.
 
-> **Auto-mode**: This step is skipped. The `automatable` label is applied automatically.
+> **Unattended-mode**: This step is skipped. The `automatable` label is applied automatically.
 
 ### Step 6: Synthesize into Issue Body
 
@@ -291,13 +291,13 @@ Iterate until the user approves.
    ```
    gh label create "label-name" --description "Description" --color "hex-color"
    ```
-3. **Ensure the `automatable` label exists** (if Step 5b answered "Yes" or in auto-mode):
+3. **Ensure the `automatable` label exists** (if Step 5b answered "Yes" or in unattended mode):
    - Check: `gh label list --search automatable --json name --jq '.[].name'`
    - If not found, create it: `gh label create "automatable" --description "Suitable for automated SDLC processing" --color "0E8A16"`
 4. **Determine labels** based on issue type and automation eligibility:
    - Feature → `enhancement`
    - Bug → `bug`
-   - If Step 5b answered "Yes" (or auto-mode) → also include `automatable`
+   - If Step 5b answered "Yes" (or unattended mode) → also include `automatable`
    - Other project-specific labels as appropriate
 5. **Create the issue** (include `--milestone` if Step 3 assigned one):
    ```
@@ -319,8 +319,8 @@ URL: [issue URL]
 Labels: [labels applied]
 [If automatable label verification failed]: Warning: automatable label was not applied — verify manually.
 
-[If `.claude/auto-mode` does NOT exist]: Next step: Run `/start-issue #N` to create a feature branch and begin working on this issue.
-[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
+[If `.claude/unattended-mode` does NOT exist]: Next step: Run `/start-issue #N` to create a feature branch and begin working on this issue.
+[If `.claude/unattended-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ## Guidelines

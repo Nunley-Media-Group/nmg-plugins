@@ -1,4 +1,4 @@
-# Tasks: Fix SDLC runner committing auto-mode file to target projects
+# Tasks: Fix SDLC runner committing unattended-mode file to target projects
 
 **Issue**: #57
 **Date**: 2026-02-19
@@ -11,7 +11,7 @@
 
 | Task | Description | Status |
 |------|-------------|--------|
-| T001 | Add `ensureRunnerArtifactsGitignored()` and call it before auto-mode creation | [ ] |
+| T001 | Add `ensureRunnerArtifactsGitignored()` and call it before unattended-mode creation | [ ] |
 | T002 | Add regression test | [ ] |
 | T003 | Verify no regressions | [ ] |
 
@@ -30,15 +30,15 @@
 - [ ] Function ensures a trailing newline before appending
 - [ ] Function does not modify or remove any existing `.gitignore` entries
 - [ ] Function is idempotent — calling it twice produces the same result
-- [ ] `ensureRunnerArtifactsGitignored()` is called in `main()` before auto-mode file creation (before line ~1434)
+- [ ] `ensureRunnerArtifactsGitignored()` is called in `main()` before unattended-mode file creation (before line ~1434)
 - [ ] Uses `node:fs` and `node:path` (zero external dependencies)
 - [ ] Uses `path.join()` for cross-platform path construction
 
-**Notes**: Reference `RUNNER_ARTIFACTS` constant for the list of patterns to add. The patterns in `.gitignore` should match the values in `RUNNER_ARTIFACTS` (e.g., `.claude/auto-mode`, `.claude/sdlc-state.json`). Add a log message when entries are appended.
+**Notes**: Reference `RUNNER_ARTIFACTS` constant for the list of patterns to add. The patterns in `.gitignore` should match the values in `RUNNER_ARTIFACTS` (e.g., `.claude/unattended-mode`, `.claude/sdlc-state.json`). Add a log message when entries are appended.
 
 ### T002: Add Regression Test
 
-**File(s)**: `.claude/specs/57-fix-sdlc-runner-auto-mode-gitignore/feature.gherkin`
+**File(s)**: `.claude/specs/57-fix-sdlc-runner-unattended-mode-gitignore/feature.gherkin`
 **Type**: Create
 **Depends**: T001
 **Acceptance**:

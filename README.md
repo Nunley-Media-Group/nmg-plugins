@@ -135,7 +135,7 @@ Determines the version bump (patch for bugs, minor for enhancements, major on mi
 - Version bump details
 - `Closes #42` to auto-close the issue on merge
 
-## Automation Mode
+## Unattended Mode
 
 The plugin supports fully automated operation through a deterministic Node.js runner (`scripts/sdlc-runner.mjs`) that drives the full development cycle — issue selection, spec writing, implementation, verification, PR creation, CI monitoring, and merge — looping continuously until no open issues remain.
 
@@ -191,25 +191,27 @@ The runner supports per-step model and effort level configuration. Each step can
 2. **Global** — top-level `model` / `effort`
 3. **Default** — `opus` for model, unset for effort
 
-The implement step uses a single invocation — the `write-code` skill handles planning internally via auto-mode. See `sdlc-config.example.json` for the full schema.
+The implement step uses a single invocation — the `write-code` skill handles planning internally via unattended mode. See `sdlc-config.example.json` for the full schema.
 
 **Skill frontmatter:** Each SKILL.md includes a `model` field declaring its recommended model. This is informational for interactive use — the runner's config takes precedence for automated runs.
 
-### Auto-mode flag
+### Unattended-mode flag
 
-The runner creates `.claude/auto-mode` automatically. When this file exists, skills skip interactive prompts. You can also toggle it manually:
+> **Not to be confused with Claude Code's native Auto Mode.** Claude Code (since v2.1.83) ships its own "Auto Mode" — a permission feature that auto-approves safe tool calls via a classifier. This plugin's `.claude/unattended-mode` flag is independent: it signals that the SDLC runner is driving the session headlessly and causes skills to skip interactive gates. The two features are orthogonal — you can run either, both, or neither.
+
+The runner creates `.claude/unattended-mode` automatically. When this file exists, skills skip interactive prompts. You can also toggle it manually:
 
 ```bash
-# Enable automation mode
-mkdir -p .claude && touch .claude/auto-mode
+# Enable unattended mode
+mkdir -p .claude && touch .claude/unattended-mode
 
-# Disable automation mode
-rm .claude/auto-mode
+# Disable unattended mode
+rm .claude/unattended-mode
 ```
 
-When `.claude/auto-mode` does not exist, skills work interactively as normal.
+When `.claude/unattended-mode` does not exist, skills work interactively as normal.
 
-### Default behaviors in automation mode
+### Default behaviors in unattended mode
 
 - **Issue selection**: picks the first open issue in the milestone, sorted by issue number ascending (oldest first)
 - **Confirmations**: answers yes
@@ -219,7 +221,7 @@ When `.claude/auto-mode` does not exist, skills work interactively as normal.
 
 ### Safety net
 
-`/verify-code` runs fully autonomously (even outside automation mode) and validates the implementation against specs. It serves as the quality gate — catching deviations, running architecture review, and auto-fixing findings.
+`/verify-code` runs fully autonomously (even outside unattended mode) and validates the implementation against specs. It serves as the quality gate — catching deviations, running architecture review, and auto-fixing findings.
 
 ## Customization
 

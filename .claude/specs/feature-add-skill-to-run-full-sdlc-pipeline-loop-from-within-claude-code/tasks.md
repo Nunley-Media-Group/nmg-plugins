@@ -77,7 +77,7 @@
 - [ ] Step 2: Reads config to extract `pluginsPath`; derives runner path as `<pluginsPath>/scripts/sdlc-runner.mjs`; verifies runner exists
 - [ ] Step 3: Builds and executes command: `CLAUDECODE="" node <runner-path> --config <config-path>` (loop mode) or `CLAUDECODE="" node <runner-path> --config <config-path> --issue N` (single-issue mode)
 - [ ] Step 4: Reports runner output, exit code, and log path
-- [ ] Includes auto-mode section noting the runner creates/removes `.claude/auto-mode` automatically
+- [ ] Includes unattended-mode section noting the runner creates/removes `.claude/unattended-mode` automatically
 - [ ] Includes "Integration with SDLC Workflow" section
 - [ ] Cross-platform: uses POSIX-compatible commands only
 - [ ] References the existing log tailing patterns
@@ -91,7 +91,7 @@
 **Depends**: T004
 **Acceptance**:
 - [ ] `/doing-skills-right` run against the SKILL.md produces no critical findings
-- [ ] All required structural elements present: frontmatter, allowed-tools, auto-mode section, integration section
+- [ ] All required structural elements present: frontmatter, allowed-tools, unattended-mode section, integration section
 - [ ] Any findings from the review are addressed by editing SKILL.md
 
 **Notes**: This is AC5 from requirements.md. The implementer MUST run `/doing-skills-right` and fix any issues before proceeding.

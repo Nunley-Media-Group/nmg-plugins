@@ -63,7 +63,7 @@ Always (when `.claude/sdlc-state.json` is git-tracked in the target project)
 
 ### AC2: start-issue skill tolerates runner artifacts in working tree
 
-**Given** the working tree contains only modified runner artifacts (`.claude/sdlc-state.json`, `.claude/auto-mode`)
+**Given** the working tree contains only modified runner artifacts (`.claude/sdlc-state.json`, `.claude/unattended-mode`)
 **When** the `start-issue` skill evaluates the working tree precondition
 **Then** the filtered output is considered clean
 **And** branch creation proceeds normally

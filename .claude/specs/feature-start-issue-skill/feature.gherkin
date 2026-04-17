@@ -24,7 +24,7 @@ Feature: Starting Issues Skill
     Then the issue status is set to "In Progress" in any associated GitHub Project
 
   Scenario: Automation mode auto-selects oldest issue
-    Given automation mode is active
+    Given unattended mode is active
     When "/start-issue" runs
     Then it selects the oldest open issue without user confirmation
 
@@ -35,22 +35,22 @@ Feature: Starting Issues Skill
 
   # Added by issue #89 — Diagnostics for zero automatable issues
 
-  Scenario: Diagnostic context included in zero-result auto-mode output
-    Given automation mode is active
+  Scenario: Diagnostic context included in zero-result unattended-mode output
+    Given unattended mode is active
     And there are 5 open issues but none have the "automatable" label
     When "/start-issue" runs and finds zero automatable issues
     Then it queries total open issues in the same scope without the label filter
     And the output includes "No automatable issues found (5 open issues exist without the automatable label)"
 
   Scenario: Label suggestion when open issues exist without the automatable label
-    Given automation mode is active
+    Given unattended mode is active
     And there are 3 open issues but none have the "automatable" label
     When "/start-issue" runs and finds zero automatable issues
     Then the output suggests checking label assignment
     And the output includes "Consider adding the automatable label to issues that should be picked up automatically."
 
   Scenario: No misleading suggestion when genuinely no open issues
-    Given automation mode is active
+    Given unattended mode is active
     And there are 0 open issues in the repository
     When "/start-issue" runs and finds zero automatable issues
     Then the output indicates no work is available

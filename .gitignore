@@ -8,7 +8,7 @@
 # SDLC runner config
 sdlc-config.json
 .claude/sdlc-state.json
-.claude/auto-mode
+.claude/unattended-mode
 
 # Node dependencies
 node_modules/

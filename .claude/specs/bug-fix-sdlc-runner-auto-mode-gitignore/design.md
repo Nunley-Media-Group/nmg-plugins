@@ -1,4 +1,4 @@
-# Root Cause Analysis: SDLC runner commits auto-mode file to target projects
+# Root Cause Analysis: SDLC runner commits unattended-mode file to target projects
 
 **Issue**: #57
 **Date**: 2026-02-19
@@ -9,7 +9,7 @@
 
 ## Root Cause
 
-The SDLC runner creates two temporary artifacts in the target project: `.claude/auto-mode` (a flag file for headless operation) and `.claude/sdlc-state.json` (runner state). The `RUNNER_ARTIFACTS` constant at line 477 enumerates these files and is used by `autoCommitIfDirty()` at lines 496-500 to filter them from the "should we commit?" decision. However, this filtering only controls **whether** a commit happens — once the decision to commit is made, `git add -A` stages **everything** not in `.gitignore`.
+The SDLC runner creates two temporary artifacts in the target project: `.claude/unattended-mode` (a flag file for headless operation) and `.claude/sdlc-state.json` (runner state). The `RUNNER_ARTIFACTS` constant at line 477 enumerates these files and is used by `autoCommitIfDirty()` at lines 496-500 to filter them from the "should we commit?" decision. However, this filtering only controls **whether** a commit happens — once the decision to commit is made, `git add -A` stages **everything** not in `.gitignore`.
 
 The nmg-plugins repo itself has these patterns in its `.gitignore`, so the bug is invisible during dogfooding. But target projects configured via `sdlc-config.json` may not have them gitignored, causing runner artifacts to be silently committed alongside real implementation changes.
 
@@ -24,11 +24,11 @@ There are four `git('add -A')` call sites, and only one (`autoCommitIfDirty` at 
 | `scripts/sdlc-runner.mjs` | 977-990 | `handleFailure()` — unconditional `git add -A` before retry |
 | `scripts/sdlc-runner.mjs` | 1033-1041 | `escalate()` — unconditional `git add -A` before escalation |
 | `scripts/sdlc-runner.mjs` | 1269-1277 | Signal handler — unconditional `git add -A` on shutdown |
-| `scripts/sdlc-runner.mjs` | 1433-1440 | `main()` — creates `.claude/auto-mode` without ensuring gitignore coverage |
+| `scripts/sdlc-runner.mjs` | 1433-1440 | `main()` — creates `.claude/unattended-mode` without ensuring gitignore coverage |
 
 ### Triggering Conditions
 
-- Target project's `.gitignore` does not include `.claude/auto-mode` or `.claude/sdlc-state.json`
+- Target project's `.gitignore` does not include `.claude/unattended-mode` or `.claude/sdlc-state.json`
 - Any of the four `git add -A` call sites executes
 - The runner artifacts exist in the working tree at commit time
 
@@ -38,7 +38,7 @@ There are four `git('add -A')` call sites, and only one (`autoCommitIfDirty` at 
 
 ### Approach
 
-Add an `ensureRunnerArtifactsGitignored()` function that checks the target project's `.gitignore` for each `RUNNER_ARTIFACTS` entry and appends any missing patterns. Call this function in `main()` **before** creating `.claude/auto-mode` (before line 1434). This is a single-point fix — once the artifacts are in `.gitignore`, all four `git add -A` call sites automatically exclude them.
+Add an `ensureRunnerArtifactsGitignored()` function that checks the target project's `.gitignore` for each `RUNNER_ARTIFACTS` entry and appends any missing patterns. Call this function in `main()` **before** creating `.claude/unattended-mode` (before line 1434). This is a single-point fix — once the artifacts are in `.gitignore`, all four `git add -A` call sites automatically exclude them.
 
 The function will:
 1. Read the existing `.gitignore` (or start with an empty string if it doesn't exist)
@@ -53,7 +53,7 @@ This approach is idempotent (safe to call multiple times) and preserves existing
 | File | Change | Rationale |
 |------|--------|-----------|
 | `scripts/sdlc-runner.mjs` | Add `ensureRunnerArtifactsGitignored()` function near line 477 (after `RUNNER_ARTIFACTS`) | Centralizes the gitignore check next to the artifact list it references |
-| `scripts/sdlc-runner.mjs` | Call `ensureRunnerArtifactsGitignored()` in `main()` before auto-mode creation (before line 1434) | Ensures artifacts are gitignored before any are created |
+| `scripts/sdlc-runner.mjs` | Call `ensureRunnerArtifactsGitignored()` in `main()` before unattended-mode creation (before line 1434) | Ensures artifacts are gitignored before any are created |
 
 ### Blast Radius
 

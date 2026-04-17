@@ -15,9 +15,9 @@ Read the specifications for the current branch's issue, enter plan mode to desig
 - When ready to begin coding a specified feature
 - To resume implementation of a partially completed spec
 
-## Automation Mode
+## Unattended Mode
 
-If the file `.claude/auto-mode` exists in the project directory:
+If the file `.claude/unattended-mode` exists in the project directory:
 - **Do NOT call `EnterPlanMode`.** Still perform Steps 1–3 (identify context, read specs, read steering docs), then design the implementation approach internally in your thinking and proceed to Step 5 (Execute Tasks). Only Step 4 is skipped — calling `EnterPlanMode` in a headless session will fail because there is no user to approve the plan.
 - All approval gates are pre-approved. Do NOT call `AskUserQuestion` — proceed without stopping for user input.
 
@@ -57,7 +57,7 @@ Load all specification documents:
 
 If specs don't exist:
 
-**If `.claude/auto-mode` exists:** Output:
+**If `.claude/unattended-mode` exists:** Output:
 
 ```
 No specs found for issue #N. The `/write-spec` step must run first.
@@ -69,7 +69,7 @@ Done. Awaiting orchestrator.
 
 Then stop — do not proceed to subsequent steps.
 
-**If `.claude/auto-mode` does NOT exist:** Use `AskUserQuestion` to prompt: "No specs found. Run `/write-spec #N` first."
+**If `.claude/unattended-mode` does NOT exist:** Use `AskUserQuestion` to prompt: "No specs found. Run `/write-spec #N` first."
 
 ### Step 3: Read Steering Documents
 
@@ -85,9 +85,9 @@ These tell you *how* this project implements things (frameworks, patterns, file 
 
 ### Step 4: Design Implementation Approach
 
-**If `.claude/auto-mode` exists:** Skip `EnterPlanMode` entirely — it will fail in a headless session. Instead, design the approach internally in your thinking, covering the points below, then go straight to Step 5.
+**If `.claude/unattended-mode` exists:** Skip `EnterPlanMode` entirely — it will fail in a headless session. Instead, design the approach internally in your thinking, covering the points below, then go straight to Step 5.
 
-**If `.claude/auto-mode` does NOT exist:** Call `EnterPlanMode` to design the approach with user approval.
+**If `.claude/unattended-mode` does NOT exist:** Call `EnterPlanMode` to design the approach with user approval.
 
 The implementation approach (whether internal or in plan mode) should:
 
@@ -103,9 +103,9 @@ The implementation approach (whether internal or in plan mode) should:
 
 ### Step 5: Execute Tasks
 
-**If `.claude/auto-mode` exists:** The runner handles implementation directly via its code phase — proceed to execute tasks inline using the approach designed in your thinking.
+**If `.claude/unattended-mode` exists:** The runner handles implementation directly via its code phase — proceed to execute tasks inline using the approach designed in your thinking.
 
-**If `.claude/auto-mode` does NOT exist:** After the user approves the plan, delegate implementation to the `spec-implementer` agent via the Task tool:
+**If `.claude/unattended-mode` does NOT exist:** After the user approves the plan, delegate implementation to the `spec-implementer` agent via the Task tool:
 
 ```
 Task(subagent_type="nmg-sdlc:spec-implementer",
@@ -166,8 +166,8 @@ Tasks completed: [X/Y]
 Files created: [list]
 Files modified: [list]
 
-[If `.claude/auto-mode` does NOT exist]: Next step: Run `/verify-code #N` to verify implementation and update the issue.
-[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
+[If `.claude/unattended-mode` does NOT exist]: Next step: Run `/verify-code #N` to verify implementation and update the issue.
+[If `.claude/unattended-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ---

@@ -1,4 +1,4 @@
-# Tasks: migrate-project Respects auto-mode Despite Spec Excluding It
+# Tasks: migrate-project Respects unattended-mode Despite Spec Excluding It
 
 **Issue**: #46
 **Date**: 2026-02-16
@@ -11,25 +11,25 @@
 
 | Task | Description | Status |
 |------|-------------|--------|
-| T001 | Add Automation Mode section to SKILL.md | [ ] |
+| T001 | Add Unattended Mode section to SKILL.md | [ ] |
 | T002 | Add regression Gherkin feature file | [ ] |
 | T003 | Verify no regressions in other skills | [ ] |
 
 ---
 
-### T001: Add Automation Mode Section to SKILL.md
+### T001: Add Unattended Mode Section to SKILL.md
 
 **File(s)**: `plugins/nmg-sdlc/skills/migrate-project/SKILL.md`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
-- [ ] A `## Automation Mode` section exists after `## When to Use` and before `## What Gets Analyzed`
-- [ ] The section explicitly states that `.claude/auto-mode` does NOT apply to this skill
+- [ ] A `## Unattended Mode` section exists after `## When to Use` and before `## What Gets Analyzed`
+- [ ] The section explicitly states that `.claude/unattended-mode` does NOT apply to this skill
 - [ ] The section instructs Claude to ALWAYS use `AskUserQuestion` for the review gate
-- [ ] Existing auto-mode notes at Step 9 (line ~222) and Key Rules (line ~279) are preserved
+- [ ] Existing unattended-mode notes at Step 9 (line ~222) and Key Rules (line ~279) are preserved
 - [ ] No other content in the SKILL.md is changed
 
-**Notes**: Follow the fix strategy from design.md. The section heading and placement must match the structural pattern used by other skills (e.g., `write-spec/SKILL.md` has `## Automation Mode` after `## When to Use`).
+**Notes**: Follow the fix strategy from design.md. The section heading and placement must match the structural pattern used by other skills (e.g., `write-spec/SKILL.md` has `## Unattended Mode` after `## When to Use`).
 
 ### T002: Add Regression Test
 
@@ -37,10 +37,10 @@
 **Type**: Create
 **Depends**: T001
 **Acceptance**:
-- [ ] Gherkin scenario reproduces the original bug condition (auto-mode present, review gate should still appear)
+- [ ] Gherkin scenario reproduces the original bug condition (unattended-mode present, review gate should still appear)
 - [ ] Scenario tagged `@regression`
-- [ ] Scenario for the no-auto-mode path confirms existing behavior preserved
-- [ ] Scenario for other skills confirms they still respect auto-mode
+- [ ] Scenario for the no-unattended-mode path confirms existing behavior preserved
+- [ ] Scenario for other skills confirms they still respect unattended-mode
 
 ### T003: Verify No Regressions
 
@@ -48,9 +48,9 @@
 **Type**: Verify (no file changes)
 **Depends**: T001, T002
 **Acceptance**:
-- [ ] `write-spec/SKILL.md` still has its Automation Mode section unchanged
-- [ ] `write-code/SKILL.md` still has its auto-mode handling unchanged
-- [ ] `verify-code/SKILL.md` still has its auto-mode handling unchanged
+- [ ] `write-spec/SKILL.md` still has its Unattended Mode section unchanged
+- [ ] `write-code/SKILL.md` still has its unattended-mode handling unchanged
+- [ ] `verify-code/SKILL.md` still has its unattended-mode handling unchanged
 - [ ] No other skill SKILL.md files were modified
 
 ---

@@ -1,4 +1,4 @@
-# Defect Report: SDLC runner commits auto-mode file to target projects
+# Defect Report: SDLC runner commits unattended-mode file to target projects
 
 **Issue**: #57
 **Date**: 2026-02-19
@@ -13,10 +13,10 @@
 
 ### Steps to Reproduce
 
-1. Configure the SDLC runner with a target project that does NOT have `.claude/auto-mode` in its `.gitignore`
+1. Configure the SDLC runner with a target project that does NOT have `.claude/unattended-mode` in its `.gitignore`
 2. Run the SDLC runner (`node sdlc-runner.mjs --config <path>`)
 3. Let it reach a step where `autoCommitIfDirty()`, escalation handling, or signal handling triggers `git add -A`
-4. The `.claude/auto-mode` and `.claude/sdlc-state.json` files are staged and committed to the target project
+4. The `.claude/unattended-mode` and `.claude/sdlc-state.json` files are staged and committed to the target project
 
 ### Environment
 
@@ -25,7 +25,7 @@
 | **OS / Platform** | Any (cross-platform) |
 | **Version / Commit** | Current `sdlc-runner.mjs` (v2.12.7) |
 | **Runtime** | Node.js v24+ |
-| **Configuration** | Any SDLC runner config pointing to a target project without `.claude/auto-mode` in `.gitignore` |
+| **Configuration** | Any SDLC runner config pointing to a target project without `.claude/unattended-mode` in `.gitignore` |
 
 ### Frequency
 
@@ -37,7 +37,7 @@ Always (when the target project's `.gitignore` doesn't exclude runner artifacts)
 
 | | Description |
 |---|-------------|
-| **Expected** | Runner artifacts (`.claude/auto-mode`, `.claude/sdlc-state.json`) are never committed to the target project, regardless of the target project's `.gitignore` contents |
+| **Expected** | Runner artifacts (`.claude/unattended-mode`, `.claude/sdlc-state.json`) are never committed to the target project, regardless of the target project's `.gitignore` contents |
 | **Actual** | Runner artifacts are staged by `git add -A` and committed to the target project if they are not in the project's `.gitignore` |
 
 ### Error Output
@@ -57,9 +57,9 @@ The `RUNNER_ARTIFACTS` filtering at line ~493-498 only controls whether a commit
 
 ### AC1: Runner ensures artifacts are gitignored at startup
 
-**Given** the SDLC runner starts with a target project whose `.gitignore` does not include `.claude/auto-mode` or `.claude/sdlc-state.json`
-**When** the runner creates `.claude/auto-mode`
-**Then** the runner first ensures `.claude/auto-mode` and `.claude/sdlc-state.json` are listed in the target project's `.gitignore`
+**Given** the SDLC runner starts with a target project whose `.gitignore` does not include `.claude/unattended-mode` or `.claude/sdlc-state.json`
+**When** the runner creates `.claude/unattended-mode`
+**Then** the runner first ensures `.claude/unattended-mode` and `.claude/sdlc-state.json` are listed in the target project's `.gitignore`
 
 ### AC2: Existing gitignore is preserved
 
@@ -72,7 +72,7 @@ The `RUNNER_ARTIFACTS` filtering at line ~493-498 only controls whether a commit
 
 **Given** the runner is operating normally with artifacts gitignored
 **When** the runner completes a cycle or receives a shutdown signal
-**Then** `.claude/auto-mode` is still removed as before (cleanup behavior preserved)
+**Then** `.claude/unattended-mode` is still removed as before (cleanup behavior preserved)
 
 ---
 
@@ -80,7 +80,7 @@ The `RUNNER_ARTIFACTS` filtering at line ~493-498 only controls whether a commit
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR1 | Runner must ensure `.claude/auto-mode` and `.claude/sdlc-state.json` are in the target project's `.gitignore` before creating any runner artifacts | Must |
+| FR1 | Runner must ensure `.claude/unattended-mode` and `.claude/sdlc-state.json` are in the target project's `.gitignore` before creating any runner artifacts | Must |
 | FR2 | Runner must not duplicate entries if they already exist in `.gitignore` | Must |
 | FR3 | Runner must not modify or remove existing `.gitignore` content | Must |
 | FR4 | If the target project has no `.gitignore`, the runner must create one with the artifact patterns | Must |

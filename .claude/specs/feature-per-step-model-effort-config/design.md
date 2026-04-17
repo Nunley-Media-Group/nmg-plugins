@@ -11,9 +11,9 @@
 
 This feature adds per-step model and effort level configuration to three layers of the nmg-sdlc system: the SDLC runner script, individual skill frontmatter, and the config example template.
 
-At the **runner layer**, `sdlc-runner.mjs` gains per-step `model` and `effort` fields in the step config, resolving via a fallback chain (`step.field → config.field → default`). The `buildClaudeArgs()` function uses the resolved model for `--model` and sets `CLAUDE_CODE_EFFORT_LEVEL` in the subprocess environment. The implement step uses a single `runClaude()` invocation — the same as every other step — with the skill's auto-mode handling planning internally.
+At the **runner layer**, `sdlc-runner.mjs` gains per-step `model` and `effort` fields in the step config, resolving via a fallback chain (`step.field → config.field → default`). The `buildClaudeArgs()` function uses the resolved model for `--model` and sets `CLAUDE_CODE_EFFORT_LEVEL` in the subprocess environment. The implement step uses a single `runClaude()` invocation — the same as every other step — with the skill's unattended-mode handling planning internally.
 
-At the **skill layer**, all SKILL.md files gain a `model` frontmatter field so Claude Code enforces the recommended model during manual invocation. The write-code skill's existing auto-mode support (skips `EnterPlanMode`, designs internally, then executes) is relied upon — no changes to the skill itself.
+At the **skill layer**, all SKILL.md files gain a `model` frontmatter field so Claude Code enforces the recommended model during manual invocation. The write-code skill's existing unattended-mode support (skips `EnterPlanMode`, designs internally, then executes) is relied upon — no changes to the skill itself.
 
 At the **documentation layer**, `sdlc-config.example.json` is updated with recommended per-step defaults (flat config for implement, no nested plan/code), and the README gains a model/effort recommendations table.
 
@@ -32,7 +32,7 @@ Manual User Path:
 │  ┌──────────────────────────────────────────────────┐   │
 │  │  Single session (Opus)                            │   │
 │  │  Steps 1-4 of skill (plan + execute internally)   │   │
-│  │  Auto-mode: skips EnterPlanMode, designs then     │   │
+│  │  Unattended-mode: skips EnterPlanMode, designs then     │   │
 │  │  executes directly in same session                │   │
 │  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
@@ -45,7 +45,7 @@ Runner Path (SDLC runner):
 │  │  claude -p (single invocation)                    │   │
 │  │  --model opus                                     │   │
 │  │  EFFORT_LEVEL=medium                              │   │
-│  │  Skill's auto-mode handles plan + execute         │   │
+│  │  Skill's unattended-mode handles plan + execute         │   │
 │  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 
@@ -203,7 +203,7 @@ Add a "Model & Effort Recommendations" section with:
 | Option | Description | Pros | Cons | Decision |
 |--------|-------------|------|------|----------|
 | **A: Keep plan/code split, just change defaults** | Keep the two-subprocess architecture but change default models | Minimal code change | Unnecessary complexity; every other step uses single invocation; skill already handles plan internally | Rejected — unnecessary overhead |
-| **B: Single invocation, skill handles internally** | Remove runner split; rely on skill's auto-mode to plan then execute in one session | Consistent with all other steps; simpler runner code; fewer functions to maintain | Single model for both planning and coding (opus for both) | **Selected** — consistency and simplicity win; write-code already has auto-mode support |
+| **B: Single invocation, skill handles internally** | Remove runner split; rely on skill's unattended-mode to plan then execute in one session | Consistent with all other steps; simpler runner code; fewer functions to maintain | Single model for both planning and coding (opus for both) | **Selected** — consistency and simplicity win; write-code already has unattended-mode support |
 | **C: Deprecation warning before removal** | Emit a warning when `plan`/`code` keys are detected, remove in next major version | Gradual migration path | Over-engineering for an internal tool with few users; adds code that will be immediately removed | Rejected — silent ignore is sufficient for an internal tool |
 
 ---

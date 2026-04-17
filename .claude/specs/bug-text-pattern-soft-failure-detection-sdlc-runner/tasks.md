@@ -25,7 +25,7 @@
 **Acceptance**:
 - [ ] A `TEXT_FAILURE_PATTERNS` constant array is defined near the existing `IMMEDIATE_ESCALATION_PATTERNS` constant (~line 1036), containing regex/label pairs for known text failure patterns:
   - `EnterPlanMode` (called in headless/pipe session)
-  - `AskUserQuestion.*auto-mode` (called when auto-mode is active)
+  - `AskUserQuestion.*unattended-mode` (called when unattended-mode is active)
   - Other known text-based failure indicators as identified from runner logs
 - [ ] `detectSoftFailure(stdout)` scans raw `stdout` against `TEXT_FAILURE_PATTERNS` after the existing JSON checks return no failure
 - [ ] When a text pattern matches, returns `{ isSoftFailure: true, reason: 'text_pattern: <label>' }`
@@ -38,7 +38,7 @@
 ```javascript
 const TEXT_FAILURE_PATTERNS = [
   { pattern: /EnterPlanMode/i, label: 'EnterPlanMode' },
-  { pattern: /AskUserQuestion.*auto-mode/i, label: 'AskUserQuestion in auto-mode' },
+  { pattern: /AskUserQuestion.*unattended-mode/i, label: 'AskUserQuestion in unattended-mode' },
 ];
 ```
 
@@ -49,7 +49,7 @@ const TEXT_FAILURE_PATTERNS = [
 **Depends**: T001
 **Acceptance**:
 - [ ] Test: `detectSoftFailure()` returns `isSoftFailure: true` when stdout contains an `EnterPlanMode` text failure pattern
-- [ ] Test: `detectSoftFailure()` returns `isSoftFailure: true` when stdout contains an `AskUserQuestion.*auto-mode` text failure pattern
+- [ ] Test: `detectSoftFailure()` returns `isSoftFailure: true` when stdout contains an `AskUserQuestion.*unattended-mode` text failure pattern
 - [ ] Test: `detectSoftFailure()` returns `isSoftFailure: false` when stdout contains normal success text with no failure patterns
 - [ ] Test: JSON-based soft failure detection (`error_max_turns`, `permission_denials`) still works when text patterns are also present (JSON takes precedence)
 - [ ] Test: `detectSoftFailure()` returns `isSoftFailure: false` for empty/null stdout

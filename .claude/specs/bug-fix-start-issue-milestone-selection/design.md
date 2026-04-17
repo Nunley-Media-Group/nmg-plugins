@@ -34,7 +34,7 @@ The root issue is twofold: (1) the `--jq` filter discards the `open_issues` coun
 
 Replace the milestone-fetching logic in Step 1 with a deterministic two-step process: (1) fetch milestones with `open_issues` metadata and filter to those with `open_issues > 0`, (2) apply selection logic based on the filtered result count. This changes only the "Fetch Milestones" and "Fetch Issues by Milestone" subsections of Step 1 — no other steps are affected.
 
-The `gh api` call will use a `--jq` filter that returns both `title` and `open_issues`, then the skill instructions will provide explicit logic for three cases: zero viable milestones (fallback to all open issues), exactly one viable milestone (auto-select it), or multiple viable milestones (present to user, or pick first alphabetically in auto-mode).
+The `gh api` call will use a `--jq` filter that returns both `title` and `open_issues`, then the skill instructions will provide explicit logic for three cases: zero viable milestones (fallback to all open issues), exactly one viable milestone (auto-select it), or multiple viable milestones (present to user, or pick first alphabetically in unattended-mode).
 
 ### Changes
 
@@ -56,7 +56,7 @@ The `gh api` call will use a `--jq` filter that returns both `title` and `open_i
 |------|------------|------------|
 | Repos with no milestones stop working | Low | Existing fallback path preserved: "If no milestones are found... fall back to all open issues" |
 | `--jq` filter syntax incompatible with older `gh` versions | Low | `select()` and `sort_by()` are standard jq built-ins available in all supported `gh` CLI versions |
-| Auto-mode milestone selection differs from previous behavior | Low | Previous behavior was non-deterministic (guessing); new behavior (first alphabetically) is strictly better and matches the "oldest first" convention used for issue selection |
+| Unattended-mode milestone selection differs from previous behavior | Low | Previous behavior was non-deterministic (guessing); new behavior (first alphabetically) is strictly better and matches the "oldest first" convention used for issue selection |
 | Multiple viable milestones no longer iterate automatically | Low | The iteration was the bug — presenting options (or auto-selecting first) is the intended fix per AC3 |
 
 ---

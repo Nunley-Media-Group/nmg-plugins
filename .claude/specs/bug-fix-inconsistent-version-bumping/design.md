@@ -30,7 +30,7 @@ The runner has no postcondition validation for Step 7 — unlike steps 3, 6, and
 ### Triggering Conditions
 
 - The project has a `VERSION` file (versioning is active)
-- The runner is in auto-mode (no interactive confirmation to force the LLM through the version bump flow)
+- The runner is in unattended-mode (no interactive confirmation to force the LLM through the version bump flow)
 - The LLM subprocess has consumed many turns (e.g., reading specs, checking git state) before reaching the version bump steps, increasing the chance of skipping them
 - Retry scenarios (where prior work is "saved" before restarting) compound the issue — the retry also omits the bump
 
@@ -46,7 +46,7 @@ The fix uses a **defense-in-depth** strategy with three layers:
 
 2. **Reinforced prompt**: Strengthen the Step 7 prompt to explicitly mention version bumping as mandatory, reducing the chance the LLM skips it in the first place.
 
-3. **Preserved skill flow**: The `/open-pr` skill's Steps 2–3 remain unchanged — they still handle version bumping for manual (interactive) use. When running in auto-mode under the runner, the deterministic postcondition acts as a safety net if the LLM skips the skill's version bump steps.
+3. **Preserved skill flow**: The `/open-pr` skill's Steps 2–3 remain unchanged — they still handle version bumping for manual (interactive) use. When running in unattended-mode under the runner, the deterministic postcondition acts as a safety net if the LLM skips the skill's version bump steps.
 
 This approach was chosen over making the version bump a separate runner step (e.g., Step 6.5) because:
 - It preserves the existing step numbering and config schema

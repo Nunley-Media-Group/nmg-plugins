@@ -15,9 +15,9 @@ Verify the implementation against specifications, fix any findings, review archi
 - Before creating a pull request via `/open-pr`
 - When reviewing whether a feature meets its specification
 
-## Automation Mode
+## Unattended Mode
 
-If the file `.claude/auto-mode` exists in the project directory:
+If the file `.claude/unattended-mode` exists in the project directory:
 - All approval gates are pre-approved. Do NOT call `AskUserQuestion` — proceed through all steps without stopping for user input.
 
 ## Prerequisites
@@ -337,10 +337,10 @@ Remaining issues: [count]
 
 GitHub issue #N updated with verification report.
 
-[If `.claude/auto-mode` does NOT exist AND passing]: Next step: Run `/open-pr #N` to create a pull request.
-[If `.claude/auto-mode` does NOT exist AND remaining issues]: Deferred items documented — review before creating a PR.
-[If `.claude/auto-mode` does NOT exist AND failing]: Critical issues remain — address the items above before creating a PR.
-[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
+[If `.claude/unattended-mode` does NOT exist AND passing]: Next step: Run `/open-pr #N` to create a pull request.
+[If `.claude/unattended-mode` does NOT exist AND remaining issues]: Deferred items documented — review before creating a PR.
+[If `.claude/unattended-mode` does NOT exist AND failing]: Critical issues remain — address the items above before creating a PR.
+[If `.claude/unattended-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ---

@@ -31,7 +31,7 @@
 | AC1 | Issue selection presents open issues | Pass | `SKILL.md:43-61` — Steps 1-2 with milestone fetching |
 | AC2 | Feature branch is created and linked | Pass | `SKILL.md:100-108` — `gh issue develop N --checkout` |
 | AC3 | Issue status is updated | Pass | `SKILL.md:112-169` — GraphQL API status update |
-| AC4 | Automation mode auto-selects oldest | Pass | `SKILL.md:20-22` — Auto-mode with oldest-first selection |
+| AC4 | Automation mode auto-selects oldest | Pass | `SKILL.md:20-22` — Unattended-mode with oldest-first selection |
 | AC5 | Issue number as argument | Pass | `SKILL.md:39-40` — Argument parsing in Step 1 |
 
 ---
@@ -92,7 +92,7 @@ Linear: GitHub API → user selection → `gh issue develop` → GraphQL mutatio
 | AC1 — Issue selection | Yes | N/A | Yes |
 | AC2 — Branch creation | Yes | N/A | Yes |
 | AC3 — Status update | Yes | N/A | Yes |
-| AC4 — Auto-mode | Yes | N/A | Yes |
+| AC4 — Unattended-mode | Yes | N/A | Yes |
 | AC5 — Argument support | Yes | N/A | Yes |
 
 ### Coverage Summary

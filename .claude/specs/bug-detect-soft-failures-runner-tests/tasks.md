@@ -14,7 +14,7 @@
 | T001 | Add soft failure detection to the runner | [ ] |
 | T002 | Refactor runner for testability (isMainModule guard + exports) | [ ] |
 | T003 | Create Jest test suite with ESM config | [ ] |
-| T004 | Improve auto-mode instruction prominence in start-issue | [ ] |
+| T004 | Improve unattended-mode instruction prominence in start-issue | [ ] |
 | T005 | Verify no regressions | [ ] |
 
 ---
@@ -88,9 +88,9 @@
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
-- [ ] A bold critical callout is added immediately after the frontmatter, before the skill title or "When to Use" section, stating: in headless/auto-mode, NEVER call `AskUserQuestion`
-- [ ] The existing "Automation Mode" section content is preserved but reformatted for emphasis (bold key directives)
-- [ ] Step 2 (Present Issue Selection) includes a reminder: "If `.claude/auto-mode` exists, skip this step entirely — do NOT call `AskUserQuestion`"
+- [ ] A bold critical callout is added immediately after the frontmatter, before the skill title or "When to Use" section, stating: in headless/unattended-mode, NEVER call `AskUserQuestion`
+- [ ] The existing "Unattended Mode" section content is preserved but reformatted for emphasis (bold key directives)
+- [ ] Step 2 (Present Issue Selection) includes a reminder: "If `.claude/unattended-mode` exists, skip this step entirely — do NOT call `AskUserQuestion`"
 - [ ] No changes to manual-mode workflow behavior
 
 **Notes**: The goal is to make the instruction impossible to miss. Position the critical directive at the top of the file where Claude reads it first, and repeat it at the point of action (Step 2). Use bold markdown and explicit tool name references.

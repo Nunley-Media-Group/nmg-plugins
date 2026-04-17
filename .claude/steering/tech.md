@@ -193,7 +193,7 @@ Skills are defined as Markdown files (`SKILL.md`) with:
 - Workflow steps (numbered, imperative)
 - `allowedTools` sections listing permitted tool patterns
 - Integration with SDLC Workflow section
-- Auto-mode conditionals for headless operation
+- Unattended-mode conditionals for headless operation
 
 ### GitHub CLI (`gh`)
 
@@ -269,7 +269,7 @@ Then invoke each changed skill directly (e.g., `/nmg-sdlc:write-spec #42`) and v
 - The skill loads without errors
 - Workflow steps execute in the expected order
 - Output artifacts (files, GitHub comments, PR bodies) match downstream skill expectations
-- Interactive gates appear in manual mode (or are skipped when `.claude/auto-mode` exists)
+- Interactive gates appear in manual mode (or are skipped when `.claude/unattended-mode` exists)
 
 #### Test Project Pattern
 
@@ -413,7 +413,7 @@ Every skill has implicit contracts. When verifying a skill change, check:
 #### Invariants (Throughout Execution)
 - Stack-agnostic: no project-specific technology hardcoded in skill instructions
 - Steering docs used as the abstraction layer for project-specific details
-- Auto-mode gates: interactive prompts present unless `.claude/auto-mode` exists
+- Unattended-mode gates: interactive prompts present unless `.claude/unattended-mode` exists
 - Cross-platform: no platform-specific paths, commands, or assumptions
 
 #### Behavioral Boundaries
@@ -441,10 +441,10 @@ For Markdown skills, the "code quality" equivalent is prompt quality:
 | Criterion | What to Check |
 |-----------|---------------|
 | **Unambiguous instructions** | Each step has one clear interpretation; no room for Claude to guess |
-| **Complete workflow paths** | Happy path, error/edge cases, and auto-mode all covered |
+| **Complete workflow paths** | Happy path, error/edge cases, and unattended mode all covered |
 | **Correct tool references** | Skills name the right tools (`Read`, `Glob`, `Grep` — not `cat`, `find`, `grep`) |
 | **Logical step ordering** | Dependencies flow forward; no step references information from a later step |
-| **Gate integrity** | Decision points have `AskUserQuestion` (or auto-mode bypass) |
+| **Gate integrity** | Decision points have `AskUserQuestion` (or unattended-mode bypass) |
 | **Template-output chain** | Output format matches what downstream skills expect as input |
 | **Cross-reference validity** | Links to templates, checklists, and other skills resolve correctly |
 

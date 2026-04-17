@@ -5,7 +5,7 @@ argument-hint: "[#issue-number]"
 allowed-tools: Read, Glob, Grep, Bash(gh:*), Bash(git:*)
 ---
 
-> **CRITICAL (Headless/Auto-Mode):** If `.claude/auto-mode` exists, **NEVER** call `AskUserQuestion`. Select issues automatically and skip all confirmation steps. Calling `AskUserQuestion` in pipe mode will be denied and waste all turns.
+> **CRITICAL (Headless/Unattended-Mode):** If `.claude/unattended-mode` exists, **NEVER** call `AskUserQuestion`. Select issues automatically and skip all confirmation steps. Calling `AskUserQuestion` in pipe mode will be denied and waste all turns.
 
 # Start Issue
 
@@ -17,12 +17,12 @@ Select a GitHub issue to work on, create a linked feature branch, and set the is
 - Picking up the next issue from your milestone
 - Setting up a feature branch linked to an issue before writing specs or implementing
 
-## Automation Mode
+## Unattended Mode
 
-If the file `.claude/auto-mode` exists in the project directory:
+If the file `.claude/unattended-mode` exists in the project directory:
 - If an issue number was provided as an argument, **skip Steps 2–3** (selection and confirmation) — go directly to Step 4.
 - If no issue number was provided, **select the first available issue** (sorted by issue number ascending — oldest first) from the first viable milestone (sorted alphabetically) (or all open issues if no viable milestone exists) **without calling `AskUserQuestion`**. **Skip Step 3 confirmation.**
-- **Only issues with the `automatable` label are eligible.** Add `--label automatable` to all `gh issue list` commands in auto-mode. If no automatable issues are found, run a diagnostic query (see "Auto-Mode: Empty Result Handling") and exit without creating a branch.
+- **Only issues with the `automatable` label are eligible.** Add `--label automatable` to all `gh issue list` commands in unattended mode. If no automatable issues are found, run a diagnostic query (see "Unattended-Mode: Empty Result Handling") and exit without creating a branch.
 
 ## Workflow Overview
 
@@ -63,7 +63,7 @@ Apply deterministic selection based on the number of viable milestones:
   ```bash
   # Interactive mode:
   gh issue list -s open -L 10 --json number,title,labels
-  # Auto-mode:
+  # Unattended-mode:
   gh issue list -s open --label automatable -L 10 --json number,title,labels
   ```
 
@@ -71,17 +71,17 @@ Apply deterministic selection based on the number of viable milestones:
   ```bash
   # Interactive mode:
   gh issue list -s open -m "<milestone>" -L 10 --json number,title,labels
-  # Auto-mode:
+  # Unattended-mode:
   gh issue list -s open -m "<milestone>" --label automatable -L 10 --json number,title,labels
   ```
 
 - **Multiple viable milestones:**
   - **Interactive mode:** Present the filtered milestone list via `AskUserQuestion` (label: milestone title, description: "N open issues"), then fetch issues from the selected milestone.
-  - **Auto-mode:** Select the first milestone alphabetically and fetch its issues (with `--label automatable`).
+  - **Unattended-mode:** Select the first milestone alphabetically and fetch its issues (with `--label automatable`).
 
-#### Auto-Mode: Empty Result Handling
+#### Unattended-Mode: Empty Result Handling
 
-After fetching issues in auto-mode, if the result is an empty array (`[]`):
+After fetching issues in unattended mode, if the result is an empty array (`[]`):
 
 1. **Run a diagnostic query** to count total open issues in the same scope, **without** the `--label automatable` filter. The diagnostic query MUST match the same scope as the original query:
 
@@ -112,7 +112,7 @@ After fetching issues in auto-mode, if the result is an empty array (`[]`):
 
 ## Step 2: Present Issue Selection
 
-> **Auto-mode:** If `.claude/auto-mode` exists, skip this step entirely — do NOT call `AskUserQuestion`.
+> **Unattended-mode:** If `.claude/unattended-mode` exists, skip this step entirely — do NOT call `AskUserQuestion`.
 
 Use `AskUserQuestion` to present up to 4 issues as options.
 
@@ -151,7 +151,7 @@ Before any branch operation, verify the working tree is clean:
 git status --porcelain
 ```
 
-**Filter SDLC runner artifacts** before evaluating the output. Remove any lines whose file path ends with `.claude/sdlc-state.json` or `.claude/auto-mode` — these are runtime artifacts managed by the SDLC runner and are not real working-tree dirt.
+**Filter SDLC runner artifacts** before evaluating the output. Remove any lines whose file path ends with `.claude/sdlc-state.json` or `.claude/unattended-mode` — these are runtime artifacts managed by the SDLC runner and are not real working-tree dirt.
 
 - **If the filtered output is empty** (clean tree): proceed to branch creation below.
 - **If the filtered output is non-empty** (dirty tree): abort immediately. Do **not** call `gh issue develop`.
@@ -167,7 +167,7 @@ Dirty files:
 Please resolve these changes (commit, stash, or discard) before running /start-issue again.
 ```
 
-**Auto-mode** (`.claude/auto-mode` exists) — report as an escalation reason for the runner:
+**Unattended-mode** (`.claude/unattended-mode` exists) — report as an escalation reason for the runner:
 
 ```
 Working tree is not clean. Cannot create feature branch.
@@ -273,8 +273,8 @@ Milestone: [milestone or "none"]
 Labels: [labels or "none"]
 Status: In Progress
 
-[If `.claude/auto-mode` does NOT exist]: Next step: Run `/write-spec #N` to create specifications for this issue.
-[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
+[If `.claude/unattended-mode` does NOT exist]: Next step: Run `/write-spec #N` to create specifications for this issue.
+[If `.claude/unattended-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 This summary serves as the handoff contract for downstream skills like `/write-spec` and `/write-code`.

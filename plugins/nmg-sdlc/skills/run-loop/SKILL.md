@@ -74,7 +74,7 @@ CLAUDECODE="" node <runner-path> --config <config-path>
 ```
 
 Run the command and stream its output. The runner handles all orchestration:
-- Auto-mode flag management (`.claude/auto-mode`)
+- Unattended-mode flag management (`.claude/unattended-mode`)
 - Step sequencing and precondition validation
 - Retry logic and escalation
 - Clean exit after completion
@@ -86,11 +86,11 @@ After the runner exits, report:
 - **Exit code 0** → success. State what was accomplished (issue processed, PR merged, etc.)
 - **Exit code 1** → failure. Report the exit code and suggest checking the runner log for details. The log path follows the pattern: `<os.tmpdir()>/sdlc-logs/<project-name>/sdlc-runner.log`
 
-## Auto-Mode
+## Unattended-Mode
 
-The runner creates and manages `.claude/auto-mode` automatically. When this file exists, all SDLC skills skip interactive prompts and run headlessly. The runner removes the file on exit (success or failure).
+The runner creates and manages `.claude/unattended-mode` automatically. When this file exists, all SDLC skills skip interactive prompts and run headlessly. The runner removes the file on exit (success or failure).
 
-Do **not** create or remove `.claude/auto-mode` manually — the runner handles the full lifecycle.
+Do **not** create or remove `.claude/unattended-mode` manually — the runner handles the full lifecycle.
 
 ## Integration with SDLC Workflow
 

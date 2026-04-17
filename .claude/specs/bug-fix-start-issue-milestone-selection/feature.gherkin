@@ -37,9 +37,9 @@ Feature: Starting-issues milestone selection no longer iterates through random m
     Then the user is presented with "v1" and "v2" to choose from
 
   @regression
-  Scenario: Multiple viable milestones in auto-mode selects first alphabetically
+  Scenario: Multiple viable milestones in unattended-mode selects first alphabetically
     Given a repo with milestones "v1" (3 open issues) and "v2" (5 open issues)
-    And auto-mode is enabled
+    And unattended-mode is enabled
     When /start-issue is invoked without an issue number
     Then "v1" is auto-selected as the first milestone alphabetically
 

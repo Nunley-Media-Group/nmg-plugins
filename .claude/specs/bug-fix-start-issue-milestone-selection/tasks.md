@@ -27,10 +27,10 @@
 - [ ] The "Fetch Issues by Milestone" subsection is replaced with deterministic 3-way selection logic:
   - **Zero viable milestones**: Fall back to all open issues (existing fallback preserved)
   - **One viable milestone**: Auto-select it and fetch its issues
-  - **Multiple viable milestones**: In interactive mode, present filtered milestones for user selection; in auto-mode, select the first alphabetically
+  - **Multiple viable milestones**: In interactive mode, present filtered milestones for user selection; in unattended-mode, select the first alphabetically
 - [ ] The ambiguous "current/next milestone" instruction is removed
 - [ ] No changes outside Step 1's milestone discovery subsection (lines 45–63)
-- [ ] The Automation Mode section's reference to "current milestone" is updated to match the new deterministic logic
+- [ ] The Unattended Mode section's reference to "current milestone" is updated to match the new deterministic logic
 
 **Notes**: The `gh api repos/{owner}/{repo}/milestones` endpoint already returns `open_issues` — the fix is using a `--jq` filter that preserves it. Use `[.[] | select(.open_issues > 0) | {title: .title, open_issues: .open_issues}] | sort_by(.title)` to filter and sort in one pass. Update the prose instructions to match the new algorithm.
 
@@ -53,7 +53,7 @@
 **Acceptance**:
 - [ ] Step 2 (issue selection), Step 3 (confirmation), and Step 4 (branch creation) are unchanged
 - [ ] The output contract ("Issue Ready" summary) is unchanged
-- [ ] Auto-mode behavior still selects issues oldest-first within the chosen milestone
+- [ ] Unattended-mode behavior still selects issues oldest-first within the chosen milestone
 - [ ] The skill still works when invoked with an explicit issue number (skips Step 1 entirely)
 - [ ] The fallback path (no milestones → all open issues) is preserved
 

@@ -209,7 +209,7 @@ These are hard contracts that must never be violated. `/verify-code` should flag
 | Skills must be stack-agnostic | Skills work across any project; project specifics live in steering docs | Grep skill content for hardcoded language/framework/tool names that aren't Claude Code tools |
 | One skill = one SDLC step | Each skill has a single, well-defined purpose in the pipeline | A skill's postconditions must be the preconditions of exactly one downstream skill |
 | Skills must reference steering docs for project context | Decouples workflow logic from project specifics | Skills say "reference `tech.md` for..." rather than embedding conventions directly |
-| Auto-mode must be opt-in | Manual mode is the default; automation requires `.claude/auto-mode` | Every `AskUserQuestion` call must be guarded by auto-mode check |
+| Unattended-mode must be opt-in | Manual mode is the default; automation requires `.claude/unattended-mode` | Every `AskUserQuestion` call must be guarded by unattended-mode check |
 | Skill output feeds the next skill | The pipeline is a chain; each skill's output format is a contract | Verify output templates match the input expectations of downstream skills |
 
 ### Agent Contracts

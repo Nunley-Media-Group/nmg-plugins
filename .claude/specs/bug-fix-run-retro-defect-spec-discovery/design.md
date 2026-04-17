@@ -17,7 +17,7 @@ Four interconnected problems exist across three skill files, all stemming from i
 
 **Problem 3 (migrate-project):** Step 4 analyzes spec file headings and variants but never validates the semantic correctness of `Related Spec` links. Invalid links persist silently across migration runs.
 
-**Problem 4 (write-spec Phase 1 Step 7):** The Related Spec search (added in #58) lists all specs via Glob and Grep with no filter to exclude defect specs. When a defect spec matches keywords more strongly than the feature spec, the agent picks the defect, creating circular references (e.g., bug #57 about auto-mode linking to defect #17 instead of feature #11).
+**Problem 4 (write-spec Phase 1 Step 7):** The Related Spec search (added in #58) lists all specs via Glob and Grep with no filter to exclude defect specs. When a defect spec matches keywords more strongly than the feature spec, the agent picks the defect, creating circular references (e.g., bug #57 about unattended-mode linking to defect #17 instead of feature #11).
 
 ### Affected Code
 

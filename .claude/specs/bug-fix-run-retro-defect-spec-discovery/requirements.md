@@ -34,7 +34,7 @@
 
 **Problem 4: write-spec doesn't filter defect specs from Related Spec search**
 
-1. File a bug about a component that already has a defect spec (e.g., "auto-mode")
+1. File a bug about a component that already has a defect spec (e.g., "unattended-mode")
 2. Run `/write-spec` — Phase 1 Step 7 searches all specs via Glob/Grep
 3. A defect spec matches the keywords more strongly than the feature spec
 4. The agent picks the defect spec as the Related Spec, creating a circular reference
@@ -69,8 +69,8 @@ Always (deterministic in Problems 1 and 4; depends on spec topology for Problems
 # Actual: 0 files found (ripgrep glob doesn't match directory depth)
 
 # Problem 4: write-spec Phase 1 Step 7
-# Searching for "auto-mode" across all specs
-# Defect spec #17 (fix-auto-mode-cleanup-on-exit) matches "auto-mode" more strongly
+# Searching for "unattended-mode" across all specs
+# Defect spec #17 (fix-unattended-mode-cleanup-on-exit) matches "unattended-mode" more strongly
 # than feature spec #11 (automation-mode-support)
 # Result: Related Spec set to defect spec #17 instead of feature spec #11
 ```

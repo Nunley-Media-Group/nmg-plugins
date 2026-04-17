@@ -9,7 +9,7 @@
 
 ## Overview
 
-The `/write-code` skill is the execution engine of the nmg-sdlc workflow. It reads spec documents, enters plan mode for user approval, then executes implementation tasks sequentially. The skill supports both interactive mode (with plan approval) and automation mode (headless execution).
+The `/write-code` skill is the execution engine of the nmg-sdlc workflow. It reads spec documents, enters plan mode for user approval, then executes implementation tasks sequentially. The skill supports both interactive mode (with plan approval) and unattended mode (headless execution).
 
 The skill follows a 6-step workflow: identify context (from argument, branch, or user input), read specs, read steering documents, design implementation approach (plan mode), execute tasks sequentially, and signal completion. For bug fixes, it follows the defect spec's fix strategy with minimal change scope.
 
@@ -202,7 +202,7 @@ FeatureScreen
 
 | Layer | Type | Coverage |
 |-------|------|----------|
-| Task Execution | BDD | Scenarios for sequential execution, plan mode, auto-mode |
+| Task Execution | BDD | Scenarios for sequential execution, plan mode, unattended-mode |
 | Bug Fix Mode | BDD | Scenario for minimal change scope |
 
 ---

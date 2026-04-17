@@ -55,7 +55,7 @@
 - [ ] Step 4 (spec file analysis) is unaffected by the changes
 - [ ] Steps 5–8 (config, CHANGELOG, VERSION) are unaffected
 - [ ] The skill's self-updating property is preserved (templates still read at runtime)
-- [ ] The "always interactive" rule is preserved (auto-mode still does not apply)
+- [ ] The "always interactive" rule is preserved (unattended-mode still does not apply)
 
 ---
 

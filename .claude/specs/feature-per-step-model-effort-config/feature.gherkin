@@ -130,8 +130,8 @@ Feature: Per-step model and effort level configuration
   # --- Writing-Specs Auto-Mode Fix ---
   # Added by issue #91
 
-  Scenario: Writing-specs auto-mode always amends existing spec
-    Given auto-mode is active
+  Scenario: Writing-specs unattended-mode always amends existing spec
+    Given unattended-mode is active
     And spec discovery finds a matching existing feature spec
     When the skill decides whether to amend or create
     Then it proceeds directly in amendment mode without calling AskUserQuestion

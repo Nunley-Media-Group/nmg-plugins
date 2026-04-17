@@ -31,7 +31,7 @@ Feature: Writing Specs Skill
   # --- Review Gates ---
 
   Scenario: Human review gates pause between phases
-    Given I am not in automation mode
+    Given I am not in unattended mode
     When a phase completes
     Then the skill pauses for human review before proceeding
 

@@ -15,9 +15,9 @@ Batch-analyze defect specs to identify recurring spec-writing gaps and produce `
 - Periodically (e.g., after each release cycle) to refresh learnings
 - Before starting a new feature in a domain where past defects occurred
 
-## Automation Mode
+## Unattended Mode
 
-If the file `.claude/auto-mode` exists in the project directory:
+If the file `.claude/unattended-mode` exists in the project directory:
 - All approval gates are pre-approved. Do NOT call `AskUserQuestion` — proceed through all steps without stopping for user input.
 
 ---
@@ -260,8 +260,8 @@ Learnings generated: [total] ([new_count] new, [carried_count] carried forward)
 Written to .claude/steering/retrospective.md
 State saved to .claude/steering/retrospective-state.json
 
-[If `.claude/auto-mode` does NOT exist]: Next step: This document will be read automatically by `/write-spec` during Phase 1 on the next spec-writing run — no action needed. Run `/draft-issue` or `/start-issue` to continue the SDLC workflow.
-[If `.claude/auto-mode` exists]: Done. Awaiting orchestrator.
+[If `.claude/unattended-mode` does NOT exist]: Next step: This document will be read automatically by `/write-spec` during Phase 1 on the next spec-writing run — no action needed. Run `/draft-issue` or `/start-issue` to continue the SDLC workflow.
+[If `.claude/unattended-mode` exists]: Done. Awaiting orchestrator.
 ```
 
 ---
