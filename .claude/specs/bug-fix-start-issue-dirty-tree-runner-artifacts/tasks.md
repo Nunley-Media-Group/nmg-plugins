@@ -18,7 +18,7 @@
 
 ### T001: Add runner self-heal for tracked artifacts
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Removed the legacy `postDiscord()` pass-through from `scripts/sdlc-runner.mjs`; status notifications now go directly through `log()` as `[STATUS]` lines (behavior unchanged)
+
 ## [5.0.0] - 2026-04-16
 
 ### Changed (BREAKING)

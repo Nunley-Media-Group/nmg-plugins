@@ -17,7 +17,7 @@
 
 ## Background
 
-Automation mode enables external agents (like OpenClaw) to drive the entire SDLC cycle without human input. When `.claude/auto-mode` exists, skills skip all interactive prompts: `AskUserQuestion` calls, `EnterPlanMode` requests, and human review gates. This was developed iteratively — initial attempts used hook-level blocks (PermissionRequest auto-allow, PreToolUse blocks on AskUserQuestion and EnterPlanMode, Stop hook continuation), but these caused infinite retry loops because Claude interprets a blocked tool as "I need this but couldn't get it" and retries endlessly. The final solution moved automation awareness into the skills themselves, where each skill checks for `.claude/auto-mode` and conditionally skips interactive steps.
+Automation mode enables external agents (like the SDLC runner) to drive the entire SDLC cycle without human input. When `.claude/auto-mode` exists, skills skip all interactive prompts: `AskUserQuestion` calls, `EnterPlanMode` requests, and human review gates. This was developed iteratively — initial attempts used hook-level blocks (PermissionRequest auto-allow, PreToolUse blocks on AskUserQuestion and EnterPlanMode, Stop hook continuation), but these caused infinite retry loops because Claude interprets a blocked tool as "I need this but couldn't get it" and retries endlessly. The final solution moved automation awareness into the skills themselves, where each skill checks for `.claude/auto-mode` and conditionally skips interactive steps.
 
 ---
 

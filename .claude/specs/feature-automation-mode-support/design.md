@@ -11,7 +11,7 @@
 
 Automation mode is a cross-cutting concern that modifies the behavior of every SDLC skill. When `.claude/auto-mode` exists, each skill conditionally skips interactive steps: AskUserQuestion calls, EnterPlanMode requests, and human review gates. The implementation is skill-level awareness rather than hook-level blocking, because hook-based approaches caused infinite retry loops where Claude would endlessly attempt blocked tools.
 
-The design is intentionally simple: a single flag file (`.claude/auto-mode`) triggers headless behavior. Each skill's SKILL.md includes an "Automation Mode" section that documents exactly which steps are skipped and what alternative behavior is used. Skills output "Done. Awaiting orchestrator." instead of next-step suggestions, providing a clean handoff signal for external orchestrators like OpenClaw.
+The design is intentionally simple: a single flag file (`.claude/auto-mode`) triggers headless behavior. Each skill's SKILL.md includes an "Automation Mode" section that documents exactly which steps are skipped and what alternative behavior is used. Skills output "Done. Awaiting orchestrator." instead of next-step suggestions, providing a clean handoff signal for external orchestrators like the SDLC runner.
 
 ---
 

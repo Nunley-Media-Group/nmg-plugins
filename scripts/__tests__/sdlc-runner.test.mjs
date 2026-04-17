@@ -1379,15 +1379,6 @@ describe('Edge case fixes (#51)', () => {
     });
   });
 
-  // F2: postDiscord is a simple log wrapper (no external calls)
-  describe('F2: postDiscord is a log-only wrapper', () => {
-    it('postDiscord does not reference Atomics or spawn', () => {
-      const src = runner.postDiscord.toString();
-      expect(src).not.toContain('Atomics');
-      expect(src).not.toContain('spawn');
-    });
-  });
-
   // F3: autoCommitIfDirty uses shellEscape for commit messages
   describe('F3: shellEscape in autoCommitIfDirty', () => {
     it('wraps commit message in single quotes via shellEscape', () => {
@@ -2055,12 +2046,12 @@ describe('hasNonEscalatedIssues uses --limit 200', () => {
   });
 });
 
-describe('handleSignal uses fire-and-forget status notification', () => {
-  it('handleSignal source does not await postDiscord', () => {
-    // Verify the function source uses .catch(() => {}) pattern (fire-and-forget)
+describe('handleSignal uses non-blocking status notification', () => {
+  it('handleSignal source does not await log()', () => {
+    // log() is synchronous; the signal handler must not introduce any await
+    // before writing the stop notice.
     const src = handleSignal.toString();
-    expect(src).toContain('.catch(');
-    expect(src).not.toMatch(/await\s+postDiscord/);
+    expect(src).not.toMatch(/await\s+log\(/);
   });
 
   it('handleSignal uses autoCommitIfDirty instead of inline git commands', () => {

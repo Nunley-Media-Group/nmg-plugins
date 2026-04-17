@@ -53,7 +53,7 @@
 **Acceptance**:
 - [ ] Step 3's heading-diff logic still works correctly for sections that pass filtering
 - [ ] Step 4 (spec file analysis) is unaffected by the changes
-- [ ] Steps 5–8 (OpenClaw config, CHANGELOG, VERSION) are unaffected
+- [ ] Steps 5–8 (config, CHANGELOG, VERSION) are unaffected
 - [ ] The skill's self-updating property is preserved (templates still read at runtime)
 - [ ] The "always interactive" rule is preserved (auto-mode still does not apply)
 

@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds per-step model and effort level configuration to three layers of the nmg-sdlc system: the OpenClaw runner script, individual skill frontmatter, and the config example template.
+This feature adds per-step model and effort level configuration to three layers of the nmg-sdlc system: the SDLC runner script, individual skill frontmatter, and the config example template.
 
 At the **runner layer**, `sdlc-runner.mjs` gains per-step `model` and `effort` fields in the step config, resolving via a fallback chain (`step.field → config.field → default`). The `buildClaudeArgs()` function uses the resolved model for `--model` and sets `CLAUDE_CODE_EFFORT_LEVEL` in the subprocess environment. The implement step uses a single `runClaude()` invocation — the same as every other step — with the skill's auto-mode handling planning internally.
 
@@ -37,7 +37,7 @@ Manual User Path:
 │  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 
-Runner Path (OpenClaw):
+Runner Path (SDLC runner):
 ┌─────────────────────────────────────────────────────────┐
 │  sdlc-runner.mjs → implement step                       │
 │                                                         │
@@ -149,9 +149,8 @@ All SKILL.md files gain a `model` field:
 |-------|-------|-----------|
 | `draft-issue` | `sonnet` | Structured interview, moderate reasoning |
 | `open-pr` | `sonnet` | Template-driven PR creation |
-| `generating-openclaw-config` | `sonnet` | Mechanical config generation |
+| `init-config` | `sonnet` | Mechanical config generation |
 | `write-code` | `opus` | Planning + execution needs deep reasoning |
-| `installing-openclaw-skill` | `sonnet` | Mechanical file operations |
 | `migrate-project` | `opus` | Complex project analysis |
 | `run-retro` | `opus` | Pattern analysis across defects |
 | `setup-steering` | `opus` | Understanding project architecture |
@@ -163,7 +162,7 @@ All SKILL.md files gain a `model` field:
 
 ## Affected Files
 
-### Runner Script (`openclaw/scripts/sdlc-runner.mjs`)
+### Runner Script (`scripts/sdlc-runner.mjs`)
 
 | Area | Change | Lines (approx) |
 |------|--------|----------------|
@@ -174,14 +173,14 @@ All SKILL.md files gain a `model` field:
 | `runStep()` | Remove `if (step.number === 4)` special case — step 4 falls through to standard `runClaude()` path | ~1769-1771 |
 | Named exports | Remove `resolveImplementPhaseConfig` and `runImplementStep` from exports | ~2125, ~2137 |
 
-### Config Template (`openclaw/scripts/sdlc-config.example.json`)
+### Config Template (`scripts/sdlc-config.example.json`)
 
 | Area | Change |
 |------|--------|
 | `steps.implement` | Remove nested `plan`/`code` sub-objects; set flat `model: "opus"`, `effort: "medium"` |
 | `steps.createPR` | Increase `maxTurns` from 15 to 30 |
 
-### Test File (`openclaw/scripts/__tests__/sdlc-runner.test.mjs`)
+### Test File (`scripts/__tests__/sdlc-runner.test.mjs`)
 
 | Area | Change |
 |------|--------|

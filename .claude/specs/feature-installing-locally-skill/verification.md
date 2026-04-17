@@ -30,8 +30,6 @@
 |----|-------------|--------|----------|
 | AC1 | All marketplace plugins installed | Pass | `.claude/skills/installing-locally/SKILL.md` — Steps 2-3 |
 | AC2 | Skills, hooks, agents copied | Pass | `SKILL.md` — Step 3 rsync with --delete |
-| AC3 | OpenClaw skill synced | Pass | `SKILL.md` — Step 5 copies 3 files |
-| AC4 | Gateway restarted | Pass | `SKILL.md` — Step 6 with nvm sourcing |
 
 ---
 
@@ -40,7 +38,7 @@
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
 | T001 | Create Skill Directory | Complete | Repo-level |
-| T002 | Create Skill Definition | Complete | 7-step workflow |
+| T002 | Create Skill Definition | Complete | 5-step workflow |
 | T003 | Configure Allowed Tools | Complete | |
 | T004 | Create BDD Feature File | Complete | |
 
@@ -55,16 +53,16 @@
 | Single Responsibility | 5 | Skill does one thing: install all plugins locally |
 | Open/Closed | 4 | Reads marketplace.json dynamically — new plugins installed automatically |
 | Liskov Substitution | N/A | No inheritance |
-| Interface Segregation | 4 | 7 steps are cleanly separated |
+| Interface Segregation | 4 | 5 steps are cleanly separated |
 | Dependency Inversion | 4 | Depends on marketplace.json format, not specific plugins |
 
 ### Layer Separation
 
-Clean: marketplace discovery → plugin sync → registry update → OpenClaw sync → gateway restart.
+Clean: marketplace discovery → plugin sync → registry update.
 
 ### Dependency Flow
 
-Linear: marketplace.json → rsync → installed_plugins.json → OpenClaw → gateway.
+Linear: marketplace.json → rsync → installed_plugins.json.
 
 ---
 
@@ -92,12 +90,10 @@ Linear: marketplace.json → rsync → installed_plugins.json → OpenClaw → g
 |---------------------|-------------|-----------|--------|
 | AC1 — All plugins installed | Yes | N/A | Yes |
 | AC2 — Skills/hooks/agents | Yes | N/A | Yes |
-| AC3 — OpenClaw sync | Yes | N/A | Yes |
-| AC4 — Gateway restart | Yes | N/A | Yes |
 
 ### Coverage Summary
 
-- Feature files: 4 scenarios
+- Feature files: 2 scenarios
 - Step definitions: N/A (Markdown plugin)
 
 ---
@@ -121,9 +117,8 @@ None.
 
 ## Positive Observations
 
-- Comprehensive 7-step workflow handles the full installation lifecycle
+- 5-step workflow handles the full installation lifecycle
 - Version tracking in installed_plugins.json enables update detection
-- Non-fatal gateway restart prevents total failure from optional dependency
 - Version mismatch warnings catch marketplace/plugin version drift
 
 ---
@@ -143,7 +138,7 @@ None.
 
 | File | Issues | Notes |
 |------|--------|-------|
-| `.claude/skills/installing-locally/SKILL.md` | 0 | Comprehensive 7-step workflow |
+| `.claude/skills/installing-locally/SKILL.md` | 0 | 5-step workflow |
 
 ---
 

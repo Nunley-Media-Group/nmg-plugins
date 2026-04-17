@@ -15,7 +15,7 @@
 
 1. Set up `.claude/auto-mode` in the project directory
 2. Start work on an issue without running `/write-spec` first
-3. OpenClaw runner invokes `/write-code #N` (step 4 — code)
+3. SDLC runner invokes `/write-code #N` (step 4 — code)
 4. The skill reaches Step 2 ("Read Specs"), finds no spec files
 5. The skill calls `AskUserQuestion` to suggest running `/write-spec #N` first
 6. In headless mode, the `AskUserQuestion` prompt goes nowhere and the session hangs

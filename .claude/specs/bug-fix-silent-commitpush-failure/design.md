@@ -19,11 +19,11 @@ A secondary contributing factor is the step 6 prompt (line 585): it asks Claude 
 
 | File | Lines | Role |
 |------|-------|------|
-| `openclaw/scripts/sdlc-runner.mjs` | 1031-1038 | Exit code 0 handler — trusts success unconditionally |
-| `openclaw/scripts/sdlc-runner.mjs` | 1040-1055 | Spec validation gate (step 3) — the pattern to follow |
-| `openclaw/scripts/sdlc-runner.mjs` | 1066-1081 | CI validation gate (step 8) — the pattern to follow |
-| `openclaw/scripts/sdlc-runner.mjs` | 585 | Step 6 prompt — missing explicit failure instruction |
-| `openclaw/scripts/sdlc-runner.mjs` | 517-518 | Step 6 precondition — always returns `{ ok: true }` |
+| `scripts/sdlc-runner.mjs` | 1031-1038 | Exit code 0 handler — trusts success unconditionally |
+| `scripts/sdlc-runner.mjs` | 1040-1055 | Spec validation gate (step 3) — the pattern to follow |
+| `scripts/sdlc-runner.mjs` | 1066-1081 | CI validation gate (step 8) — the pattern to follow |
+| `scripts/sdlc-runner.mjs` | 585 | Step 6 prompt — missing explicit failure instruction |
+| `scripts/sdlc-runner.mjs` | 517-518 | Step 6 precondition — always returns `{ ok: true }` |
 
 ### Triggering Conditions
 
@@ -37,7 +37,7 @@ A secondary contributing factor is the step 6 prompt (line 585): it asks Claude 
 
 ### Approach
 
-Add a post-step push validation gate after step 6, following the identical pattern used for spec validation (step 3) and CI validation (step 8). The gate runs `git log origin/${branch}..HEAD --oneline` — the same check that step 7's precondition uses — and treats any output (unpushed commits) as a validation failure. On failure, it increments `retries[6]`, posts a Discord diagnostic message, and returns `'retry'` to re-run step 6. At `MAX_RETRIES`, it escalates with a message identifying the push failure.
+Add a post-step push validation gate after step 6, following the identical pattern used for spec validation (step 3) and CI validation (step 8). The gate runs `git log origin/${branch}..HEAD --oneline` — the same check that step 7's precondition uses — and treats any output (unpushed commits) as a validation failure. On failure, it increments `retries[6]`, writes a `[STATUS]` diagnostic line to the orchestration log, and returns `'retry'` to re-run step 6. At `MAX_RETRIES`, it escalates with a message identifying the push failure.
 
 Additionally, update the step 6 prompt to explicitly instruct Claude Code to exit with a non-zero status code if `git push` fails, reducing the likelihood of silent failures at the source.
 
@@ -45,8 +45,8 @@ Additionally, update the step 6 prompt to explicitly instruct Claude Code to exi
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `openclaw/scripts/sdlc-runner.mjs` ~line 585 | Update step 6 prompt to include explicit failure-exit instruction | Reduces silent push failures at the source — Claude Code will be told to exit non-zero on push failure |
-| `openclaw/scripts/sdlc-runner.mjs` ~lines 1055-1066 (insert between step 3 and step 8 gates) | Add `validatePush()` helper and post-step validation gate for step 6 | Catches push failures even when exit code is 0, following the established spec/CI validation pattern |
+| `scripts/sdlc-runner.mjs` ~line 585 | Update step 6 prompt to include explicit failure-exit instruction | Reduces silent push failures at the source — Claude Code will be told to exit non-zero on push failure |
+| `scripts/sdlc-runner.mjs` ~lines 1055-1066 (insert between step 3 and step 8 gates) | Add `validatePush()` helper and post-step validation gate for step 6 | Catches push failures even when exit code is 0, following the established spec/CI validation pattern |
 
 ### Blast Radius
 

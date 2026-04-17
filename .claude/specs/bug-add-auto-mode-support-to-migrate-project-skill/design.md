@@ -31,7 +31,7 @@ Every other skill in the pipeline (`/write-spec`, `/write-code`, `/verify-code`,
 ### Triggering Conditions
 
 - `.claude/auto-mode` exists in the project directory
-- `/migrate-project` is invoked (e.g., by OpenClaw runner during a headless SDLC cycle)
+- `/migrate-project` is invoked (e.g., by SDLC runner during a headless SDLC cycle)
 - Any migration finding is detected (steering doc sections, spec frontmatter, config keys, etc.)
 - The skill hits any `AskUserQuestion` call and hangs indefinitely because no user is present
 
@@ -54,7 +54,7 @@ This is a minimal fix to the Markdown skill instructions — no scripts or runti
 | Related Spec link corrections (Step 4a) | Non-destructive | Auto-apply |
 | Legacy frontmatter migration `Issue` → `Issues` (Step 4f) | Non-destructive | Auto-apply |
 | Change History section additions (Step 4f) | Non-destructive | Auto-apply |
-| OpenClaw config key additions (Step 5) | Non-destructive | Auto-apply |
+| Config key additions (Step 5) | Non-destructive | Auto-apply |
 | CHANGELOG.md fixes (Step 7) | Non-destructive | Auto-apply |
 | VERSION file creation/update (Step 8) | Non-destructive | Auto-apply |
 | Spec directory consolidation (Steps 4b–4e) | Destructive | Skip with summary |
@@ -68,13 +68,13 @@ This is a minimal fix to the Markdown skill instructions — no scripts or runti
 | `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` lines 21–27 | Rewrite "Automation Mode" section to describe the dual behavior: auto-apply non-destructive, skip destructive with summary | Establishes the auto-mode contract for this skill |
 | `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Step 4d (lines 169–179) | Add auto-mode guard: when `.claude/auto-mode` exists, skip consolidation entirely and record each group as a skipped operation | Prevents destructive merges/renames/deletes in headless mode |
 | `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Step 9 (lines 293–379) | Add auto-mode branch: skip both Part A and Part B approval prompts; auto-select all non-destructive changes; skip any remaining destructive changes | Eliminates all `AskUserQuestion` calls in auto-mode |
-| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Step 10 (lines 380–392) | Add auto-mode output section: after applying changes, emit a machine-readable "Skipped Operations" block listing each skipped destructive operation with type, paths, and reason | Enables the runner to report skipped operations to Discord |
+| `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Step 10 (lines 380–392) | Add auto-mode output section: after applying changes, emit a machine-readable "Skipped Operations" block listing each skipped destructive operation with type, paths, and reason | Enables the runner to surface skipped operations in its status log |
 | `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` Key Rules | Update rule 5 to reflect conditional interactivity; add a new rule about auto-mode behavior | Keeps the Key Rules section consistent with the updated workflow |
 
 ### Blast Radius
 
 - **Direct impact**: Only `plugins/nmg-sdlc/skills/migrate-project/SKILL.md` is modified
-- **Indirect impact**: OpenClaw runner (`sdlc-runner.mjs`) invokes this skill — it will now complete instead of hanging, which is the desired fix. No runner code changes needed.
+- **Indirect impact**: The SDLC runner (`sdlc-runner.mjs`) invokes this skill — it will now complete instead of hanging, which is the desired fix. No runner code changes needed.
 - **Risk level**: Low — the skill is Markdown instructions; the fix adds conditional branches around existing `AskUserQuestion` calls without changing the underlying analysis logic (Steps 1–8) or the apply logic (Step 10)
 
 ---
@@ -86,7 +86,7 @@ This is a minimal fix to the Markdown skill instructions — no scripts or runti
 | Interactive mode behavior changes | Low | AC4 explicitly requires all existing interactive behavior to be preserved unchanged; the auto-mode branch only activates when `.claude/auto-mode` exists |
 | Non-destructive operations misclassified as destructive (or vice versa) | Low | The operation classification table is explicit; all directory-level operations (consolidation, renames, deletes) are destructive; all content additions are non-destructive |
 | Declined sections not persisted in auto-mode | Low | FR7 explicitly states `.claude/migration-exclusions.json` is not written to in auto-mode (nothing is declined); existing exclusions from prior interactive runs are still respected during analysis |
-| Machine-readable output format breaks runner parsing | Low | The output is informational — the runner reports it to Discord but does not parse it for control flow decisions |
+| Machine-readable output format breaks runner parsing | Low | The output is informational — the runner surfaces it in its status log but does not parse it for control flow decisions |
 
 ---
 

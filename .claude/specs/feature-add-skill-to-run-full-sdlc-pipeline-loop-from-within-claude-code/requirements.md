@@ -222,7 +222,7 @@ Feature: Running SDLC Loop
 
 ## Out of Scope
 
-- Discord status notifications (not part of the SDLC runner)
+- External status notification integrations (not part of the SDLC runner)
 - Creating new issues or assigning milestones (handled by `/draft-issue`)
 - Retry logic for failed phases — the skill halts on failure rather than retrying
 - Configurable timeouts per phase (the runner handles this internally)

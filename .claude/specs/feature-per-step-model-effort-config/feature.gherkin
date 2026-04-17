@@ -4,7 +4,7 @@
 # Issues: #77, #91
 
 Feature: Per-step model and effort level configuration
-  As a developer or OpenClaw automation agent running the SDLC workflow
+  As a developer or SDLC automation agent running the SDLC workflow
   I want per-step model and effort level configuration
   So that each SDLC phase uses the optimal model for its task
 
@@ -118,9 +118,8 @@ Feature: Per-step model and effort level configuration
       | skill                    | model  |
       | draft-issue          | sonnet |
       | open-pr             | sonnet |
-      | generating-openclaw-config | sonnet |
+      | init-config | sonnet |
       | write-code       | opus   |
-      | installing-openclaw-skill | sonnet |
       | migrate-project       | opus   |
       | run-retro   | opus   |
       | setup-steering      | opus   |

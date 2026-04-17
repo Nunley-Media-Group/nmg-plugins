@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `.claude/specs/feature-openclaw-runner-operations/`
+**Related Spec**: `.claude/specs/feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/`
 
 ---
 
@@ -25,7 +25,7 @@
 
 | Factor | Value |
 |--------|-------|
-| **Component** | `openclaw/scripts/sdlc-runner.mjs` |
+| **Component** | `scripts/sdlc-runner.mjs` |
 | **Step** | 8 (`monitorCI`) |
 | **Config defaults** | `maxTurns: 20`, `timeoutMin: 10` |
 | **Runtime** | Node.js v24+ (ESM) |

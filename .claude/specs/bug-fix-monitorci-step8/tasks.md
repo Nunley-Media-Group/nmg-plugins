@@ -20,7 +20,7 @@
 
 ### T001: Rewrite Step 8 prompt and add CI validation gate
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -47,7 +47,7 @@ Prompt should include:
 
 ### T002: Increase Step 8 resource defaults in example config
 
-**File(s)**: `openclaw/scripts/sdlc-config.example.json`
+**File(s)**: `scripts/sdlc-config.example.json`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:

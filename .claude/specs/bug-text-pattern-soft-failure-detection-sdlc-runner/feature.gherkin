@@ -32,10 +32,10 @@ Feature: Text-pattern soft failure detection in SDLC runner
     Then it returns isSoftFailure true with reason containing "text_pattern:"
 
   @regression
-  Scenario: Discord message includes matched text pattern
+  Scenario: Status log line includes matched text pattern
     Given a text-pattern soft failure is detected for step 3 with key "writeSpecs"
-    When the runner posts the soft failure status to Discord
-    Then the Discord message contains the matched pattern label
+    When the runner writes the soft failure status to the orchestration log
+    Then the [STATUS] line contains the matched pattern label
 
   # --- Related Behavior Still Works ---
 

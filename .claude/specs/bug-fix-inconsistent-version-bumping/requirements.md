@@ -13,7 +13,7 @@
 
 ### Steps to Reproduce
 
-1. Configure OpenClaw SDLC runner against a project with a `VERSION` file and `.claude/steering/tech.md` versioning section
+1. Configure SDLC runner against a project with a `VERSION` file and `.claude/steering/tech.md` versioning section
 2. Queue multiple issues with identical labels (`bug`) and milestone (`v0`)
 3. Let the runner process them sequentially through the full SDLC cycle (steps 1–9)
 4. Check the resulting PRs for `chore: bump version` commits
@@ -25,7 +25,7 @@
 | **OS / Platform** | macOS (Darwin 25.3.0) |
 | **Version / Commit** | nmg-sdlc 2.12.5 |
 | **Browser / Runtime** | Node.js v24+ (sdlc-runner.mjs) |
-| **Configuration** | OpenClaw SDLC runner in auto-mode; chrome-cli project (Rust/Cargo) |
+| **Configuration** | SDLC runner in auto-mode; chrome-cli project (Rust/Cargo) |
 
 ### Frequency
 
@@ -112,7 +112,7 @@ Under turn/time pressure, the LLM sometimes skips the version bumping steps and 
 ## Out of Scope
 
 - Changing the version classification matrix (patch/minor/major logic) — that's defined in spec #41
-- Modifying how milestones trigger major bumps
+- Changing how major bumps are applied (major bumps remain manual-only per v4.3.0)
 - Adding version bumping to non-PR steps (implementation, verification)
 - Refactoring the `/open-pr` skill's version bump steps beyond adding "mandatory" language
 

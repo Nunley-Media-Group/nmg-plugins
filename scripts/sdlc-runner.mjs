@@ -453,10 +453,6 @@ function detectAndHydrateState() {
 // Status notifications (logged to console and orchestration log)
 // ---------------------------------------------------------------------------
 
-async function postDiscord(message) {
-  log(`[STATUS] ${message}`);
-}
-
 function log(msg) {
   const ts = new Date().toISOString();
   const line = `[${ts}] ${msg}`;
@@ -1130,7 +1126,7 @@ async function handleFailure(step, result, state) {
 
   if (patternMatch?.action === 'wait') {
     log('Rate limited. Waiting 60s before retry...');
-    await postDiscord(`Rate limited on Step ${step.number}. Waiting 60s...`);
+    log(`[STATUS] Rate limited on Step ${step.number}. Waiting 60s...`);
     await sleep(60_000);
   }
 
@@ -1145,7 +1141,7 @@ async function handleFailure(step, result, state) {
       }
       const failedCheck = preconds.failedCheck || preconds.reason;
       log(`Step ${step.number} (${step.key}) precondition failed: "${failedCheck}". Bouncing to Step ${prevStep.number} (${prevStep.key}). (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
-      await postDiscord(`Step ${step.number} (${step.key}) bounced to Step ${prevStep.number} (${prevStep.key}). Precondition failed: "${failedCheck}". (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
+      log(`[STATUS] Step ${step.number} (${step.key}) bounced to Step ${prevStep.number} (${prevStep.key}). Precondition failed: "${failedCheck}". (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
       return 'retry-previous';
     }
   }
@@ -1164,7 +1160,7 @@ async function handleFailure(step, result, state) {
 
   // 5. Increment retry and signal to relaunch
   updateState({ retries: { ...retries, [step.number]: count } });
-  await postDiscord(`Step ${step.number} failed (attempt ${count}/${MAX_RETRIES}). Retrying...`);
+  log(`[STATUS] Step ${step.number} failed (attempt ${count}/${MAX_RETRIES}). Retrying...`);
   log(`Retry ${count}/${MAX_RETRIES} for step ${step.number}`);
   return 'retry';
 }
@@ -1213,7 +1209,7 @@ async function escalate(step, reason, output = '') {
     'Manual intervention required.',
   ].filter(Boolean).join('\n');
 
-  await postDiscord(diagnostic);
+  log(`[STATUS] ${diagnostic}`);
 
   // In single-issue mode, exit immediately on escalation — no next cycle
   if (SINGLE_ISSUE_NUMBER) {
@@ -1242,7 +1238,7 @@ async function haltFailureLoop(loopType, details) {
 
   log(diagnostic);
   cleanupProcesses();
-  await postDiscord(diagnostic);
+  log(`[STATUS] ${diagnostic}`);
   process.exit(1);
 }
 
@@ -1668,7 +1664,7 @@ let currentProcess = null;
 let lastClaudePid = null;
 let shuttingDown = false;
 
-async function handleSignal(signal) {
+function handleSignal(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
   log(`Received ${signal}. Shutting down gracefully...`);
@@ -1685,7 +1681,7 @@ async function handleSignal(signal) {
 
   const savedState = readState();
   const nextStep = (savedState.lastCompletedStep || 0) + 1;
-  postDiscord(`SDLC runner stopped (${signal}). Work saved. Resume with --resume to continue from Step ${nextStep}.`).catch(() => {});
+  log(`[STATUS] SDLC runner stopped (${signal}). Work saved. Resume with --resume to continue from Step ${nextStep}.`);
   // Preserve lastCompletedStep for resume — don't reset step tracking.
   // Mark signalShutdown so detectAndHydrateState knows the auto-push was WIP,
   // not a completed step 6.
@@ -1713,7 +1709,7 @@ async function runValidationGate(step, state, validateFn, label) {
 
   const reason = check.reason || check.missing?.join(', ') || 'unknown';
   log(`${label} failed: ${reason}`);
-  await postDiscord(`${label} failed after Step ${step.number} — ${reason}. Retrying...`);
+  log(`[STATUS] ${label} failed after Step ${step.number} — ${reason}. Retrying...`);
 
   const retries = state.retries || {};
   const count = (retries[step.number] || 0) + 1;
@@ -1733,7 +1729,7 @@ async function runStep(step, state) {
   if (!preconds.ok) {
     const failedCheck = preconds.failedCheck || preconds.reason;
     log(`Preconditions failed for step ${step.number} (${step.key}): "${failedCheck}"`);
-    await postDiscord(`Step ${step.number} (${step.key}) preconditions failed: "${failedCheck}"`);
+    log(`[STATUS] Step ${step.number} (${step.key}) preconditions failed: "${failedCheck}"`);
 
     if (step.number > 1) {
       const prevStep = STEPS[step.number - 2];
@@ -1742,7 +1738,7 @@ async function runStep(step, state) {
         return 'escalated';
       }
       log(`Step ${step.number} (${step.key}) bounced to Step ${prevStep.number} (${prevStep.key}). Precondition failed: "${failedCheck}". (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
-      await postDiscord(`Step ${step.number} (${step.key}) bounced to Step ${prevStep.number} (${prevStep.key}). Precondition failed: "${failedCheck}". (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
+      log(`[STATUS] Step ${step.number} (${step.key}) bounced to Step ${prevStep.number} (${prevStep.key}). Precondition failed: "${failedCheck}". (bounce ${bounceCount}/${MAX_BOUNCE_RETRIES})`);
       // Increment retry for the previous step
       const retries = state.retries || {};
       const prevCount = (retries[prevStep.number] || 0) + 1;
@@ -1761,7 +1757,7 @@ async function runStep(step, state) {
 
   // Update state
   state = updateState({ currentStep: step.number });
-  await postDiscord(`Starting Step ${step.number}: ${step.key}${state.currentIssue ? ` (issue #${state.currentIssue})` : ''}...`);
+  log(`[STATUS] Starting Step ${step.number}: ${step.key}${state.currentIssue ? ` (issue #${state.currentIssue})` : ''}...`);
 
   // Run claude
   let result;
@@ -1775,7 +1771,7 @@ async function runStep(step, state) {
     const softFailure = detectSoftFailure(result.stdout);
     if (softFailure.isSoftFailure) {
       log(`Soft failure detected: ${softFailure.reason}`);
-      await postDiscord(`Step ${step.number} (${step.key}) soft failure: ${softFailure.reason}`);
+      log(`[STATUS] Step ${step.number} (${step.key}) soft failure: ${softFailure.reason}`);
       return await handleFailure(step, result, state);
     }
 
@@ -1804,15 +1800,15 @@ async function runStep(step, state) {
       const versionCheck = validateVersionBump();
       if (!versionCheck.ok) {
         log(`Version bump missing: ${versionCheck.reason}`);
-        await postDiscord(`Version bump missing after Step 7 — ${versionCheck.reason}. Performing deterministic bump...`);
+        log(`[STATUS] Version bump missing after Step 7 — ${versionCheck.reason}. Performing deterministic bump...`);
         const bumped = performDeterministicVersionBump(state);
         if (bumped) {
-          await postDiscord('Deterministic version bump succeeded. Retrying Step 7...');
+          log('[STATUS] Deterministic version bump succeeded. Retrying Step 7...');
           return 'retry';
         } else {
           // Could not bump — warn but don't block PR creation
           log('Warning: deterministic version bump failed, continuing without version bump');
-          await postDiscord('Warning: could not perform deterministic version bump. Continuing.');
+          log('[STATUS] Warning: could not perform deterministic version bump. Continuing.');
         }
       }
     }
@@ -1822,7 +1818,7 @@ async function runStep(step, state) {
       const issue = state.currentIssue || 'unknown';
       const committed = autoCommitIfDirty(`feat: implement issue #${issue}`);
       if (committed) {
-        await postDiscord('Auto-committed implementation changes after Step 4.');
+        log('[STATUS] Auto-committed implementation changes after Step 4.');
       }
     }
 
@@ -1832,7 +1828,7 @@ async function runStep(step, state) {
       if (gate) return gate;
     }
 
-    await postDiscord(`Step ${step.number} (${step.key}) complete.${result.duration > 60 ? ` (${Math.round(result.duration / 60)}min)` : ''}`);
+    log(`[STATUS] Step ${step.number} (${step.key}) complete.${result.duration > 60 ? ` (${Math.round(result.duration / 60)}min)` : ''}`);
     return 'ok';
   }
 
@@ -1888,7 +1884,7 @@ async function main() {
     state = defaultState();
     writeState(state);
     log('Detected merged PR on feature branch. Checked out main for fresh cycle.');
-    await postDiscord('Detected merged PR — checked out main, starting fresh cycle.');
+    log('[STATUS] Detected merged PR — checked out main, starting fresh cycle.');
   } else if (detected) {
     // In-progress work detected from git/filesystem artifacts
     const nextStep = detected.lastCompletedStep + 1;
@@ -1905,18 +1901,18 @@ async function main() {
     state = { ...defaultState(), ...detected };
     writeState(state);
     log(`Detected in-progress work: issue #${detected.currentIssue}, branch "${detected.currentBranch}", lastCompletedStep=${detected.lastCompletedStep} — resuming from step ${nextStep}`);
-    await postDiscord(`Detected in-progress work on issue #${detected.currentIssue} (step ${detected.lastCompletedStep} complete). Resuming from Step ${nextStep}.`);
+    log(`[STATUS] Detected in-progress work on issue #${detected.currentIssue} (step ${detected.lastCompletedStep} complete). Resuming from Step ${nextStep}.`);
   } else if (RESUME) {
     // No feature branch detected but --resume passed — use state file
     state = readState();
     const nextStep = (state.lastCompletedStep || 0) + 1;
     log(`Resuming: last completed step ${state.lastCompletedStep || 0}, starting from step ${nextStep}. Issue: #${state.currentIssue || 'none'}`);
-    await postDiscord(`SDLC runner resuming from Step ${nextStep}.`);
+    log(`[STATUS] SDLC runner resuming from Step ${nextStep}.`);
   } else {
     // Fresh start on main — normal behavior
     state = defaultState();
     writeState(state);
-    await postDiscord('SDLC runner started.');
+    log('[STATUS] SDLC runner started.');
   }
 
   // Record PID
@@ -1942,7 +1938,7 @@ async function main() {
     // Check for open issues (skip in single-issue mode — we already know which issue to work on)
     if (!SINGLE_ISSUE_NUMBER && !DRY_RUN && !hasOpenIssues()) {
       log('No more open issues. All done!');
-      await postDiscord('No more open issues in the project. SDLC runner complete.');
+      log('[STATUS] No more open issues in the project. SDLC runner complete.');
       updateState({ currentStep: 0 });
       removeAutoMode();
       break;
@@ -2036,9 +2032,9 @@ async function main() {
 }
 
 if (isMainModule) {
-  main().catch(async (err) => {
+  main().catch((err) => {
     log(`Fatal error: ${err.message}`);
-    await postDiscord(`SDLC runner crashed: ${err.message}`);
+    log(`[STATUS] SDLC runner crashed: ${err.message}`);
     removeAutoMode();
     process.exit(1);
   });
@@ -2121,7 +2117,6 @@ export {
   haltFailureLoop,
 
   runStep,
-  postDiscord,
   log,
   readState,
   writeState,

@@ -19,13 +19,13 @@
 
 ### T001: Fix the Defect
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs`
+**File(s)**: `scripts/sdlc-runner.mjs`
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
 - [ ] A `validatePush()` helper function exists that runs `git fetch` then `git log origin/${branch}..HEAD --oneline` and returns `{ ok: boolean, reason?: string }`
 - [ ] A post-step validation gate for step 6 exists in `runStep()`, inserted between the step 4 auto-commit block and the step 8 CI validation gate
-- [ ] The gate follows the exact pattern of the spec validation gate (step 3, lines 1040-1055): check result, log failure, post Discord message, increment `retries[6]`, return `'retry'` or escalate at `MAX_RETRIES`
+- [ ] The gate follows the exact pattern of the spec validation gate (step 3, lines 1040-1055): check result, log failure, write a `[STATUS]` line to the orchestration log, increment `retries[6]`, return `'retry'` or escalate at `MAX_RETRIES`
 - [ ] The step 6 prompt (line 585) is updated to include explicit instruction for Claude to exit with a non-zero status code if `git push` fails
 - [ ] No unrelated changes are included in the diff
 

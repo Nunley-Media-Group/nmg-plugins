@@ -49,9 +49,7 @@ The architecture follows a registry pattern: the marketplace index is the single
 3. Skill reads marketplace.json to discover plugins
 4. For each plugin, rsync source → versioned cache directory
 5. Skill updates installed_plugins.json with version, path, SHA
-6. Skill syncs OpenClaw skill (if present)
-7. Skill restarts OpenClaw gateway (if available)
-8. Skill reports installation summary
+6. Skill reports installation summary
 ```
 
 ---

@@ -330,7 +330,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - [x] Steering docs define exercise-based verification strategy (`tech.md` → Testing Standards)
 - [x] Test project scaffolding layout defined (`structure.md` → Test Project Scaffolding)
 - [x] Existing `/verify-code` skill with Step 5 test coverage verification
-- [x] OpenClaw runner's `claude -p` subprocess pattern (`sdlc-runner.mjs`) as reference
+- [x] SDLC runner's `claude -p` subprocess pattern (`sdlc-runner.mjs`) as reference
 
 ### External Dependencies
 - [ ] Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`) — for full interactive testing (optional; fallback exists)

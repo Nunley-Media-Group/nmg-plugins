@@ -9,7 +9,7 @@
 
 ## Root Cause
 
-The `cleanupProcesses()` function in `openclaw/scripts/sdlc-runner.mjs` (lines 529–561) has three independent bugs that compound into incomplete cleanup:
+The `cleanupProcesses()` function in `scripts/sdlc-runner.mjs` (lines 529–561) has three independent bugs that compound into incomplete cleanup:
 
 **Bug 1: Filtered PID list is discarded.** The function calls `pgrep -f` to find matching PIDs, filters out the runner's own PID, logs the count — then calls `pkill -f` separately to do the actual killing. The `pkill -f` call re-matches processes independently and does not use the filtered PID list. This means the filter is cosmetic: the runner's own PID could be matched, and the logged count may not reflect what was actually killed.
 
@@ -21,13 +21,13 @@ The `cleanupProcesses()` function in `openclaw/scripts/sdlc-runner.mjs` (lines 5
 
 | File | Lines | Role |
 |------|-------|------|
-| `openclaw/scripts/sdlc-runner.mjs` | 529–561 | `cleanupProcesses()` — the broken function |
-| `openclaw/scripts/sdlc-runner.mjs` | 759–763 | `runClaude()` — sets `currentProcess = proc` |
-| `openclaw/scripts/sdlc-runner.mjs` | 784–785 | `runClaude()` close handler — sets `currentProcess = null` |
-| `openclaw/scripts/sdlc-runner.mjs` | 1178 | `currentProcess` declaration |
-| `openclaw/scripts/sdlc-runner.mjs` | 1187–1191 | `handleSignal()` — kills `currentProcess`, then calls `cleanupProcesses()` |
-| `openclaw/scripts/sdlc-runner.mjs` | 954 | `escalate()` — calls `cleanupProcesses()` |
-| `openclaw/scripts/sdlc-runner.mjs` | 1259 | Main loop — calls `cleanupProcesses()` after each step |
+| `scripts/sdlc-runner.mjs` | 529–561 | `cleanupProcesses()` — the broken function |
+| `scripts/sdlc-runner.mjs` | 759–763 | `runClaude()` — sets `currentProcess = proc` |
+| `scripts/sdlc-runner.mjs` | 784–785 | `runClaude()` close handler — sets `currentProcess = null` |
+| `scripts/sdlc-runner.mjs` | 1178 | `currentProcess` declaration |
+| `scripts/sdlc-runner.mjs` | 1187–1191 | `handleSignal()` — kills `currentProcess`, then calls `cleanupProcesses()` |
+| `scripts/sdlc-runner.mjs` | 954 | `escalate()` — calls `cleanupProcesses()` |
+| `scripts/sdlc-runner.mjs` | 1259 | Main loop — calls `cleanupProcesses()` after each step |
 
 ### Triggering Conditions
 
@@ -78,14 +78,14 @@ The implementation requires:
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `openclaw/scripts/sdlc-runner.mjs` | Add `IS_WINDOWS` constant and platform-aware `getChildPids(pid)` helper | Abstracts POSIX `pgrep -P` vs Windows `wmic` for child PID discovery |
-| `openclaw/scripts/sdlc-runner.mjs` | Add `getProcessTree(pid)` helper: recursively calls `getChildPids` to collect all descendant PIDs | Platform-agnostic tree walker built on the `getChildPids` primitive |
-| `openclaw/scripts/sdlc-runner.mjs` | Add `killProcessTree(pid)` helper: POSIX — bottom-up `process.kill`; Windows — `taskkill /T /F /PID` | Uses native OS tree-kill on Windows, manual bottom-up on POSIX |
-| `openclaw/scripts/sdlc-runner.mjs` | Add `findProcessesByPattern(pattern)` helper: POSIX — `pgrep -f`; Windows — `wmic` CommandLine query | Replaces the old bare `pgrep -f` / `pkill -f` calls with a platform-aware abstraction |
-| `openclaw/scripts/sdlc-runner.mjs` | Add `lastClaudePid` variable alongside `currentProcess`: set to `proc.pid` in `runClaude()`, not cleared on close | Preserves the PID for tree cleanup after subprocess exits |
-| `openclaw/scripts/sdlc-runner.mjs` | Rewrite `cleanupProcesses()`: (1) if `lastClaudePid` is set, call `killProcessTree(lastClaudePid)`; (2) then run pattern-based fallback using `findProcessesByPattern` + direct `process.kill` on filtered PID list | Two-phase: targeted tree kill, then pattern fallback for orphans |
-| `openclaw/scripts/sdlc-runner.mjs` | Add `[CLEANUP]` log lines for: tree kill start/results, fallback start/results, no-processes-found | Ensures debugging visibility (AC5) |
-| `openclaw/scripts/sdlc-config.example.json` | Add comment-style documentation (via README or inline field) explaining that `processPatterns` is now a fallback for orphaned processes | Documents the behavioral change (FR6) |
+| `scripts/sdlc-runner.mjs` | Add `IS_WINDOWS` constant and platform-aware `getChildPids(pid)` helper | Abstracts POSIX `pgrep -P` vs Windows `wmic` for child PID discovery |
+| `scripts/sdlc-runner.mjs` | Add `getProcessTree(pid)` helper: recursively calls `getChildPids` to collect all descendant PIDs | Platform-agnostic tree walker built on the `getChildPids` primitive |
+| `scripts/sdlc-runner.mjs` | Add `killProcessTree(pid)` helper: POSIX — bottom-up `process.kill`; Windows — `taskkill /T /F /PID` | Uses native OS tree-kill on Windows, manual bottom-up on POSIX |
+| `scripts/sdlc-runner.mjs` | Add `findProcessesByPattern(pattern)` helper: POSIX — `pgrep -f`; Windows — `wmic` CommandLine query | Replaces the old bare `pgrep -f` / `pkill -f` calls with a platform-aware abstraction |
+| `scripts/sdlc-runner.mjs` | Add `lastClaudePid` variable alongside `currentProcess`: set to `proc.pid` in `runClaude()`, not cleared on close | Preserves the PID for tree cleanup after subprocess exits |
+| `scripts/sdlc-runner.mjs` | Rewrite `cleanupProcesses()`: (1) if `lastClaudePid` is set, call `killProcessTree(lastClaudePid)`; (2) then run pattern-based fallback using `findProcessesByPattern` + direct `process.kill` on filtered PID list | Two-phase: targeted tree kill, then pattern fallback for orphans |
+| `scripts/sdlc-runner.mjs` | Add `[CLEANUP]` log lines for: tree kill start/results, fallback start/results, no-processes-found | Ensures debugging visibility (AC5) |
+| `scripts/sdlc-config.example.json` | Add comment-style documentation (via README or inline field) explaining that `processPatterns` is now a fallback for orphaned processes | Documents the behavioral change (FR6) |
 
 ### Blast Radius
 
@@ -116,7 +116,7 @@ The implementation requires:
 | **B: Track all child PIDs via `/proc` or `ps`** | Periodically poll `ps` for children of the `claude -p` PID and maintain a set | Adds polling complexity, timer management, and state. Overkill for a cleanup-time operation. `/proc` doesn't exist on macOS or Windows. |
 | **C: Use `pkill -P` (parent-based pkill)** | Kill all processes whose parent is the `claude -p` PID | Only kills direct children, not grandchildren. Doesn't handle reparented orphans (PPID=1). POSIX-only — no equivalent on Windows. |
 | **D: Drop pattern-based cleanup entirely** | Rely solely on tree-based PID cleanup | Would miss orphaned processes (PPID=1) that were reparented before cleanup runs. The pattern fallback is still valuable for these cases. |
-| **E: Use npm `tree-kill` package** | Cross-platform tree-kill as an npm dependency | Violates the zero-dependency constraint for OpenClaw scripts (per `tech.md`). The platform abstraction with `wmic`/`pgrep` achieves the same result with no external dependencies. |
+| **E: Use npm `tree-kill` package** | Cross-platform tree-kill as an npm dependency | Violates the zero-dependency constraint for runner scripts (per `tech.md`). The platform abstraction with `wmic`/`pgrep` achieves the same result with no external dependencies. |
 
 ---
 

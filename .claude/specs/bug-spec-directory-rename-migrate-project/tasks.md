@@ -55,7 +55,7 @@
 - [ ] Multi-spec consolidation logic (Step 4e lines 197–205) is unchanged
 - [ ] Interactive mode behavior (Step 4d non-auto-mode path, lines 189–191) is unchanged
 - [ ] Steps 1–4a and Steps 5–10 are unmodified
-- [ ] Existing steering doc migration, spec section migration, OpenClaw config, CHANGELOG, and VERSION analysis steps are unaffected
+- [ ] Existing steering doc migration, spec section migration, SDLC config, CHANGELOG, and VERSION analysis steps are unaffected
 - [ ] Auto-mode still skips consolidation and records it in "Skipped Operations" output
 
 ---

@@ -20,7 +20,7 @@
 
 ### T001: Replace regex extraction with branch-name detection
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs` (`extractStateFromStep`, step 2 handler)
+**File(s)**: `scripts/sdlc-runner.mjs` (`extractStateFromStep`, step 2 handler)
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
@@ -34,7 +34,7 @@
 
 ### T002: Add working tree cleanup to step 1 prompt
 
-**File(s)**: `openclaw/scripts/sdlc-runner.mjs` (`buildClaudeArgs`, step 1 prompt)
+**File(s)**: `scripts/sdlc-runner.mjs` (`buildClaudeArgs`, step 1 prompt)
 **Type**: Modify
 **Depends**: None
 **Acceptance**:

@@ -13,7 +13,7 @@
 
 ### Steps to Reproduce
 
-1. Set up an OpenClaw agent configured to run the full SDLC cycle
+1. Set up an SDLC runner configured to run the full SDLC cycle
 2. Ensure `.claude/auto-mode` exists in the project directory
 3. Runner invokes `/migrate-project` during a headless session
 4. Skill calls `AskUserQuestion` for every consolidation/migration decision (Steps 4d, 9 Part A, 9 Part B)
@@ -25,7 +25,7 @@
 |--------|-------|
 | **OS / Platform** | Any (macOS, Linux, Windows) |
 | **Version / Commit** | nmg-sdlc v2.16.0 |
-| **Browser / Runtime** | Claude Code CLI via OpenClaw `claude -p` subprocess |
+| **Browser / Runtime** | Claude Code CLI via SDLC runner's `claude -p` subprocess |
 | **Configuration** | `.claude/auto-mode` present; headless execution |
 
 ### Frequency
@@ -45,7 +45,7 @@ Always — every invocation in a headless auto-mode session hangs.
 
 ```
 No error output — the session hangs waiting for user input that never arrives.
-The OpenClaw runner eventually times out the step.
+The SDLC runner eventually times out the step.
 ```
 
 ---
@@ -81,7 +81,7 @@ The OpenClaw runner eventually times out the step.
 **When** the skill completes
 **Then** the output includes a machine-readable list of skipped operations in a structured format (e.g., markdown table or code block with one operation per line)
 **And** each entry includes the operation type, affected paths, and reason for skipping
-**And** the runner can parse this to report skipped operations to Discord
+**And** the runner can parse this to surface skipped operations in its status log
 
 ### AC4: Interactive Mode Behavior Unchanged
 

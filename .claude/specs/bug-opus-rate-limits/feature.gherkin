@@ -5,11 +5,11 @@ Feature: Skills inherit session model to avoid rate limit bucket switches
     Given the nmg-sdlc plugin is installed in Claude Code
 
   Scenario: No skill has a model field
-    When the SKILL.md frontmatter of all 12 skills is examined
+    When the SKILL.md frontmatter of all skills is examined
     Then no skill has a "model:" field
     And all skills inherit the session model
 
   Scenario: Slash-command-only skills are not auto-triggerable
-    Given the skills "run-loop", "installing-openclaw-skill", "generating-openclaw-config", and "run-retro"
+    Given the skills "run-loop", "init-config", and "run-retro"
     When the plugin is loaded
     Then each has "disable-model-invocation: true" in its frontmatter

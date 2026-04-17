@@ -1,4 +1,4 @@
-# File: openclaw/scripts/__tests__/features/sdlc-runner-edge-cases.feature
+# File: scripts/__tests__/features/sdlc-runner-edge-cases.feature
 #
 # Generated from: .claude/specs/51-sdlc-runner-edge-case-fixes/requirements.md
 # Issue: #51
@@ -7,9 +7,10 @@
 @regression
 Feature: SDLC runner edge case fixes
   The SDLC runner (sdlc-runner.mjs) had 6 bugs identified through edge case
-  analysis: orphaned subprocesses on SIGTERM, blocking event loop during Discord
-  retry, incomplete shell escaping, uncaught exception on merged-PR checkout,
-  silent retry reset on resume, and dead AbortController code.
+  analysis: orphaned subprocesses on SIGTERM, blocking event loop during a
+  status-notification retry, incomplete shell escaping, uncaught exception
+  on merged-PR checkout, silent retry reset on resume, and dead AbortController
+  code.
 
   # --- F1: currentProcess assigned for signal handling ---
 
@@ -21,11 +22,11 @@ Feature: SDLC runner edge case fixes
     And currentProcess is set to the spawned process during execution
     And currentProcess is cleared to null after the process closes
 
-  # --- F2: Non-blocking Discord retry ---
+  # --- F2: Non-blocking status-notification retry ---
 
   @regression
-  Scenario: Discord retry uses non-blocking async sleep
-    Given a Discord post fails and enters the retry loop
+  Scenario: Status-notification retry uses non-blocking async sleep
+    Given a status-notification post fails and enters the retry loop
     When the retry backoff delay elapses
     Then the delay uses the async sleep() helper
     And the event loop remains responsive during the retry delay
@@ -78,4 +79,4 @@ Feature: SDLC runner edge case fixes
     When a step completes successfully
     Then state is updated with lastCompletedStep
     And the next step's preconditions are validated
-    And Discord status updates are posted
+    And status notifications are written to the orchestration log
