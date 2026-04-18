@@ -6,6 +6,7 @@
   "logDir": "",
   "maxLogDiskUsageMB": 500,
   "_cleanup_note": "processPatterns is a Phase 2 fallback; Phase 1 uses the Claude subprocess PID tree",
+  "_draft_issue_note": "draft-issue is interactive-only as of plugin v6.0.0 (issue #116); do not add a draftIssue step",
   "cleanup": {
     "processPatterns": ["--remote-debugging-port"]
   },

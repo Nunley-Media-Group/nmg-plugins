@@ -241,7 +241,7 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 
 The plugin includes an integrated versioning system built on a `VERSION` file (plain text semver at the project root). When `VERSION` exists, skills automatically:
 
-- **`/draft-issue`** — Assigns issues to a milestone derived from the major version (e.g., `v2`), creating the milestone if needed
+- **`/draft-issue`** — Assigns issues to a milestone derived from the major version (e.g., `v2`), creating the milestone if needed. As of v6.0.0, this skill is **interactive-only** and does not participate in unattended-mode workflows — the SDLC runner assumes issues are drafted by a human before it picks them up
 - **`/open-pr`** — Classifies the version bump from issue labels, updates `VERSION`, rolls `CHANGELOG.md` entries to a versioned heading, and updates stack-specific files
 
 The **classification matrix**:
@@ -299,7 +299,7 @@ Any gate Fail caps the overall verification status at "Partial". Any gate Incomp
 | Skill | Description |
 |-------|-------------|
 | `/start-issue [#N]` | Select a GitHub issue, create a linked feature branch, and set the issue to In Progress |
-| `/draft-issue [description]` | Interview user about a feature need, assign to version milestone, create groomed GitHub issue with BDD acceptance criteria |
+| `/draft-issue [description]` | Interview user about a feature need, assign to version milestone, create groomed GitHub issue with BDD acceptance criteria. **Interactive-only as of v6.0.0** — renders a structured inline summary and `[1] Approve / [2] Revise` review menu, and plays back its understanding before drafting. Does not participate in unattended-mode workflows. |
 | `/write-spec #N` | Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown |
 | `/write-code #N` | Read specs for current branch, enter plan mode, then execute implementation tasks sequentially |
 | `/verify-code #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
