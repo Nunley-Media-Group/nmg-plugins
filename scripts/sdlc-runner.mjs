@@ -233,7 +233,7 @@ function resolveStepConfig(step, config) {
 const REQUIRED_SPEC_FILES = ['requirements.md', 'design.md', 'tasks.md', 'feature.gherkin'];
 
 /**
- * Locate the feature directory inside .claude/specs/.
+ * Locate the feature directory inside specs/.
  * Matches by featureName, branchSlug, or falls back to the last directory.
  * Returns the absolute path, or null if nothing is found.
  */
@@ -377,7 +377,7 @@ function detectAndHydrateState() {
   let lastCompletedStep = 2; // At minimum, we're on a feature branch (step 2 done)
 
   // Check for spec files (step 3)
-  const specsDir = path.join(PROJECT_PATH, '.claude', 'specs');
+  const specsDir = path.join(PROJECT_PATH, 'specs');
   let featureName = null;
   const featureDir = findFeatureDir(specsDir, null, branchMatch[2]);
   if (featureDir && checkRequiredSpecFiles(featureDir).length === 0) {
@@ -788,7 +788,7 @@ function validatePreconditions(step, state) {
     }
 
     case 4: { // Implement — all 4 spec files exist
-      const specsDir = path.join(PROJECT_PATH, '.claude', 'specs');
+      const specsDir = path.join(PROJECT_PATH, 'specs');
       const featureDir = findFeatureDir(specsDir, state.featureName);
       if (!featureDir) {
         return { ok: false, failedCheck: 'spec files exist', reason: 'No feature spec directory found' };
@@ -896,7 +896,7 @@ function buildClaudeArgs(step, state, overrides = {}) {
       `3. If all checks pass, report success and exit with code 0.`,
       `4. If any check fails:`,
       `   a. Read the CI logs for the failing check(s) to diagnose the root cause.`,
-      `   b. Before applying any fix, review the spec files in .claude/specs/ to ensure`,
+      `   b. Before applying any fix, review the spec files in specs/ to ensure`,
       `      the fix does not deviate from specified behavior. If the only correct fix`,
       `      would change specified behavior, exit with a non-zero status explaining why.`,
       `   c. Apply the minimal fix, commit with a "fix:" conventional-commit message, and push.`,
@@ -1282,7 +1282,7 @@ function extractStateFromStep(step, result, state) {
 
   if (step.number === 3) {
     // Try to detect the feature name from specs directory
-    const specsDir = path.join(PROJECT_PATH, '.claude', 'specs');
+    const specsDir = path.join(PROJECT_PATH, 'specs');
     const featureDir = findFeatureDir(specsDir);
     if (featureDir) {
       patch.featureName = path.basename(featureDir);
@@ -1372,7 +1372,7 @@ function validateSpecContent(featureDir) {
 }
 
 function validateSpecs(state) {
-  const specsDir = path.join(PROJECT_PATH, '.claude', 'specs');
+  const specsDir = path.join(PROJECT_PATH, 'specs');
   const featureDir = findFeatureDir(specsDir, state.featureName);
 
   if (!featureDir) {
@@ -1468,11 +1468,11 @@ function validateVersionBump() {
 
 /**
  * Classify the version bump type from issue labels.
- * Reads the classification matrix from .claude/steering/tech.md if available,
+ * Reads the classification matrix from steering/tech.md if available,
  * falls back to hardcoded defaults (bug→patch, else→minor).
  */
 function classifyBumpType(labels, projectPath) {
-  const techMdPath = path.join(projectPath, '.claude', 'steering', 'tech.md');
+  const techMdPath = path.join(projectPath, 'steering', 'tech.md');
 
   if (!fs.existsSync(techMdPath)) {
     return labels.includes('bug') ? 'patch' : 'minor';
@@ -1580,8 +1580,8 @@ function performDeterministicVersionBump(state) {
       }
     }
 
-    // 3. Update stack-specific files from .claude/steering/tech.md
-    const techMdPath = path.join(PROJECT_PATH, '.claude', 'steering', 'tech.md');
+    // 3. Update stack-specific files from steering/tech.md
+    const techMdPath = path.join(PROJECT_PATH, 'steering', 'tech.md');
     if (fs.existsSync(techMdPath)) {
       try {
         const techMd = fs.readFileSync(techMdPath, 'utf8');

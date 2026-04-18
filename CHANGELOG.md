@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [6.1.0] - 2026-04-18
+
+### Changed (BREAKING)
+
+- **Relocated canonical SDLC artifacts out of `.claude/`** (issue #121) — current Claude Code releases protect the project-level `.claude/` directory from Edit/Write even under `--dangerously-skip-permissions`, which silently broke every SDLC skill that authored files under `.claude/steering/` or `.claude/specs/`. Canonical locations moved to `steering/` and `specs/` at the project root. Runtime artifacts (`.claude/unattended-mode`, `.claude/sdlc-state.json`) remain unchanged — they are read/written by the SDLC runner directly and are not affected by the tool-layer protection.
+
+  **Migration:** Existing projects must run `/upgrade-project` once to `git mv` the legacy directories into place, rewrite intra-file cross-references, and rename `.claude/migration-exclusions.json` → `.claude/upgrade-exclusions.json`. Every pipeline skill (`/start-issue`, `/write-spec`, `/write-code`, `/verify-code`, `/open-pr`, `/run-retro`, `/draft-issue`, `/setup-steering`) hard-gates on the legacy layout and refuses to proceed until the upgrade runs.
+
+- **Renamed `/migrate-project` → `/upgrade-project`** (issue #121) — the old name described a narrow "migrate artifacts" action; the skill's actual job is to bring a project forward to match the current plugin contract. The renamed skill now also handles the new legacy-layout relocation (see above). A deprecation stub remains at `/migrate-project` that points to `/upgrade-project` and exits; it will be removed in the next minor release.
+
+- **Renamed `.claude/migration-exclusions.json` → `.claude/upgrade-exclusions.json`** (issue #121) — naming consistency with the renamed skill. `/upgrade-project` auto-migrates the existing file on first run via `git mv`, preserving declined-section data. The schema is unchanged.
+
 ## [6.0.0] - 2026-04-18
 
 ### Changed (BREAKING)

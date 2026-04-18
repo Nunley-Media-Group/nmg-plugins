@@ -22,9 +22,20 @@ If the file `.claude/unattended-mode` exists in the project directory:
 
 ## Prerequisites
 
-1. Specs exist at `.claude/specs/{feature-name}/`. The `{feature-name}` is the spec directory name. For specs created with v2.15+, this follows the `feature-{slug}` or `bug-{slug}` convention (e.g., `feature-dark-mode`). Legacy specs use `{issue#}-{slug}` (e.g., `42-add-precipitation-overlay`). **Fallback:** Use `Glob` to find `.claude/specs/*/requirements.md`. For each result, read the `**Issues**` (or legacy `**Issue**`) frontmatter field and match against the current issue number. If no frontmatter match, try matching the issue number or branch name keywords against the directory name.
+1. Specs exist at `specs/{feature-name}/`. The `{feature-name}` is the spec directory name. For specs created with v2.15+, this follows the `feature-{slug}` or `bug-{slug}` convention (e.g., `feature-dark-mode`). Legacy specs use `{issue#}-{slug}` (e.g., `42-add-precipitation-overlay`). **Fallback:** Use `Glob` to find `specs/*/requirements.md`. For each result, read the `**Issues**` (or legacy `**Issue**`) frontmatter field and match against the current issue number. If no frontmatter match, try matching the issue number or branch name keywords against the directory name.
 2. Implementation is complete (or believed to be complete)
 3. A GitHub issue exists for tracking
+4. The project uses the current directory layout — no `.claude/steering/` or `.claude/specs/` content remains. See the **Legacy-Layout Precondition** below.
+
+### Legacy-Layout Precondition
+
+Before Step 1, run `Glob` for `.claude/steering/*.md` and `.claude/specs/*/requirements.md`. If either returns a match, abort and print:
+
+```
+ERROR: This project uses the legacy `.claude/steering/` and/or `.claude/specs/` directory layout, which current Claude Code releases refuse to write to. Run `/upgrade-project` first, then re-run `/verify-code`.
+```
+
+The gate fires in both interactive and unattended mode — do not silently verify against a mixed layout.
 
 ---
 
@@ -35,7 +46,7 @@ If the file `.claude/unattended-mode` exists in the project directory:
 Read all spec documents:
 
 ```
-.claude/specs/{feature-name}/
+specs/{feature-name}/
 ├── requirements.md    — Acceptance criteria to verify
 ├── design.md          — Architecture decisions to validate
 ├── tasks.md           — Task completion to confirm
@@ -45,7 +56,7 @@ Read all spec documents:
 Read all steering documents (these define project conventions used throughout verification):
 
 ```
-.claude/steering/
+steering/
 ├── tech.md        — Technology stack, coding standards, testing strategy, behavioral contracts
 ├── structure.md   — Code organization, naming conventions, architectural invariants
 └── product.md     — Product principles, intent verification postconditions
@@ -204,7 +215,7 @@ For each finding:
 
 #### 6b. Run Tests After Fixes
 
-Reference `.claude/steering/tech.md` for the project's test command. Run the full test suite and fix any regressions introduced by the fixes.
+Reference `steering/tech.md` for the project's test command. Run the full test suite and fix any regressions introduced by the fixes.
 
 #### 6c. Re-verify Changed Areas
 

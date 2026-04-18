@@ -278,6 +278,6 @@ If no `## Verification Gates` section exists in `tech.md`, no gates are enforced
 ## References
 
 - CLAUDE.md for project overview
-- `.claude/steering/product.md` for product direction
-- `.claude/steering/structure.md` for code organization
+- `steering/product.md` for product direction
+- `steering/structure.md` for code organization
 ```

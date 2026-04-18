@@ -1,6 +1,6 @@
 ---
 name: write-code
-description: "Read specs for current branch, enter plan mode, then execute implementation tasks sequentially. Use when user says 'implement the spec', 'start coding', 'build the feature', 'implement issue #N', 'resume implementation', 'how do I implement this', 'how to start coding', 'write the code', or 'build it'. Do NOT use for writing specs, verifying implementations, or creating PRs. Reads requirements, design, and tasks from .claude/specs/ and executes them in order. Fourth step in the SDLC pipeline — follows /write-spec and precedes /verify-code."
+description: "Read specs for current branch, enter plan mode, then execute implementation tasks sequentially. Use when user says 'implement the spec', 'start coding', 'build the feature', 'implement issue #N', 'resume implementation', 'how do I implement this', 'how to start coding', 'write the code', or 'build it'. Do NOT use for writing specs, verifying implementations, or creating PRs. Reads requirements, design, and tasks from specs/ and executes them in order. Fourth step in the SDLC pipeline — follows /write-spec and precedes /verify-code."
 argument-hint: "[#issue-number]"
 allowed-tools: Read, Glob, Grep, Task, Write, Edit, WebFetch, WebSearch, EnterPlanMode, Bash(gh:*), Bash(git:*)
 ---
@@ -23,9 +23,20 @@ If the file `.claude/unattended-mode` exists in the project directory:
 
 ## Prerequisites
 
-1. Specs exist at `.claude/specs/{feature-name}/` (created by `/write-spec`). The `{feature-name}` is the spec directory name. For specs created with v2.15+, this follows the `feature-{slug}` or `bug-{slug}` convention (e.g., `feature-dark-mode`). Legacy specs use `{issue#}-{slug}` (e.g., `42-add-precipitation-overlay`). **Fallback:** Use `Glob` to find `.claude/specs/*/requirements.md`. For each result, read the `**Issues**` (or legacy `**Issue**`) frontmatter field and match against the current issue number. If no frontmatter match, try matching the issue number or branch name keywords against the directory name.
+1. Specs exist at `specs/{feature-name}/` (created by `/write-spec`). The `{feature-name}` is the spec directory name. For specs created with v2.15+, this follows the `feature-{slug}` or `bug-{slug}` convention (e.g., `feature-dark-mode`). Legacy specs use `{issue#}-{slug}` (e.g., `42-add-precipitation-overlay`). **Fallback:** Use `Glob` to find `specs/*/requirements.md`. For each result, read the `**Issues**` (or legacy `**Issue**`) frontmatter field and match against the current issue number. If no frontmatter match, try matching the issue number or branch name keywords against the directory name.
 2. A feature branch exists for this issue (or will be created)
-3. Steering documents exist at `.claude/steering/`
+3. Steering documents exist at `steering/`
+4. The project uses the current directory layout — no `.claude/steering/` or `.claude/specs/` content remains. See the **Legacy-Layout Precondition** below.
+
+### Legacy-Layout Precondition
+
+Before Step 1, run `Glob` for `.claude/steering/*.md` and `.claude/specs/*/requirements.md`. If either returns a match, abort and print:
+
+```
+ERROR: This project uses the legacy `.claude/steering/` and/or `.claude/specs/` directory layout, which current Claude Code releases refuse to write to. Run `/upgrade-project` first, then re-run `/write-code`.
+```
+
+The gate fires in both interactive and unattended mode — do not silently implement against a mixed layout.
 
 ---
 
@@ -48,7 +59,7 @@ If no issue can be identified, ask the user.
 Load all specification documents:
 
 ```
-.claude/specs/{feature-name}/
+specs/{feature-name}/
 ├── requirements.md    — Acceptance criteria, functional requirements
 ├── design.md          — Architecture, data flow, component design
 ├── tasks.md           — Phased implementation tasks with dependencies
@@ -76,7 +87,7 @@ Then stop — do not proceed to subsequent steps.
 Load project conventions:
 
 ```
-.claude/steering/
+steering/
 ├── tech.md        — Stack, testing standards, coding conventions
 └── structure.md   — Directory layout, naming, patterns
 ```
@@ -109,7 +120,7 @@ The implementation approach (whether internal or in plan mode) should:
 
 ```
 Task(subagent_type="nmg-sdlc:spec-implementer",
-     prompt="Implement the specs for issue #N in .claude/specs/{feature-name}/. Read requirements.md, design.md, tasks.md, and steering docs in .claude/steering/, then execute all tasks sequentially.")
+     prompt="Implement the specs for issue #N in specs/{feature-name}/. Read requirements.md, design.md, tasks.md, and steering docs in steering/, then execute all tasks sequentially.")
 ```
 
 The agent will read all spec and steering documents, execute tasks from `tasks.md` sequentially, and return a completion summary with files created/modified.
@@ -187,7 +198,7 @@ If implementation was started but not finished:
 
 ### Example 1: Implement by issue number
 User says: "/write-code #42"
-Actions: Reads specs from `.claude/specs/feature-add-auth/` (or legacy `42-add-auth/`), loads steering docs, enters plan mode, executes tasks sequentially
+Actions: Reads specs from `specs/feature-add-auth/` (or legacy `42-add-auth/`), loads steering docs, enters plan mode, executes tasks sequentially
 Result: All tasks complete; user prompted to run `/verify-code #42`
 
 ### Example 2: Resume partial implementation

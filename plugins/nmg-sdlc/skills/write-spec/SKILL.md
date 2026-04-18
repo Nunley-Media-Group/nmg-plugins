@@ -30,7 +30,7 @@ If the file `.claude/unattended-mode` exists in the project directory, all Human
 
 ## Feature Name Convention
 
-The `{feature-name}` used in `.claude/specs/{feature-name}/` is derived from the **issue type and title**:
+The `{feature-name}` used in `specs/{feature-name}/` is derived from the **issue type and title**:
 
 1. Take the issue title (e.g., "Add dark mode toggle to settings")
 2. Lowercase, replace spaces and special characters with hyphens
@@ -42,7 +42,7 @@ The `{feature-name}` used in `.claude/specs/{feature-name}/` is derived from the
 
 The directory name contains **no issue number** — issue numbers are tracked in spec frontmatter only. Note that branch names still use the `N-feature-name` format (e.g., `71-add-dark-mode-toggle`); this mismatch is intentional since multiple issues can contribute to a single feature spec.
 
-**Fallback:** If the feature-name cannot be determined from context, use `Glob` to find `.claude/specs/*/requirements.md` and match against the current issue number by reading the `**Issues**` frontmatter field (plural). Fall back to the legacy `**Issue**` field (singular) for older specs. If no frontmatter match, try matching the issue number or branch name keywords against the directory name.
+**Fallback:** If the feature-name cannot be determined from context, use `Glob` to find `specs/*/requirements.md` and match against the current issue number by reading the `**Issues**` frontmatter field (plural). Fall back to the legacy `**Issue**` field (singular) for older specs. If no frontmatter match, try matching the issue number or branch name keywords against the directory name.
 
 **Examples:**
 - New convention: `feature-dark-mode/`, `bug-login-crash-on-timeout/`
@@ -62,7 +62,18 @@ The directory name contains **no issue number** — issue numbers are tracked in
 ## Prerequisites
 
 1. A GitHub issue exists (created via `/draft-issue` or manually)
-2. Steering documents exist in `.claude/steering/` (create with `/setup-steering` if missing)
+2. Steering documents exist in `steering/` (create with `/setup-steering` if missing)
+3. The project uses the current directory layout (`steering/` and `specs/` at the project root). If `.claude/steering/` or `.claude/specs/` still exists, run `/upgrade-project` first — see the **Legacy-Layout Precondition** block below.
+
+### Legacy-Layout Precondition
+
+Before Phase 1 does any work, run `Glob` for `.claude/steering/*.md` and `.claude/specs/*/requirements.md`. If either glob returns a match, abort and print:
+
+```
+ERROR: This project uses the legacy `.claude/steering/` and/or `.claude/specs/` directory layout, which current Claude Code releases refuse to write to. Run `/upgrade-project` first, then re-run `/write-spec`.
+```
+
+The gate fires in both interactive and unattended mode — do not silently write specs against a mixed layout.
 
 ## Defect Detection
 
@@ -91,7 +102,7 @@ If any label is `bug`, this is a **defect issue**. All three phases use the **De
 ### Process
 
 1. **Extract keywords** from the issue title: tokenize by spaces, then filter out stop words: `a`, `an`, `the`, `to`, `for`, `in`, `on`, `of`, `and`, `or`, `is`, `it`, `as`, `at`, `by`, `with`, `from`, `this`, `that`, `add`, `fix`, `update`, `implement`, `create`
-2. **Search for existing feature specs**: Run `Glob` for `.claude/specs/feature-*/requirements.md` to list all feature spec candidates
+2. **Search for existing feature specs**: Run `Glob` for `specs/feature-*/requirements.md` to list all feature spec candidates
 3. **If no feature specs exist**, skip to the "create new spec" flow below
 4. **Score candidates**: For each candidate spec file, run `Grep` using each extracted keyword against the file content. Count total keyword hits per candidate.
 5. **Rank and filter**: Sort candidates by total keyword hits. Filter to candidates with at least 2 keyword hits.
@@ -109,7 +120,7 @@ The result of this step determines whether subsequent phases operate in **amendm
 
 ## Steering Documents
 
-Steering documents provide project-specific context. They live in `.claude/steering/`:
+Steering documents provide project-specific context. They live in `steering/`:
 
 | Document | Purpose |
 |----------|---------|
@@ -140,8 +151,8 @@ Extract from the issue:
 
 1. Read the issue via `gh issue view #N`
 2. **Check for `bug` label** — if present, use the Defect Requirements Variant (see [Defect Detection](#defect-detection)). Bug-labeled issues always create a new `bug-{slug}/` directory — they never amend.
-3. Read `.claude/steering/product.md` for user context and product vision
-4. If `.claude/steering/retrospective.md` exists, read it and apply relevant learnings when drafting acceptance criteria — read each learning as a transferable principle; adapt it to the current feature's domain by mapping the abstract pattern to concrete scenarios relevant to this feature. For example, a learning like "When specifying features that interact with external systems via session-scoped protocols, include ACs for state persistence across invocations" applied to a database connection pool feature becomes: "Given a connection is checked out and used for a query / When the connection is returned to the pool / Then any session-level state (temp tables, variables) is reset before reuse"
+3. Read `steering/product.md` for user context and product vision
+4. If `steering/retrospective.md` exists, read it and apply relevant learnings when drafting acceptance criteria — read each learning as a transferable principle; adapt it to the current feature's domain by mapping the abstract pattern to concrete scenarios relevant to this feature. For example, a learning like "When specifying features that interact with external systems via session-scoped protocols, include ACs for state persistence across invocations" applied to a database connection pool feature becomes: "Given a connection is checked out and used for a query / When the connection is returned to the pool / Then any session-level state (temp tables, variables) is reset before reuse"
 5. **If amending an existing spec** (determined by [Spec Discovery](#spec-discovery)):
    1. Read the existing `requirements.md`
    2. Parse the `**Issues**` field to get the current issue list
@@ -165,19 +176,19 @@ Extract from the issue:
       - **Feature**: Full template — user story, ACs, functional/non-functional requirements, UI/UX, data requirements, dependencies, success metrics
       - **Defect**: Defect variant — reproduction steps, expected vs actual, severity, 2–3 acceptance criteria (bug fixed + no regression), lightweight functional requirements. Omit NFRs table, UI/UX table, data requirements, success metrics. To populate the **Related Spec** field, actively search for a related **feature** spec:
         1. Extract keywords from the issue — file paths, function/method names, component names, module names
-        2. Run `Glob` for `.claude/specs/feature-*/requirements.md` and `.claude/specs/*/requirements.md` to list all existing specs (covers both new `feature-` naming and legacy `{issue#}-` naming)
+        2. Run `Glob` for `specs/feature-*/requirements.md` and `specs/*/requirements.md` to list all existing specs (covers both new `feature-` naming and legacy `{issue#}-` naming)
         3. Run `Grep` over those spec files using the extracted keywords
         4. Read the **first heading** of each matching file to determine its type:
            - `# Requirements:` → feature spec
            - `# Defect Report:` → defect spec
-        5. **If feature specs match** → use the best-matching feature spec. Set **Related Spec** to its directory (e.g., `.claude/specs/feature-dark-mode/`).
+        5. **If feature specs match** → use the best-matching feature spec. Set **Related Spec** to its directory (e.g., `specs/feature-dark-mode/`).
         6. **If no feature specs match but defect specs do** → follow each matching defect spec's `**Related Spec**` link to find the root feature spec (same chain-resolution logic: follow `Related Spec` links through defect specs until reaching a `# Requirements:` heading, maintaining a visited set to detect cycles). Use the resolved feature spec.
         7. **If nothing matches** after filtering and chain following → set **Related Spec** to **N/A**.
 7. Consult steering docs for project-specific requirements (e.g., accessibility, platform support)
 
 ### Output
 
-Write to (or amend) `.claude/specs/{feature-name}/requirements.md`
+Write to (or amend) `specs/{feature-name}/requirements.md`
 
 ### Human Review Gate
 
@@ -187,7 +198,7 @@ Write to (or amend) `.claude/specs/{feature-name}/requirements.md`
 
 ---
 
-**Requirements Summary** — `.claude/specs/{feature-name}/requirements.md`
+**Requirements Summary** — `specs/{feature-name}/requirements.md`
 
 **User Story**: As a [type], I want [action] so that [benefit]
 
@@ -224,8 +235,8 @@ If the user selects 2 (or provides feedback), apply their changes to the file an
 ### Input
 
 - Approved `requirements.md` from Phase 1
-- `.claude/steering/tech.md` for technical standards
-- `.claude/steering/structure.md` for code organization patterns
+- `steering/tech.md` for technical standards
+- `steering/structure.md` for code organization patterns
 
 ### Process
 
@@ -252,7 +263,7 @@ If the user selects 2 (or provides feedback), apply their changes to the file an
 
 ### Output
 
-Write to (or amend) `.claude/specs/{feature-name}/design.md`
+Write to (or amend) `specs/{feature-name}/design.md`
 
 ### Human Review Gate
 
@@ -262,7 +273,7 @@ Write to (or amend) `.claude/specs/{feature-name}/design.md`
 
 ---
 
-**Design Summary** — `.claude/specs/{feature-name}/design.md`
+**Design Summary** — `specs/{feature-name}/design.md`
 
 **Approach**: [2-3 sentence summary of the architectural approach — what components are involved, the key design decision, and why this approach was chosen over alternatives]
 
@@ -300,7 +311,7 @@ If the user selects 2 (or provides feedback), apply their changes to the file an
 ### Input
 
 - Approved `design.md` from Phase 2
-- `.claude/steering/structure.md` for file path conventions
+- `steering/structure.md` for file path conventions
 
 ### Process
 
@@ -352,8 +363,8 @@ For **defect** issues, skip phasing. Use the flat task list from the Defect Task
 ### Output
 
 Write to (or amend):
-- `.claude/specs/{feature-name}/tasks.md`
-- `.claude/specs/{feature-name}/feature.gherkin`
+- `specs/{feature-name}/tasks.md`
+- `specs/{feature-name}/feature.gherkin`
 
 ### Human Review Gate
 
@@ -363,7 +374,7 @@ Write to (or amend):
 
 ---
 
-**Tasks Summary** — `.claude/specs/{feature-name}/tasks.md`
+**Tasks Summary** — `specs/{feature-name}/tasks.md`
 
 **Phase breakdown**:
 | Phase | Tasks | Key work |
@@ -419,7 +430,7 @@ The pipeline shape is identical to features (SPECIFY → PLAN → TASKS with hum
 Output:
 
 ```
-Specs written to (or amended in) `.claude/specs/{feature-name}/`:
+Specs written to (or amended in) `specs/{feature-name}/`:
 - requirements.md — Acceptance criteria and functional requirements
 - design.md — Technical architecture and design decisions
 - tasks.md — Phased implementation tasks

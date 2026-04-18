@@ -1,7 +1,7 @@
 /**
  * BDD Test Suite for sdlc-runner.mjs
  *
- * Derived from: .claude/specs/38-detect-soft-failures-runner-tests/
+ * Derived from: specs/38-detect-soft-failures-runner-tests/
  * Issue: #38
  *
  * Tests are organized by spec scenarios (feature.gherkin) and functional
@@ -390,7 +390,7 @@ describe('Precondition validation', () => {
   });
 
   it('step 4 (implement) passes when all 4 spec files exist', () => {
-    const specsDir = `${TEST_PROJECT}/.claude/specs`;
+    const specsDir = `${TEST_PROJECT}/specs`;
     const featureDir = `${specsDir}/42-feature`;
 
     mockFs.existsSync.mockImplementation((p) => {
@@ -408,7 +408,7 @@ describe('Precondition validation', () => {
   });
 
   it('step 4 (implement) fails when spec files are missing', () => {
-    const specsDir = `${TEST_PROJECT}/.claude/specs`;
+    const specsDir = `${TEST_PROJECT}/specs`;
 
     mockFs.existsSync.mockImplementation((p) => {
       if (p === specsDir) return true;
@@ -516,7 +516,7 @@ describe('State extraction', () => {
   });
 
   it('step 3 detects feature name from specs directory', () => {
-    const specsDir = `${TEST_PROJECT}/.claude/specs`;
+    const specsDir = `${TEST_PROJECT}/specs`;
     mockFs.existsSync.mockImplementation((p) => p === specsDir);
     mockFs.readdirSync.mockReturnValue(['38-detect-soft-failures']);
     mockFs.statSync.mockReturnValue({ isDirectory: () => true });
@@ -723,7 +723,7 @@ describe('Failure handling', () => {
     const state = { ...defaultState(), currentIssue: 42, retries: {} };
 
     // Mock: preconditions pass for step 4
-    const specsDir = `${TEST_PROJECT}/.claude/specs`;
+    const specsDir = `${TEST_PROJECT}/specs`;
     const featureDir = `${specsDir}/42-feature`;
     mockFs.existsSync.mockImplementation((p) => {
       if (p === TEST_STATE_PATH) return true;
@@ -748,7 +748,7 @@ describe('Failure handling', () => {
     const state = { ...defaultState(), currentIssue: 42, retries: { 4: 2 } }; // Already at 2, max is 3
 
     // Mock: preconditions pass
-    const specsDir = `${TEST_PROJECT}/.claude/specs`;
+    const specsDir = `${TEST_PROJECT}/specs`;
     const featureDir = `${specsDir}/42-feature`;
     mockFs.existsSync.mockImplementation((p) => {
       if (p === TEST_STATE_PATH) return true;
@@ -895,7 +895,7 @@ describe('State hydration', () => {
   });
 
   it('detects lastCompletedStep=3 when spec files exist', () => {
-    const specsDir = `${TEST_PROJECT}/.claude/specs`;
+    const specsDir = `${TEST_PROJECT}/specs`;
     mockExecSync.mockImplementation((cmd) => {
       if (cmd.includes('rev-parse --abbrev-ref HEAD')) return '42-my-feature';
       if (cmd.includes('pr view --json state')) throw new Error('no PR');
@@ -1165,7 +1165,7 @@ describe('No CI checks handling (#54)', () => {
     });
 
     mockFs.existsSync.mockImplementation((p) => {
-      if (p.includes('.claude/specs')) return true;
+      if (p.includes('specs')) return true;
       if (p.includes('42-my-feature')) return true;
       return false;
     });
@@ -1194,10 +1194,10 @@ describe('detectAndHydrateState after signal shutdown', () => {
       return '';
     });
 
-    const specsDir = `${TEST_PROJECT}/.claude/specs`;
+    const specsDir = `${TEST_PROJECT}/specs`;
     mockFs.existsSync.mockImplementation((p) => {
       if (p === TEST_STATE_PATH) return true;
-      if (p.includes('.claude/specs')) return true;
+      if (p.includes('specs')) return true;
       if (p.includes('42-my-feature') || p.includes('my-feature')) return true;
       return false;
     });
@@ -1226,7 +1226,7 @@ describe('detectAndHydrateState after signal shutdown', () => {
 
     mockFs.existsSync.mockImplementation((p) => {
       if (p === TEST_STATE_PATH) return true;
-      if (p.includes('.claude/specs')) return true;
+      if (p.includes('specs')) return true;
       if (p.includes('42-my-feature') || p.includes('my-feature')) return true;
       return false;
     });
@@ -1253,7 +1253,7 @@ describe('detectAndHydrateState after signal shutdown', () => {
 
     mockFs.existsSync.mockImplementation((p) => {
       if (p === TEST_STATE_PATH) return true;
-      if (p.includes('.claude/specs')) return false;
+      if (p.includes('specs')) return false;
       return false;
     });
     mockFs.readdirSync.mockReturnValue([]);

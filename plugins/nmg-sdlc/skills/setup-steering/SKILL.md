@@ -14,22 +14,21 @@ Generate or enhance project steering documents by analyzing the codebase. These 
 ## When to Use
 
 - First time setting up nmg-sdlc in a project
-- When `.claude/steering/` directory doesn't exist
+- When `steering/` directory doesn't exist
 - When you want to enhance or update existing steering documents
 - After major project changes (new framework, reorganization, etc.)
 
 ## What Gets Created / Modified
 
 ```
-.claude/
-├── steering/
-│   ├── product.md     — Product vision, users, priorities
-│   ├── tech.md        — Tech stack, testing, coding standards
-│   └── structure.md   — Code organization, layers, naming
-└── specs/             — Empty directory for future specs
+steering/
+├── product.md     — Product vision, users, priorities
+├── tech.md        — Tech stack, testing, coding standards
+└── structure.md   — Code organization, layers, naming
+specs/             — Empty directory for future specs
 ```
 
-In bootstrap mode, all three files are generated from templates. In enhancement mode, existing files are modified in-place using `Edit` to preserve your customizations.
+In bootstrap mode, all three files are generated from templates at the project root. In enhancement mode, existing files are modified in-place using `Edit` to preserve your customizations.
 
 ---
 
@@ -40,12 +39,23 @@ In bootstrap mode, all three files are generated from templates. In enhancement 
 Check whether steering documents already exist:
 
 1. Use `Glob` to check for:
-   - `.claude/steering/product.md`
-   - `.claude/steering/tech.md`
-   - `.claude/steering/structure.md`
+   - `steering/product.md`
+   - `steering/tech.md`
+   - `steering/structure.md`
+   - **Legacy layout:** `.claude/steering/*.md` and `.claude/specs/*/requirements.md`
 
-2. **If at least one file is found** → go to **Enhancement Flow**
-3. **If no files are found** (directory missing, empty, or contains only non-steering files) → go to **Bootstrap Flow**
+2. **If any legacy layout file exists** → abort and print:
+
+   ```
+   ERROR: This project uses the legacy `.claude/steering/` and/or `.claude/specs/` directory layout, which current Claude Code releases refuse to write to. Running `/setup-steering` alongside the legacy layout would create mixed-location steering docs.
+
+   Run `/upgrade-project` first. It will relocate the legacy content to `steering/` and `specs/` and then you can re-run `/setup-steering` if you want to add new sections.
+   ```
+
+   Do not proceed in either interactive or unattended mode when legacy content is present.
+
+3. **If at least one file is found under `steering/`** → go to **Enhancement Flow**
+4. **If no files are found** (directory missing, empty, or contains only non-steering files) → go to **Bootstrap Flow**
 
 ---
 
@@ -59,9 +69,9 @@ List which steering files were found and which are missing:
 
 ```
 Found existing steering documents:
-  ✓ .claude/steering/product.md
-  ✓ .claude/steering/tech.md
-  ✗ .claude/steering/structure.md  (missing)
+  ✓ steering/product.md
+  ✓ steering/tech.md
+  ✗ steering/structure.md  (missing)
 
 Entering enhancement mode — your existing content will be preserved.
 ```
@@ -166,14 +176,14 @@ From [templates/structure.md](templates/structure.md):
 
 #### Step 3: Write Files
 
-1. Create `.claude/steering/` directory
+1. Create `steering/` directory
 2. Write `product.md`, `tech.md`, `structure.md`
-3. Create `.claude/specs/` directory (empty, for future specs)
+3. Create `specs/` directory (empty, for future specs)
 
 #### Step 4: Prompt User
 
 ```
-Steering documents created at .claude/steering/:
+Steering documents created at steering/:
 
   product.md  — Product vision (needs your input on mission, users, priorities)
   tech.md     — Tech stack (pre-filled, review coding standards and testing)

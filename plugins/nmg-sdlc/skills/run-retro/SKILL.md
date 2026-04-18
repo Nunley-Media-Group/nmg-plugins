@@ -1,13 +1,13 @@
 ---
 name: run-retro
-description: "Analyze defect specs to identify spec-writing gaps and produce actionable learnings. Use when user says 'run retrospective', 'analyze defects', 'review past bugs', 'what can we learn from bugs', 'update retrospective', 'how do I run a retrospective', or 'learn from our bugs'. Produces .claude/steering/retrospective.md that /write-spec reads to avoid repeating past failures. Utility skill — run periodically, outside the main SDLC pipeline."
+description: "Analyze defect specs to identify spec-writing gaps and produce actionable learnings. Use when user says 'run retrospective', 'analyze defects', 'review past bugs', 'what can we learn from bugs', 'update retrospective', 'how do I run a retrospective', or 'learn from our bugs'. Produces steering/retrospective.md that /write-spec reads to avoid repeating past failures. Utility skill — run periodically, outside the main SDLC pipeline."
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash(gh:*), Bash(shasum:*), Bash(sha256sum:*)
 ---
 
 # Run Retro
 
-Batch-analyze defect specs to identify recurring spec-writing gaps and produce `.claude/steering/retrospective.md` — a steering document that `/write-spec` reads during Phase 1 to avoid repeating past spec failures.
+Batch-analyze defect specs to identify recurring spec-writing gaps and produce `steering/retrospective.md` — a steering document that `/write-spec` reads during Phase 1 to avoid repeating past spec failures.
 
 ## When to Use
 
@@ -24,19 +24,29 @@ If the file `.claude/unattended-mode` exists in the project directory:
 
 ## Workflow
 
+### Step 0: Legacy-Layout Precondition
+
+Before Step 1, run `Glob` for `.claude/steering/*.md` and `.claude/specs/*/requirements.md`. If either returns a match, abort and print:
+
+```
+ERROR: This project uses the legacy `.claude/steering/` and/or `.claude/specs/` directory layout, which current Claude Code releases refuse to write to. Run `/upgrade-project` first, then re-run `/run-retro`.
+```
+
+The gate fires in both interactive and unattended mode — do not silently run a retro against a mixed layout.
+
 ### Step 1: Scan for Defect Specs
 
 Use Glob to find all spec files:
 
 ```
-.claude/specs/*/requirements.md
+specs/*/requirements.md
 ```
 
 Then Read the **first line** of each file and collect those whose heading starts with `# Defect Report:`. This reliably distinguishes defect specs from feature specs (which start with `# Requirements:`) without depending on Grep glob parameter interpretation.
 
 ### Step 1.5: Load State and Compute Hashes
 
-Read `.claude/steering/retrospective-state.json` if it exists. This state file tracks which defect specs have been previously analyzed and their content hashes, enabling incremental runs that skip unchanged specs.
+Read `steering/retrospective-state.json` if it exists. This state file tracks which defect specs have been previously analyzed and their content hashes, enabling incremental runs that skip unchanged specs.
 
 **State file schema:**
 
@@ -44,7 +54,7 @@ Read `.claude/steering/retrospective-state.json` if it exists. This state file t
 {
   "version": 1,
   "specs": {
-    ".claude/specs/20-fix-example/requirements.md": {
+    "specs/20-fix-example/requirements.md": {
       "hash": "a1b2c3d4e5f6...",
       "lastAnalyzed": "2026-02-22"
     }
@@ -70,13 +80,13 @@ Read `.claude/steering/retrospective-state.json` if it exists. This state file t
 For each defect spec found in Step 1, compute a SHA-256 hash of its `requirements.md` file using Bash:
 
 ```bash
-shasum -a 256 .claude/specs/{defect}/requirements.md
+shasum -a 256 specs/{defect}/requirements.md
 ```
 
 Use the hex digest portion of the output (first 64 characters). If `shasum` is not available, fall back to `sha256sum`:
 
 ```bash
-sha256sum .claude/specs/{defect}/requirements.md
+sha256sum specs/{defect}/requirements.md
 ```
 
 **Partitioning specs:**
@@ -148,7 +158,7 @@ For each new/modified defect spec with a resolved feature spec from Step 2:
 
 ### Step 3.5: Load Existing Retrospective and Extract Carried-Forward Learnings
 
-Read `.claude/steering/retrospective.md` if it exists.
+Read `steering/retrospective.md` if it exists.
 
 **Carry-forward strategy**: Rather than re-analyzing every spec, extract learnings from the existing `retrospective.md` that can be carried forward unchanged. This avoids redundant LLM analysis for specs that haven't changed.
 
@@ -219,7 +229,7 @@ Classify each learning into exactly **one** of three pattern types:
 
 ### Step 7: Write Retrospective Document
 
-Write `.claude/steering/retrospective.md` using [templates/retrospective.md](templates/retrospective.md).
+Write `steering/retrospective.md` using [templates/retrospective.md](templates/retrospective.md).
 
 Fill in:
 - **Last Updated**: today's date
@@ -228,13 +238,13 @@ Fill in:
 - **Table rows**: One row per learning in the appropriate pattern-type section, with columns:
   - **Learning**: Transferable spec-writing pattern (domain-agnostic)
   - **Recommendation**: Actionable guidance for future spec writing
-  - **Evidence (defect specs)**: Comma-separated paths to defect spec directories that support this learning (e.g., `.claude/specs/20-bug/, .claude/specs/25-bug/`)
+  - **Evidence (defect specs)**: Comma-separated paths to defect spec directories that support this learning (e.g., `specs/20-bug/, specs/25-bug/`)
 
 Remove placeholder rows from sections with no learnings — leave only the table header.
 
 ### Step 8: Write State File
 
-Write `.claude/steering/retrospective-state.json` to persist the current analysis state for the next run.
+Write `steering/retrospective-state.json` to persist the current analysis state for the next run.
 
 **Building the state object:**
 
@@ -243,7 +253,7 @@ Write `.claude/steering/retrospective-state.json` to persist the current analysi
 3. **Omit deleted specs** — they are no longer in the current defect spec set
 4. Set `version` to `1`
 
-Write the state file as formatted JSON with 2-space indentation using the Write tool. Ensure the `.claude/steering/` directory exists before writing (create it if needed, same as Step 7).
+Write the state file as formatted JSON with 2-space indentation using the Write tool. Ensure the `steering/` directory exists before writing (create it if needed, same as Step 7).
 
 ### Step 9: Output Summary
 
@@ -257,8 +267,8 @@ Learnings generated: [total] ([new_count] new, [carried_count] carried forward)
   Undertested Boundaries: [count]
   Domain-Specific Gaps: [count]
 
-Written to .claude/steering/retrospective.md
-State saved to .claude/steering/retrospective-state.json
+Written to steering/retrospective.md
+State saved to steering/retrospective-state.json
 
 [If `.claude/unattended-mode` does NOT exist]: Next step: This document will be read automatically by `/write-spec` during Phase 1 on the next spec-writing run — no action needed. Run `/draft-issue` or `/start-issue` to continue the SDLC workflow.
 [If `.claude/unattended-mode` exists]: Done. Awaiting orchestrator.
@@ -275,7 +285,7 @@ State saved to .claude/steering/retrospective-state.json
 | `Related Spec` link points to nonexistent spec | Warn: "Related Spec link in [defect] points to [path] which does not exist — skipping" |
 | `Related Spec` points to another defect spec | Follow chain to root feature spec; if circular or dead end, warn and skip |
 | All learnings filtered out | Report "N defect specs analyzed, but no spec-quality learnings identified." — do not create/modify retrospective.md |
-| `.claude/steering/` directory doesn't exist | Create it before writing retrospective.md |
+| `steering/` directory doesn't exist | Create it before writing retrospective.md |
 | State file missing (first run) | Treat all defect specs as "new" — full analysis, state file created on completion |
 | State file contains malformed JSON | Warn: "State file contains invalid JSON — falling back to full re-analysis" — treat as first run |
 | State file has unrecognized `version` | Warn: "State file has unrecognized version [N] — falling back to full re-analysis" — treat as first run |

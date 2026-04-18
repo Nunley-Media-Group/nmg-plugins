@@ -53,17 +53,27 @@ Interview the user to understand their need, then create a well-groomed GitHub i
 
 ## Workflow
 
+### Step 0: Legacy-Layout Precondition
+
+Before Step 1, run `Glob` for `.claude/steering/*.md` and `.claude/specs/*/requirements.md`. If either returns a match, abort and print:
+
+```
+ERROR: This project uses the legacy `.claude/steering/` and/or `.claude/specs/` directory layout, which current Claude Code releases refuse to write to. Run `/upgrade-project` first, then re-run `/draft-issue`.
+```
+
+The gate fires in both interactive and unattended mode — do not silently draft an issue against a mixed layout.
+
 ### Step 1: Gather Context
 
 #### Input
 
 - Optional CLI argument (e.g., `/draft-issue "add dark mode"`)
-- `.claude/steering/product.md` (if it exists)
+- `steering/product.md` (if it exists)
 
 #### Process
 
 1. If an argument was provided, use it as the starting description. Otherwise, ask the user what they need.
-2. Read `.claude/steering/product.md` to understand:
+2. Read `steering/product.md` to understand:
    - Product vision and mission
    - Target users and personas
    - Feature prioritization (MoSCoW)
@@ -139,9 +149,9 @@ Perform a targeted codebase investigation before the interview. The investigatio
 
 ##### If Enhancement / Feature
 
-1. **Explore existing specs**: Use `Glob` for `.claude/specs/*/requirements.md` and read any that relate to the area described by the user
+1. **Explore existing specs**: Use `Glob` for `specs/*/requirements.md` and read any that relate to the area described by the user
 2. **Explore source code**: Use `Glob` and `Grep` to find files related to the enhancement area (e.g., the relevant SKILL.md, templates, hooks, or application code)
-3. **Read steering docs**: Read `.claude/steering/tech.md` and `.claude/steering/structure.md` (if they exist) and note any technical or architectural constraints relevant to the enhancement area
+3. **Read steering docs**: Read `steering/tech.md` and `steering/structure.md` (if they exist) and note any technical or architectural constraints relevant to the enhancement area
 4. **Summarize findings**: Produce a "Current State" summary capturing:
    - What exists today (relevant code, patterns, specs)
    - How the current implementation works
@@ -154,7 +164,7 @@ If no relevant code or specs are found, note that this appears to be a greenfiel
 
 1. **Search for related code**: Use `Grep` to find code related to the bug description (error messages, function names, file patterns the user mentioned)
 2. **Trace code paths**: `Read` the relevant files and follow the logic through the affected paths
-3. **Read steering docs**: Read `.claude/steering/tech.md` and `.claude/steering/structure.md` (if they exist) and note any constraints relevant to the bug's domain
+3. **Read steering docs**: Read `steering/tech.md` and `steering/structure.md` (if they exist) and note any constraints relevant to the bug's domain
 4. **Form hypothesis**: Formulate a root cause hypothesis describing:
    - What code is involved
    - What the incorrect behavior or assumption is

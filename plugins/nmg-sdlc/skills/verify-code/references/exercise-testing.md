@@ -16,9 +16,9 @@ Create a minimal test project for exercising the changed skill:
 
 2. **Write scaffold files** using the `Write` tool:
 
-   - `{test-project-path}/.claude/steering/product.md` — `"Test Project. One persona: Developer."`
-   - `{test-project-path}/.claude/steering/tech.md` — `"Stack: Node.js. Test: manual verification."`
-   - `{test-project-path}/.claude/steering/structure.md` — `"Flat layout: src/ + tests/"`
+   - `{test-project-path}/steering/product.md` — `"Test Project. One persona: Developer."`
+   - `{test-project-path}/steering/tech.md` — `"Stack: Node.js. Test: manual verification."`
+   - `{test-project-path}/steering/structure.md` — `"Flat layout: src/ + tests/"`
    - `{test-project-path}/src/index.js` — `console.log("hello")`
    - `{test-project-path}/README.md` — `"Test project for nmg-sdlc exercise verification"`
    - `{test-project-path}/.gitignore` — `node_modules/`

@@ -158,6 +158,6 @@ class [Name] {
 ## References
 
 - CLAUDE.md for project overview
-- `.claude/steering/product.md` for product direction
-- `.claude/steering/tech.md` for technical standards
+- `steering/product.md` for product direction
+- `steering/tech.md` for technical standards
 ```

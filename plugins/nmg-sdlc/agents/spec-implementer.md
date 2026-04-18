@@ -16,8 +16,8 @@ This agent is automatically invoked by `/write-code` during Step 5 (Execute Task
 
 ## Execution Process
 
-1. **Read specifications**: Load `requirements.md`, `design.md`, `tasks.md`, and `feature.gherkin` from `.claude/specs/{feature-name}/`
-2. **Read steering documents**: Load `tech.md` and `structure.md` from `.claude/steering/`
+1. **Read specifications**: Load `requirements.md`, `design.md`, `tasks.md`, and `feature.gherkin` from `specs/{feature-name}/`
+2. **Read steering documents**: Load `tech.md` and `structure.md` from `steering/`
 3. **Execute tasks sequentially**: For each task in `tasks.md`:
    - Read the task requirements and acceptance criteria
    - Implement the code changes following `design.md` architecture decisions
