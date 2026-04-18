@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [6.0.0] - 2026-04-18
+
+### Changed (BREAKING)
+
+- **`/draft-issue` no longer honors `.claude/unattended-mode`** (issue #116) — issue drafting is intrinsically a human-judgment activity and shipping an unattended path was a miscalibration. The top-level "Unattended Mode" section and every per-step `> Unattended-mode: ...` blockquote have been removed from the skill; the skill no longer reads or acts on the flag file. A single sign-post sentence replaces the section so users scrolling for the old behavior are explicitly redirected. The SDLC runner's `STEP_KEYS` array already excluded `draftIssue` and now carries an in-file comment and a regression test to prevent re-introduction. The plugin version is bumped **major** (5.2.0 → 6.0.0) because this changes observable behavior for any user who previously relied on `.claude/unattended-mode` in `/draft-issue`.
+
+  **Migration:** If your workflow created issues via `/draft-issue` under `.claude/unattended-mode`, switch to invoking `/draft-issue` interactively. Downstream skills (`/write-spec`, `/write-code`, `/verify-code`, `/open-pr`) continue to honor `.claude/unattended-mode` unchanged.
+
+### Added
+
+- **`/draft-issue` readability treatment** (issue #116) — brought the skill to parity with `/write-spec` on review-gate UX. Step 7 now renders a structured inline summary of the drafted issue (Title, User Story one-liner, numbered ACs with one-line G/W/T, FRs with MoSCoW priorities, Out of Scope, Labels) followed by an `AskUserQuestion` menu with two options: `[1] Approve — create the issue` / `[2] Revise — I'll describe what to change`. Revise iterations replace the draft wholesale and loop until approval. A Workflow Overview ASCII diagram opens the skill, every workflow step is restructured with explicit `#### Input` / `#### Process` / `#### Output` subsections (plus `#### Human Review Gate` on Steps 5c and 7), and a feature-vs-bug template comparison table appears near Step 6.
+
+- **`/draft-issue` deeper interview** (issue #116) — the interview now probes non-functional requirements, edge cases, and related-feature consistency for Features, and adds an edge-case / regression-risk round to the Bug path. A new **Step 5c: Playback and Confirm** forces the skill to play back its understanding of persona / outcome / AC outline / scope before drafting; the skill does not synthesize the issue body until the user confirms. Playback length is depth-proportional (one-line for core, full structured block for extended). Step 5 selects interview depth (core vs extended) from Step 4 signals (`filesFound`, `componentsInvolved`, `descriptionVagueness`) and logs the decision to the user; borderline signals bias toward the extended interview. The user can override the heuristic's pick via `AskUserQuestion` immediately after the log, with the override recorded as a one-line session note for future threshold tuning. Every final round ends with a free-text `"Anything I missed?"` probe before Step 5c. Step 5b's automatable-label question now includes a 1–2 line prefix explaining that the label controls downstream skills (not `/draft-issue` itself).
+
+- **`/draft-issue` Step 7 soft guard** (issue #116) — on the 4th consecutive `[2] Revise` selection, the menu expands to three options: `[1] Keep revising`, `[2] Reset and re-interview` (returns to Step 5 with classification and milestone preserved), `[3] Accept as-is` (proceeds to issue creation). The skill does not auto-terminate the loop; the user remains in control.
+
 ## [5.2.0] - 2026-04-17
 
 ### Changed

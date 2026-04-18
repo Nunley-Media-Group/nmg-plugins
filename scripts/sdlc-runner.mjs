@@ -153,6 +153,9 @@ let bounceCount = 0;
 // Step definitions
 // ---------------------------------------------------------------------------
 
+// NOTE: draftIssue is intentionally absent. /draft-issue is interactive-only
+// as of plugin v6.0.0 (issue #116). Do not add it here — see
+// plugins/nmg-sdlc/skills/draft-issue/SKILL.md for the rationale.
 const STEP_KEYS = [
   'startCycle',   // 1
   'startIssue',   // 2
