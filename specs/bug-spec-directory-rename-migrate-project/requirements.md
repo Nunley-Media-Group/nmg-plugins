@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude (spec agent)
 **Severity**: Medium
-**Related Spec**: `specs/feature-migration-skill/`
+**Related Spec**: `specs/feature-migrate-project-skill/`
 
 ---
 

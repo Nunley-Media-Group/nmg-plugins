@@ -4,7 +4,7 @@
 **Status**: Complete
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `specs/bug-fix-sdlc-runner-auto-mode-gitignore/`
+**Related Spec**: `specs/feature-automation-mode-support/`
 
 ---
 

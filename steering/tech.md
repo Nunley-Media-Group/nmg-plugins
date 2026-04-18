@@ -374,9 +374,31 @@ This tests the "no-questions" execution path only. Use the Agent SDK approach fo
 
 ---
 
-## Verification Strategy — Behavioral Contracts
+## Verification Gates
 
-This project is prompt-based: skills are Markdown instructions that Claude Code executes. Traditional code quality metrics (test coverage, cyclomatic complexity) don't apply to most of the codebase. Instead, verification uses **Design by Contract** — each skill and component has preconditions, postconditions, invariants, and behavioral boundaries that `/verify-code` checks.
+Declare mandatory verification steps that `/verify-code` enforces as hard gates. Each gate specifies when it applies, what command to run, and how to determine success.
+
+This project is prompt-based: skills are Markdown instructions that Claude Code executes. Traditional code quality metrics (test coverage, cyclomatic complexity) don't apply to most of the codebase. The gates below combine automated tests (for the runner script) with contract-based review (for skills and templates). Verification uses **Design by Contract** — each skill and component has preconditions, postconditions, invariants, and behavioral boundaries that `/verify-code` checks.
+
+| Gate | Condition | Action | Pass Criteria |
+|------|-----------|--------|---------------|
+| SDLC runner tests | `scripts/__tests__/` directory exists | `cd scripts && npm test` | Exit code 0 |
+| Skill exercise test | Any `plugins/nmg-sdlc/skills/**/SKILL.md` file changed | Load plugin and invoke changed skill against a test project (see Testing Standards → Test Project Pattern) | Skill produces expected output OR verification report explicitly notes manual exercise follow-up |
+| Prompt quality review | Any `plugins/nmg-sdlc/skills/**/SKILL.md` file changed | Review against Prompt Quality Criteria below | All criteria satisfied |
+| Behavioral contract review | Any skill or script changed | Review against Contract Framework below | Preconditions, postconditions, invariants, and boundaries all addressed |
+
+### Condition Evaluation Rules
+
+- `Always` — gate always applies
+- `{path} directory exists` — gate applies only when the directory is present (`test -d {path}`)
+- `{glob} file changed` — gate applies only when matching files are in the diff
+
+### Pass Criteria Evaluation Rules
+
+- `Exit code 0` — the Action command must exit with code 0
+- `{file} file generated` — the named file must exist after the Action command completes (artifact verification)
+- `output contains "{text}"` — stdout or stderr must contain the specified text
+- Textual criteria (e.g., "reviewer confirms ...") are evaluated by `/verify-code` against the verification report
 
 ### Self-Verification (Dogfooding)
 
@@ -437,9 +459,9 @@ The architecture-reviewer checklists were designed for runtime codebases. Apply 
 | Testability | All — reinterpret | N/A | For skills: steps can be followed manually with predictable results; scenarios are independent; templates produce valid output |
 | Error Handling | Scripts | Markdown skills | Focus: runner exit codes, graceful failures with meaningful stderr |
 
-### Prompt Quality Verification
+### Prompt Quality Criteria
 
-For Markdown skills, the "code quality" equivalent is prompt quality:
+For Markdown skills, the "code quality" equivalent is prompt quality. The Prompt Quality Review gate above is satisfied when every row of this table is addressed:
 
 | Criterion | What to Check |
 |-----------|---------------|

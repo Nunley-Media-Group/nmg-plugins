@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `specs/feature-retrospective-skill/` (also affects `feature-write-spec-skill` and `feature-migration-skill`)
+**Related Spec**: `specs/feature-run-retro-skill/` (also affects `feature-write-spec-skill` and `feature-migrate-project-skill`)
 
 ---
 

@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Medium
-**Related Spec**: `specs/feature-retrospective-skill/`
+**Related Spec**: `specs/feature-run-retro-skill/`
 
 ---
 
