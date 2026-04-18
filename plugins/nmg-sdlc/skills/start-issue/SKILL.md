@@ -39,6 +39,33 @@ If the file `.claude/unattended-mode` exists in the project directory:
 
 ---
 
+## Step 0: Legacy-Layout Gate
+
+**Before any other work**, check whether this project still uses the legacy `.claude/steering/` or `.claude/specs/` directory layout. Current Claude Code releases protect the project-level `.claude/` directory from Edit/Write, so SDLC skills can no longer author files under those paths. Canonical SDLC artifacts must live at `steering/` and `specs/` at the project root.
+
+1. Run `Glob` for `.claude/steering/*.md` and `.claude/specs/*/requirements.md`.
+2. If either glob returns at least one match, the project uses the legacy layout. **Abort immediately without creating a branch, updating issue status, or modifying anything.**
+
+Print the following message and exit:
+
+```
+ERROR: This project uses the legacy `.claude/steering/` and/or `.claude/specs/` directory layout, which current Claude Code releases refuse to write to. The SDLC pipeline cannot proceed until the project is upgraded.
+
+Run `/upgrade-project` first. It will:
+  - Relocate `.claude/steering/` → `steering/`
+  - Relocate `.claude/specs/` → `specs/`
+  - Rewrite intra-file cross-references
+  - Preserve runtime artifacts (`.claude/unattended-mode`, `.claude/sdlc-state.json`) unchanged
+
+Then re-run `/start-issue`.
+```
+
+**Unattended-mode:** The gate still fires. Automation on a legacy-layout project must halt — do not silently write to a mixed state. Output the same message (framed as an orchestrator escalation) and exit without creating a branch.
+
+If the glob returns no matches, proceed to Step 1.
+
+---
+
 ## Step 1: Identify Issue
 
 If an argument was provided (e.g., `/start-issue #42`), skip to Step 3 using that issue number.

@@ -12,7 +12,7 @@ Reference `tech.md` for:
 ```gherkin
 # File: {test-layer}/features/[feature-name].feature
 #
-# Generated from: .claude/specs/[feature-name]/requirements.md
+# Generated from: specs/[feature-name]/requirements.md
 # Issue: #[number]
 
 Feature: [Feature Name]
@@ -152,7 +152,7 @@ Scenario: Second scenario
 ```gherkin
 # File: {test-layer}/features/[feature-name].feature
 #
-# Generated from: .claude/specs/[feature-name]/requirements.md
+# Generated from: specs/[feature-name]/requirements.md
 # Issue: #[number]
 # Type: Defect regression
 

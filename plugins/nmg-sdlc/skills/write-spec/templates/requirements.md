@@ -219,7 +219,7 @@ Before moving to PLAN phase:
 **Status**: Draft | In Review | Approved
 **Author**: [name]
 **Severity**: Critical | High | Medium | Low
-**Related Spec**: `.claude/specs/[original-feature-name]/` *(populated by the keyword search in SKILL.md Phase 1 step 7 — set to N/A if no matching spec is found)*
+**Related Spec**: `specs/[original-feature-name]/` *(populated by the keyword search in SKILL.md Phase 1 step 7 — set to N/A if no matching spec is found)*
 
 ---
 

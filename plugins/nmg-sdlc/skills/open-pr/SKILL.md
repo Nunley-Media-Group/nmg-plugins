@@ -17,9 +17,20 @@ Create a pull request with a spec-driven summary that links to the GitHub issue 
 
 ## Prerequisites
 
-1. Implementation is complete (all tasks from `tasks.md` done). The `{feature-name}` in spec paths is the issue number + kebab-case slug of the title (e.g., `42-add-precipitation-overlay`), matching the branch name. If unsure, use `Glob` to find `.claude/specs/*/requirements.md` and match against the current issue number or branch name.
+1. Implementation is complete (all tasks from `tasks.md` done). The `{feature-name}` in spec paths is the issue number + kebab-case slug of the title (e.g., `42-add-precipitation-overlay`), matching the branch name. If unsure, use `Glob` to find `specs/*/requirements.md` and match against the current issue number or branch name.
 2. Verification has passed (via `/verify-code`)
 3. Changes are committed to a feature branch
+4. The project uses the current directory layout — no `.claude/steering/` or `.claude/specs/` content remains. See the **Legacy-Layout Precondition** below.
+
+### Legacy-Layout Precondition
+
+Before Step 1, run `Glob` for `.claude/steering/*.md` and `.claude/specs/*/requirements.md`. If either returns a match, abort and print:
+
+```
+ERROR: This project uses the legacy `.claude/steering/` and/or `.claude/specs/` directory layout, which current Claude Code releases refuse to write to. Run `/upgrade-project` first, then re-run `/open-pr`.
+```
+
+The gate fires in both interactive and unattended mode — do not silently open a PR against a mixed layout.
 
 ---
 
@@ -30,10 +41,10 @@ Create a pull request with a spec-driven summary that links to the GitHub issue 
 Gather all information needed for the PR:
 
 1. **Read the issue**: `gh issue view #N` for title, description, acceptance criteria
-2. **Check for spec files**: Use `Glob` with pattern `.claude/specs/*/requirements.md` to check whether spec files exist for this feature. Match results against the current issue number or branch name (same logic as the Prerequisites fallback guidance). If a match is found, set a **specs-found** flag. If no match is found, set a **specs-not-found** flag.
+2. **Check for spec files**: Use `Glob` with pattern `specs/*/requirements.md` to check whether spec files exist for this feature. Match results against the current issue number or branch name (same logic as the Prerequisites fallback guidance). If a match is found, set a **specs-found** flag. If no match is found, set a **specs-not-found** flag.
 3. **Read spec files (specs-found only)**:
-   - `.claude/specs/{feature-name}/requirements.md` for acceptance criteria
-   - `.claude/specs/{feature-name}/tasks.md` for testing phase
+   - `specs/{feature-name}/requirements.md` for acceptance criteria
+   - `specs/{feature-name}/tasks.md` for testing phase
 
    > **Skip this sub-step if specs-not-found.** Acceptance criteria will be extracted from the issue body already fetched in step 1.
 
@@ -48,7 +59,7 @@ If a `VERSION` file exists in the project root, determine the appropriate versio
 
 1. **Read the current version**: Read the `VERSION` file and verify it contains a valid semver string (X.Y.Z). If the content is not valid semver, warn and skip versioning.
 2. **Read issue labels**: Run `gh issue view #N --json labels --jq '.labels[].name'` to get the issue's labels.
-3. **Read the classification matrix** from `.claude/steering/tech.md`:
+3. **Read the classification matrix** from `steering/tech.md`:
    - Find the `## Versioning` section, then the `### Version Bump Classification` subsection.
    - Parse the table rows to extract Label → Bump Type mappings (match the Label column against the issue's labels, case-insensitively, stripping any backtick characters).
    - Use the Bump Type from the first matching row.
@@ -78,7 +89,7 @@ If Step 2 determined a version bump, update all version-related files before gen
    - Insert a new version heading `## [{new_version}] - {YYYY-MM-DD}` immediately after it.
    - Move all entries that were under `[Unreleased]` to under the new version heading.
    - Leave the `[Unreleased]` section empty (just the heading with a blank line after it).
-3. **Update stack-specific files**: Read `.claude/steering/tech.md` and look for the `## Versioning` section. If it exists, parse the table of stack-specific files and update each one:
+3. **Update stack-specific files**: Read `steering/tech.md` and look for the `## Versioning` section. If it exists, parse the table of stack-specific files and update each one:
    - For **JSON files** (e.g., `package.json`): Use the dot-notation path to locate and update the version field.
    - For **TOML files** (e.g., `Cargo.toml`): Use the dot-notation path to locate and update the version field.
    - For **plain text files**: Replace the version string on the specified line (or the entire file content if no line is specified).
@@ -106,7 +117,7 @@ If Step 2 determined a version bump, update all version-related files before gen
 
 ## Acceptance Criteria
 
-From `.claude/specs/{feature}/requirements.md`:
+From `specs/{feature}/requirements.md`:
 
 - [ ] AC1: [criterion]
 - [ ] AC2: [criterion]
@@ -114,7 +125,7 @@ From `.claude/specs/{feature}/requirements.md`:
 
 ## Test Plan
 
-From `.claude/specs/{feature}/tasks.md` testing phase:
+From `specs/{feature}/tasks.md` testing phase:
 
 - [ ] [Test type]: [what was tested]
 - [ ] [Test type]: [what was tested]
@@ -126,9 +137,9 @@ From `.claude/specs/{feature}/tasks.md` testing phase:
 
 ## Specs
 
-- Requirements: `.claude/specs/{feature}/requirements.md`
-- Design: `.claude/specs/{feature}/design.md`
-- Tasks: `.claude/specs/{feature}/tasks.md`
+- Requirements: `specs/{feature}/requirements.md`
+- Design: `specs/{feature}/design.md`
+- Tasks: `specs/{feature}/tasks.md`
 
 Closes #N
 ```
@@ -181,7 +192,7 @@ Title: [title]
 Base: main ← [branch-name]
 Issue: Closes #N
 
-[If specs-found]: The PR links to specs at .claude/specs/{feature}/ and will close issue #N when merged.
+[If specs-found]: The PR links to specs at specs/{feature}/ and will close issue #N when merged.
 [If specs-not-found]: The PR extracts acceptance criteria from the issue body and will close issue #N when merged.
 
 [If `.claude/unattended-mode` does NOT exist]: Next step: Wait for CI to pass, then merge the PR to close issue #N. After merging, you can start the next issue with `/draft-issue` (for new work) or `/start-issue` (to pick up an existing issue).

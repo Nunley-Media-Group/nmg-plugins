@@ -48,7 +48,7 @@ Run `/setup-steering` in your project to generate steering documents:
 /setup-steering
 ```
 
-On first run, this analyzes your codebase and creates three documents in `.claude/steering/`. Re-running it when steering files already exist enters an enhancement flow that preserves your customizations:
+On first run, this analyzes your codebase and creates three documents in `steering/` at the project root. Re-running it when steering files already exist enters an enhancement flow that preserves your customizations:
 
 | Document | Purpose |
 |----------|---------|
@@ -88,7 +88,7 @@ Reads the GitHub issue and creates three specification documents through human-g
 2. **PLAN** — Technical design with architecture decisions
 3. **TASKS** — Phased implementation tasks with dependencies
 
-Output: `.claude/specs/{feature-name}/requirements.md`, `design.md`, `tasks.md`, `feature.gherkin`
+Output: `specs/{feature-name}/requirements.md`, `design.md`, `tasks.md`, `feature.gherkin`
 
 The `{feature-name}` is the issue number + kebab-case slug of the title (e.g., `42-add-precipitation-overlay`), matching the branch name format.
 
@@ -252,7 +252,7 @@ The **classification matrix**:
 | `enhancement` | Minor | 2.3.1 → 2.4.0 |
 | (milestone completion) | Major | 2.9.1 → 3.0.0 |
 
-**Stack-specific files** (e.g., `package.json`, `Cargo.toml`) are declared in `tech.md`'s `## Versioning` section. The `/open-pr` skill reads this mapping to update all version files in a single commit. Run `/migrate-project` to bootstrap `CHANGELOG.md` and `VERSION` from git history if they don't exist yet.
+**Stack-specific files** (e.g., `package.json`, `Cargo.toml`) are declared in `tech.md`'s `## Versioning` section. The `/open-pr` skill reads this mapping to update all version files in a single commit. Run `/upgrade-project` to bootstrap `CHANGELOG.md` and `VERSION` from git history if they don't exist yet.
 
 ### Verification Gates
 
@@ -290,7 +290,7 @@ During `/verify-code` Step 5, each gate's condition is evaluated. If applicable,
 
 Any gate Fail caps the overall verification status at "Partial". Any gate Incomplete caps it at "Incomplete". A "Pass" overall status requires all applicable gates to pass.
 
-**Migration:** Existing projects can add the `## Verification Gates` section by running `/migrate-project` — the migration skill detects missing sections from the updated template and offers to add them.
+**Upgrade:** Existing projects can add the `## Verification Gates` section by running `/upgrade-project` — the upgrade skill detects missing sections from the updated template and offers to add them.
 
 ## Skills Reference
 
@@ -304,10 +304,10 @@ Any gate Fail caps the overall verification status at "Partial". Any gate Incomp
 | `/write-code #N` | Read specs for current branch, enter plan mode, then execute implementation tasks sequentially |
 | `/verify-code #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
 | `/open-pr #N` | Determine version bump, update VERSION/CHANGELOG/stack files, create PR with spec-driven summary |
-| `/run-retro` | Batch-analyze defect specs to identify spec-writing gaps and produce `.claude/steering/retrospective.md` with actionable learnings |
+| `/run-retro` | Batch-analyze defect specs to identify spec-writing gaps and produce `steering/retrospective.md` with actionable learnings |
 | `/run-loop [#N]` | Run the full SDLC pipeline from within an active Claude Code session — processes a specific issue or loops over all open issues via `sdlc-runner.mjs` |
 | `/setup-steering` | Set up or enhance project steering documents (product, tech, structure) — bootstraps on first run, enhances existing docs on subsequent runs |
-| `/migrate-project` | Update project specs, steering docs, configs, CHANGELOG, and VERSION to latest standards |
+| `/upgrade-project` | Upgrade an existing project to current plugin standards — relocates legacy `.claude/steering/` and `.claude/specs/` to the project root, updates specs, steering docs, configs, CHANGELOG, and VERSION |
 | `/init-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path auto-detected and written to the project root |
 
 ### Utility Skills
@@ -323,6 +323,18 @@ These are repo-level utilities (not part of the nmg-sdlc plugin itself):
 ```bash
 /plugin marketplace update nmg-plugins
 ```
+
+### Upgrading from 6.0.x or earlier
+
+v6.1.0 relocates canonical SDLC artifacts from `.claude/steering/` and `.claude/specs/` to `steering/` and `specs/` at the project root, because current Claude Code releases protect the project-level `.claude/` directory from Edit/Write. Existing projects must run:
+
+```bash
+/upgrade-project
+```
+
+once after updating. This `git mv`s the legacy directories, rewrites intra-file cross-references, and renames `.claude/migration-exclusions.json` → `.claude/upgrade-exclusions.json`. Runtime artifacts (`.claude/unattended-mode`, `.claude/sdlc-state.json`) stay under `.claude/` unchanged. The `/migrate-project` command was renamed to `/upgrade-project` — a deprecation stub remains for one release.
+
+Every pipeline skill (`/start-issue`, `/write-spec`, `/write-code`, `/verify-code`, `/open-pr`, `/run-retro`, `/draft-issue`, `/setup-steering`) hard-gates on the legacy layout and refuses to proceed until the upgrade runs.
 
 ## License
 

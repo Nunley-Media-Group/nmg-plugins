@@ -21,7 +21,7 @@ Defects caused by scenarios that the original feature spec did not cover at all.
 
 | Learning | Recommendation | Evidence (defect specs) |
 |----------|---------------|------------------------|
-| [transferable pattern] | [actionable guidance] | .claude/specs/[defect]/ |
+| [transferable pattern] | [actionable guidance] | specs/[defect]/ |
 
 ---
 
@@ -32,7 +32,7 @@ insufficiently.
 
 | Learning | Recommendation | Evidence (defect specs) |
 |----------|---------------|------------------------|
-| [transferable pattern] | [actionable guidance] | .claude/specs/[defect]/ |
+| [transferable pattern] | [actionable guidance] | specs/[defect]/ |
 
 ---
 
@@ -42,4 +42,4 @@ Defects caused by domain knowledge the original feature spec failed to capture.
 
 | Learning | Recommendation | Evidence (defect specs) |
 |----------|---------------|------------------------|
-| [transferable pattern] | [actionable guidance] | .claude/specs/[defect]/ |
+| [transferable pattern] | [actionable guidance] | specs/[defect]/ |

@@ -1,0 +1,192 @@
+# File: specs/feature-draft-issue-skill/feature.gherkin
+#
+# Generated from: specs/feature-draft-issue-skill/requirements.md
+# Issues: #4, #116
+
+Feature: Creating Issues Skill
+  As a developer or product owner
+  I want a guided interview process that produces well-groomed GitHub issues
+  So that every feature request is captured in a structured, spec-ready format
+
+  # --- Happy Path (Issue #4) ---
+
+  Scenario: Interactive interview gathers requirements
+    Given I invoke "/draft-issue" without unattended mode
+    When the skill starts
+    Then it asks adaptive questions about the feature need
+    And it skips topics I've already addressed
+
+  Scenario: Issue body follows BDD template
+    Given the interview is complete
+    When the GitHub issue is created
+    Then the body contains User Story, Background, Acceptance Criteria, Functional Requirements, and Out of Scope sections
+    And acceptance criteria use Given/When/Then format
+
+  # --- Bug Report (Issue #4) ---
+
+  Scenario: Bug report uses defect template
+    Given I'm creating an issue for a bug
+    When I indicate it's a defect
+    Then the issue uses the bug report template
+    And it includes reproduction steps, expected/actual behavior, and environment table
+
+  # --- Unattended Mode Historical Behavior (Issue #4, superseded by #116) ---
+  # Retained for provenance; behavior is removed as of v6.0.0.
+
+  Scenario: [SUPERSEDED] Automation mode skips interview
+    Given unattended mode is active with ".claude/unattended-mode" file present
+    And plugin version is prior to v6.0.0
+    When I invoke "/draft-issue" with a feature description argument
+    Then the skill skips the interview
+    And it infers 3-5 acceptance criteria from steering docs
+
+  # ============================================================
+  # Added by issue #116 — Readability treatment + deeper interview
+  # ============================================================
+
+  # --- Readability (AC5, AC6) ---
+
+  Scenario: Inline review summary replaces open-ended prompts  # AC5
+    Given I have completed the interview and the skill has drafted an issue body
+    When the skill reaches the Present Draft for Review step
+    Then the skill renders an inline structured summary containing Title, User Story one-liner, numbered ACs with Given/When/Then, FRs with MoSCoW priorities, Out of Scope, and Labels
+    And it presents an AskUserQuestion with exactly two options: "[1] Approve — create the issue" and "[2] Revise — I'll describe what to change"
+
+  Scenario: Revise path loops until approval  # AC6
+    Given the review summary is shown
+    When I select "[2] Revise"
+    And I provide free-text change instructions
+    Then the skill applies the changes to the draft
+    And re-renders the summary + menu
+    And repeats until I select "[1] Approve"
+
+  # --- Feature vs Bug contrast (AC7) ---
+
+  Scenario: Tables contrast Feature vs Bug templates  # AC7
+    Given I'm scanning SKILL.md
+    When I reach the template synthesis section
+    Then a reference table contrasts the Feature and Bug templates on Opening section, Context section, Reproduction, Expected vs Actual, AC count guidance, FR priority, and Out of Scope
+
+  # --- Document restructure (AC8) ---
+
+  Scenario: Workflow steps use Input/Process/Output subsections and top-of-file Workflow Overview  # AC8
+    Given I open SKILL.md
+    When I view each workflow step
+    Then each step uses explicit "### Input", "### Process", "### Output" subsections
+    And steps with human checkpoints also include a "### Human Review Gate" subsection
+    And the file opens with a "Workflow Overview" ASCII diagram listing all steps and marking review gates
+
+  # --- Interview depth (AC9, AC11, AC15) ---
+
+  Scenario: Feature interview probes NFRs, edge cases, and related features  # AC9
+    Given I classified the issue as a Feature
+    And the adaptive-depth heuristic selected the extended path
+    When the skill runs the interview step
+    Then the interview includes dedicated probing rounds for non-functional requirements, edge cases and error states, and related existing features for consistency
+
+  Scenario: Adaptive depth heuristic selects core for trivial issues  # AC11
+    Given Step 4 investigation found 2 files in 1 component
+    And the initial description had low vagueness
+    When the skill enters the interview step
+    Then the heuristic selects the core-depth interview
+    And the skill logs a one-sentence explanation of the decision to the user
+
+  Scenario: Adaptive depth heuristic selects extended for complex issues  # AC11
+    Given Step 4 investigation found 12 files across 4 components
+    When the skill enters the interview step
+    Then the heuristic selects the extended-depth interview
+    And the skill logs a one-sentence explanation of the decision to the user
+
+  Scenario: Borderline signals bias toward extended depth  # AC15 (FR23)
+    Given Step 4 investigation found 10 files in 1 component
+    When the skill evaluates the depth heuristic
+    Then it selects extended depth because the borderline rule (single component with many files) triggers
+
+  Scenario: User overrides the heuristic's depth decision  # AC15
+    Given the skill logged a depth decision of "core"
+    When the skill presents the depth-override AskUserQuestion
+    And I select "Use extended interview"
+    Then the skill emits a one-line session note "(heuristic chose core, user selected extended)"
+    And the skill proceeds with the extended interview
+
+  Scenario: Final interview round asks "Anything I missed?"  # AC15 (FR24)
+    Given I have answered all structured interview questions
+    When the skill approaches Step 5c
+    Then the skill asks a one-line free-text probe "Before I play back my understanding, is there anything I haven't asked that matters here?"
+    And any non-empty answer is folded into the understanding block
+
+  # --- Playback (AC10, AC16) ---
+
+  Scenario: Understanding check blocks drafting until confirmed  # AC10
+    Given I have answered the interview questions
+    When the skill transitions toward the Synthesize Issue Body step
+    Then the skill first plays back its understanding
+    And asks me to confirm or correct via AskUserQuestion
+    And the skill does not draft the issue body until I confirm
+
+  Scenario: Core-depth playback is a one-line confirm  # AC16
+    Given the skill selected core-depth for this issue
+    When the skill reaches the playback step
+    Then the playback renders as a single line: "Drafting an issue for {persona} that {outcome}. In-scope: {...}. Out-of-scope: {...}"
+    And presents a two-option menu: "[1] Looks right — draft the issue" / "[2] Something's off — let me clarify"
+
+  Scenario: Extended-depth playback is a structured 5-line block  # AC16
+    Given the skill selected extended-depth for this issue
+    When the skill reaches the playback step
+    Then the playback renders a 5-line structured block with Persona, Outcome, ACs outline, Scope in, Scope out
+    And presents the same two-option menu
+
+  # --- Review loop soft guard (AC17) ---
+
+  Scenario: Revise loop expands menu after three consecutive revises  # AC17
+    Given I am at the Step 7 review summary
+    And I have selected "[2] Revise" three consecutive times without approving
+    When the next review round is presented
+    Then the AskUserQuestion menu expands to three options: "[1] Keep revising", "[2] Reset and re-interview", "[3] Accept as-is"
+    And the skill does not auto-terminate the loop
+
+  Scenario: Reset option returns to the interview step  # AC17
+    Given the soft-guard menu is shown
+    When I select "[2] Reset and re-interview"
+    Then the skill returns to Step 5 with the classification and milestone preserved
+    And the consecutive-revises counter resets to zero
+
+  Scenario: Accept-as-is proceeds without further changes  # AC17
+    Given the soft-guard menu is shown
+    When I select "[3] Accept as-is"
+    Then the skill proceeds to Step 8 as if "[1] Approve" was selected
+
+  # --- Unattended-mode removal + breaking change plumbing (AC12, AC13, AC18) ---
+
+  Scenario: Skill ignores unattended-mode flag  # AC12
+    Given ".claude/unattended-mode" exists in the project directory
+    When I invoke "/draft-issue"
+    Then the skill runs the full interactive workflow
+    And the skill does not check for or act on the flag file
+
+  Scenario: SDLC runner cannot invoke draft-issue  # AC13
+    Given the sdlc-runner.mjs STEP_KEYS constant
+    When I inspect it
+    Then "draftIssue" is not in the list
+    And a comment above STEP_KEYS notes that draft-issue is interactive-only as of plugin v6.0.0
+    And the regression test asserts STEP_KEYS.includes('draftIssue') === false
+
+  Scenario: Breaking-change sign-post is present in SKILL.md  # AC18
+    Given I am reading SKILL.md after the v6.0.0 release
+    When I search for "unattended-mode"
+    Then I find exactly one reference: the sign-post sentence "As of v6.0.0, /draft-issue no longer honors .claude/unattended-mode. Issue drafting requires interactive input."
+
+  Scenario: Plugin version is a major bump reflecting the breaking change  # AC18
+    Given plugin version was v5.2.0
+    When the release for issue #116 ships
+    Then plugin.json version is "6.0.0"
+    And marketplace.json plugin entry version is "6.0.0"
+    And CHANGELOG.md [Unreleased] has a "### Changed (BREAKING)" subsection describing the unattended-mode removal
+
+  # --- Automatable explanation (AC14) ---
+
+  Scenario: Automatable-label question explains downstream impact  # AC14
+    Given I reach Step 5b
+    When the skill presents the automatable-label AskUserQuestion
+    Then the question body includes a 1–2 line explanation that references "/write-spec", "/write-code", "/verify-code", and "/open-pr"
+    And clarifies that "automatable" controls downstream automation — not drafting itself

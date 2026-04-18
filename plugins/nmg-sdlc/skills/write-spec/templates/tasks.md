@@ -2,7 +2,7 @@
 
 Use this template to create implementation tasks in the **TASKS** phase.
 
-Reference `.claude/steering/structure.md` to map task file paths to the project's actual directory layout.
+Reference `steering/structure.md` to map task file paths to the project's actual directory layout.
 
 ---
 
