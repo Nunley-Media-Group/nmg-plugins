@@ -1,7 +1,7 @@
 # File: specs/feature-add-onboard-project-skill/feature.gherkin
 #
 # Generated from: specs/feature-add-onboard-project-skill/requirements.md
-# Issue: #115
+# Issues: #115, #124
 
 Feature: Onboard Project
   As a developer adopting nmg-sdlc on a project that isn't spec-driven
@@ -143,3 +143,215 @@ Feature: Onboard Project
     And the summary lists every delegated skill invoked ("/setup-steering" if triggered) and its exit status
     And the summary lists every gap recorded during verification
     And the summary ends with the next-step instruction to run "/draft-issue" or "/upgrade-project"
+
+  # =========================================================================
+  # Added by issue #124 — Greenfield enhancement
+  # =========================================================================
+
+  # --- Intent + Tech-Selection Interview ---
+
+  Scenario: Greenfield interview covers vision, personas, and tech selection before any steering write
+    Given a project detected as greenfield
+    And no steering files exist
+    When Step 2G begins
+    Then the skill conducts an interview via AskUserQuestion covering vision, target users, success criteria, language, framework, test tooling, and deployment target
+    And no file under "steering/" is written until the interview completes
+
+  Scenario: Unattended greenfield interview applies defaults from the design payload and logs them
+    Given ".claude/unattended-mode" exists
+    And a Claude Design URL was supplied and decoded successfully
+    When Step 2G runs the interview sub-step
+    Then no AskUserQuestion prompts fire
+    And every default applied is logged with its source ("from design context", "from template default") in the Step 5 summary
+
+  # --- Milestone Seeding ---
+
+  Scenario: v1 and v2 milestones are seeded when missing
+    Given greenfield mode and zero pre-existing milestones in the repo
+    When milestone seeding runs
+    Then "v1 (MVP)" is created via gh api
+    And "v2" is created via gh api
+    And both milestones are listed in the Step 5 summary as "seeded"
+
+  Scenario: Existing milestones are reused without duplication
+    Given a repo where "v1 (MVP)" already exists
+    When milestone seeding runs
+    Then "v1 (MVP)" is detected via gh api list and reused
+    And no duplicate milestone is created
+    And the Step 5 summary lists "v1 (MVP)" as "skipped (already exists)"
+
+  Scenario: Milestone creation failure does not abort the run
+    Given greenfield mode
+    And the gh api POST for milestone creation returns HTTP 403
+    When milestone seeding runs
+    Then the failure is recorded as a gap in the Step 5 summary
+    And the greenfield flow continues with starter-issue seeding
+
+  # --- Starter-Issue Seeding via /draft-issue Loop ---
+
+  Scenario: Five starter issues are seeded via /draft-issue with shared context
+    Given the interview surfaced 5 starter-issue candidates
+    When Step 2G.7 runs the seeding loop
+    Then "/draft-issue" is invoked exactly 5 times
+    And each invocation receives the shared interview context
+    And each invocation receives the candidate's seed body
+    And each created issue is captured by number for autolinking
+
+  Scenario: A failed /draft-issue invocation does not abort the loop
+    Given 5 candidate issues queued for seeding
+    And "/draft-issue" fails for candidate #3
+    When the loop runs
+    Then candidates #1, #2, #4, and #5 are seeded successfully
+    And candidate #3's failure is recorded as a gap in the Step 5 summary
+
+  # --- Dependency DAG Inference + Confirmation ---
+
+  Scenario: Inferred DAG is presented for user approval before the seeding loop begins
+    Given 5 starter-issue candidates with overlapping component_refs and explicit ordering cues
+    When Step 2G.6 runs
+    Then the skill renders the inferred DAG as ASCII to the user
+    And presents AskUserQuestion options: approve / adjust / proceed-without-DAG
+    And no "/draft-issue" invocation runs until a choice is selected
+
+  Scenario: Cycle detection aborts the DAG step but does not abort the run
+    Given inferred DAG edges that form a cycle (A blocks B, B blocks C, C blocks A)
+    When Step 2G.6 runs cycle detection
+    Then the skill logs the cycle
+    And the seeding loop proceeds with no autolink wiring
+    And the Step 5 summary notes "DAG skipped due to cycle"
+
+  Scenario: v2 candidate cannot block a v1 candidate
+    Given two candidates: "Add caching layer" assigned to "v2" and "Set up basic API" assigned to "v1 (MVP)"
+    And the inference rules would otherwise create an edge "Add caching layer" → "Set up basic API"
+    When Step 2G.6 builds the DAG
+    Then the milestone-gate filter drops the cross-milestone edge
+    And the resulting DAG contains no v2-blocks-v1 edges
+
+  # --- Autolinking ---
+
+  Scenario: Seeded issues are autolinked via gh issue edit --add-sub-issue and body Depends/Blocks lines
+    Given the approved DAG has edge "Set up auth" (parent) → "Add user profile" (child)
+    And both candidates are about to be seeded in topological order
+    When the seeding loop creates "Set up auth" as issue #200
+    And the seeding loop creates "Add user profile" as issue #201
+    Then "gh issue edit 201 --add-sub-issue 200" is invoked
+    And the body of issue #201 contains the line "Depends on: #200"
+    And the body of issue #200 contains the line "Blocks: #201"
+
+  Scenario: Autolinking reuses Issue #125's primitive
+    Given Issue #125 has shipped and exposes the autolinking helper in /draft-issue
+    When Step 2G.7 needs to wire a parent/child edge
+    Then the helper from /draft-issue is invoked
+    And the skill does not contain its own implementation of "gh issue edit --add-sub-issue" wiring logic
+
+  # --- Claude Design URL Ingestion ---
+
+  Scenario: Claude Design URL is fetched, gzip-decoded, and surfaced
+    Given the user supplies a Claude Design URL ("https://api.anthropic.com/v1/design/h/abc123")
+    When Step 2G.1 runs
+    Then WebFetch retrieves the payload (~119 KB)
+    And the payload's gzip magic bytes (1f 8b) are detected
+    And the payload is decoded via node:zlib gunzipSync
+    And the README inside the archive is summarized to the user
+    And the archive entries (filename, size) are listed
+    And the parsed content is stored as design_context for later sub-steps
+
+  Scenario: design_context feeds both interview defaults and starter-issue seeds
+    Given a Claude Design URL was successfully ingested at Step 2G.1
+    When Step 2G.2 (interview) runs
+    Then defaults for vision and personas are pre-populated from design_context
+    When Step 2G.5 (candidate generation) runs
+    Then design-derived files become candidate starter issues unless the user excludes them
+
+  Scenario: Claude Design fetch failure logs and continues
+    Given a Claude Design URL was supplied
+    And the URL is unreachable (network timeout)
+    When Step 2G.1 attempts the fetch
+    Then the failure is logged with the URL and "network timeout"
+    And design_context is empty
+    And the greenfield flow continues to Step 2G.2 (interview)
+    And the Step 5 summary lists the design fetch failure as a gap
+
+  Scenario: Non-HTTPS Claude Design URL is rejected
+    Given the user supplies a non-HTTPS URL ("http://example.com/design")
+    When Step 2G.1 validates the URL
+    Then the URL is rejected before fetch
+    And the rejection is logged
+    And the greenfield flow continues without design context
+
+  Scenario: Decode failure on a non-gzip payload falls back gracefully
+    Given a Claude Design URL was supplied
+    And the response payload has neither the gzip magic bytes nor a gzip content-type
+    When Step 2G.1 attempts decode
+    Then the payload is treated as plain text
+    And if no README content can be extracted, design_context is empty
+    And the Step 5 summary notes "design payload could not be parsed"
+
+  # --- /setup-steering Absorption ---
+
+  Scenario: /setup-steering no longer exists as a standalone skill
+    Given this issue has shipped
+    When the user attempts to invoke "/setup-steering"
+    Then the standalone skill directory "plugins/nmg-sdlc/skills/setup-steering/" does not exist
+    And steering bootstrap logic runs inside Step 2G.3 of "/onboard-project"
+
+  Scenario: /upgrade-project's references to /setup-steering have been rewritten
+    Given this issue has shipped
+    When the user reads "plugins/nmg-sdlc/skills/upgrade-project/SKILL.md"
+    Then no occurrence of "/setup-steering" remains
+    And every prior delegation point either targets "/onboard-project" or removes the indirection
+
+  Scenario: CHANGELOG records the removal of /setup-steering
+    Given this issue has shipped
+    When the user reads "CHANGELOG.md"
+    Then the [Unreleased] section's Removed list contains an entry for "/setup-steering" absorption
+
+  # --- Steering-Enhancement Re-Run Mode ---
+
+  Scenario: Re-run on a project with steering but no specs enters enhancement mode
+    Given "steering/product.md", "steering/tech.md", and "steering/structure.md" all exist
+    And no "specs/" directory exists
+    When "/onboard-project" is invoked
+    Then mode detection routes to "Greenfield-Enhancement"
+    And Step 2G.3 uses Edit (not Write) on the steering files
+    And no unrelated section in any steering file is overwritten
+
+  Scenario: Enhancement mode skips already-seeded milestones
+    Given Greenfield-Enhancement mode is active
+    And "v1 (MVP)" and "v2" already exist (seeded by a prior /onboard-project run)
+    When Step 2G.4 runs
+    Then both milestones are detected and skipped
+    And no new milestone is created
+
+  Scenario: Enhancement mode skips already-seeded starter issues
+    Given Greenfield-Enhancement mode is active
+    And 3 issues with the label "seeded-by-onboard" already exist with titles matching candidate titles
+    When Step 2G.5 runs
+    Then those 3 candidates are filtered out
+    And only candidates with no matching seeded issue are passed to the seeding loop
+
+  Scenario: Enhancement mode preserves existing dependency links
+    Given Greenfield-Enhancement mode is active
+    And a prior run wired "gh issue edit 100 --add-sub-issue 99"
+    When Step 2G.7 runs against the remaining non-seeded candidates
+    Then the existing parent/child edge between #99 and #100 is not rewritten or deleted
+
+  # --- /init-config Still Delegated ---
+
+  Scenario: /init-config is still invoked after seeding completes
+    Given backlog seeding has finished (milestones seeded, starter issues seeded, dependencies wired)
+    When the greenfield flow reaches Step 3G
+    Then "/init-config" is invoked per existing AC10 behavior
+    And in unattended mode the invocation is auto-yes
+
+  # --- Step 5 Summary Extensions ---
+
+  Scenario: Step 5 summary includes design fetch result, interview defaults, milestones, DAG, and seeded issues
+    Given the greenfield enhanced flow has completed
+    When Step 5 emits the summary
+    Then the summary includes the design URL fetch result (success / skipped / failed-with-reason)
+    And the summary includes every interview default applied with its source
+    And the summary lists every milestone seeded vs skipped
+    And the summary lists the full DAG (or "skipped due to cycle")
+    And the summary lists every seeded issue with its number and DAG neighbors
+    And the summary lists every gap from every sub-step

@@ -62,7 +62,7 @@ The directory name contains **no issue number** — issue numbers are tracked in
 ## Prerequisites
 
 1. A GitHub issue exists (created via `/draft-issue` or manually)
-2. Steering documents exist in `steering/` (create with `/setup-steering` if missing)
+2. Steering documents exist in `steering/` (create with `/onboard-project` if missing)
 3. The project uses the current directory layout (`steering/` and `specs/` at the project root). If `.claude/steering/` or `.claude/specs/` still exists, run `/upgrade-project` first — see the **Legacy-Layout Precondition** block below.
 
 ### Legacy-Layout Precondition
@@ -476,7 +476,7 @@ Specs written to (or amended in) `specs/{feature-name}/`:
 
 ```
 .claude/
-├── steering/           # Project-wide context (from /setup-steering)
+├── steering/           # Project-wide context (from /onboard-project)
 │   ├── product.md
 │   ├── tech.md
 │   └── structure.md

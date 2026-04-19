@@ -1,6 +1,6 @@
 # Requirements: Add /onboard-project Skill
 
-**Issues**: #115
+**Issues**: #115, #124
 **Date**: 2026-04-18
 **Status**: Draft
 **Author**: Claude
@@ -108,6 +108,92 @@ Pipeline position: runs **before** `/draft-issue`, **once per project lifetime**
 **When** it reports completion
 **Then** the final output names the mode detected, lists every spec directory produced (with issue numbers), lists every delegated skill invoked and whether each succeeded, and — for brownfield — calls out any issues where the reconciled spec references behavior that no longer exists in the current implementation
 
+---
+
+<!-- ACs added by issue #124: greenfield enhancement (interview, backlog seeding, Claude Design URL, /setup-steering absorption) -->
+
+### AC12: Intent + Tech-Selection Interview Runs in Greenfield Mode
+
+**Given** a project detected as greenfield
+**When** Step 2G begins
+**Then** the skill conducts an interactive interview (via `AskUserQuestion` multi-question rounds, consistent with `/draft-issue`) covering: product vision, target users/personas, success criteria, language, framework, test tooling, and deployment target — *before* any steering file is written
+**And** in unattended mode, the interview is replaced by deterministic defaults sourced from the Claude Design payload (if provided) or from the steering templates' defaults; every applied default is logged in the Step 5 summary so the run can be audited
+
+### AC13: v1 and v2 Milestones Are Seeded Idempotently
+
+**Given** greenfield mode
+**When** milestone seeding runs
+**Then** GitHub milestones `v1 (MVP)` and `v2` are created via `gh api` if they do not already exist
+**And** if either already exists, the existing milestone is reused without duplication
+**And** failure to create a milestone (network error, permission denied, name collision the user did not approve overwriting) is recorded as a gap in the Step 5 summary and the run continues — milestone seeding does not abort the greenfield flow
+
+### AC14: Starter Issues Are Seeded via the /draft-issue Loop
+
+**Given** the interview surfaces 3–7 starter-issue candidates
+**When** seeding runs
+**Then** `/draft-issue` is delegated to once per candidate
+**And** the shared interview context (vision, personas, tech selections, design payload if any) is passed in to each delegation so each starter issue lands with a proper AC/FR body — not a minimal placeholder
+**And** if `/draft-issue` fails for any one candidate, that failure is recorded as a per-issue gap and the loop continues with the remaining candidates
+
+### AC15: Dependencies Between Seeded Starter Issues Are Inferred and Confirmed
+
+**Given** 3–7 starter issues are about to be seeded
+**When** dependency inference runs
+**Then** the skill proposes a DAG built from: (a) shared component references in the candidate bodies, (b) explicit ordering cues surfaced in the interview, and (c) milestone mapping (`v1` items cannot depend on `v2` items)
+**And** the user approves or adjusts the DAG via `AskUserQuestion` *before* any `/draft-issue` invocation begins (auto-accept in unattended mode, with the proposed DAG logged for the summary)
+**And** if cycles are detected in the inferred DAG, the skill aborts the dependency step, logs the cycle, and proceeds to seed issues without dependency wiring rather than producing an invalid graph
+
+### AC16: Seeded Starter Issues Are Autolinked
+
+**Given** the dependency graph is approved
+**When** each starter issue is created inside the `/draft-issue` loop
+**Then** hierarchical relationships are wired via `gh issue edit <child> --add-sub-issue <parent>` for every DAG edge that has a clear parent/child relationship
+**And** every seeded issue body includes machine-parseable `Depends on: #X, #Y` and/or `Blocks: #Z` lines reflecting its DAG neighbors
+**And** the autolinking primitive landed by Issue #125 is reused — this skill does not duplicate dependency-wiring logic
+
+### AC17: Claude Design URL Is Used as Context
+
+**Given** the user supplies a Claude Design URL at the start of the greenfield interview
+**When** the greenfield flow runs
+**Then** the archive is fetched, decoded as gzip-aware (the payload is a gzipped archive of ~119 KB in the example, not raw HTML)
+**And** the README inside the archive is read and summarized to the user
+**And** relevant files surfaced from the archive (file names, sizes, brief content previews) are presented as context
+**And** the parsed content feeds both the interview defaults and the starter-issue seed bodies — design-derived files become candidate starter issues unless the user excludes them
+
+### AC18: Re-Run Switches to Steering Enhancement Mode
+
+**Given** `steering/product.md`, `steering/tech.md`, and `steering/structure.md` already exist
+**When** `/onboard-project` is invoked on the same project
+**Then** the flow switches to **steering-enhancement mode** — existing steering content is edited in place rather than overwritten
+**And** milestone seeding detects already-seeded milestones (`v1 (MVP)`, `v2`) and skips them
+**And** issue seeding detects already-seeded starter issues (by title match against the previously-seeded set, recorded in the Step 5 summary of the prior run, or by GitHub label `seeded-by-onboard`) and skips them
+**And** existing dependency links between issues are preserved — the skill does not rewrite or delete `--add-sub-issue` relationships set by a prior run
+
+### AC19: /setup-steering Is Absorbed Into /onboard-project
+
+**Given** this issue ships
+**When** a user runs `/setup-steering`
+**Then** the standalone `/setup-steering` skill no longer exists in `plugins/nmg-sdlc/skills/`
+**And** all steering bootstrap and steering-enhancement logic that previously lived in `/setup-steering` runs inside `/onboard-project`'s greenfield branch (Step 2G) and re-run branch (Step 2I, enhancement mode)
+**And** every reference to `/setup-steering` in other skills (notably `/upgrade-project`'s delegation references) is rewritten to point at `/onboard-project` (or to no delegation if the new entry point makes the indirection unnecessary)
+**And** `CHANGELOG.md` records the removal of the standalone `/setup-steering` skill in `[Unreleased]`
+
+### AC20: Claude Design Fetch Failure Degrades Gracefully
+
+**Given** the supplied Claude Design URL is unreachable, times out, returns a non-success HTTP status, or returns a payload that cannot be decoded as gzip
+**When** the fetch or decode step fails
+**Then** the failure is logged with the URL, the failure mode (network, HTTP status, decode error), and a single-sentence remediation hint
+**And** the greenfield flow continues without design context — interview proceeds with no design-derived defaults
+**And** the failure is noted as a gap in the Step 5 summary
+**And** the run does not abort
+
+### AC21: /init-config Is Still Delegated After Seeding
+
+**Given** backlog seeding completes (milestones seeded, starter issues seeded, dependencies wired)
+**When** the greenfield flow nears exit
+**Then** `/init-config` is still invoked per the existing Step 3G behavior — no scope change to `/init-config` itself
+**And** in unattended mode, the invocation remains auto-yes (existing AC6 behavior preserved)
+
 ### Generated Gherkin Preview
 
 ```gherkin
@@ -170,6 +256,69 @@ Feature: Onboard Project
     Given the skill has finished
     When it reports completion
     Then the output names the mode, lists specs produced, lists delegated skills invoked, and calls out gaps
+
+  # --- Added by issue #124 ---
+
+  Scenario: Greenfield interview covers intent and tech selection
+    Given a project detected as greenfield
+    When Step 2G begins
+    Then the skill conducts a multi-round interview covering vision, personas, success criteria, language, framework, test tooling, and deployment target before any steering file is written
+
+  Scenario: v1 and v2 milestones are seeded idempotently
+    Given greenfield mode and no pre-existing milestones
+    When milestone seeding runs
+    Then "v1 (MVP)" and "v2" are created via gh api
+    And on a re-run the existing milestones are reused without duplication
+
+  Scenario: Starter issues seeded via /draft-issue loop
+    Given the interview surfaces 5 starter-issue candidates
+    When seeding runs
+    Then /draft-issue is invoked once per candidate with shared interview context
+
+  Scenario: Dependency DAG is inferred and confirmed
+    Given 5 starter-issue candidates exist
+    When dependency inference runs
+    Then a DAG is proposed from shared components, ordering cues, and milestone mapping
+    And the user approves the DAG before any /draft-issue invocation begins
+
+  Scenario: Seeded issues are autolinked
+    Given the dependency DAG is approved
+    When each starter issue is created
+    Then "gh issue edit <child> --add-sub-issue <parent>" wires hierarchical edges
+    And every seeded issue body includes "Depends on: #X" and "Blocks: #Y" lines for its DAG neighbors
+
+  Scenario: Claude Design URL is fetched, decoded, and used as context
+    Given the user supplies a Claude Design URL at interview start
+    When the greenfield flow runs
+    Then the gzipped archive is fetched and decoded
+    And the README is summarized to the user
+    And the parsed content feeds interview defaults and starter-issue seeds
+
+  Scenario: Re-run switches to steering enhancement mode
+    Given steering/product.md, steering/tech.md, and steering/structure.md already exist
+    When /onboard-project is invoked again
+    Then steering content is edited in place (not overwritten)
+    And already-seeded milestones and starter issues are skipped
+    And existing dependency links are preserved
+
+  Scenario: /setup-steering is absorbed into /onboard-project
+    Given this issue has shipped
+    When the user looks for /setup-steering
+    Then the standalone skill no longer exists
+    And all steering bootstrap/enhancement runs inside /onboard-project
+    And /upgrade-project's references to /setup-steering have been rewritten
+
+  Scenario: Claude Design fetch failure degrades gracefully
+    Given the supplied Claude Design URL is unreachable
+    When fetch fails
+    Then the failure is logged with URL and failure mode
+    And the greenfield flow continues without design context
+    And the failure is noted in the Step 5 summary
+
+  Scenario: /init-config is still delegated after seeding
+    Given backlog seeding has completed
+    When the greenfield flow nears exit
+    Then /init-config is still invoked per existing Step 3G behavior
 ```
 
 ---
@@ -194,6 +343,18 @@ Feature: Onboard Project
 | FR14 | Verify all four artifact files exist in each produced spec directory before reporting success | Must | Postcondition check — addresses probabilistic agent-produced output. |
 | FR15 | Support a dry-run mode (`--dry-run` or equivalent argument) that previews which specs would be produced without writing files | Should | Previews only; no filesystem writes. |
 | FR16 | Skip issues whose reconciled spec would duplicate an existing spec directory name (idempotent per-issue) | Should | Prevents partial re-runs from overwriting completed work. |
+| FR17 | Conduct a multi-round intent + tech-selection interview inside the greenfield branch (Step 2G) before any steering file is written | Must | `AskUserQuestion` rounds covering vision, personas, success criteria, language, framework, test tooling, deployment target. Unattended mode applies deterministic defaults from design payload or templates and logs them in the summary. (Issue #124) |
+| FR18 | Seed `v1 (MVP)` and `v2` GitHub milestones idempotently via `gh api` | Must | Reuse existing milestones by name match; skip duplicates; record per-milestone failures in the summary without aborting. (Issue #124) |
+| FR19 | Seed 3–7 starter issues by delegating to `/draft-issue` in a loop with shared interview context | Must | Each delegation receives the full interview payload + design payload; per-issue failures are recorded as gaps without aborting the loop. (Issue #124) |
+| FR20 | Infer a dependency DAG between candidate starter issues from shared component references, interview ordering cues, and milestone mapping | Must | `v1` items cannot depend on `v2` items. Detect cycles and abort the dependency step (continue without wiring) rather than emit an invalid graph. (Issue #124) |
+| FR21 | Confirm the inferred DAG via `AskUserQuestion` before any `/draft-issue` invocation begins | Must | Auto-accept in unattended mode; log the proposed DAG for the summary. (Issue #124) |
+| FR22 | Autolink seeded starter issues via `gh issue edit <child> --add-sub-issue <parent>` and embed `Depends on:` / `Blocks:` lines in seeded issue bodies | Must | Reuse the autolinking primitive landed by Issue #125; do not duplicate dependency-wiring logic. (Issue #124) |
+| FR23 | Absorb all `/setup-steering` logic (bootstrap and in-place enhancement) into `/onboard-project`'s greenfield branch (Step 2G) and re-run branch (Step 2I enhancement mode); delete the standalone `/setup-steering` skill directory | Must | Maintains the "one skill = one SDLC step" invariant. (Issue #124) |
+| FR24 | Rewrite all `/setup-steering` references in other skills (notably `/upgrade-project`) to point at `/onboard-project` (or remove the indirection where the new entry point makes it unnecessary) | Must | Grep `plugins/nmg-sdlc/skills/**/SKILL.md` for any remaining `/setup-steering` mention; CHANGELOG records the removal. (Issue #124) |
+| FR25 | Accept an optional Claude Design URL argument at the start of the greenfield interview, fetch the URL, decode the gzipped archive, parse the README, and inject the parsed content as interview defaults + starter-issue seed context | Should | Treat the payload as untrusted: fenced blocks only when embedding into Markdown, no shell interpolation of payload content into commands. (Issue #124) |
+| FR26 | Degrade gracefully on Claude Design fetch or decode failure — log URL + failure mode + remediation hint, continue the greenfield flow without design context, surface the failure as a gap in the Step 5 summary | Should | Fetch failures must not abort the run. (Issue #124) |
+| FR27 | Detect re-run on a project that already has steering docs and switch to **steering-enhancement mode** — edit existing steering content in place, skip already-seeded milestones, skip already-seeded starter issues, preserve existing dependency links | Must | Already-seeded starter issues identified by either a `seeded-by-onboard` GitHub label or by title match against the prior run's summary; existing `--add-sub-issue` relationships are not rewritten or deleted. Distinct from the existing FR9 already-initialized branch (which routes to `/upgrade-project`) — enhancement mode applies when steering exists but specs do not. (Issue #124) |
+| FR28 | Emit progress lines during interview, design fetch/decode, milestone seeding, dependency inference, and the starter-issue loop | Should | Per the existing UI/UX requirement for long operations; one line per phase boundary plus per-issue progress in the seeding loop. (Issue #124) |
 
 ---
 
@@ -249,17 +410,20 @@ Feature: Onboard Project
 ## Dependencies
 
 ### Internal Dependencies
-- [x] `/setup-steering` — delegated for steering doc bootstrap (greenfield and brownfield-missing-steering)
+- [x] `/setup-steering` — **(Pre-#124)** delegated for steering doc bootstrap. **(Post-#124)** absorbed into `/onboard-project`; standalone skill removed (FR23, AC19).
 - [x] `/init-config` — optionally delegated after steering bootstrap (greenfield)
-- [x] `/upgrade-project` — delegated when already-initialized is detected
+- [x] `/upgrade-project` — delegated when already-initialized is detected; references to `/setup-steering` rewritten per FR24
 - [x] `/write-spec` templates — reused verbatim for reconciled spec artifact structure
+- [x] `/draft-issue` — **(#124)** delegated in a loop for starter-issue seeding (FR19); shared interview context passed in
+- [x] `/draft-issue` autolinking primitive — **(#124)** consumed for starter-issue dependency wiring (FR22); landed by Issue #125
 
 ### External Dependencies
-- [x] `gh` CLI — closed issues, PR bodies, PR diffs, commit messages
+- [x] `gh` CLI — closed issues, PR bodies, PR diffs, commit messages, milestone seeding (`gh api`), autolinking (`gh issue edit --add-sub-issue`)
 - [x] `git` — working tree status, file presence checks
+- [x] HTTP fetch + gzip decode — **(#124)** Claude Design URL ingestion (FR25); use built-in fetch + decompression (no new npm dependency)
 
 ### Blocked By
-- None
+- Issue #125 — must land the dependency-inference + autolinking primitive in `/draft-issue` first; this issue consumes that primitive (FR22, AC16)
 
 ---
 
@@ -271,6 +435,11 @@ Feature: Onboard Project
 - Rewriting historical specs when they already exist — that is `/upgrade-project`
 - Re-running verification (`/verify-code`) against reconciled specs — a separate invocation after onboarding
 - Backfilling specs for issues closed as `duplicate`, `wontfix`, or `not-planned` — these yield no useful design evidence; skipped by default with a note in the summary
+- *(#124)* Auto-implementing design files as runnable code (e.g., writing the actual `Live Incident Map.html` from a design payload) — that remains a later `/write-code` activity on a seeded starter issue
+- *(#124)* Brownfield reconciliation behavior changes — Step 2B/3B logic is unchanged by issue #124; the enhancement is greenfield-only
+- *(#124)* `/upgrade-project` behavioral changes — only the delegation target rewrites to match the absorbed `/setup-steering` (FR24)
+- *(#124)* `/init-config` scope changes — it is still delegated with current behavior (AC21)
+- *(#124)* Inventing dependency-detection or autolinking primitives — reuse the helper from Issue #125 rather than duplicating (FR22)
 
 ---
 
@@ -297,6 +466,7 @@ Feature: Onboard Project
 | Issue | Date | Summary |
 |-------|------|---------|
 | #115 | 2026-04-18 | Initial feature spec |
+| #124 | 2026-04-18 | Greenfield enhancement: intent + tech-selection interview, v1/v2 milestone seeding, 3–7 starter-issue seeding via `/draft-issue` loop with dependency inference + autolinking, optional Claude Design URL ingestion (gzip-decoded), steering-enhancement re-run mode, absorption of `/setup-steering` into `/onboard-project` |
 
 ---
 

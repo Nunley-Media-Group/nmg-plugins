@@ -71,7 +71,7 @@ VERSION                             — Single source of truth for project versi
 
 Locate the template directories from the installed plugin. Use this skill's own file path to resolve paths relative to the plugin root:
 
-- **Steering templates:** `plugins/nmg-sdlc/skills/setup-steering/templates/*.md`
+- **Steering templates:** `plugins/nmg-sdlc/skills/onboard-project/templates/*.md`
   - `product.md`, `tech.md`, `structure.md`
 - **Retrospective template:** `plugins/nmg-sdlc/skills/run-retro/templates/retrospective.md`
   - Maps to `steering/retrospective.md`
@@ -142,14 +142,14 @@ specs/*/tasks.md
 sdlc-config.json
 ```
 
-**Only analyze files that already exist.** Do not create missing files — suggest `/setup-steering` or `/write-spec` for that.
+**Only analyze files that already exist.** Do not create missing files — suggest `/onboard-project` or `/write-spec` for that.
 
 ### Step 3: Analyze Steering Docs
 
 For each existing steering doc (e.g., `steering/product.md`):
 
-1. **Read the template file** (e.g., `setup-steering/templates/product.md`)
-2. **Extract template content** — steering templates from `setup-steering/` wrap their content in a ` ```markdown ... ``` ` code block; parse only the content between the opening ` ```markdown ` and the closing ` ``` `. The retrospective template (`run-retro/templates/retrospective.md`) is direct markdown — use the file content as-is.
+1. **Read the template file** (e.g., `onboard-project/templates/product.md`)
+2. **Extract template content** — steering templates from `onboard-project/templates/` wrap their content in a ` ```markdown ... ``` ` code block; parse only the content between the opening ` ```markdown ` and the closing ` ``` `. The retrospective template (`run-retro/templates/retrospective.md`) is direct markdown — use the file content as-is.
 3. **Parse headings** — Extract all `## ` headings from both the template content and the existing project file.
 4. **Diff headings** — Identify headings present in the template but absent from the project file.
 5. **Filter by relevance** — For each missing heading, check whether it matches a keyword in the **Relevance Heuristic Table** below. If it matches, use `Glob` to check the project codebase for the associated evidence patterns. If **no evidence is found**, exclude the section from the proposal. If the heading does **not match any keyword** in the table (unknown section), **conservatively include it** — let the user decide.
@@ -369,7 +369,7 @@ Display a per-file summary of all proposed changes. Group by category:
 ### Steering Docs
 - **product.md** — Add 2 missing sections: "Product Principles", "Brand Voice"
 - **tech.md** — Up to date
-- **structure.md** — Not found (run /setup-steering to create)
+- **structure.md** — Not found (run /onboard-project to create)
 
 ### Spec Files
 - **feature-add-auth/requirements.md** — Add 1 missing section: "UI/UX Requirements"
@@ -533,7 +533,7 @@ If no destructive operations were skipped, omit this section entirely.
 Run this skill periodically after plugin updates to keep project files current:
 
 ```
-/setup-steering (one-time)
+/onboard-project (one-time)
          ↓
 /upgrade-project (after plugin updates)
          ↓
