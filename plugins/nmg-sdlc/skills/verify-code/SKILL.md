@@ -242,6 +242,8 @@ Detection is deliberately conservative — any single signal triggers routing (f
 
 Cache the probe result for the duration of the verify-code run so the warning is emitted at most once per run. The probe is a filesystem/system-reminder check, not an `AskUserQuestion` gate — unattended-mode behaviour is preserved.
 
+If `/skill-creator` is available but errors or reports failures, record those as additional findings to fix in the current 6a cycle — do not silently swallow them.
+
 The Fixes Applied table in the verification report records the routing path taken for each fix so reviewers can confirm the skill-authoring invariant was honored.
 
 #### 6a-bis. Simplify After Fix

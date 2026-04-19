@@ -58,6 +58,8 @@ Detection is deliberately conservative — any single signal triggers routing (f
 
 Cache the probe result for the duration of the run so the warning is emitted at most once per run. The probe is a filesystem/system-reminder check, not an `AskUserQuestion` gate — unattended-mode behaviour is preserved.
 
+If `/skill-creator` is available but errors or reports failures, surface those as additional findings and address them before proceeding to the next task.
+
 ## Implementation Rules
 
 - Follow the spec — reduces deviation and rework

@@ -201,6 +201,8 @@ Detection is deliberately conservative — any single signal triggers routing (f
 
 Cache the probe result for the duration of the run so the warning is emitted at most once per run. The probe is a filesystem/system-reminder check, not an `AskUserQuestion` gate — unattended-mode behaviour is preserved.
 
+If `/skill-creator` is available but errors or reports failures, surface those as additional findings and address them before proceeding to Step 5b.
+
 ### Step 5b: Simplify Pass
 
 After all tasks are complete and before signalling completion, run the `/simplify` skill over the files changed on this branch. Simplify is a marketplace skill that is NOT bundled with `nmg-sdlc`; use the probe-and-skip pattern below so pipelines without it continue to work.
