@@ -10,6 +10,10 @@ Major-version bumps are reserved for explicit, manual maintenance milestones and
 
 ## [Unreleased]
 
+### Added
+
+- **Route skill creation and update tasks through `/skill-creator`** (issue #141) — `plugins/nmg-sdlc/skills/write-code/SKILL.md` gains a Step 5a "Route Skill Tasks Through /skill-creator" with a SKILL-TASK DETECTOR (path/description/issue signals) and a skill-creator probe-and-skip contract modelled after the existing `simplify` probe. `plugins/nmg-sdlc/agents/spec-implementer.md` gains the same detector and probe so the agent path honours the invariant when `/write-code` delegates via the Task tool. `plugins/nmg-sdlc/skills/verify-code/SKILL.md` Step 6a now classifies each finding and routes `SKILL.md` fixes through `/skill-creator` when available, with a new `Routing` column in the Fixes Applied table (and matching update to `plugins/nmg-sdlc/skills/verify-code/checklists/report-template.md`) recording `skill-creator` vs. `direct` for every fix. **Graceful degradation:** when `/skill-creator` is not installed, every call site logs `skill-creator not available — implementing skill directly` verbatim and falls back to direct `Write`/`Edit` authoring — no pipeline that previously worked is broken by this change. Probe result is cached per run, so the warning is emitted at most once regardless of how many skill tasks/findings are processed. Detection is deliberately conservative (any of three signals triggers routing) per the `steering/tech.md` invariant that skill authoring must be driven through `/skill-creator`.
+
 ## [1.51.0] - 2026-04-19
 
 ### Added

@@ -166,9 +166,9 @@ Use this template to generate the final verification report.
 
 ## Fixes Applied
 
-| Severity | Category | Location | Original Issue | Fix Applied |
-|----------|----------|----------|----------------|-------------|
-| [sev] | [cat] | `path/to/file:line` | [what was wrong] | [what was done] |
+| Severity | Category | Location | Original Issue | Fix Applied | Routing |
+|----------|----------|----------|----------------|-------------|---------|
+| [sev] | [cat] | `path/to/file:line` | [what was wrong] | [what was done] | `skill-creator` or `direct` |
 
 ## Remaining Issues
 

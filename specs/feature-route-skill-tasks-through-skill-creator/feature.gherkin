@@ -1,0 +1,146 @@
+# File: specs/feature-route-skill-tasks-through-skill-creator/feature.gherkin
+#
+# Generated from: specs/feature-route-skill-tasks-through-skill-creator/requirements.md
+# Issue: #141
+
+Feature: Route skill creation and update tasks through /skill-creator
+  As a developer implementing or modifying a Claude Code skill definition through the SDLC pipeline
+  I want write-code, spec-implementer, and verify-code to route skill-related work through /skill-creator
+  So that all skill definitions meet Anthropic's official best practices regardless of how the task was initiated
+
+  Background:
+    Given the nmg-sdlc plugin is loaded
+    And the SDLC pipeline is executing for a valid GitHub issue
+
+  # --- Happy Path: Detection ---
+
+  Scenario: Detect skill task by SKILL.md path suffix
+    Given a task with file path "plugins/acme/skills/foo/SKILL.md"
+    When the SKILL-TASK DETECTOR is applied
+    Then the task is classified as skill-related
+
+  Scenario: Detect skill task by description token
+    Given a task whose description contains the phrase "Implement the foo skill"
+    And the task file path does not end in SKILL.md
+    When the SKILL-TASK DETECTOR is applied
+    Then the task is classified as skill-related
+
+  Scenario: Detect skill task by issue-title token
+    Given the issue title contains the word "skill"
+    And a task without SKILL.md in its path and without skill tokens in its description
+    When the SKILL-TASK DETECTOR is applied
+    Then the task is classified as skill-related
+
+  # --- Happy Path: Routing With /skill-creator Available ---
+
+  Scenario: write-code invokes /skill-creator for a detected task
+    Given /skill-creator is installed
+    And a skill task has been detected in write-code's task loop
+    When write-code reaches that task
+    Then /skill-creator is invoked with the task context and target file path
+    And Write or Edit is NOT used to author the SKILL.md directly
+    And the target SKILL.md exists at the declared path after execution
+
+  Scenario: spec-implementer agent invokes /skill-creator for a detected task
+    Given /skill-creator is installed
+    And the spec-implementer agent is executing tasks sequentially
+    And the next task has been detected as skill-related
+    When the agent reaches that task
+    Then /skill-creator is invoked for the task
+    And the agent does NOT use Write or Edit to author the SKILL.md directly
+
+  Scenario: verify-code routes a SKILL.md fix through /skill-creator
+    Given /skill-creator is installed
+    And verify-code has identified a finding in a file whose path ends in SKILL.md
+    When verify-code applies the fix in Step 6a
+    Then the fix is routed through /skill-creator with the finding context and existing file content
+    And Write or Edit is NOT used to patch the SKILL.md directly
+    And the fix appears in the verification report's Fixes Applied table with its routing noted
+
+  # --- Graceful Degradation (Error Handling) ---
+
+  Scenario: write-code emits verbatim warning when /skill-creator is missing
+    Given /skill-creator is NOT installed
+    And a skill task has been detected in write-code's task loop
+    When write-code reaches that task
+    Then the warning "skill-creator not available — implementing skill directly" is emitted in a fenced code block
+    And write-code falls back to direct Write/Edit authoring
+    And the pipeline completes without failure
+
+  Scenario: spec-implementer emits verbatim warning when /skill-creator is missing
+    Given /skill-creator is NOT installed
+    And the spec-implementer agent encounters a detected skill task
+    When the agent reaches that task
+    Then the warning "skill-creator not available — implementing skill directly" is emitted in a fenced code block
+    And the agent falls back to direct Write/Edit authoring
+    And the agent completes execution without failure
+
+  Scenario: verify-code emits verbatim warning when /skill-creator is missing
+    Given /skill-creator is NOT installed
+    And verify-code has identified a finding in a SKILL.md file
+    When verify-code applies the fix in Step 6a
+    Then the warning "skill-creator not available — implementing skill directly" is emitted in a fenced code block
+    And the fix proceeds via direct Write/Edit
+    And the verification report records the fix normally
+
+  Scenario: Warning is emitted at most once per component run
+    Given /skill-creator is NOT installed
+    And a component processes multiple skill tasks in a single run
+    When each skill task is processed
+    Then the probe result is cached per run
+    And the verbatim warning appears exactly once in the transcript for that run
+
+  # --- Edge Cases ---
+
+  Scenario: Conservative false-positive bias for ambiguous tasks
+    Given /skill-creator is installed
+    And a task has weak skill signals (e.g., only the issue body mentions "skill" while the task touches an unrelated file)
+    When the SKILL-TASK DETECTOR is applied
+    Then the task is classified as skill-related
+    And /skill-creator is invoked (false-positive routing preferred over false-negative)
+    And no warning about missing skill-creator is emitted
+
+  Scenario: Non-skill task is unaffected
+    Given a task with no SKILL.md in its file path
+    And the task description contains no skill tokens
+    And the issue title and body contain no skill tokens
+    When the component executes the task
+    Then the SKILL-CREATOR PROBE is NOT performed for this task
+    And direct Write/Edit authoring is used as today
+    And /skill-creator is NOT invoked
+
+  Scenario: Unattended mode does not introduce interactive prompts
+    Given the file .claude/unattended-mode exists at the project root
+    And /skill-creator is installed
+    And a skill task has been detected
+    When the component routes the task through /skill-creator
+    Then no AskUserQuestion prompt is raised by the routing logic
+    And the probe remains a filesystem and system-reminder check only
+    And execution proceeds without human intervention
+
+  Scenario: Detection signals match case-insensitively at word boundaries
+    Given a task whose description contains the word "Skills" (capitalized, plural)
+    When the SKILL-TASK DETECTOR is applied
+    Then the task is classified as skill-related
+
+  Scenario: Detection does not false-match on substrings
+    Given a task whose description contains the word "skillet" but no other skill signals
+    And the file path does not end in SKILL.md
+    And the issue does not contain the word "skill"
+    When the SKILL-TASK DETECTOR is applied
+    Then the task is NOT classified as skill-related
+
+  # --- Data-Driven: Probe Availability Sources ---
+
+  Scenario Outline: /skill-creator is considered available when any probe source matches
+    Given a skill task has been detected
+    And <probe_source> indicates /skill-creator is present
+    When the SKILL-CREATOR PROBE runs
+    Then /skill-creator is considered available
+    And the component invokes /skill-creator instead of falling back
+
+    Examples:
+      | probe_source                                                 |
+      | the user-skills directory (~/.claude/skills/skill-creator/)  |
+      | a plugin-skills glob (~/.claude/plugins/**/skills/skill-creator/) |
+      | the available-skills list in the current system reminder     |
