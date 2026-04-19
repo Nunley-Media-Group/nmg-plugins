@@ -213,6 +213,8 @@ mkdir -p .claude && touch .claude/unattended-mode
 rm .claude/unattended-mode
 ```
 
+To stop an in-flight runner cleanly (signal the live PID and clear both runner artifacts in one step), use `/end-loop` — the explicit counterpart to `/run-loop`. It is idempotent and safe to run when unattended mode is already off.
+
 When `.claude/unattended-mode` does not exist, skills work interactively as normal.
 
 ### Default behaviors in unattended mode
@@ -310,6 +312,7 @@ Any gate Fail caps the overall verification status at "Partial". Any gate Incomp
 | `/open-pr #N` | Determine version bump, update VERSION/CHANGELOG/stack files, create PR with spec-driven summary |
 | `/run-retro` | Batch-analyze defect specs to identify spec-writing gaps and produce `steering/retrospective.md` with actionable learnings |
 | `/run-loop [#N]` | Run the full SDLC pipeline from within an active Claude Code session — processes a specific issue or loops over all open issues via `sdlc-runner.mjs` |
+| `/end-loop` | Stop unattended mode and clear runner state — signals the runner PID (if live) and removes `.claude/unattended-mode` and `.claude/sdlc-state.json`. Pairs with `/run-loop` for mid-cycle stop or crash cleanup |
 | `/setup-steering` | Set up or enhance project steering documents (product, tech, structure) — bootstraps on first run, enhances existing docs on subsequent runs |
 | `/upgrade-project` | Upgrade an existing project to current plugin standards — relocates legacy `.claude/steering/` and `.claude/specs/` to the project root, updates specs, steering docs, configs, CHANGELOG, and VERSION |
 | `/init-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path auto-detected and written to the project root |
