@@ -3,7 +3,7 @@ name: open-pr
 description: "Create a pull request with spec-driven summary, linking GitHub issue and spec documents. Use when user says 'create PR', 'open pull request', 'submit for review', 'push for review', 'ready to merge', 'make a PR for issue #N', 'how do I create a PR', 'how do I open a pull request', or 'ship this'. Do NOT use for implementing code, verifying specs, or creating issues. Handles version bumping, changelog updates, and links specs and acceptance criteria. Final step in the SDLC pipeline — follows /verify-code."
 argument-hint: "[#issue-number]"
 disable-model-invocation: true
-allowed-tools: Read, Glob, Grep, Write, Edit, Bash(gh:*), Bash(git:*), AskUserQuestion
+allowed-tools: Read, Glob, Grep, Write, Edit, Bash(gh:*), Bash(git:*), Bash(sleep:*), AskUserQuestion
 model: sonnet
 effort: low
 ---
@@ -185,7 +185,9 @@ Closes #N
    ```
 3. **Add labels** if appropriate (same labels as the issue)
 
-### Step 6: Output
+### Step 6: Output (Base Case)
+
+Print the PR status block:
 
 ```
 PR created: [PR URL]
@@ -196,10 +198,81 @@ Issue: Closes #N
 
 [If specs-found]: The PR links to specs at specs/{feature}/ and will close issue #N when merged.
 [If specs-not-found]: The PR extracts acceptance criteria from the issue body and will close issue #N when merged.
-
-[If `.claude/unattended-mode` does NOT exist]: Next step: Wait for CI to pass, then merge the PR to close issue #N. After merging, you can start the next issue with `/draft-issue` (for new work) or `/start-issue` (to pick up an existing issue).
-[If `.claude/unattended-mode` exists]: Done. Awaiting orchestrator.
 ```
+
+Then branch on the `.claude/unattended-mode` sentinel:
+
+- **If `.claude/unattended-mode` exists**: print `Done. Awaiting orchestrator.` and **stop**. Do NOT proceed to Step 7 — the runner owns CI monitoring and merging. This gate is an active-suppression requirement (see `steering/retrospective.md` → "Missing Acceptance Criteria" on explicitly excluded automation modes).
+- **If `.claude/unattended-mode` does NOT exist**: fall through to Step 7.
+
+### Step 7: Interactive CI Monitor + Auto-Merge (Opt-In)
+
+**Gate**: This entire step runs only when `.claude/unattended-mode` does NOT exist. In unattended mode the skill MUST NOT call `AskUserQuestion` for CI monitoring, MUST NOT poll `gh pr checks`, and MUST NOT invoke `gh pr merge`.
+
+1. **Prompt the user** via `AskUserQuestion`:
+
+   ```
+   question: "Monitor CI and auto-merge this PR once all required checks pass?"
+   options:
+     - "Yes, monitor CI and auto-merge"
+     - "No, I'll handle it"
+   ```
+
+2. **If the user selects "No, I'll handle it"** (opt-out):
+
+   Print the existing next-step guidance and exit:
+
+   ```
+   Next step: Wait for CI to pass, then merge the PR to close issue #N. After merging, you can start the next issue with `/draft-issue` (for new work) or `/start-issue` (to pick up an existing issue).
+   ```
+
+3. **If the user selects "Yes, monitor CI and auto-merge"** (opt-in):
+
+   Run the polling loop, then the merge + cleanup path (or the failure path on any non-success terminal state).
+
+   **Polling constants** (documented inline for future maintainers; matches `scripts/sdlc-runner.mjs` line 937 for behavioral parity with the unattended runner):
+
+   | Constant | Value |
+   |----------|-------|
+   | Poll interval | 30 seconds |
+   | Poll timeout | 30 minutes |
+   | Max polls | 60 |
+
+   **Polling loop**:
+
+   1. Run `gh pr checks <num> --json name,state,link`. If the JSON response is an empty array `[]`, jump to the **No-CI graceful-skip path** below. If the `--json` flag is not supported by the installed `gh` version, fall back to `gh pr checks <num>` (plain text) and check for the "no checks reported" string; if present, also jump to the **No-CI graceful-skip path**.
+   2. Map each check's state per the terminal-state table in `specs/feature-open-pr-skill/design.md` → "Terminal-State Mapping":
+      - `SUCCESS`, `SKIPPED`, `NEUTRAL` → treat as success for that check.
+      - `PENDING`, `IN_PROGRESS`, `QUEUED` → not terminal; keep polling.
+      - `FAILURE`, `CANCELLED`, `TIMED_OUT` → terminal failure; jump to the **Failure path**.
+   3. Print a progress line on each poll (e.g., `Polling checks... 3/5 complete`).
+   4. Sleep 30 seconds, then re-poll. Stop after 60 polls total (30 minutes); treat timeout as a failure and jump to the **Failure path** with the message `Polling timeout (30 min) reached — not merging.`
+   5. When every check is in a success-equivalent state, proceed to the **Merge path**.
+
+   **Pre-merge mergeability check** (before invoking `gh pr merge`):
+
+   Run `gh pr view <num> --json mergeable,mergeStateStatus`. If `mergeStateStatus` is anything other than `CLEAN` (e.g., `CONFLICTING`, `BEHIND`, `BLOCKED`, `UNSTABLE`, `DIRTY`), jump to the **Failure path** with the state name in the message. Do NOT merge.
+
+   **Merge path** (all checks green AND `mergeStateStatus == CLEAN`):
+
+   1. Capture the current branch name: `git rev-parse --abbrev-ref HEAD` — store this value as `<branch-name>` for use in step 4. Do this before `git checkout main` so the name is preserved.
+   2. `gh pr merge <num> --squash --delete-branch` — squash-merges and deletes the remote branch atomically.
+   3. `git checkout main` — detach from the feature branch before deleting it locally.
+   4. `git branch -D <branch-name>` — delete the local feature branch using the name captured in step 1.
+   5. Print:
+      ```
+      Merged and cleaned up — you are back on main.
+      ```
+
+   **Failure path** (any terminal-failure state, non-`CLEAN` mergeability, or polling timeout):
+
+   1. Print each failing check's name and details URL (from the `link` field returned by `--json`). For non-mergeable states, print the `mergeStateStatus` value and reason. For timeout, print the timeout message from the polling loop.
+   2. Do NOT invoke `gh pr merge`. Do NOT run `git branch -D`. Do NOT check out `main` — leave the user on the feature branch so they can push follow-up fixes.
+   3. Exit so the user can investigate.
+
+   **No-CI graceful-skip path** (`gh pr checks` reports no checks):
+
+   Print `No CI configured — skipping auto-merge.` and exit. Do NOT merge. Do NOT delete the feature branch. This mirrors the retrospective learning on absent external integrations — graceful skip rather than silent pass-through merge.
 
 ---
 
