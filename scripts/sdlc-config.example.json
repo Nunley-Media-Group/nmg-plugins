@@ -14,6 +14,7 @@
     "startIssue":   { "model": "sonnet", "effort": "low",    "maxTurns": 25,  "timeoutMin": 5,  "skill": "start-issue" },
     "writeSpecs":   { "model": "opus",   "effort": "xhigh",  "maxTurns": 60,  "timeoutMin": 15, "skill": "write-spec" },
     "implement":    { "model": "opus",   "effort": "xhigh",  "maxTurns": 150, "timeoutMin": 30, "skill": "write-code" },
+    "simplify":     { "model": "sonnet", "effort": "medium", "maxTurns": 60,  "timeoutMin": 15 },
     "verify":       { "model": "opus",   "effort": "high",   "maxTurns": 100, "timeoutMin": 20, "skill": "verify-code" },
     "commitPush":   { "model": "haiku",                      "maxTurns": 15,  "timeoutMin": 5  },
     "createPR":     { "model": "sonnet", "effort": "low",    "maxTurns": 45,  "timeoutMin": 5,  "skill": "open-pr" },

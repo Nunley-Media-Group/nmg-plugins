@@ -11,12 +11,14 @@ The **nmg-sdlc** plugin is a stack-agnostic, BDD spec-driven development toolkit
 It provides a GitHub issue-driven workflow. Projects first run `/onboard-project` (once per project lifetime) to bootstrap steering docs and — for existing codebases — reconcile specs from closed issues; afterward the per-feature cycle kicks in:
 
 ```
-Setup (once)         Step 1               Step 2                   Step 3                  Step 4                     Step 5                    Step 6
-/onboard-project  →  /draft-issue  →  /start-issue #42  →  /write-spec #42  →  /write-code #42  →  /verify-code #42  →  /open-pr #42
-Greenfield bootstrap Interview user,      Select issue, create     Read issue, create      Read specs, enter plan     Verify implementation,    Create PR with
-or brownfield spec   create groomed       linked branch, set       specs (requirements/    mode, create plan,         review architecture,      summary referencing
-reconciliation       GitHub issue         status to In Progress    design/tasks)           then execute               update issue              specs and issue
+Setup (once)         Step 1               Step 2                   Step 3                  Step 4                     Optional                 Step 5                    Step 6
+/onboard-project  →  /draft-issue  →  /start-issue #42  →  /write-spec #42  →  /write-code #42  →  /simplify  →  /verify-code #42  →  /open-pr #42
+Greenfield bootstrap Interview user,      Select issue, create     Read issue, create      Read specs, enter plan     Clean & simplify         Verify implementation,    Create PR with
+or brownfield spec   create groomed       linked branch, set       specs (requirements/    mode, create plan,         changed code             review architecture,      summary referencing
+reconciliation       GitHub issue         status to In Progress    design/tasks)           then execute               (optional external)      update issue              specs and issue
 ```
+
+`/simplify` is an optional marketplace skill. When installed, `/write-code` invokes it before signalling completion and `/verify-code` re-runs it after each batch of fixes. When not installed, both steps log `simplify skill not available — skipping simplification pass` and proceed without failing.
 
 ## Installation
 
