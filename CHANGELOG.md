@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [7.5.0] - 2026-04-19
+
 ### Changed
 
 - **SDLC runner + skill defaults re-tuned for the current Claude Code lineup** (issue #130) — `scripts/sdlc-config.example.json` now pins an explicit `model` / `maxTurns` / `timeoutMin` (and `effort` for non-Haiku steps) on every step, with Opus hard-capped to `writeSpecs`, `implement`, and `verify`. Mechanical steps (`startCycle`, `commitPush`, `merge`) drop to Haiku; `startIssue` / `createPR` / `monitorCI` run on Sonnet at tier-appropriate effort. The runner's `VALID_EFFORTS` gains `xhigh`; `max` is explicitly rejected with a policy message; `effort` on a Haiku step (step-level or inherited from global) is rejected at config load. The fallback for both `resolveStepConfig()` and module-level `MODEL`/`EFFORT` flips from `opus` / `undefined` to `sonnet` / `medium` so configs that omit fields produce a cost-aware baseline. All SDLC pipeline skills (`draft-issue`, `start-issue`, `write-spec`, `write-code`, `verify-code`, `open-pr`, `run-retro`, `init-config`, `run-loop`, `upgrade-project`) declare matching `model:` and (for Opus/Sonnet) `effort:` frontmatter, honored under interactive invocation. Run `/upgrade-project` to review the diff against existing configs. See README → *Model & Effort Configuration* for the precedence chain and the full defaults table.
