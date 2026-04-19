@@ -3,7 +3,7 @@ name: open-pr
 description: "Create a pull request with spec-driven summary, linking GitHub issue and spec documents. Use when user says 'create PR', 'open pull request', 'submit for review', 'push for review', 'ready to merge', 'make a PR for issue #N', 'how do I create a PR', 'how do I open a pull request', or 'ship this'. Do NOT use for implementing code, verifying specs, or creating issues. Handles version bumping, changelog updates, and links specs and acceptance criteria. Final step in the SDLC pipeline — follows /verify-code."
 argument-hint: "[#issue-number]"
 disable-model-invocation: true
-allowed-tools: Read, Glob, Grep, Write, Edit, Bash(gh:*), Bash(git:*), AskUserQuestion
+allowed-tools: Read, Glob, Grep, Write, Edit, Bash(gh:*), Bash(git:*), Bash(sleep:*), AskUserQuestion
 model: sonnet
 effort: low
 ---
@@ -240,7 +240,7 @@ Then branch on the `.claude/unattended-mode` sentinel:
 
    **Polling loop**:
 
-   1. Run `gh pr checks <num> --json name,state,link`. If the command reports "no checks reported" (plain-text fallback) or returns an empty array, jump to the **No-CI graceful-skip path** below.
+   1. Run `gh pr checks <num> --json name,state,link`. If the JSON response is an empty array `[]`, jump to the **No-CI graceful-skip path** below. If the `--json` flag is not supported by the installed `gh` version, fall back to `gh pr checks <num>` (plain text) and check for the "no checks reported" string; if present, also jump to the **No-CI graceful-skip path**.
    2. Map each check's state per the terminal-state table in `specs/feature-open-pr-skill/design.md` → "Terminal-State Mapping":
       - `SUCCESS`, `SKIPPED`, `NEUTRAL` → treat as success for that check.
       - `PENDING`, `IN_PROGRESS`, `QUEUED` → not terminal; keep polling.
@@ -255,10 +255,11 @@ Then branch on the `.claude/unattended-mode` sentinel:
 
    **Merge path** (all checks green AND `mergeStateStatus == CLEAN`):
 
-   1. `gh pr merge <num> --squash --delete-branch` — squash-merges and deletes the remote branch atomically.
-   2. `git checkout main` — detach from the feature branch before deleting it locally.
-   3. `git branch -D <branch-name>` — delete the local feature branch.
-   4. Print:
+   1. Capture the current branch name: `git rev-parse --abbrev-ref HEAD` — store this value as `<branch-name>` for use in step 4. Do this before `git checkout main` so the name is preserved.
+   2. `gh pr merge <num> --squash --delete-branch` — squash-merges and deletes the remote branch atomically.
+   3. `git checkout main` — detach from the feature branch before deleting it locally.
+   4. `git branch -D <branch-name>` — delete the local feature branch using the name captured in step 1.
+   5. Print:
       ```
       Merged and cleaned up — you are back on main.
       ```

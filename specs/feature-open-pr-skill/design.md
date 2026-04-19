@@ -85,7 +85,7 @@ Unattended branch (.claude/unattended-mode present):
 | File | Type | Purpose |
 |------|------|---------|
 | `plugins/nmg-sdlc/skills/open-pr/SKILL.md` | Create | Original (Issue #8): 4-step workflow |
-| `plugins/nmg-sdlc/skills/open-pr/SKILL.md` | Modify | Issue #128: Add Step 7 (interactive CI monitor + auto-merge); update `allowed-tools` to include `Bash(gh pr checks:*)`, `Bash(gh pr merge:*)`, `Bash(git branch:*)` (already covered by existing `Bash(gh:*)` and `Bash(git:*)` globs); restructure Step 6 output so the existing "Next step..." message becomes the opt-out fallback |
+| `plugins/nmg-sdlc/skills/open-pr/SKILL.md` | Modify | Issue #128: Add Step 7 (interactive CI monitor + auto-merge); update `allowed-tools` to add `Bash(sleep:*)` (required for 30-second poll interval — not covered by `Bash(gh:*)` or `Bash(git:*)`); restructure Step 6 output so the existing "Next step..." message becomes the opt-out fallback |
 | `specs/feature-open-pr-skill/feature.gherkin` | Modify | Add scenarios for AC5–AC9 |
 
 ---
