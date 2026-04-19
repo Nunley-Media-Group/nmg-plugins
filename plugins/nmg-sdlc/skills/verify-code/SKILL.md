@@ -215,6 +215,29 @@ For each finding:
 3. Verify the fix addresses the finding
 4. Record: original issue, location, and fix applied
 
+#### 6a-bis. Simplify After Fix
+
+If at least one fix was applied in 6a AND the `simplify` marketplace skill is available, run `/simplify` over the files just modified to ensure the fix itself is clean before re-testing. If no fixes were applied in 6a, skip this sub-step entirely (no Claude turn consumed).
+
+##### Simplify-Skill Probe Contract
+
+1. **Probe for availability** — treat the `simplify` skill as available if ANY of the following is true:
+   - `Glob` finds `~/.claude/skills/simplify/SKILL.md`
+   - `Glob` finds `~/.claude/plugins/**/skills/simplify/SKILL.md`
+   - The available-skills list in your system reminder advertises a skill named `simplify` (or `*:simplify`)
+2. **If available**: invoke `/simplify` on the files touched by fixes in 6a. Apply any returned changes before proceeding to 6b.
+3. **If unavailable**: emit the warning verbatim:
+
+   ```
+   simplify skill not available — skipping simplification pass
+   ```
+
+   Then proceed to 6b without simplification.
+
+If the `simplify` skill is available but errors or reports failures, record those as additional findings to fix in the current 6a cycle — do not silently swallow them.
+
+Unattended-mode behaviour is preserved — the probe is a filesystem/system-reminder check, not an `AskUserQuestion` gate.
+
 #### 6b. Run Tests After Fixes
 
 Reference `steering/tech.md` for the project's test command. Run the full test suite and fix any regressions introduced by the fixes.
@@ -374,6 +397,8 @@ GitHub issue #N updated with verification report.
 ## Integration with SDLC Workflow
 
 ```
-/draft-issue  →  /start-issue #N  →  /write-spec #N  →  /write-code #N  →  /verify-code #N  →  /open-pr #N
-                                                                                                    ▲ You are here
+/draft-issue  →  /start-issue #N  →  /write-spec #N  →  /write-code #N  →  /simplify  →  /verify-code #N  →  /open-pr #N
+                                                                                                               ▲ You are here
 ```
+
+`/simplify` is an optional external marketplace skill. When installed, it runs once between `/write-code` and `/verify-code`, and again inside `/verify-code`'s Step 6a-bis after each batch of fixes. When not installed, the step logs a warning and proceeds.

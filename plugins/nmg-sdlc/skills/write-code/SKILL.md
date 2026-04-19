@@ -168,9 +168,32 @@ If you discover during implementation that the spec needs changes:
 2. **Major deviation**: Stop and discuss with the user
 3. **Blocker**: Flag the issue, suggest alternatives
 
+### Step 5b: Simplify Pass
+
+After all tasks are complete and before signalling completion, run the `/simplify` skill over the files changed on this branch. Simplify is a marketplace skill that is NOT bundled with `nmg-sdlc`; use the probe-and-skip pattern below so pipelines without it continue to work.
+
+#### Simplify-Skill Probe Contract
+
+1. **Probe for availability** — treat the `simplify` skill as available if ANY of the following is true:
+   - `Glob` finds `~/.claude/skills/simplify/SKILL.md`
+   - `Glob` finds `~/.claude/plugins/**/skills/simplify/SKILL.md`
+   - The available-skills list in your system reminder advertises a skill named `simplify` (or `*:simplify`)
+2. **If available**: invoke `/simplify` against the files returned by `git diff main...HEAD --name-only`. Apply any fixes it returns in-place. Only proceed to Step 6 once findings are cleared.
+3. **If unavailable**: emit the warning verbatim:
+
+   ```
+   simplify skill not available — skipping simplification pass
+   ```
+
+   Then proceed to Step 6 with the same success status you would have had without the simplify pass.
+
+If the `simplify` skill is available but errors or reports failures, surface those as additional findings and address them before proceeding to Step 6.
+
+Unattended-mode behaviour is preserved — the probe is a filesystem/system-reminder check, not an `AskUserQuestion` gate.
+
 ### Step 6: Signal Completion
 
-After all tasks are complete:
+After all tasks are complete and the simplify pass has either run or been gracefully skipped:
 
 ```
 Implementation complete for issue #N.
@@ -213,6 +236,8 @@ Result: Remaining tasks completed from where the previous session left off
 ## Integration with SDLC Workflow
 
 ```
-/draft-issue  →  /start-issue #N  →  /write-spec #N  →  /write-code #N  →  /verify-code #N  →  /open-pr #N
+/draft-issue  →  /start-issue #N  →  /write-spec #N  →  /write-code #N  →  /simplify  →  /verify-code #N  →  /open-pr #N
                                                                          ▲ You are here
 ```
+
+`/simplify` is an optional external marketplace skill. When installed, it runs between `/write-code` and `/verify-code` (including from inside `/write-code`'s completion step). When not installed, pipeline steps log a warning and proceed without simplification.

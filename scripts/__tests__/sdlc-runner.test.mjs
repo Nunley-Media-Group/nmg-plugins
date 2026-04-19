@@ -451,76 +451,92 @@ describe('Precondition validation', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('step 5 (verify) passes on feature branch with commits ahead', () => {
+  it('simplify step always passes — no strict preconditions (issue #140)', () => {
+    const simplifyStep = STEPS[STEP_KEYS.indexOf('simplify')];
+    const result = validatePreconditions(simplifyStep, defaultState());
+    expect(result.ok).toBe(true);
+  });
+
+  it('verify step passes on feature branch with commits ahead', () => {
     mockGitMulti({
       'rev-parse --abbrev-ref HEAD': '42-feature',
       'log main..HEAD --oneline': 'abc1234 feat: implement something',
     });
-    const result = validatePreconditions(STEPS[4], defaultState());
+    const verifyStep = STEPS[STEP_KEYS.indexOf('verify')];
+    const result = validatePreconditions(verifyStep, defaultState());
     expect(result.ok).toBe(true);
   });
 
-  it('step 5 (verify) fails on main branch', () => {
+  it('verify step fails on main branch', () => {
     mockExecSync.mockReturnValue('main');
-    const result = validatePreconditions(STEPS[4], defaultState());
+    const verifyStep = STEPS[STEP_KEYS.indexOf('verify')];
+    const result = validatePreconditions(verifyStep, defaultState());
     expect(result.ok).toBe(false);
   });
 
-  it('step 6 (commitPush) always passes — no strict preconditions', () => {
-    const result = validatePreconditions(STEPS[5], defaultState());
+  it('commitPush step always passes — no strict preconditions', () => {
+    const commitPushStep = STEPS[STEP_KEYS.indexOf('commitPush')];
+    const result = validatePreconditions(commitPushStep, defaultState());
     expect(result.ok).toBe(true);
   });
 
-  it('step 7 (createPR) passes when branch is pushed with no unpushed commits', () => {
+  it('createPR step passes when branch is pushed with no unpushed commits', () => {
     mockGitMulti({
       'rev-parse --abbrev-ref HEAD': '42-feature',
       'log origin/42-feature..HEAD --oneline': '',
     });
-    const result = validatePreconditions(STEPS[6], defaultState());
+    const createPRStep = STEPS[STEP_KEYS.indexOf('createPR')];
+    const result = validatePreconditions(createPRStep, defaultState());
     expect(result.ok).toBe(true);
   });
 
-  it('step 7 (createPR) fails when unpushed commits exist', () => {
+  it('createPR step fails when unpushed commits exist', () => {
     mockGitMulti({
       'rev-parse --abbrev-ref HEAD': '42-feature',
       'log origin/42-feature..HEAD --oneline': 'abc1234 some commit',
     });
-    const result = validatePreconditions(STEPS[6], defaultState());
+    const createPRStep = STEPS[STEP_KEYS.indexOf('createPR')];
+    const result = validatePreconditions(createPRStep, defaultState());
     expect(result.ok).toBe(false);
     expect(result.reason).toContain('Unpushed');
   });
 
-  it('step 8 (monitorCI) passes when PR exists', () => {
+  it('monitorCI step passes when PR exists', () => {
     mockExecSync.mockReturnValue('{"number": 10}');
-    const result = validatePreconditions(STEPS[7], defaultState());
+    const monitorCIStep = STEPS[STEP_KEYS.indexOf('monitorCI')];
+    const result = validatePreconditions(monitorCIStep, defaultState());
     expect(result.ok).toBe(true);
   });
 
-  it('step 8 (monitorCI) fails when no PR exists', () => {
+  it('monitorCI step fails when no PR exists', () => {
     mockExecSync.mockImplementation(() => { throw new Error('no PR'); });
-    const result = validatePreconditions(STEPS[7], defaultState());
+    const monitorCIStep = STEPS[STEP_KEYS.indexOf('monitorCI')];
+    const result = validatePreconditions(monitorCIStep, defaultState());
     expect(result.ok).toBe(false);
     expect(result.reason).toContain('No PR');
   });
 
-  it('step 9 (merge) passes when CI checks pass', () => {
+  it('merge step passes when CI checks pass', () => {
     mockExecSync.mockReturnValue('All checks passed');
-    const result = validatePreconditions(STEPS[8], defaultState());
+    const mergeStep = STEPS[STEP_KEYS.indexOf('merge')];
+    const result = validatePreconditions(mergeStep, defaultState());
     expect(result.ok).toBe(true);
   });
 
-  it('step 9 (merge) fails when CI checks are failing', () => {
+  it('merge step fails when CI checks are failing', () => {
     mockExecSync.mockReturnValue('Some check FAIL');
-    const result = validatePreconditions(STEPS[8], defaultState());
+    const mergeStep = STEPS[STEP_KEYS.indexOf('merge')];
+    const result = validatePreconditions(mergeStep, defaultState());
     expect(result.ok).toBe(false);
     expect(result.reason).toContain('failing');
   });
 
-  it('step 9 (merge) passes when no CI checks are reported (#54)', () => {
+  it('merge step passes when no CI checks are reported (#54)', () => {
     const err = new Error('Command failed: gh pr checks\nno checks reported on the \'54-fix\' branch');
     err.stderr = "no checks reported on the '54-fix' branch";
     mockExecSync.mockImplementation(() => { throw err; });
-    const result = validatePreconditions(STEPS[8], defaultState());
+    const mergeStep = STEPS[STEP_KEYS.indexOf('merge')];
+    const result = validatePreconditions(mergeStep, defaultState());
     expect(result.ok).toBe(true);
   });
 });
@@ -557,17 +573,19 @@ describe('State extraction', () => {
     expect(patch.featureName).toBe('38-detect-soft-failures');
   });
 
-  it('step 7 extracts PR number from output', () => {
+  it('createPR step extracts PR number from output', () => {
     const result = { stdout: 'https://github.com/org/repo/pull/15', stderr: '', exitCode: 0 };
     const state = defaultState();
-    const patch = extractStateFromStep(STEPS[6], result, state);
+    const createPRStep = STEPS[STEP_KEYS.indexOf('createPR')];
+    const patch = extractStateFromStep(createPRStep, result, state);
     expect(patch.prNumber).toBe(15);
   });
 
-  it('step 9 resets all state for next cycle', () => {
+  it('merge step resets all state for next cycle', () => {
     const result = { stdout: '{}', stderr: '', exitCode: 0 };
     const state = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature', featureName: '42-feature' };
-    const patch = extractStateFromStep(STEPS[8], result, state);
+    const mergeStep = STEPS[STEP_KEYS.indexOf('merge')];
+    const patch = extractStateFromStep(mergeStep, result, state);
     expect(patch.currentStep).toBe(0);
     expect(patch.lastCompletedStep).toBe(0);
     expect(patch.currentIssue).toBeNull();
@@ -1201,9 +1219,9 @@ describe('No CI checks handling (#54)', () => {
     expect(result.reason).toContain('Could not check CI status');
   });
 
-  it('detectAndHydrateState advances to step 8 when no checks reported (with prior verify evidence)', () => {
-    // Advancement past step 4 via the "all pushed" signal requires saved state
-    // to confirm verify (step 5) previously completed — see
+  it('detectAndHydrateState advances to monitorCI when no checks reported (with prior verify evidence)', () => {
+    // Advancement past implement via the "all pushed" signal requires saved state
+    // to confirm verify previously completed — see
     // specs/bug-fix-runner-detectandhydratestate-skips-verify/requirements.md.
     mockExecSync.mockImplementation((cmd) => {
       if (cmd.includes('rev-parse --abbrev-ref HEAD')) return '42-my-feature';
@@ -1227,10 +1245,10 @@ describe('No CI checks handling (#54)', () => {
     });
     mockFs.readdirSync.mockReturnValue(['42-my-feature']);
     mockFs.statSync.mockReturnValue({ isDirectory: () => true, size: 200 });
-    mockFs.readFileSync.mockReturnValue(JSON.stringify({ lastCompletedStep: 5 }));
+    mockFs.readFileSync.mockReturnValue(JSON.stringify({ lastCompletedStep: STEP_KEYS.indexOf('verify') + 1 }));
 
     const result = detectAndHydrateState();
-    expect(result.lastCompletedStep).toBe(8);
+    expect(result.lastCompletedStep).toBe(STEP_KEYS.indexOf('monitorCI') + 1);
   });
 });
 
@@ -1240,9 +1258,9 @@ describe('No CI checks handling (#54)', () => {
 
 describe('detectAndHydrateState after signal shutdown', () => {
   it('caps lastCompletedStep to state file value when signalShutdown is set', () => {
-    // Simulate: runner was at step 3 (writeSpecs), SIGTERM auto-pushed WIP.
-    // Artifact probing would see "no unpushed commits" → step 6.
-    // But state file says lastCompletedStep=3 + signalShutdown=true → cap to 3.
+    // Simulate: runner was at writeSpecs, SIGTERM auto-pushed WIP.
+    // Artifact probing would see "no unpushed commits" → commitPush.
+    // But state file says lastCompletedStep=3 (writeSpecs) + signalShutdown=true → cap to 3.
     mockExecSync.mockImplementation((cmd) => {
       if (cmd.includes('rev-parse --abbrev-ref HEAD')) return '42-my-feature';
       if (cmd.includes('pr view --json state')) throw new Error('no PR');
@@ -1270,11 +1288,11 @@ describe('detectAndHydrateState after signal shutdown', () => {
     expect(result.lastCompletedStep).toBe(3);
   });
 
-  it('does not advance past step 4 when state file lastCompletedStep < 5 and signalShutdown is not set', () => {
+  it('does not advance past implement when state file lastCompletedStep < verify and signalShutdown is not set', () => {
     // Regression guard for bug-fix-runner-detectandhydratestate-skips-verify:
-    // "all pushed" alone must NOT imply verify (step 5) completed. Without
-    // saved state evidence (lastCompletedStep >= 5) or a signalShutdown cap,
-    // probing must stop at step 4 so the next cycle re-runs verify.
+    // "all pushed" alone must NOT imply verify completed. Without saved state
+    // evidence (lastCompletedStep >= verify) or a signalShutdown cap, probing
+    // must stop at implement so the next cycle re-runs simplify and verify.
     mockExecSync.mockImplementation((cmd) => {
       if (cmd.includes('rev-parse --abbrev-ref HEAD')) return '42-my-feature';
       if (cmd.includes('pr view --json state')) throw new Error('no PR');
@@ -1332,8 +1350,8 @@ describe('detectAndHydrateState after signal shutdown', () => {
 // ===========================================================================
 
 describe('isStepOutcomeSatisfied', () => {
-  const mergeStep = { number: 9, key: 'merge' };
-  const otherStep = { number: 7, key: 'createPR' };
+  const mergeStep = { number: STEP_KEYS.indexOf('merge') + 1, key: 'merge' };
+  const otherStep = { number: STEP_KEYS.indexOf('createPR') + 1, key: 'createPR' };
 
   it('returns false for steps other than merge', () => {
     expect(isStepOutcomeSatisfied(otherStep, { currentIssue: 42 })).toBe(false);
@@ -1427,12 +1445,12 @@ describe('defaultState', () => {
 });
 
 describe('STEP_KEYS and STEPS', () => {
-  it('has 9 step keys', () => {
-    expect(STEP_KEYS).toHaveLength(9);
+  it('has 10 step keys', () => {
+    expect(STEP_KEYS).toHaveLength(10);
   });
 
-  it('STEPS has 9 entries with correct numbering', () => {
-    expect(STEPS).toHaveLength(9);
+  it('STEPS has 10 entries with correct numbering', () => {
+    expect(STEPS).toHaveLength(10);
     STEPS.forEach((step, i) => {
       expect(step.number).toBe(i + 1);
       expect(step.key).toBe(STEP_KEYS[i]);
@@ -1442,12 +1460,38 @@ describe('STEP_KEYS and STEPS', () => {
   it('step keys match expected names', () => {
     expect(STEP_KEYS).toEqual([
       'startCycle', 'startIssue', 'writeSpecs', 'implement',
-      'verify', 'commitPush', 'createPR', 'monitorCI', 'merge',
+      'simplify', 'verify', 'commitPush', 'createPR', 'monitorCI', 'merge',
     ]);
+  });
+
+  it('simplify sits at index 4 between implement and verify (issue #140)', () => {
+    expect(STEP_KEYS[4]).toBe('simplify');
+    expect(STEP_KEYS[3]).toBe('implement');
+    expect(STEP_KEYS[5]).toBe('verify');
+  });
+
+  it('downstream step numbers shift after #140: verify=6, commitPush=7, createPR=8, monitorCI=9, merge=10', () => {
+    expect(STEP_KEYS.indexOf('simplify') + 1).toBe(5);
+    expect(STEP_KEYS.indexOf('verify') + 1).toBe(6);
+    expect(STEP_KEYS.indexOf('commitPush') + 1).toBe(7);
+    expect(STEP_KEYS.indexOf('createPR') + 1).toBe(8);
+    expect(STEP_KEYS.indexOf('monitorCI') + 1).toBe(9);
+    expect(STEP_KEYS.indexOf('merge') + 1).toBe(10);
   });
 
   it('STEP_KEYS does not contain draftIssue — /draft-issue is interactive-only (v1.41.0, issue #116)', () => {
     expect(STEP_KEYS.includes('draftIssue')).toBe(false);
+  });
+
+  it('simplify prompt contains verbatim skip warning and git diff command (issue #140)', () => {
+    const step = STEPS[STEP_KEYS.indexOf('simplify')];
+    const state = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature' };
+    const args = buildClaudeArgs(step, state);
+    const promptIdx = args.indexOf('-p') + 1;
+    const prompt = args[promptIdx];
+    expect(prompt).toContain('simplify skill not available — skipping simplification pass');
+    expect(prompt).toContain('git diff main...HEAD --name-only');
+    expect(prompt).toContain('exit with code 1');
   });
 });
 
@@ -2640,12 +2684,12 @@ describe('performDeterministicVersionBump (#60)', () => {
   });
 });
 
-describe('Step 7 prompt includes version bump mandate (#60)', () => {
-  it('Step 7 prompt text mentions mandatory version bumping', () => {
+describe('createPR prompt includes version bump mandate (#60)', () => {
+  it('createPR prompt text mentions mandatory version bumping', () => {
     mockFs.existsSync.mockReturnValue(true);
     mockFs.readFileSync.mockReturnValue('skill content');
 
-    const step = { ...STEPS[6], skill: 'open-pr' };
+    const step = { ...STEPS[STEP_KEYS.indexOf('createPR')], skill: 'open-pr' };
     const state = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature' };
     const args = buildClaudeArgs(step, state);
 

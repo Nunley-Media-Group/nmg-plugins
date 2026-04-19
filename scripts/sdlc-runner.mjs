@@ -161,11 +161,12 @@ const STEP_KEYS = [
   'startIssue',   // 2
   'writeSpecs',   // 3
   'implement',    // 4
-  'verify',       // 5
-  'commitPush',   // 6
-  'createPR',     // 7
-  'monitorCI',    // 8
-  'merge',        // 9
+  'simplify',     // 5 — optional marketplace skill; probe-and-skip if absent
+  'verify',       // 6
+  'commitPush',   // 7
+  'createPR',     // 8
+  'monitorCI',    // 9
+  'merge',        // 10
 ];
 
 const STEPS = STEP_KEYS.map((key, i) => ({
@@ -391,78 +392,78 @@ function detectAndHydrateState() {
     // No PR exists yet — that's fine, continue probing
   }
 
-  // Read any persisted state up front: verify (step 5) has no git-observable
-  // artifact, so we need the saved state to confirm it passed before probing
-  // past step 4 on the basis of "branch pushed".
+  // Read any persisted state up front: verify and simplify have no
+  // git-observable artifact, so we need the saved state to confirm they passed
+  // before probing past implement on the basis of "branch pushed".
   const savedState = readState();
   const savedLastCompleted = typeof savedState.lastCompletedStep === 'number' ? savedState.lastCompletedStep : 0;
 
   // Probe artifacts from highest to lowest to determine lastCompletedStep
-  let lastCompletedStep = 2; // At minimum, we're on a feature branch (step 2 done)
+  let lastCompletedStep = STEP_NUMBER.startIssue; // At minimum, we're on a feature branch (startIssue done)
 
-  // Check for spec files (step 3)
+  // Check for spec files (writeSpecs)
   const specsDir = path.join(PROJECT_PATH, 'specs');
   let featureName = null;
   const featureDir = findFeatureDir(specsDir, null, branchMatch[2]);
   if (featureDir && checkRequiredSpecFiles(featureDir).length === 0) {
-    lastCompletedStep = 3;
+    lastCompletedStep = STEP_NUMBER.writeSpecs;
     featureName = path.basename(featureDir);
   }
 
-  // Check for commits ahead of main (step 4 — conservative; steps 4/5 indistinguishable)
-  if (lastCompletedStep >= 3) {
+  // Check for commits ahead of main (implement — conservative; implement/simplify/verify indistinguishable from git state)
+  if (lastCompletedStep >= STEP_NUMBER.writeSpecs) {
     try {
       const aheadLog = git('log main..HEAD --oneline');
       if (aheadLog) {
-        lastCompletedStep = 4;
+        lastCompletedStep = STEP_NUMBER.implement;
       }
     } catch { /* ignore */ }
   }
 
-  // Check if branch is pushed to remote with no unpushed commits (step 6).
-  // "All commits pushed" only implies step 6 completion when verify (step 5)
-  // actually passed. Since verify has no git-observable artifact, require the
-  // saved state to confirm `lastCompletedStep >= 5` before advancing past
-  // step 4 on this signal alone. Otherwise, a crash mid-verify followed by a
-  // resume would falsely skip verification entirely.
-  if (lastCompletedStep >= 4 && savedLastCompleted >= 5) {
+  // Check if branch is pushed to remote with no unpushed commits (commitPush).
+  // "All commits pushed" only implies commitPush completion when verify
+  // actually passed. Since simplify/verify have no git-observable artifact,
+  // require the saved state to confirm `lastCompletedStep >= verify` before
+  // advancing past implement on this signal alone. Otherwise, a crash
+  // mid-verify followed by a resume would falsely skip verification entirely.
+  if (lastCompletedStep >= STEP_NUMBER.implement && savedLastCompleted >= STEP_NUMBER.verify) {
     try {
       const unpushed = git(`log origin/${branch}..HEAD --oneline`);
       if (!unpushed) {
         // All commits pushed AND verify previously confirmed
-        lastCompletedStep = 6;
+        lastCompletedStep = STEP_NUMBER.commitPush;
       }
     } catch {
       // Remote branch doesn't exist — not pushed yet
     }
   }
 
-  // Check if PR exists (step 7)
-  if (lastCompletedStep >= 6) {
+  // Check if PR exists (createPR)
+  if (lastCompletedStep >= STEP_NUMBER.commitPush) {
     try {
       gh('pr view --json number');
-      lastCompletedStep = 7;
+      lastCompletedStep = STEP_NUMBER.createPR;
     } catch {
       // No PR yet
     }
   }
 
-  // Check if CI is passing (step 8)
-  if (lastCompletedStep >= 7) {
+  // Check if CI is passing (monitorCI)
+  if (lastCompletedStep >= STEP_NUMBER.createPR) {
     try {
       const checks = gh('pr checks');
       if (!/fail|pending/i.test(checks)) {
-        lastCompletedStep = 8;
+        lastCompletedStep = STEP_NUMBER.monitorCI;
       }
     } catch (err) {
       if (/no checks reported/i.test(err.stderr || err.message || '')) {
-        lastCompletedStep = 8;
+        lastCompletedStep = STEP_NUMBER.monitorCI;
       }
     }
   }
 
   // If the runner was shut down by signal, the SIGTERM handler auto-pushed WIP
-  // commits. That makes artifact probing think "all pushed → step 6 done" even
+  // commits. That makes artifact probing think "all pushed → step 7 (commitPush) done" even
   // if the runner was mid-way through an earlier step. Cap the probed value to
   // what the state file recorded before shutdown.
   if (savedState.signalShutdown && savedState.lastCompletedStep < lastCompletedStep) {
@@ -789,10 +790,10 @@ function cleanupProcesses() {
 
 function validatePreconditions(step, state) {
   switch (step.number) {
-    case 1: // Start cycle — no preconditions
+    case STEP_NUMBER.startCycle: // Start cycle — no preconditions
       return { ok: true };
 
-    case 2: { // Start issue — clean main branch
+    case STEP_NUMBER.startIssue: { // Start issue — clean main branch
       try {
         const status = git('status --porcelain')
           .split('\n')
@@ -808,14 +809,14 @@ function validatePreconditions(step, state) {
       }
     }
 
-    case 3: { // Write specs — feature branch exists, issue known
+    case STEP_NUMBER.writeSpecs: { // Write specs — feature branch exists, issue known
       const branch = git('rev-parse --abbrev-ref HEAD');
       if (branch === 'main') return { ok: false, failedCheck: 'feature branch exists', reason: 'Still on main, expected feature branch' };
       if (!state.currentIssue) return { ok: false, failedCheck: 'issue number known', reason: 'No current issue set in state' };
       return { ok: true };
     }
 
-    case 4: { // Implement — all 4 spec files exist
+    case STEP_NUMBER.implement: { // Implement — all 4 spec files exist
       const specsDir = path.join(PROJECT_PATH, 'specs');
       const featureDir = findFeatureDir(specsDir, state.featureName);
       if (!featureDir) {
@@ -828,7 +829,10 @@ function validatePreconditions(step, state) {
       return { ok: true };
     }
 
-    case 5: { // Verify — implementation committed on feature branch
+    case STEP_NUMBER.simplify: // Simplify — no preconditions; probe-and-skip handled in prompt
+      return { ok: true };
+
+    case STEP_NUMBER.verify: { // Verify — implementation committed on feature branch
       const branch = git('rev-parse --abbrev-ref HEAD');
       if (branch === 'main') return { ok: false, failedCheck: 'on feature branch', reason: 'On main, expected feature branch' };
       try {
@@ -840,10 +844,10 @@ function validatePreconditions(step, state) {
       return { ok: true };
     }
 
-    case 6: // Commit/push — no strict preconditions (step handles it)
+    case STEP_NUMBER.commitPush: // Commit/push — no strict preconditions (step handles it)
       return { ok: true };
 
-    case 7: { // Create PR — branch pushed to remote
+    case STEP_NUMBER.createPR: { // Create PR — branch pushed to remote
       const branch = git('rev-parse --abbrev-ref HEAD');
       try {
         const unpushed = git(`log origin/${branch}..HEAD --oneline`);
@@ -854,7 +858,7 @@ function validatePreconditions(step, state) {
       return { ok: true };
     }
 
-    case 8: { // Monitor CI — PR exists
+    case STEP_NUMBER.monitorCI: { // Monitor CI — PR exists
       try {
         gh('pr view --json number');
         return { ok: true };
@@ -863,7 +867,7 @@ function validatePreconditions(step, state) {
       }
     }
 
-    case 9: { // Merge — CI passing
+    case STEP_NUMBER.merge: { // Merge — CI passing
       try {
         const checks = gh('pr checks');
         if (/fail/i.test(checks)) return { ok: false, failedCheck: 'CI checks passing', reason: 'CI checks failing' };
@@ -901,9 +905,9 @@ function buildClaudeArgs(step, state, overrides = {}) {
     : null;
 
   const prompts = {
-    1: 'Check out main, clean the working tree, and pull latest. Run: git checkout main && git clean -fd && git checkout -- . && git pull. Report the current branch and latest commit.',
+    [STEP_NUMBER.startCycle]: 'Check out main, clean the working tree, and pull latest. Run: git checkout main && git clean -fd && git checkout -- . && git pull. Report the current branch and latest commit.',
 
-    2: SINGLE_ISSUE_NUMBER
+    [STEP_NUMBER.startIssue]: SINGLE_ISSUE_NUMBER
       ? `Start issue #${SINGLE_ISSUE_NUMBER}. Create a linked feature branch and set the issue to In Progress. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`
       : [
           `You are running in UNATTENDED MODE (\`.claude/unattended-mode\` exists).`,
@@ -921,17 +925,31 @@ function buildClaudeArgs(step, state, overrides = {}) {
           `Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
         ].filter(Boolean).join('\n'),
 
-    3: `Write BDD specifications for issue #${issue} on branch ${branch}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
+    [STEP_NUMBER.writeSpecs]: `Write BDD specifications for issue #${issue} on branch ${branch}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
-    4: `Implement the specifications for issue #${issue} on branch ${branch}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
+    [STEP_NUMBER.implement]: `Implement the specifications for issue #${issue} on branch ${branch}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
-    5: `Verify the implementation for issue #${issue} on branch ${branch}. Fix any findings. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
+    [STEP_NUMBER.simplify]: [
+      `Run the simplify pass over files changed on branch ${branch} for issue #${issue}.`,
+      ``,
+      `1. Probe for the simplify skill. Treat it as available if ANY of these is true:`,
+      `   - Glob finds ~/.claude/skills/simplify/SKILL.md`,
+      `   - Glob finds ~/.claude/plugins/**/skills/simplify/SKILL.md`,
+      `   - The available-skills list in your system reminder advertises a skill named "simplify" (or "*:simplify")`,
+      `2. If NOT available, print the following line verbatim and exit with code 0:`,
+      `   simplify skill not available — skipping simplification pass`,
+      `3. If available, invoke /simplify on the files listed by: git diff main...HEAD --name-only`,
+      `   Apply any fixes it returns. Exit with code 0 on success.`,
+      `   If /simplify errors or reports failures, print the error details to stdout and exit with code 1.`,
+    ].join('\n'),
 
-    6: `Stage all changes, commit with a meaningful conventional-commit message summarizing the work for issue #${issue}, and push to the remote branch ${branch}. After pushing, verify the push succeeded by running git log origin/${branch}..HEAD --oneline — if any unpushed commits remain, or if git push reported an error, exit with a non-zero status code.`,
+    [STEP_NUMBER.verify]: `Verify the implementation for issue #${issue} on branch ${branch}. Fix any findings. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
-    7: `Create a pull request for branch ${branch} targeting main for issue #${issue}. You MUST bump the version (Steps 2-3 of the skill) before creating the PR — this is mandatory and must not be skipped. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
+    [STEP_NUMBER.commitPush]: `Stage all changes, commit with a meaningful conventional-commit message summarizing the work for issue #${issue}, and push to the remote branch ${branch}. After pushing, verify the push succeeded by running git log origin/${branch}..HEAD --oneline — if any unpushed commits remain, or if git push reported an error, exit with a non-zero status code.`,
 
-    8: [
+    [STEP_NUMBER.createPR]: `Create a pull request for branch ${branch} targeting main for issue #${issue}. You MUST bump the version (Steps 2-3 of the skill) before creating the PR — this is mandatory and must not be skipped. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
+
+    [STEP_NUMBER.monitorCI]: [
       `Monitor CI for the PR on branch ${branch}. Follow these steps exactly:`,
       `1. Run \`gh pr checks\`. If the output contains "no checks reported", the repository has no CI configured — treat this as success and exit with code 0 immediately.`,
       `2. Poll \`gh pr checks\` every 30 seconds until no checks are "pending".`,
@@ -948,7 +966,7 @@ function buildClaudeArgs(step, state, overrides = {}) {
       `6. Only exit with code 0 when ALL CI checks show as passing.`,
     ].join('\n'),
 
-    9: `First verify CI is passing with gh pr checks. If the output contains "no checks reported", treat this as passing (the repository has no CI configured). If any check is failing, do NOT merge — report the failure and exit with a non-zero status. If all checks pass, merge the current PR to main and delete the remote branch ${branch}.`,
+    [STEP_NUMBER.merge]: `First verify CI is passing with gh pr checks. If the output contains "no checks reported", treat this as passing (the repository has no CI configured). If any check is failing, do NOT merge — report the failure and exit with a non-zero status. If all checks pass, merge the current PR to main and delete the remote branch ${branch}.`,
   };
 
   const claudeArgs = [
@@ -1188,7 +1206,7 @@ function incrementBounceCount() {
 /**
  * Return true when a step's expected outcome is already observable in the
  * repo / GitHub, making a retry unnecessary (and usually harmful). Currently
- * only Step 9 (merge) is covered — it's the only step whose inner action
+ * only the merge step is covered — it's the only step whose inner action
  * produces irreversible side-effects (squash-merge + branch delete) before
  * the Claude session might exit non-zero on unrelated follow-up noise.
  *
@@ -1373,7 +1391,7 @@ function extractStateFromStep(step, result, state) {
   const output = result.stdout;
   const patch = {};
 
-  if (step.number === 1) {
+  if (step.number === STEP_NUMBER.startCycle) {
     // After checkout main, reset cycle state
     patch.currentIssue = null;
     patch.currentBranch = 'main';
@@ -1381,7 +1399,7 @@ function extractStateFromStep(step, result, state) {
     patch.retries = {};
   }
 
-  if (step.number === 2) {
+  if (step.number === STEP_NUMBER.startIssue) {
     // Detect branch first — more reliable than parsing Claude output
     try {
       const branch = git('rev-parse --abbrev-ref HEAD');
@@ -1396,11 +1414,11 @@ function extractStateFromStep(step, result, state) {
     // If branch-based extraction failed, log a warning — do NOT fall back to
     // regex on conversation output, which can match stale issue numbers (#62)
     if (!patch.currentIssue) {
-      log('Warning: branch-based issue extraction failed after step 2 — currentIssue will be null');
+      log('Warning: branch-based issue extraction failed after startIssue — currentIssue will be null');
     }
   }
 
-  if (step.number === 3) {
+  if (step.number === STEP_NUMBER.writeSpecs) {
     // Try to detect the feature name from specs directory
     const specsDir = path.join(PROJECT_PATH, 'specs');
     const featureDir = findFeatureDir(specsDir);
@@ -1409,13 +1427,13 @@ function extractStateFromStep(step, result, state) {
     }
   }
 
-  if (step.number === 7) {
+  if (step.number === STEP_NUMBER.createPR) {
     // Try to extract PR number from output
     const prMatch = output.match(/pull\/(\d+)/);
     if (prMatch) patch.prNumber = parseInt(prMatch[1], 10);
   }
 
-  if (step.number === 9) {
+  if (step.number === STEP_NUMBER.merge) {
     // Merged — reset for next cycle
     patch.currentStep = 0;
     patch.lastCompletedStep = 0;
@@ -1520,14 +1538,14 @@ function validateSpecs(state) {
 }
 
 // ---------------------------------------------------------------------------
-// CI validation gate (post-step-8)
+// CI validation gate (post-monitorCI)
 // ---------------------------------------------------------------------------
 
 function validateCI() {
   try {
     const checks = gh('pr checks');
     if (/fail/i.test(checks)) {
-      return { ok: false, reason: 'CI checks still failing after Step 8' };
+      return { ok: false, reason: `CI checks still failing after Step ${STEP_NUMBER.monitorCI}` };
     }
     return { ok: true };
   } catch (err) {
@@ -1825,7 +1843,7 @@ function handleSignal(signal) {
   log(`[STATUS] SDLC runner stopped (${signal}). Work saved. Resume with --resume to continue from Step ${nextStep}.`);
   // Preserve lastCompletedStep for resume — don't reset step tracking.
   // Mark signalShutdown so detectAndHydrateState knows the auto-push was WIP,
-  // not a completed step 6.
+  // not a completed commitPush step.
   updateState({ runnerPid: null, signalShutdown: true });
   removeUnattendedMode();
   process.exit(0);
@@ -1918,7 +1936,7 @@ async function runStep(step, state) {
 
     // Extract state updates
     const patch = extractStateFromStep(step, result, state);
-    // Track completed step for resume (step 9 resets this to 0 via its own patch)
+    // Track completed step for resume (step 10/merge resets this to 0 via its own patch)
     if (patch.lastCompletedStep === undefined) {
       patch.lastCompletedStep = step.number;
     }
@@ -1931,7 +1949,7 @@ async function runStep(step, state) {
     // preconditions bounce repeatedly until the bounce-loop guard escalates.
     // Treat "no feature branch" as a soft failure so the retry path handles
     // it deterministically.
-    if (step.number === 2 && !SINGLE_ISSUE_NUMBER) {
+    if (step.number === STEP_NUMBER.startIssue && !SINGLE_ISSUE_NUMBER) {
       if (!state.currentIssue || !state.currentBranch || state.currentBranch === 'main') {
         log('Soft failure detected: step 2 exited 0 but no feature branch was created');
         log(`[STATUS] Step 2 (startIssue) soft failure: no feature branch created (HEAD on ${state.currentBranch || 'main'})`);
@@ -1939,27 +1957,27 @@ async function runStep(step, state) {
       }
     }
 
-    // Special: spec validation gate after step 3
-    if (step.number === 3) {
+    // Special: spec validation gate after writeSpecs
+    if (step.number === STEP_NUMBER.writeSpecs) {
       const gate = await runValidationGate(step, state, () => validateSpecs(state), 'Spec validation');
       if (gate) return gate;
     }
 
-    // Special: push validation gate after step 6
-    if (step.number === 6) {
+    // Special: push validation gate after commitPush
+    if (step.number === STEP_NUMBER.commitPush) {
       const gate = await runValidationGate(step, state, validatePush, 'Push validation');
       if (gate) return gate;
     }
 
-    // Special: version bump postcondition gate after step 7
-    if (step.number === 7) {
+    // Special: version bump postcondition gate after createPR
+    if (step.number === STEP_NUMBER.createPR) {
       const versionCheck = validateVersionBump();
       if (!versionCheck.ok) {
         log(`Version bump missing: ${versionCheck.reason}`);
-        log(`[STATUS] Version bump missing after Step 7 — ${versionCheck.reason}. Performing deterministic bump...`);
+        log(`[STATUS] Version bump missing after Step ${STEP_NUMBER.createPR} — ${versionCheck.reason}. Performing deterministic bump...`);
         const bumped = performDeterministicVersionBump(state);
         if (bumped) {
-          log('[STATUS] Deterministic version bump succeeded. Retrying Step 7...');
+          log(`[STATUS] Deterministic version bump succeeded. Retrying Step ${STEP_NUMBER.createPR}...`);
           return 'retry';
         } else {
           // Could not bump — warn but don't block PR creation
@@ -1969,17 +1987,17 @@ async function runStep(step, state) {
       }
     }
 
-    // Auto-commit implementation so Step 5's "commits ahead of main" precondition passes
-    if (step.number === 4) {
+    // Auto-commit implementation so the simplify/verify "commits ahead of main" precondition passes
+    if (step.number === STEP_NUMBER.implement) {
       const issue = state.currentIssue || 'unknown';
       const committed = autoCommitIfDirty(`feat: implement issue #${issue}`);
       if (committed) {
-        log('[STATUS] Auto-committed implementation changes after Step 4.');
+        log(`[STATUS] Auto-committed implementation changes after Step ${STEP_NUMBER.implement}.`);
       }
     }
 
-    // Special: CI validation gate after step 8
-    if (step.number === 8) {
+    // Special: CI validation gate after monitorCI
+    if (step.number === STEP_NUMBER.monitorCI) {
       const gate = await runValidationGate(step, state, validateCI, 'CI validation');
       if (gate) return gate;
     }
@@ -2148,8 +2166,8 @@ async function main() {
         continue;
       }
 
-      // Post-step-2 safety check: halt if Claude selected an escalated issue (skip in single-issue mode)
-      if (!SINGLE_ISSUE_NUMBER && result === 'ok' && step.number === 2) {
+      // Post-startIssue safety check: halt if Claude selected an escalated issue (skip in single-issue mode)
+      if (!SINGLE_ISSUE_NUMBER && result === 'ok' && step.number === STEP_NUMBER.startIssue) {
         const freshState = readState();
         if (freshState.currentIssue && escalatedIssues.has(freshState.currentIssue)) {
           await haltFailureLoop('all issues escalated', [
@@ -2159,8 +2177,8 @@ async function main() {
         }
       }
 
-      // After successful merge (step 9), reset consecutive escalation counter
-      if (result === 'ok' && step.number === 9) {
+      // After successful merge, reset consecutive escalation counter
+      if (result === 'ok' && step.number === STEP_NUMBER.merge) {
         consecutiveEscalations = 0;
         if (SINGLE_ISSUE_NUMBER) {
           log(`Single-issue mode: issue #${SINGLE_ISSUE_NUMBER} complete. Exiting.`);
@@ -2299,6 +2317,7 @@ export {
   IS_WINDOWS,
   STEPS,
   STEP_KEYS,
+  STEP_NUMBER,
   REQUIRED_SPEC_FILES,
   RUNNER_ARTIFACTS,
   IMMEDIATE_ESCALATION_PATTERNS,

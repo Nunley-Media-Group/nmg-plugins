@@ -1,6 +1,6 @@
 ---
 name: run-loop
-description: "Run the full SDLC pipeline loop from within an active Claude Code session. Use when user says 'run the SDLC loop', 'run loop', 'run SDLC for #N', 'process issue end-to-end', 'run pipeline', 'how do I run the SDLC loop', or 'kick off automation'. Invokes sdlc-runner.mjs as a subprocess with CLAUDECODE unset to enable nested claude sessions. Orchestrates the full pipeline: /draft-issue → /start-issue → /write-spec → /write-code → /verify-code → /open-pr."
+description: "Run the full SDLC pipeline loop from within an active Claude Code session. Use when user says 'run the SDLC loop', 'run loop', 'run SDLC for #N', 'process issue end-to-end', 'run pipeline', 'how do I run the SDLC loop', or 'kick off automation'. Invokes sdlc-runner.mjs as a subprocess with CLAUDECODE unset to enable nested claude sessions. Orchestrates the full pipeline: /draft-issue → /start-issue → /write-spec → /write-code → /simplify → /verify-code → /open-pr."
 argument-hint: "[#issue-number]"
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Bash(node:*), Bash(env:*), Bash(CLAUDECODE:*), Bash(test:*), Bash(git:*), Skill
