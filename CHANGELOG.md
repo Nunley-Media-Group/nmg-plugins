@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **SDLC runner no longer false-positives on "permission denied" substring** (issue #133) — removed the duplicate `/permission denied/i` regex from `IMMEDIATE_ESCALATION_PATTERNS` in `scripts/sdlc-runner.mjs`. The structured `permission_denials` array from the stream-json `result` event (inspected by `detectSoftFailure` with `BENIGN_DENIED_TOOLS` and ephemeral-tmpdir filtering) is now the single authoritative signal for permission-denial escalation. Motivated by agentchrome issue #181, where the literal phrase appeared in a tool-result payload with `permission_denials: []` and hard-escalated a successful verify step into a bounce-loop exit. Regression tests added in `scripts/__tests__/sdlc-runner.test.mjs` pin both directions (phrase ignored; real non-benign denial still escalates via soft-failure).
+
 ## [8.1.0] - 2026-04-18
 
 ### Added

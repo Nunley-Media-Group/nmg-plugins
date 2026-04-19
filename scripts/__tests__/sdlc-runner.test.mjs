@@ -674,10 +674,32 @@ describe('Error pattern matching', () => {
     expect(result.action).toBe('escalate');
   });
 
-  it('matches permission denied → escalate', () => {
+  // Regression for issue #133: the literal phrase "permission denied" must NOT
+  // trigger immediate escalation via IMMEDIATE_ESCALATION_PATTERNS. The structured
+  // permission_denials array (via detectSoftFailure) is the authoritative signal.
+  it('does not match "permission denied" phrase (issue #133 regression)', () => {
     const result = matchErrorPattern('Error: permission denied for /some/path');
-    expect(result).not.toBeNull();
-    expect(result.action).toBe('escalate');
+    expect(result).toBeNull();
+  });
+
+  it('does not match "permission denied" embedded in stream-json output (issue #133 regression)', () => {
+    const streamOutput = '{"type":"assistant","message":{"content":[{"type":"text","text":"The spec mentions permission denied handling"}]}}\n{"type":"result","permission_denials":[]}';
+    const result = matchErrorPattern(streamOutput);
+    expect(result).toBeNull();
+  });
+
+  // Issue #133 AC2: with the text pattern removed, real non-benign permission_denials
+  // must still route through detectSoftFailure unchanged.
+  it('real non-benign permission_denials still escalates via detectSoftFailure (issue #133 AC2)', () => {
+    const stdout = JSON.stringify({
+      subtype: 'success',
+      permission_denials: [
+        { tool_name: 'Write', tool_use_id: 'x', tool_input: { file_path: '/etc/passwd', content: 'bad' } },
+      ],
+    });
+    const result = detectSoftFailure(stdout);
+    expect(result.isSoftFailure).toBe(true);
+    expect(result.reason).toMatch(/^permission_denials:/);
   });
 
   it('does not match EnterPlanMode (benign denial, not unrecoverable)', () => {

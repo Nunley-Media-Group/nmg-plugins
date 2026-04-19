@@ -1078,7 +1078,6 @@ const IMMEDIATE_ESCALATION_PATTERNS = [
   /context_window_exceeded/i,
   /signal:\s*9/i,
   /signal:\s*SIGKILL/i,
-  /permission denied/i,
 ];
 
 const RATE_LIMIT_PATTERN = /rate_limit/i;
