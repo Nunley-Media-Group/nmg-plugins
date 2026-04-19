@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Deterministic version bump now updates stack-specific JSON files** (`scripts/sdlc-runner.mjs`) — three bugs prevented `plugins/nmg-sdlc/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` from being bumped alongside `VERSION` (surfaced when the 8.1.1 bump commit touched only `VERSION` + `CHANGELOG.md`, leaving the three version fields desynchronized until the next LLM-driven `/open-pr` bump corrected them). Fixes: (1) the `## Versioning` section regex now stops at `\n### ` so the `### Version Bump Classification` subsection's `Label | Bump Type` table is no longer parsed as versioned-file rows (eliminating the spurious `Label` / `bug` / `enhancement` warnings); (2) table cells now have surrounding backticks stripped so `` `plugins/nmg-sdlc/.claude-plugin/plugin.json` `` resolves to the real path instead of tripping `fs.existsSync` → "versioned file not found"; (3) the JSON dot-path navigator now supports array-index segments like `plugins[0].version` (required by `.claude-plugin/marketplace.json`).
+
 ## [9.0.0] - 2026-04-18
 
 ### Fixed

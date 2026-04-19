@@ -1705,12 +1705,15 @@ function performDeterministicVersionBump(state) {
     if (fs.existsSync(techMdPath)) {
       try {
         const techMd = fs.readFileSync(techMdPath, 'utf8');
-        const versioningMatch = techMd.match(/## Versioning\s*\n([\s\S]*?)(?=\n## |\n$|$)/);
+        const versioningMatch = techMd.match(/## Versioning\s*\n([\s\S]*?)(?=\n### |\n## |\n$|$)/);
         if (versioningMatch) {
           // Parse table rows: | file | dot.path |
           const tableRows = versioningMatch[1].match(/\|[^|\n]+\|[^|\n]+\|/g) || [];
           for (const row of tableRows) {
-            const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+            const cells = row
+              .split('|')
+              .map(c => c.trim().replace(/^`|`$/g, ''))
+              .filter(Boolean);
             if (cells.length < 2 || cells[0] === 'File' || cells[0].startsWith('-')) continue;
 
             const filePath = path.join(PROJECT_PATH, cells[0]);
@@ -1723,16 +1726,31 @@ function performDeterministicVersionBump(state) {
 
             try {
               if (filePath.endsWith('.json')) {
-                // JSON: parse, update dot-path, write back
+                // JSON: parse, update dot-path (supports arr[0] indexing), write back
                 const json = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-                const keys = dotPath.split('.');
-                let obj = json;
-                for (let i = 0; i < keys.length - 1; i++) {
-                  obj = obj[keys[i]];
-                  if (!obj) break;
-                }
-                if (obj) {
-                  obj[keys[keys.length - 1]] = newVersion;
+                const navigate = (root, segments, setOnLast) => {
+                  let obj = root;
+                  for (let i = 0; i < segments.length; i++) {
+                    const seg = segments[i];
+                    const parts = [];
+                    const re = /([^\[\]]+)|\[(\d+)\]/g;
+                    let m;
+                    while ((m = re.exec(seg)) !== null) {
+                      parts.push(m[1] !== undefined ? m[1] : Number(m[2]));
+                    }
+                    for (let j = 0; j < parts.length; j++) {
+                      const isLast = i === segments.length - 1 && j === parts.length - 1;
+                      if (isLast && setOnLast) {
+                        obj[parts[j]] = newVersion;
+                        return true;
+                      }
+                      obj = obj[parts[j]];
+                      if (obj == null) return false;
+                    }
+                  }
+                  return false;
+                };
+                if (navigate(json, dotPath.split('.'), true)) {
                   fs.writeFileSync(filePath, JSON.stringify(json, null, 2) + '\n');
                 }
               } else if (filePath.endsWith('.toml')) {

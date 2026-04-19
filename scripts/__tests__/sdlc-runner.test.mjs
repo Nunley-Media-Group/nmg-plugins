@@ -2500,6 +2500,144 @@ describe('performDeterministicVersionBump (#60)', () => {
     expect(writeCall).toBeDefined();
     expect(writeCall[1]).toBe('1.2.4\n');
   });
+
+  // Stack-specific file bump regression tests
+  it('does not scan the Version Bump Classification subsection for versioned files', () => {
+    const techMdContent = [
+      '## Versioning',
+      '',
+      '| File | Path | Notes |',
+      '|------|------|-------|',
+      '',
+      '### Version Bump Classification',
+      '',
+      '| Label | Bump Type | Description |',
+      '|-------|-----------|-------------|',
+      '| `bug` | patch | Bug fix |',
+      '| `enhancement` | minor | New feature |',
+      '',
+      '## Technical Constraints',
+    ].join('\n');
+
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      if (p.endsWith('tech.md')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return '1.2.3\n';
+      if (p.endsWith('tech.md')) return techMdContent;
+      return '';
+    });
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'bug';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":null}';
+      return '';
+    });
+
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    performDeterministicVersionBump({ currentIssue: 42 });
+    const logMessages = logSpy.mock.calls.map(c => String(c[0]));
+    logSpy.mockRestore();
+
+    // Classification table rows must never surface as "versioned file not found" warnings
+    expect(logMessages.some(m => m.includes('versioned file not found: Label'))).toBe(false);
+    expect(logMessages.some(m => m.includes('versioned file not found: bug'))).toBe(false);
+    expect(logMessages.some(m => m.includes('versioned file not found: enhancement'))).toBe(false);
+  });
+
+  it('strips surrounding backticks from versioned-file table cells', () => {
+    const techMdContent = [
+      '## Versioning',
+      '',
+      '| File | Path | Notes |',
+      '|------|------|-------|',
+      '| `plugins/nmg-sdlc/.claude-plugin/plugin.json` | `version` | Plugin manifest |',
+      '',
+      '## Technical Constraints',
+    ].join('\n');
+
+    const pluginJson = { name: 'nmg-sdlc', version: '1.2.3' };
+
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      if (p.endsWith('tech.md')) return true;
+      if (p.endsWith('plugin.json')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return '1.2.3\n';
+      if (p.endsWith('tech.md')) return techMdContent;
+      if (p.endsWith('plugin.json')) return JSON.stringify(pluginJson);
+      return '';
+    });
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'bug';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":null}';
+      return '';
+    });
+
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    const logMessages = logSpy.mock.calls.map(c => String(c[0]));
+    logSpy.mockRestore();
+
+    expect(result).toBe(true);
+    // No "file not found" warning for the backtick-wrapped path
+    expect(logMessages.some(m => m.includes('versioned file not found'))).toBe(false);
+
+    const pluginWrite = mockFs.writeFileSync.mock.calls.find(c => c[0].endsWith('plugin.json'));
+    expect(pluginWrite).toBeDefined();
+    expect(JSON.parse(pluginWrite[1]).version).toBe('1.2.4');
+  });
+
+  it('updates array-index dot-paths like plugins[0].version in JSON files', () => {
+    const techMdContent = [
+      '## Versioning',
+      '',
+      '| File | Path | Notes |',
+      '|------|------|-------|',
+      '| `.claude-plugin/marketplace.json` | `plugins[0].version` | Marketplace index |',
+      '',
+      '## Technical Constraints',
+    ].join('\n');
+
+    const marketplace = {
+      name: 'nmg-plugins',
+      plugins: [
+        { name: 'nmg-sdlc', version: '1.2.3' },
+        { name: 'other', version: '9.9.9' },
+      ],
+    };
+
+    mockFs.existsSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return true;
+      if (p.endsWith('tech.md')) return true;
+      if (p.endsWith('marketplace.json')) return true;
+      return false;
+    });
+    mockFs.readFileSync.mockImplementation((p) => {
+      if (p.endsWith('VERSION')) return '1.2.3\n';
+      if (p.endsWith('tech.md')) return techMdContent;
+      if (p.endsWith('marketplace.json')) return JSON.stringify(marketplace);
+      return '';
+    });
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('issue view') && cmd.includes('labels')) return 'bug';
+      if (cmd.includes('issue view') && cmd.includes('milestone')) return '{"milestone":null}';
+      return '';
+    });
+
+    const result = performDeterministicVersionBump({ currentIssue: 42 });
+    expect(result).toBe(true);
+
+    const marketplaceWrite = mockFs.writeFileSync.mock.calls.find(c => c[0].endsWith('marketplace.json'));
+    expect(marketplaceWrite).toBeDefined();
+    const written = JSON.parse(marketplaceWrite[1]);
+    expect(written.plugins[0].version).toBe('1.2.4');
+    // Sibling entry is untouched
+    expect(written.plugins[1].version).toBe('9.9.9');
+  });
 });
 
 describe('Step 7 prompt includes version bump mandate (#60)', () => {
