@@ -107,8 +107,11 @@ This project MUST work on macOS, Windows, and Linux. All contributions must resp
 
 ### Skills (SKILL.md)
 
+**Authoring rule:** Any time a skill is created or edited — whether by a human or by an SDLC workflow (spec implementation, verify-code autofix, etc.) — the work MUST be driven through the `skill-creator` skill (`/skill-creator`). Do not hand-author or hand-edit `SKILL.md` files directly. `skill-creator` enforces Anthropic's official best practices for frontmatter, triggering descriptions, structure, and validation. Skills that bypass `skill-creator` tend to drift from these conventions and trigger incorrectly.
+
 | Aspect | Best Practice |
 |--------|---------------|
+| Authoring tool | **Always use `/skill-creator` for creation and edits** — never hand-edit SKILL.md |
 | Frontmatter | Use YAML frontmatter for `name`, `description`, `allowed-tools`, `model`, `context`, `user-invocable`, `disable-model-invocation`, `argument-hint` |
 | Size | Keep under 500 lines — move detailed reference material to separate files |
 | Arguments | Use `$ARGUMENTS` placeholder to capture user input |
