@@ -30,7 +30,7 @@ nmg-plugins/
 │       │   ├── write-code/
 │       │   ├── run-retro/
 │       │   │   └── templates/    # Retrospective output template
-│       │   ├── setup-steering/
+│       │   ├── onboard-project/
 │       │   │   └── templates/    # Steering document templates
 │       │   ├── start-issue/
 │       │   ├── verify-code/

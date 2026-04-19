@@ -251,19 +251,21 @@ Emit a progress line: `DAG: N edges inferred, cycle detected? = no | yes (skippe
 
 Iterate candidates in **topological order** from 2G.6 (or arbitrary order if the DAG step was skipped).
 
-Before the first iteration, ensure the `seeded-by-onboard` label exists:
+Before the first iteration:
 
-```
-gh label create seeded-by-onboard --color 0E8A16 --description "Issue seeded by /onboard-project" 2>/dev/null || true
-```
+1. Ensure the `seeded-by-onboard` label exists:
+   ```
+   gh label create seeded-by-onboard --color 0E8A16 --description "Issue seeded by /onboard-project" 2>/dev/null || true
+   ```
+2. **Autolinking availability check**: attempt a dry probe to confirm Issue #125's autolinking primitive is available in `/draft-issue`. If the probe fails or the primitive is not yet shipped, log once — `Autolinking: not available (Issue #125 not yet landed); seeding will proceed without sub-issue wiring` — set `autolinking_available = false`, and record the gap for Step 5. Do NOT repeat this failure per candidate.
 
 For each candidate:
 
 1. **Invoke `/draft-issue`** (delegated) with the shared `interview_context`, `design_context`, and this candidate's `{title, milestone, body_seed, component_refs}` as the seed payload. The delegated skill is responsible for full AC/FR synthesis — do not bypass it.
 2. **Capture the created issue number** from `/draft-issue`'s return.
 3. **Apply the seeded-by-onboard label**: `gh issue edit <num> --add-label seeded-by-onboard`.
-4. **Wire DAG parents already created**: for each parent of this candidate already created in this loop, invoke the autolinking primitive landed by Issue #125 (`addSubIssue(parent_number, child_number)` exposed by `/draft-issue`). Append a `Depends on: #<parent>` line to this issue's body via `gh issue edit <self> --body-file -` (read existing body via `gh issue view <self> --json body`, append the line, write back).
-5. **Queue child back-references**: for each DAG child of this candidate not yet created, record a deferred `Blocks: #<self>` insertion that will be applied when that child is seeded.
+4. **Wire DAG parents already created** (skip if `autolinking_available = false`): for each parent of this candidate already created in this loop, invoke the autolinking primitive landed by Issue #125 (`addSubIssue(parent_number, child_number)` exposed by `/draft-issue`). Append a `Depends on: #<parent>` line to this issue's body via `gh issue edit <self> --body-file -` (read existing body via `gh issue view <self> --json body`, append the line, write back).
+5. **Queue child back-references** (skip if `autolinking_available = false`): for each DAG child of this candidate not yet created, record a deferred `Blocks: #<self>` insertion that will be applied when that child is seeded.
 6. **State isolation**: discard any per-candidate working state before iterating to the next candidate.
 
 **Per-issue failure handling**: if any of `/draft-issue` invocation, label apply, autolink call, or body edit fails — record the failure as a per-issue gap (with the candidate title, the failed step, and the error message) and **continue the loop**. A single failure must not abort the remaining seeds.

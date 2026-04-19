@@ -72,7 +72,7 @@ All feature development should align with these guidelines.
 - Spec-driven implementation with plan mode (`/write-code`)
 - Verification against specs with architecture review (`/verify-code`)
 - PR creation linking issue and specs (`/open-pr`)
-- Steering document bootstrapping (`/setup-steering`)
+- Project initialization and steering bootstrap (`/onboard-project`)
 
 ### Should Have
 - Issue branch linking and status management (`/start-issue`)
