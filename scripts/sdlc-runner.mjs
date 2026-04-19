@@ -463,7 +463,7 @@ function detectAndHydrateState() {
   }
 
   // If the runner was shut down by signal, the SIGTERM handler auto-pushed WIP
-  // commits. That makes artifact probing think "all pushed → step 6 done" even
+  // commits. That makes artifact probing think "all pushed → step 7 (commitPush) done" even
   // if the runner was mid-way through an earlier step. Cap the probed value to
   // what the state file recorded before shutdown.
   if (savedState.signalShutdown && savedState.lastCompletedStep < lastCompletedStep) {
@@ -940,6 +940,7 @@ function buildClaudeArgs(step, state, overrides = {}) {
       `   simplify skill not available — skipping simplification pass`,
       `3. If available, invoke /simplify on the files listed by: git diff main...HEAD --name-only`,
       `   Apply any fixes it returns. Exit with code 0 on success.`,
+      `   If /simplify errors or reports failures, print the error details to stdout and exit with code 1.`,
     ].join('\n'),
 
     [STEP_NUMBER.verify]: `Verify the implementation for issue #${issue} on branch ${branch}. Fix any findings. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
@@ -1935,7 +1936,7 @@ async function runStep(step, state) {
 
     // Extract state updates
     const patch = extractStateFromStep(step, result, state);
-    // Track completed step for resume (step 9 resets this to 0 via its own patch)
+    // Track completed step for resume (step 10/merge resets this to 0 via its own patch)
     if (patch.lastCompletedStep === undefined) {
       patch.lastCompletedStep = step.number;
     }

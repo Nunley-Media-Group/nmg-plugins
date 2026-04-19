@@ -1482,6 +1482,17 @@ describe('STEP_KEYS and STEPS', () => {
   it('STEP_KEYS does not contain draftIssue — /draft-issue is interactive-only (v1.41.0, issue #116)', () => {
     expect(STEP_KEYS.includes('draftIssue')).toBe(false);
   });
+
+  it('simplify prompt contains verbatim skip warning and git diff command (issue #140)', () => {
+    const step = STEPS[STEP_KEYS.indexOf('simplify')];
+    const state = { ...defaultState(), currentIssue: 42, currentBranch: '42-feature' };
+    const args = buildClaudeArgs(step, state);
+    const promptIdx = args.indexOf('-p') + 1;
+    const prompt = args[promptIdx];
+    expect(prompt).toContain('simplify skill not available — skipping simplification pass');
+    expect(prompt).toContain('git diff main...HEAD --name-only');
+    expect(prompt).toContain('exit with code 1');
+  });
 });
 
 // ===========================================================================

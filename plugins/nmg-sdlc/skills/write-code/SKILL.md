@@ -187,6 +187,8 @@ After all tasks are complete and before signalling completion, run the `/simplif
 
    Then proceed to Step 6 with the same success status you would have had without the simplify pass.
 
+If the `simplify` skill is available but errors or reports failures, surface those as additional findings and address them before proceeding to Step 6.
+
 Unattended-mode behaviour is preserved — the probe is a filesystem/system-reminder check, not an `AskUserQuestion` gate.
 
 ### Step 6: Signal Completion

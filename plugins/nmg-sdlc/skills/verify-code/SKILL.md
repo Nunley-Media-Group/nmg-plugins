@@ -234,6 +234,8 @@ If at least one fix was applied in 6a AND the `simplify` marketplace skill is av
 
    Then proceed to 6b without simplification.
 
+If the `simplify` skill is available but errors or reports failures, record those as additional findings to fix in the current 6a cycle — do not silently swallow them.
+
 Unattended-mode behaviour is preserved — the probe is a filesystem/system-reminder check, not an `AskUserQuestion` gate.
 
 #### 6b. Run Tests After Fixes
