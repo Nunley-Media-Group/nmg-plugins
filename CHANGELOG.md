@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [8.1.0] - 2026-04-18
+
 ### Added
 
 - **`/open-pr` interactive CI monitor + auto-merge** (issue #128) — after PR creation in interactive mode, the skill now offers an opt-in Step 7 that mirrors the unattended runner's semantics: `AskUserQuestion` prompts the user with "Yes, monitor CI and auto-merge" / "No, I'll handle it". On opt-in, the skill polls `gh pr checks <num> --json name,state,link` every 30 seconds (`sleep 30` via `Bash(sleep:*)`) up to 30 minutes / 60 polls, matching `scripts/sdlc-runner.mjs` line 937. Pre-merge `gh pr view --json mergeable,mergeStateStatus` check guards against non-`CLEAN` states. On all-success + `CLEAN`: captures branch name via `git rev-parse --abbrev-ref HEAD`, then runs `gh pr merge <num> --squash --delete-branch`, `git checkout main`, and `git branch -D <branch>`, printing `Merged and cleaned up — you are back on main.`. Terminal failures (`FAILURE`, `CANCELLED`, `TIMED_OUT`), non-`CLEAN` mergeability, and polling timeout print each failing check's name + details URL and exit without merging or deleting the branch. `No CI configured — skipping auto-merge.` is printed when `gh pr checks` returns an empty JSON array (graceful-skip per retrospective learning on absent integrations). Opt-out reuses the existing "Next step: Wait for CI to pass…" guidance unchanged. When `.claude/unattended-mode` exists, Step 7 is actively suppressed — the skill MUST NOT prompt, poll, or merge — preserving runner ownership of CI monitoring and merging.
