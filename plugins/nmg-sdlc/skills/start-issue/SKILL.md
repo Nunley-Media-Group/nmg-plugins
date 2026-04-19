@@ -146,7 +146,7 @@ Filter out blocked issues and topologically order the remainder so parents appea
 
 ### Fetch Dependency Metadata (single GraphQL batch)
 
-Issue a single `gh api graphql` call that requests `parent`, `subIssues`, `state`, and `body` for every candidate issue in one round-trip. The query shape per issue:
+Issue a single `gh api graphql` call that requests `parent`, `subIssues`, `state`, and `body` for every candidate issue in one round-trip. Use one aliased field per issue number inside a single query (e.g. `issue127: issue(number: 127) { ... }`), passed as a `-f query='...'` argument to `gh api graphql`. The query shape per issue:
 
 ```graphql
 issue(number: N) {
@@ -159,6 +159,8 @@ issue(number: N) {
 ```
 
 Any parent whose `state` is not `CLOSED` (including `OPEN`) is treated as an unresolved dependency.
+
+If `parent` or `subIssues` fields return `null` or `[]` but the GraphQL call itself succeeded (HTTP 200), treat the native contribution for that issue as an empty set and continue — **this is not a fallback condition**.
 
 ### Parse Body Cross-Refs
 
@@ -174,6 +176,8 @@ Extract issue numbers with `#?(\d+)`. **Normalize**: a `Blocks: #Y` on issue `X`
 ### Build Graph
 
 Construct `parentsOf: Map<issue_number, Set<parent_number>>` by merging the native links (parent + inverse sub-issues) with the body-cross-ref data. An issue declared as a parent in both formats counts once (set deduplication).
+
+Native link normalization: a `parent` entry on issue `C` with `{number: P}` adds `P` to `parentsOf[C]`; a `subIssues` entry on issue `P` with node `{number: C}` adds `P` to `parentsOf[C]` (inverse — the sub-issue's parent is `P`).
 
 ### Blocked Filter
 
@@ -198,13 +202,14 @@ If any candidate remains un-emitted after the queue drains, those nodes form a c
    ```
 2. Append the cycle members to the output list in **issue-number ascending order**.
 3. Continue.
+4. In unattended mode, this warning is informational only — the runner does not escalate based on cycles.
 
 ### Fallback Chain
 
 | Failure | Fallback |
 |---------|----------|
 | GraphQL batch query fails (network/auth/preview unavailable) | Re-fetch bodies only via `gh issue view --json body` per issue; parse body cross-refs only; emit `WARNING: Native dependency links unavailable; using body cross-refs only.` |
-| Body fetch also fails | Skip dependency resolution entirely; emit a warning; preserve legacy issue-number-ascending ordering; do not abort |
+| Body fetch also fails | Skip dependency resolution entirely; emit `WARNING: Dependency resolution unavailable; preserving legacy ordering.`; preserve legacy issue-number-ascending ordering; do not abort |
 
 ### Session Note
 
