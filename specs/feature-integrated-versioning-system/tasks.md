@@ -1,7 +1,7 @@
 # Tasks: Integrated Versioning System
 
-**Issues**: #41, #87
-**Date**: 2026-02-25
+**Issues**: #41, #87, #139
+**Date**: 2026-04-19
 **Status**: Planning
 **Author**: Claude (nmg-sdlc)
 
@@ -17,7 +17,8 @@
 | Integration | 3 | [ ] |
 | Testing | 1 | [ ] |
 | Classification Deduplication (Issue #87) | 5 | [ ] |
-| **Total** | **16** | |
+| Manual-Only Major Policy (Issue #139) | 5 | [ ] |
+| **Total** | **21** | |
 
 ---
 
@@ -329,6 +330,78 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
+## Phase 7: Manual-Only Major Version Policy — Issue #139
+
+### T017: Remove Milestone Override and Add `--major` Flag to `/open-pr`
+
+**File(s)**: `plugins/nmg-sdlc/skills/open-pr/SKILL.md`
+**Type**: Modify
+**Depends**: T014
+**Acceptance**:
+- [ ] Frontmatter `argument-hint` is `[#issue-number] [--major]`
+- [ ] A new argument-parsing sub-step before Step 2 inspects invocation args and sets a `major_requested` flag when `--major` is present
+- [ ] If `.claude/unattended-mode` exists AND `major_requested` is true, the skill prints exactly `ESCALATION: --major flag requires human confirmation — unattended mode cannot apply a major version bump` and exits immediately (no VERSION/CHANGELOG/stack-file writes, no PR)
+- [ ] Step 2.4 ("Check milestone completion") is deleted entirely — no `gh api ... open_issues` query, no major override
+- [ ] Step 2 "Calculate new version" honors `major_requested` (bumps major instead of the classified type) when set
+- [ ] Step 2 confirmation menu (`AskUserQuestion`) pre-selects Major as the recommended option when `major_requested` is set; still offers Patch / Minor / Major alternatives
+- [ ] Step 2 confirmation menu behavior is unchanged when `--major` is not supplied (classified type remains recommended)
+- [ ] Unattended-mode path without `--major` is unchanged — still applies classified bump silently
+- [ ] Subsequent step numbering remains consistent; any internal references to the deleted milestone step are removed
+
+**Notes**: See design.md "Manual-Only Major Version Policy Enforcement (Issue #139)" for the exact logic and the updated data flow. The existing Step 2 items 1–3 (read VERSION, read labels, read classification matrix) are unchanged. This task supersedes the earlier T014 note that "milestone completion override (Step 2 item 4) remains unchanged" — that note reflected the issue #87 scope only.
+
+### T018: Rewrite Breaking-Change Guidance in `steering/tech.md`
+
+**File(s)**: `steering/tech.md`
+**Type**: Modify
+**Depends**: T013
+**Acceptance**:
+- [ ] The paragraph `**Milestone completion override**: If the issue is the last open issue in its milestone, the bump type is overridden to **major** regardless of labels.` is removed from the `### Version Bump Classification` subsection
+- [ ] A replacement paragraph states `**Major bumps are manual-only.**` and explains that they are never triggered by labels, milestones, or breaking changes; the only path is `/open-pr #N --major`; the runner will not apply major bumps; unattended mode escalates on `--major`
+- [ ] A second replacement paragraph states `**Breaking changes use minor bumps.**` and describes the `**BREAKING CHANGE:**` bullet prefix convention plus the recommended `### Migration Notes` sub-section, with a short inline markdown example
+- [ ] Wording matches the design.md snippet verbatim (or is semantically equivalent if minor formatting adjustments are needed)
+- [ ] No other content in `tech.md` is modified
+- [ ] Document renders without markdown syntax errors
+
+### T019: Apply Same Rewrite to Onboard-Project Template
+
+**File(s)**: `plugins/nmg-sdlc/skills/onboard-project/templates/tech.md`
+**Type**: Modify
+**Depends**: T012
+**Acceptance**:
+- [ ] The `**Milestone completion override**` paragraph is removed from the template's `### Version Bump Classification` subsection
+- [ ] The same two replacement paragraphs from T018 appear in the template with identical wording, so that newly onboarded projects inherit the corrected policy
+- [ ] Template `<!-- TODO: -->` placeholders and example rows are preserved
+- [ ] No other template content is modified
+
+### T020: Audit README.md for Stale Milestone-Completion References
+
+**File(s)**: `README.md`
+**Type**: Modify
+**Depends**: None
+**Acceptance**:
+- [ ] No row in any version-bump-type table references milestone completion
+- [ ] The `/open-pr` skill description documents only label-based classification with `--major` as the manual opt-in for major bumps
+- [ ] Any text describing the argument hint for `/open-pr` shows `[#issue-number] [--major]`
+- [ ] If the README is already clean (commit `ac7bab1` removed most of this language), the task closes with a note confirming no further change is required
+- [ ] No unrelated README edits
+
+**Notes**: Commit `ac7bab1` already dropped the milestone-completion row from the bump-type table and rewrote the `/open-pr` description. This task is an explicit audit to guarantee no stragglers remain (e.g., argument-hint language in skill overview sections).
+
+### T021: Append Issue #139 Scenarios to BDD Feature File
+
+**File(s)**: `specs/feature-integrated-versioning-system/feature.gherkin`
+**Type**: Modify
+**Depends**: T017, T018, T019
+**Acceptance**:
+- [ ] Five new scenarios corresponding to AC14, AC15, AC16, AC17, AC18 are appended
+- [ ] Each new scenario is tagged with a comment `# Added by issue #139`
+- [ ] Scenarios use Given/When/Then format consistently
+- [ ] Existing scenarios (including the issue #87 additions) are unchanged
+- [ ] Valid Gherkin syntax
+
+---
+
 ## Dependency Graph
 
 ```
@@ -372,6 +445,21 @@ T016 (BDD update) ── (after T012, T014, T015)
 5. **After T012**: T013, T014, T015 (parallelizable)
 6. **After T012 + T014 + T015**: T016
 7. **After all impl tasks + T008**: T009, T010, T011 (parallelizable)
+8. **After T014 (issue #87 open-pr edits)**: T017
+9. **After T013**: T018
+10. **After T012**: T019
+11. **Parallel with T017–T019**: T020 (README audit, no deps)
+12. **After T017 + T018 + T019**: T021 (BDD scenarios for issue #139)
+
+```
+--- Phase 7 (Issue #139) ---
+
+T014 ──▶ T017 (open-pr: remove 2.4, add --major, escalate unattended)
+T013 ──▶ T018 (steering/tech.md: rewrite breaking-change guidance)
+T012 ──▶ T019 (onboard-project template: same rewrite)
+(no deps) T020 (README audit)
+T017 + T018 + T019 ──▶ T021 (BDD scenarios)
+```
 
 ---
 
@@ -381,6 +469,7 @@ T016 (BDD update) ── (after T012, T014, T015)
 |-------|------|---------|
 | #41 | 2026-02-16 | Initial feature spec |
 | #87 | 2026-02-25 | Phase 6: Classification deduplication — T012-T016 |
+| #139 | 2026-04-19 | Phase 7: Manual-only major policy — T017 (remove Step 2.4 + add `--major`), T018/T019 (steering rewrite), T020 (README audit), T021 (BDD scenarios) |
 
 ---
 

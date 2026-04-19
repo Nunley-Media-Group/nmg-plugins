@@ -155,3 +155,52 @@ Feature: Integrated Versioning System
     And an issue has the "documentation" label which does not match any table row
     When /open-pr classifies the version bump
     Then it defaults to a minor bump
+
+  # --- Manual-Only Major Version Policy (Issue #139) ---
+  # Added by issue #139
+
+  Scenario: AC14 - Milestone completion no longer overrides bump type in /open-pr
+    Given an issue has the "enhancement" label
+    And the issue is the last open issue in its milestone
+    And the current VERSION is "1.49.1"
+    When /open-pr runs
+    Then the skill classifies the bump as minor via the tech.md label matrix
+    And the skill does not query "gh api repos/:owner/:repo/milestones/:id --jq '.open_issues'"
+    And the proposed version is "1.50.0"
+
+  # Added by issue #139
+  Scenario: AC15 - /open-pr accepts an explicit --major argument and pre-selects Major
+    Given a developer runs "/open-pr #N --major"
+    And the current VERSION is "1.49.1"
+    When the skill reaches the version bump confirmation step
+    Then the AskUserQuestion bump menu pre-selects Major as the recommended option
+    And the proposed version is "2.0.0"
+    And the developer can still choose Patch or Minor as alternatives
+
+  # Added by issue #139
+  Scenario: AC16 - --major in unattended-mode is an escalation, not a silent apply
+    Given ".claude/unattended-mode" exists in the project
+    And the skill is invoked with the "--major" flag
+    When the skill reaches the version bump step
+    Then the skill prints "ESCALATION: --major flag requires human confirmation — unattended mode cannot apply a major version bump"
+    And the skill exits without writing VERSION
+    And the skill exits without modifying CHANGELOG.md
+    And the skill exits without creating a PR
+
+  # Added by issue #139
+  Scenario: AC17 - tech.md breaking-change guidance does not imply a major bump
+    Given steering/tech.md does not contain a "Milestone completion override" paragraph
+    And steering/tech.md documents that "### Changed (BREAKING)" sections use a minor bump
+    And steering/tech.md documents the "**BREAKING CHANGE:**" bullet prefix convention
+    When an LLM running /open-pr reads tech.md to classify an enhancement with breaking changes
+    Then it proposes a minor bump
+    And it formats the CHANGELOG entry with a "**BREAKING CHANGE:**" bullet prefix
+    And it optionally adds a "### Migration Notes" sub-section
+
+  # Added by issue #139
+  Scenario: AC18 - README documents only label-based bump rules
+    Given a reader opens README.md at the version-bump table and the /open-pr description
+    When they inspect the documentation
+    Then no row references milestone completion triggering a major bump
+    And the table shows only "bug" -> patch and "enhancement" -> minor
+    And the /open-pr argument-hint is "[#issue-number] [--major]"

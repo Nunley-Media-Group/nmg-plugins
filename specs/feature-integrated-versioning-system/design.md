@@ -1,7 +1,7 @@
 # Design: Integrated Versioning System
 
-**Issues**: #41, #87
-**Date**: 2026-02-25
+**Issues**: #41, #87, #139
+**Date**: 2026-04-19
 **Status**: Draft
 **Author**: Claude (nmg-sdlc)
 
@@ -495,6 +495,121 @@ This ensures backwards compatibility for projects that haven't migrated their te
 
 ---
 
+## Manual-Only Major Version Policy Enforcement (Issue #139)
+
+### Problem
+
+The original design (issue #41) included a "milestone completion override" — if an issue was the last open one in its milestone, `/open-pr` proposed a major bump regardless of the label-based classification. The steering template and the project's own `steering/tech.md` document this override as an explicit rule. In practice this collides with policy:
+
+1. **Label-matrix is the single source of truth** for bump type (bug → patch, enhancement → minor). Having a secondary, implicit rule (milestone completion) creates a behavior that bypasses the authoritative matrix.
+2. **Major bumps are a deliberate release decision**, not an automatic consequence of closing out a milestone. `scripts/sdlc-runner.mjs` already enforces this — it only applies patch and minor bumps; the milestone override was only ever surfaced inside the interactive `/open-pr` path.
+3. **LLMs reading the steering context infer "breaking = major"** because the steering text bundles the milestone override near discussions of breaking changes. The template needs to actively contradict that inference.
+
+### Solution: Remove the Override, Add an Opt-In Flag, Fix the Steering Text
+
+Three coordinated edits align the skill, the runner (already correct), and the steering context:
+
+1. **Remove Step 2.4 from `/open-pr`** — delete the milestone open-count query and the major bump override. Bump type is determined solely by Step 2.3 (the tech.md classification matrix).
+2. **Add a `--major` argument to `/open-pr`** — developers who genuinely want a major bump opt in explicitly. When present, the `AskUserQuestion` bump menu pre-selects Major; the developer still confirms.
+3. **Escalate `--major` in unattended mode** — combining `.claude/unattended-mode` with `--major` emits a deterministic escalation message and exits without writing artifacts. This keeps major bumps human-gated.
+4. **Rewrite the breaking-change guidance in `tech.md` and the template** — remove the "Milestone completion override" paragraph; add explicit text that `### Changed (BREAKING)` sections are minor bumps communicated via a `**BREAKING CHANGE:**` bullet prefix, with a recommended `### Migration Notes` sub-section.
+
+### Affected Files
+
+| File | Change |
+|------|--------|
+| `plugins/nmg-sdlc/skills/open-pr/SKILL.md` | Delete Step 2.4; add `--major` argument parsing before Step 2; add unattended-mode escalation branch; update `argument-hint` frontmatter |
+| `steering/tech.md` | Remove `**Milestone completion override**` paragraph from the `### Version Bump Classification` subsection; add breaking-change guidance describing the `**BREAKING CHANGE:**` bullet prefix and optional `### Migration Notes` sub-section |
+| `plugins/nmg-sdlc/skills/onboard-project/templates/tech.md` | Identical changes to the template so new projects inherit the corrected policy |
+| `README.md` | Already updated in `ac7bab1` to drop the milestone-completion row from the bump-type table and rewrite the `/open-pr` description — re-audit during implementation to confirm no stale references remain |
+| `scripts/sdlc-runner.mjs` | **Unchanged** — already patch/minor only; confirmed as out of scope in requirements |
+
+### Skill Changes (`open-pr/SKILL.md`)
+
+**Frontmatter**:
+
+```diff
+- argument-hint: "[#issue-number]"
++ argument-hint: "[#issue-number] [--major]"
+```
+
+**Argument parsing (new sub-step before Step 2)**: Early in the workflow, before Step 2 begins, inspect the invocation arguments:
+
+- If `--major` is present in the arguments, set a `major_requested` flag.
+- If `.claude/unattended-mode` exists AND `major_requested` is true, print the escalation message:
+  ```
+  ESCALATION: --major flag requires human confirmation — unattended mode cannot apply a major version bump
+  ```
+  Exit immediately. Do not continue to Step 2. Do not write VERSION, CHANGELOG, or any stack-specific file. Do not create a PR.
+
+**Step 2.4 (delete entirely)**: Remove the milestone-completion check block. The new Step 2 flow is:
+1. Read the current VERSION (unchanged)
+2. Read issue labels (unchanged)
+3. Read the classification matrix from `steering/tech.md` (unchanged)
+4. ~~Check milestone completion~~ **DELETED**
+5. Calculate the new version string based on the classification from step 3 (and bump to major instead if `major_requested` is set).
+6. Present to user via `AskUserQuestion`.
+
+**Step 2.6 menu presentation**: When `major_requested` is true (and not in unattended mode), the menu pre-selects Major as the recommended option. The menu still offers Patch / Minor / Major alternatives so the developer can back out. Without `--major`, the menu behaves exactly as today with the classified type recommended.
+
+**Unattended-mode path (without `--major`)**: Unchanged — applies the classified bump silently (patch or minor only).
+
+### Steering Changes (`steering/tech.md` and template)
+
+**Remove** the line:
+```markdown
+**Milestone completion override**: If the issue is the last open issue in its milestone, the bump type is overridden to **major** regardless of labels.
+```
+
+**Add** (appended after the **Default** line):
+```markdown
+**Major bumps are manual-only.** They are never triggered by labels, milestones, or breaking changes. A developer must opt in explicitly via `/open-pr #N --major`; the SDLC runner will not apply a major bump. In unattended mode, `--major` escalates and exits without bumping.
+
+**Breaking changes use minor bumps.** A `### Changed (BREAKING)` sub-section in a CHANGELOG version entry does NOT override the bump type. Communicate the breaking nature via a `**BREAKING CHANGE:**` bold prefix on the affected bullet, and (recommended) add a `### Migration Notes` sub-section to the entry. Example:
+
+```markdown
+## [1.50.0] - 2026-04-19
+
+### Changed (BREAKING)
+
+- **BREAKING CHANGE:** Renamed `foo()` to `bar()`; update callers accordingly.
+
+### Migration Notes
+
+Replace any calls to `foo(x)` with `bar(x)` — the signature is otherwise unchanged.
+```
+```
+
+The onboard-project template gets the same replacement with the same wording.
+
+### Data Flow (Updated — Issue #139)
+
+```
+/open-pr #N [--major]
+    ├── parse args → major_requested flag
+    ├── IF unattended-mode AND major_requested → ESCALATE + EXIT
+    ├── Step 1 Read Context (unchanged)
+    ├── Step 2 Determine Version Bump
+    │     ├── 2.1 Read VERSION
+    │     ├── 2.2 Read issue labels
+    │     ├── 2.3 Classification matrix (tech.md) → bump_type
+    │     ├── [2.4 DELETED — no milestone query]
+    │     ├── 2.5 Calculate new version (from bump_type, or major if major_requested)
+    │     └── 2.6 AskUserQuestion (Major pre-selected if major_requested)
+    ├── Step 3 Update Version Artifacts (unchanged)
+    └── Step 4+ Generate PR (unchanged)
+```
+
+### Risks (Issue #139)
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| Developer muscle memory expects milestone completion to auto-bump major | Medium | Low | Release notes explicitly call out the policy change; README already updated; `--major` provides the new opt-in path |
+| LLMs in future sessions still infer "breaking = major" from cached older tech.md | Low | Medium | Steering rewrite is authoritative on disk; `/migrate-project` can rewrite older steering docs to current template language |
+| `--major` flag passed via programmatic invocation (e.g., runner config) | Low | High | Escalation branch specifically guards unattended-mode; manual runs still require `AskUserQuestion` confirmation |
+
+---
+
 ## Alternatives Considered
 
 | Option | Description | Pros | Cons | Decision |
@@ -506,6 +621,9 @@ This ensures backwards compatibility for projects that haven't migrated their te
 | **E: Shared JSON config file for classification** | Separate `.claude/versioning.json` file defining label→bump mappings | Machine-parseable without Markdown table parsing | Adds a new file type; diverges from steering doc pattern; the runner already parses tech.md tables | Rejected — steering doc table is consistent with existing patterns |
 | **F: Extract classification into a shared JS module** | Node.js module imported by runner, referenced by skill via dynamic context | DRY in the traditional sense; type-safe | Skills are Markdown prompts, not code — they can't import JS modules; adds a build/dependency concern | Rejected — breaks the prompt-based architecture principle |
 | **G: Steering doc table in tech.md (selected)** | Add `### Version Bump Classification` subsection under `## Versioning` in tech.md | Follows existing pattern (runner already parses tech.md); single file to update; both consumers can read it; no new file types | Markdown table parsing is simple but not schema-validated | **Selected** — consistent with architecture, minimal change |
+| **H: Keep milestone override but gate it on a steering-doc flag (issue #139)** | Retain the override, add a `versioning.auto_major_on_milestone_complete = false` setting in tech.md | Backwards-compatible for projects that want the old behavior | Two rules coexist; steering inference that "breaking = major" persists; flag sprawl | Rejected — the policy is universal, not opt-out |
+| **I: Infer major from CHANGELOG `### Changed (BREAKING)` heading (issue #139)** | Detect breaking-change headings in the staged CHANGELOG entry and auto-propose major | Breaking changes clearly call for a major in strict semver | Diverges from the project's pragmatic policy (minor bumps are user-facing, including breaking); re-creates the same LLM inference we are explicitly correcting | Rejected — contradicts the established versioning convention |
+| **J: Remove override entirely + add `--major` opt-in (selected for issue #139)** | Delete Step 2.4; add an opt-in flag; escalate in unattended mode | Label matrix becomes the single behavioral source; `--major` keeps the manual path explicit; unattended runner stays deterministic | Developers who relied on the implicit override need to know to pass `--major` (documented in release notes + README) | **Selected** — enforces the plugin-wide manual-only policy |
 
 ---
 
@@ -565,6 +683,7 @@ This ensures backwards compatibility for projects that haven't migrated their te
 |-------|------|---------|
 | #41 | 2026-02-16 | Initial feature spec |
 | #87 | 2026-02-25 | Deduplicate version bump classification — shared tech.md subsection, consumer modifications |
+| #139 | 2026-04-19 | Enforce manual-only major bumps — remove Step 2.4 milestone override, add `--major` opt-in + unattended escalation, rewrite breaking-change guidance in steering and template |
 
 ---
 
