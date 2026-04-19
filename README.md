@@ -79,7 +79,11 @@ Selects an issue (or presents a picker if no number is given), creates a linked 
 /draft-issue "add user authentication"
 ```
 
-Classifies the issue type (Bug or Enhancement/Feature), investigates the codebase for relevant context, then interviews you with type-specific questions. Assigns the issue to a version milestone (derived from the `VERSION` file). Produces a groomed issue with Given/When/Then acceptance criteria — enhancements include a "Current State" section from the investigation, bugs include a "Root Cause Analysis" section.
+**Interactive-only** (v6.0.0+) — `/draft-issue` always runs the full interactive workflow regardless of `.claude/unattended-mode`. Classifies the issue type (Bug or Enhancement/Feature), investigates the codebase for relevant context, then interviews you with adaptive depth (core 3-round or extended 4-round with NFR/edge-case probing). Assigns the issue to a version milestone. Plays back its understanding before drafting (Step 5c), then renders a structured inline summary with `[1] Approve / [2] Revise` review menu before creating the issue.
+
+**Multi-issue mode (v7.3.0)**: Step 1b heuristically detects multi-part asks (conjunction markers, bullet lists, distinct component mentions) and proposes a split with per-ask summaries and a `high`/`medium`/`low` confidence indicator. A split-confirm menu (`[1] Approve / [2] Adjust / [3] Collapse`) lets you recover from false-positive splits. Step 1d infers a dependency DAG with a graph-confirm menu before any drafting begins. Each planned issue runs the full Steps 2–9 independently; created issues are autolinked via `gh issue edit --add-sub-issue` (availability probe + body cross-ref fallback). Batch abandonment at any review gate preserves already-created issues with no rollback.
+
+**Claude Design URL**: supply an optional `claude.ai` design URL to share parsed archive context read-only across every per-issue investigation, interview, and synthesis in the batch — reuses the `/onboard-project` fetch/gzip-decode/README-parse helper.
 
 ### Step 2: Write Specs
 

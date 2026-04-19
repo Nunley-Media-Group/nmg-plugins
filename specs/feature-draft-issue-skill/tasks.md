@@ -2,7 +2,7 @@
 
 **Issues**: #4, #116, #125
 **Date**: 2026-04-18
-**Status**: In Progress
+**Status**: Complete
 **Author**: Claude Code (retroactive + #116 amendment + #125 amendment)
 
 ---
@@ -15,13 +15,13 @@
 | Plugin Files (original) | 1 | [x] |
 | Integration (original) | 1 | [x] |
 | Testing (original) | 1 | [x] |
-| **Phase 5: Readability Treatment (#116)** | 4 | [ ] |
-| **Phase 6: Deeper Interview (#116)** | 5 | [ ] |
-| **Phase 7: Unattended-Mode Removal + Breaking Change Plumbing (#116)** | 5 | [ ] |
-| **Phase 8: Docs + Testing (#116)** | 3 | [ ] |
-| **Phase 9: Multi-Issue Pipeline (#125)** | 4 | [ ] |
-| **Phase 10: Claude Design + Autolinking (#125)** | 3 | [ ] |
-| **Phase 11: Batch Summary + Docs + Testing (#125)** | 4 | [ ] |
+| **Phase 5: Readability Treatment (#116)** | 4 | [x] |
+| **Phase 6: Deeper Interview (#116)** | 5 | [x] |
+| **Phase 7: Unattended-Mode Removal + Breaking Change Plumbing (#116)** | 5 | [x] |
+| **Phase 8: Docs + Testing (#116)** | 3 | [x] |
+| **Phase 9: Multi-Issue Pipeline (#125)** | 4 | [x] |
+| **Phase 10: Claude Design + Autolinking (#125)** | 3 | [x] |
+| **Phase 11: Batch Summary + Docs + Testing (#125)** | 4 | [x] |
 | **Total** | **32** | |
 
 ---
