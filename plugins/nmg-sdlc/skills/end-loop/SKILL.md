@@ -3,7 +3,7 @@ name: end-loop
 description: "Stop unattended mode and clear runner state. Use when user says 'end loop', 'stop loop', 'kill the runner', 'exit unattended mode', 'disable unattended mode', 'cleanup runner artifacts', or 'stop SDLC automation'. Pairs with /run-loop — signals the runner PID (if live) and removes .claude/unattended-mode and .claude/sdlc-state.json."
 argument-hint: ""
 disable-model-invocation: true
-allowed-tools: Read, Glob, Bash(test:*), Bash(node:*), Bash(rm:*), Bash(ls:*)
+allowed-tools: Read, Bash(test:*), Bash(node:*), Bash(rm:*), Bash(ls:*)
 ---
 
 # End Loop
@@ -83,11 +83,11 @@ Substitute `<PID>` with the validated integer from Step 3.
 ## Step 5: Send SIGTERM (If Live)
 
 ```bash
-node -e "process.kill(<PID>, 'SIGTERM')"
+node -e "try { process.kill(<PID>, 'SIGTERM'); } catch (e) { console.error(e.code || e.message); process.exit(1); }"
 ```
 
-- Success → record "Signalled runner PID `<PID>` (SIGTERM)" for the summary.
-- Failure (non-zero exit, typically `EPERM` for cross-user or protected processes) → record "Failed to signal PID `<PID>`: `<reason>`" for the summary. **Continue to Step 6** — partial cleanup is preferable to no cleanup.
+- Success (exit code 0) → record "Signalled runner PID `<PID>` (SIGTERM)" for the summary.
+- Failure (non-zero exit) → the command writes a clean error token (e.g., `EPERM`) to stderr. Capture stderr as `<reason>` and record "Failed to signal PID `<PID>`: `<reason>`" for the summary. **Continue to Step 6** — partial cleanup is preferable to no cleanup.
 
 Do not wait for the process to exit. SIGTERM is fire-and-forget.
 

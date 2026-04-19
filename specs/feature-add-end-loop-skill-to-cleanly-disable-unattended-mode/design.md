@@ -59,7 +59,7 @@ Reference `steering/structure.md` for the plugin layer architecture.
    - Parse attempt wrapped in try/catch — malformed JSON is opaque
    - On success, extract integer `runnerPid`
 5. For a valid runnerPid: check liveness via `node -e "try { process.kill(<pid>, 0); } catch { process.exit(1); }"`
-   - Exit 0 → alive → attempt SIGTERM via `node -e "process.kill(<pid>, 'SIGTERM')"`
+   - Exit 0 → alive → attempt SIGTERM via `node -e "try { process.kill(<pid>, 'SIGTERM'); } catch (e) { console.error(e.code || e.message); process.exit(1); }"`
    - SIGTERM failure → capture error code/message, continue to deletion
    - Exit 1 → dead → skip signalling silently
 6. Delete both files with `rm -f` (tolerates missing files)
@@ -85,7 +85,7 @@ name: end-loop
 description: "Stop unattended mode and clear runner state. Use when user says 'end loop', 'stop loop', 'kill the runner', 'exit unattended mode', 'disable unattended mode', 'cleanup runner artifacts', or 'stop SDLC automation'. Pairs with /run-loop — signals the runner PID (if live) and removes .claude/unattended-mode and .claude/sdlc-state.json."
 argument-hint: ""
 disable-model-invocation: true
-allowed-tools: Read, Glob, Bash(test:*), Bash(node:*), Bash(rm:*), Bash(ls:*)
+allowed-tools: Read, Bash(test:*), Bash(node:*), Bash(rm:*), Bash(ls:*)
 ---
 ```
 
