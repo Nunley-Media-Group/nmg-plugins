@@ -2,25 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## Versioning Policy
+
+This project uses semantic versioning with a deliberate convention: **bug fixes bump patch, enhancements bump minor — even when an enhancement introduces a breaking change**. Breaking changes are not auto-promoted to a major bump; instead, they are called out prominently in the changelog entry (look for `(BREAKING)` next to the section heading and migration notes inline).
+
+Major-version bumps are reserved for explicit, manual maintenance milestones and are never produced automatically by `/open-pr` or the SDLC runner.
+
+### Version Reset (2026-04-18)
+
+The version line was reset on 2026-04-18 from a runaway 1.0.0 → 9.0.0 sequence (caused by automatic major bumps on every breaking change) to a clean 1.x.y line that reflects the bug-vs-enhancement convention above. All historical entries below have been renumbered into the new sequence; their dates and content are unchanged. Existing installs that pinned `9.0.0` will not auto-update past `1.x.y` and must reinstall the plugin.
+
 ## [Unreleased]
 
 ### Fixed
 
 - **Deterministic version bump now updates stack-specific JSON files** (`scripts/sdlc-runner.mjs`) — three bugs prevented `plugins/nmg-sdlc/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` from being bumped alongside `VERSION` (surfaced when the 8.1.1 bump commit touched only `VERSION` + `CHANGELOG.md`, leaving the three version fields desynchronized until the next LLM-driven `/open-pr` bump corrected them). Fixes: (1) the `## Versioning` section regex now stops at `\n### ` so the `### Version Bump Classification` subsection's `Label | Bump Type` table is no longer parsed as versioned-file rows (eliminating the spurious `Label` / `bug` / `enhancement` warnings); (2) table cells now have surrounding backticks stripped so `` `plugins/nmg-sdlc/.claude-plugin/plugin.json` `` resolves to the real path instead of tripping `fs.existsSync` → "versioned file not found"; (3) the JSON dot-path navigator now supports array-index segments like `plugins[0].version` (required by `.claude-plugin/marketplace.json`).
 
-## [9.0.0] - 2026-04-18
+## [1.49.1] - 2026-04-18
 
 ### Fixed
 
 - **SDLC runner no longer false-positives on "permission denied" substring** (issue #133) — removed the duplicate `/permission denied/i` regex from `IMMEDIATE_ESCALATION_PATTERNS` in `scripts/sdlc-runner.mjs`. The structured `permission_denials` array from the stream-json `result` event (inspected by `detectSoftFailure` with `BENIGN_DENIED_TOOLS` and ephemeral-tmpdir filtering) is now the single authoritative signal for permission-denial escalation. Motivated by agentchrome issue #181, where the literal phrase appeared in a tool-result payload with `permission_denials: []` and hard-escalated a successful verify step into a bounce-loop exit. Regression tests added in `scripts/__tests__/sdlc-runner.test.mjs` pin both directions (phrase ignored; real non-benign denial still escalates via soft-failure).
 
-## [8.1.0] - 2026-04-18
+## [1.49.0] - 2026-04-18
 
 ### Added
 
 - **`/open-pr` interactive CI monitor + auto-merge** (issue #128) — after PR creation in interactive mode, the skill now offers an opt-in Step 7 that mirrors the unattended runner's semantics: `AskUserQuestion` prompts the user with "Yes, monitor CI and auto-merge" / "No, I'll handle it". On opt-in, the skill polls `gh pr checks <num> --json name,state,link` every 30 seconds (`sleep 30` via `Bash(sleep:*)`) up to 30 minutes / 60 polls, matching `scripts/sdlc-runner.mjs` line 937. Pre-merge `gh pr view --json mergeable,mergeStateStatus` check guards against non-`CLEAN` states. On all-success + `CLEAN`: captures branch name via `git rev-parse --abbrev-ref HEAD`, then runs `gh pr merge <num> --squash --delete-branch`, `git checkout main`, and `git branch -D <branch>`, printing `Merged and cleaned up — you are back on main.`. Terminal failures (`FAILURE`, `CANCELLED`, `TIMED_OUT`), non-`CLEAN` mergeability, and polling timeout print each failing check's name + details URL and exit without merging or deleting the branch. `No CI configured — skipping auto-merge.` is printed when `gh pr checks` returns an empty JSON array (graceful-skip per retrospective learning on absent integrations). Opt-out reuses the existing "Next step: Wait for CI to pass…" guidance unchanged. When `.claude/unattended-mode` exists, Step 7 is actively suppressed — the skill MUST NOT prompt, poll, or merge — preserving runner ownership of CI monitoring and merging.
 
-## [8.0.0] - 2026-04-18
+## [1.48.0] - 2026-04-18
 
 ### Changed
 
@@ -28,13 +38,13 @@ All notable changes to this project will be documented in this file.
 
 - **Blanket `maxTurns` floor bump** (issue #130 addendum, motivated by incident #181) — per-step turn budgets raised to conservative floors: `startCycle` 5→10, `startIssue` 15→25, `writeSpecs` 40→60, `implement` 100→150, `verify` 60→100, `commitPush` 10→15, `createPR` 30→45, `monitorCI` 40→60, `merge` 5→10. Incident #181 surfaced that `verify` exhausted 60 turns at 819s (well inside its 20-min timeout) — turns, not wall-clock, was the binding constraint. `timeoutMin` values are unchanged this round; future telemetry may warrant time-axis adjustments.
 
-## [7.4.0] - 2026-04-18
+## [1.47.0] - 2026-04-18
 
 ### Changed
 
 - **`/start-issue` dependency-aware selection** (issue #127) — added Step 1a "Dependency Resolution" between issue fetch and selection presentation. Issues with any open declared dependency (via GitHub native sub-issue/tracked-by links or `Depends on: #X` / `Blocks: #Y` body cross-refs) are filtered out; the remainder is topologically sorted using Kahn's algorithm with issue-number ascending tie-breaking. Cycles are handled gracefully (warning + tail placement, no abort). The filter and sort apply in both interactive and unattended mode; unattended auto-select now picks the first unblocked `automatable` issue in topological order. A `Filtered N blocked issues from selection.` session note is emitted before every selection (including when N=0). Fallback chain: GraphQL batch failure → body-only fetch; body failure → skip resolution entirely.
 
-## [7.3.0] - 2026-04-18
+## [1.46.0] - 2026-04-18
 
 ### Added
 
@@ -48,7 +58,7 @@ All notable changes to this project will be documented in this file.
 
 - `/draft-issue` argument hint updated to `"[brief description of the need] [optional Claude Design URL]"`.
 
-## [7.2.0] - 2026-04-18
+## [1.45.0] - 2026-04-18
 
 ### Added
 
@@ -58,19 +68,19 @@ All notable changes to this project will be documented in this file.
 
 - **Standalone `/setup-steering` skill** (issue #124) — absorbed into `/onboard-project`'s Step 2G.3. The `plugins/nmg-sdlc/skills/setup-steering/` directory has been removed; templates relocated to `plugins/nmg-sdlc/skills/onboard-project/templates/`. All references in `/upgrade-project` and `/write-spec` rewritten to point at `/onboard-project`. This maintains the "one skill = one SDLC step" invariant — `/onboard-project` is now the sole entry point for project initialization (greenfield, greenfield-enhancement, brownfield, or already-initialized).
 
-## [7.1.0] - 2026-04-18
+## [1.44.0] - 2026-04-18
 
 ### Added
 
 - **`/end-loop`** — New skill to cleanly disable unattended mode (issue #122). Explicit counterpart to `/run-loop`: sends SIGTERM to the runner PID recorded in `.claude/sdlc-state.json` (if the process is live), then removes both `.claude/unattended-mode` and `.claude/sdlc-state.json`. Idempotent — re-invocation on an already-disabled project reports "already disabled" and exits 0. Handles edge cases robustly: missing `.claude/` directory, malformed state JSON (treated as opaque and still deleted), dead runner PIDs (signalling skipped silently), and SIGTERM failures (surfaced with the PID and OS reason, deletion continues). Permission-denied on a required deletion exits non-zero with a specific-file error. Validates `runnerPid` as a positive integer before passing to `process.kill` to prevent signalling arbitrary processes or process groups.
 
-## [7.0.0] - 2026-04-18
+## [1.43.0] - 2026-04-18
 
 ### Added
 
 - **`/onboard-project`** — New skill for greenfield bootstrap and brownfield spec reconciliation (issue #115). Detects whether a project is greenfield (no code, no specs), brownfield (existing code and closed issues but no specs), or already-initialized, then routes work: delegates to `/setup-steering` for steering docs, optionally to `/init-config` for runner config, and to `/upgrade-project` for already-initialized projects. For brownfield, synthesizes one `specs/{feature,bug}-{slug}/` directory per closed issue — or per consolidated group — using `/write-spec`'s templates read at runtime, with evidence gathered in order from issue body, merged PR body, PR diff, commit messages, and the current implementation. Degrades gracefully when a closed issue has no merged PR (emits spec with `## Known Gaps` section). Honors `.claude/unattended-mode` by auto-accepting consolidation groups and defaults, and logs every auto-decision in the final summary. Supports `--dry-run` to preview without writing files. Post-reconciliation verification confirms each produced spec directory has all four artifact files and flags any referenced source files that no longer exist in the working tree. Pipeline position: runs once per project lifetime, before `/draft-issue`. Plugin version bumped **major** (6.1.0 → 7.0.0) — issue #115 was the last open issue in milestone v5, triggering the milestone-completion major-bump override from `tech.md`.
 
-## [6.1.0] - 2026-04-18
+## [1.42.0] - 2026-04-18
 
 ### Changed (BREAKING)
 
@@ -82,7 +92,7 @@ All notable changes to this project will be documented in this file.
 
 - **Renamed `.claude/migration-exclusions.json` → `.claude/upgrade-exclusions.json`** (issue #121) — naming consistency with the renamed skill. `/upgrade-project` auto-migrates the existing file on first run via `git mv`, preserving declined-section data. The schema is unchanged.
 
-## [6.0.0] - 2026-04-18
+## [1.41.0] - 2026-04-18
 
 ### Changed (BREAKING)
 
@@ -98,7 +108,7 @@ All notable changes to this project will be documented in this file.
 
 - **`/draft-issue` Step 7 soft guard** (issue #116) — on the 4th consecutive `[2] Revise` selection, the menu expands to three options: `[1] Keep revising`, `[2] Reset and re-interview` (returns to Step 5 with classification and milestone preserved), `[3] Accept as-is` (proceeds to issue creation). The skill does not auto-terminate the loop; the user remains in control.
 
-## [5.2.0] - 2026-04-17
+## [1.40.0] - 2026-04-17
 
 ### Changed
 
@@ -106,14 +116,14 @@ All notable changes to this project will be documented in this file.
 
   **Migration:** If you previously created `.claude/auto-mode` manually to enable headless mode, rename or recreate it as `.claude/unattended-mode`. Users who run the pipeline only via `/run-loop` or `sdlc-runner.mjs` do not need to take action — the runner creates and removes the flag automatically.
 
-## [5.1.0] - 2026-04-16
+## [1.39.0] - 2026-04-16
 
 ### Changed
 
 - Rewrote ~40 historical specs in `.claude/specs/` to remove stale references to OpenClaw integration (removed in v4.1.0) and Discord posting, replace `openclaw/scripts/` paths with `scripts/`, drop references to the renamed/removed `generating-openclaw-config` and `installing-openclaw-skill` skills, resolve dangling `feature-openclaw-runner-operations` cross-references, and align automatic-major-bump descriptions with the v4.3.0 manual-only behavior
 - Removed the legacy `postDiscord()` pass-through from `scripts/sdlc-runner.mjs`; status notifications now go directly through `log()` as `[STATUS]` lines (behavior unchanged)
 
-## [5.0.0] - 2026-04-16
+## [1.38.0] - 2026-04-16
 
 ### Changed (BREAKING)
 
@@ -143,39 +153,39 @@ All notable changes to this project will be documented in this file.
 - If you previously ran `/creating-issues`, now run `/draft-issue` — same behavior, new name
 - Automation scripts that invoke these skills by slash-command name must be updated to the new names
 
-## [4.3.2] - 2026-04-16
+## [1.37.2] - 2026-04-16
 
 ### Fixed
 
 - **`sdlc-runner.mjs`** — Fixed `detectAndHydrateState()` skipping steps after SIGTERM auto-push: the shutdown handler's commit+push made artifact probing think step 6 was complete even if the runner was mid-step-3; now persists a `signalShutdown` flag in state and caps the probed `lastCompletedStep` to the state file's value on resume
 
-## [4.3.1] - 2026-04-15
+## [1.37.1] - 2026-04-15
 
 ### Fixed
 
 - **`sdlc-runner.mjs`** — Fixed `ReferenceError: Cannot access 'LOG_DIR' before initialization` TDZ bug: `LOG_DIR`, `MAX_LOG_DISK_BYTES`, and `ORCHESTRATION_LOG` were declared with `let` after their first assignment inside the `if (isMainModule)` block; moved declarations to join the other module-level variables
 - **Tests** — Removed stale `performs major bump when last issue in milestone` test that tested removed major-bump functionality
 
-## [4.3.0] - 2026-04-15
+## [1.37.0] - 2026-04-15
 
 ### Changed
 
 - **`sdlc-runner.mjs`** — Removed automatic major version bumps; `performDeterministicVersionBump()` no longer checks milestone completion or increments the major version — only patch (bug) and minor (default) bumps are applied; major version changes must be done manually
 
-## [4.2.1] - 2026-04-15
+## [1.36.1] - 2026-04-15
 
 ### Fixed
 
 - **All SDLC skills** — Every step now outputs the next slash command to guide users through the workflow; `/draft-issue` was incorrectly pointing to `/write-spec` instead of `/start-issue`, and `/start-issue` had no next-step guidance at all
 - **All SDLC skills** — "Integration with SDLC Workflow" diagrams updated to include `/start-issue` in the chain (was omitted from 6 of 9 skills)
 
-## [4.2.0] - 2026-04-15
+## [1.36.0] - 2026-04-15
 
 ### Improved
 
 - **`/write-spec` review gates** — All three phase gates (Requirements, Design, Tasks) now present structured inline summaries with full spec detail so users can evaluate proposals without opening the markdown files; replaced open-ended questions with a numbered `[1] Approve / [2] Revise` menu
 
-## [4.1.0] - 2026-04-15
+## [1.35.0] - 2026-04-15
 
 ### Removed
 
@@ -191,27 +201,27 @@ All notable changes to this project will be documented in this file.
 - **`/installing-locally`** — Removed OpenClaw skill sync (Step 5) and gateway restart (Step 6)
 - **README.md** — Rewrote Automation Mode section; removed OpenClaw setup steps, skills table, and references
 
-## [4.0.3] - 2026-04-15
+## [1.34.3] - 2026-04-15
 
 ### Fixed
 
 - **`/run-loop`** — Trimmed dead auto-trigger phrases from skill description (skill uses `disable-model-invocation: true`); added `Bash(CLAUDECODE:*)` to `allowed-tools` to cover the `CLAUDECODE="" node ...` command pattern that was blocked by the previous `Bash(node:*)` pattern; replaced `cat` instruction with Read tool
 - **`sdlc-runner.mjs`** — Extracted shared helpers to eliminate duplication: `findFeatureDir()` replaces 4 inline feature-directory lookups, `checkRequiredSpecFiles()` replaces 3 inline spec-file checks, `parseMaxBounceRetries()` replaces 2 identical IIFEs, `classifyBumpType()` extracts 40-line nested classification from `performDeterministicVersionBump()` into flat early-return style, `runValidationGate()` consolidates identical retry-or-escalate boilerplate from post-step gates (steps 3, 6, 8); merged duplicate `isMainModule` blocks to eliminate redundant config re-read from disk
 
-## [4.0.2] - 2026-03-15
+## [1.34.2] - 2026-03-15
 
 ### Fixed
 
 - **Skills** — Removed `model:` frontmatter field from all 12 skills to prevent model-switch rate limit errors when invoking skills via `/`; skills now inherit the session model instead of overriding it (issue #111)
 - **Skills** — Added `disable-model-invocation: true` to 4 slash-command-only skills (`run-loop`, `installing-openclaw-skill`, `generating-openclaw-config`, `run-retro`) to reduce always-in-context token overhead (issue #111)
 
-## [4.0.1] - 2026-03-15
+## [1.34.1] - 2026-03-15
 
 ### Fixed
 
 - **Skills** — Superseded by 4.0.2 — initial attempt pinned skills to explicit model IDs but did not address the root cause (model-switch rate limit bucket issue)
 
-## [4.0.0] - 2026-03-03
+## [1.34.0] - 2026-03-03
 
 ### Added
 
@@ -220,14 +230,14 @@ All notable changes to this project will be documented in this file.
 - **`/setup-steering`** tech.md template — `## Verification Gates` section scaffolded for new projects, with condition/action/pass-criteria table and usage guidance
 - **README.md** — Verification Gates convention documented with example table and status semantics
 
-## [3.1.1] - 2026-02-26
+## [1.33.1] - 2026-02-26
 
 ### Fixed
 
 - **`sdlc-runner.mjs`** — Runner now self-heals projects where `.claude/sdlc-state.json` was committed before the gitignore fix (#57): `untrackRunnerArtifactsIfTracked()` runs `git rm --cached` on already-tracked runner artifacts at startup, making `.gitignore` effective
 - **`/start-issue`** — Step 4 working-tree check now filters known SDLC runner artifacts (`.claude/sdlc-state.json`, `.claude/auto-mode`) from `git status --porcelain` output before evaluating dirtiness, preventing false "Working tree is not clean" aborts when only runner state files are modified
 
-## [3.1.0] - 2026-02-26
+## [1.33.0] - 2026-02-26
 
 ### Added
 
@@ -238,31 +248,31 @@ All notable changes to this project will be documented in this file.
 
 - **`sdlc-runner.mjs`** — Table row parsing regex in `performDeterministicVersionBump()` now uses `[^|\n]` instead of `[^|]` to prevent cross-line matching in Markdown tables, fixing incorrect version bump classification when the `## Versioning` section contains both a file mapping table and a `### Version Bump Classification` table
 
-## [3.0.0] - 2026-02-25
+## [1.32.0] - 2026-02-25
 
 ### Added
 
 - **`/migrate-project`** — Step 5 now detects config value drift: scalar values present in both `sdlc-config.json` and the template that differ are surfaced in a new "Config Value Drift" summary section; in interactive mode, users select per-value via `AskUserQuestion multiSelect` which drifted values to update to the template default; in auto-mode, drift is reported only (no automatic updates, as drifted values may represent intentional customizations) (issue #95)
 
-## [2.22.0] - 2026-02-25
+## [1.31.0] - 2026-02-25
 
 ### Added
 
 - **`sdlc-runner.mjs`** — Post-Step 3 spec content structure validation: `validateSpecContent()` checks that `requirements.md` contains `**Issues**:` frontmatter and at least one `### AC` heading, and that `tasks.md` contains at least one `### T` task heading; content validation failures trigger a Step 3 retry with per-file, per-check detail in the retry context (issue #90)
 
-## [2.21.0] - 2026-02-25
+## [1.30.0] - 2026-02-25
 
 ### Added
 
 - **`/start-issue`** — Diagnostic output when zero automatable issues are found in auto-mode: runs a scoped `gh issue list` without the label filter and reports the total open issue count; if open issues exist without the label, suggests adding the `automatable` label; if no open issues exist, reports "0 open issues in scope" without a misleading label suggestion (issue #89)
 
-## [2.20.0] - 2026-02-25
+## [1.29.0] - 2026-02-25
 
 ### Added
 
 - **`sdlc-config.example.json`** — `maxBounceRetries` field added alongside `maxRetriesPerStep` so operators can tune the bounce-loop halt threshold without modifying the runner source (issue #88)
 
-## [2.19.0] - 2026-02-25
+## [1.28.0] - 2026-02-25
 
 ### Added
 
@@ -274,43 +284,43 @@ All notable changes to this project will be documented in this file.
 - **`sdlc-runner.mjs`** — `performDeterministicVersionBump()` now reads classification from the `tech.md` Version Bump Classification table instead of hardcoded if-else logic; falls back to `bug → patch / else → minor` if the subsection is absent
 - **`sdlc-runner.mjs`** — `MAX_BOUNCE_RETRIES` is now configurable independently from `maxRetriesPerStep` via the `maxBounceRetries` config key; precondition failure log messages now include a `failedCheck` label and step key for clearer debugging visibility
 
-## [2.18.1] - 2026-02-25
+## [1.27.6] - 2026-02-25
 
 ### Fixed
 
 - **SDLC runner** — `detectSoftFailure()` now scans stdout/stderr for known text-based failure patterns (e.g., `EnterPlanMode` in headless session, `AskUserQuestion` in auto-mode); text-pattern matches are treated as soft failures with the same retry/escalation behavior as JSON-detected failures, and matched patterns are included in Discord status messages for debugging visibility
 
-## [2.18.0] - 2026-02-25
+## [1.27.5] - 2026-02-25
 
 ### Fixed
 
 - **`/verify-code`** — Exercise script now resolves the Agent SDK from non-standard locations (e.g., npx cache) using dynamic `import()` with `pathToFileURL`, replacing the bare ESM specifier that failed when the SDK was outside the `node_modules` hierarchy; availability check updated to use the same path-resolving mechanism, eliminating false positives
 
-## [2.17.4] - 2026-02-25
+## [1.27.4] - 2026-02-25
 
 ### Fixed
 
 - **`/verify-code`** — Exercise prompt structure now places the skill invocation at the start of the prompt with dry-run instructions appended after (prefixed with "IMPORTANT:"), fixing skill recognition failure for skills with `disable-model-invocation: true`
 
-## [2.17.3] - 2026-02-24
+## [1.27.3] - 2026-02-24
 
 ### Fixed
 
 - **`/write-code`** — Missing specs error path now checks for `.claude/auto-mode`; in auto-mode, outputs an escalation message ending with "Done. Awaiting orchestrator." instead of calling `AskUserQuestion`, preventing headless sessions from hanging
 
-## [2.17.2] - 2026-02-24
+## [1.27.2] - 2026-02-24
 
 ### Fixed
 
 - **`/start-issue`** — Skill now runs `git status --porcelain` as a precondition before `gh issue develop`; aborts with a diagnostic error listing dirty files in interactive mode; in auto-mode, reports as an escalation reason for the runner
 
-## [2.17.1] - 2026-02-24
+## [1.27.1] - 2026-02-24
 
 ### Fixed
 
 - **`/migrate-project`** — Skill now detects legacy `{issue#}-{slug}/` spec directories and proposes renaming them to `feature-{slug}/` or `bug-{slug}` using `git mv`; auto-mode applies solo renames as non-destructive operations; cross-reference updates use `Grep`/`Edit` with chain resolution
 
-## [2.17.0] - 2026-02-23
+## [1.27.0] - 2026-02-23
 
 ### Changed
 
@@ -318,19 +328,19 @@ All notable changes to this project will be documented in this file.
 - **SDLC runner** — Removed `resolveImplementPhaseConfig()` and `runImplementStep()` (legacy plan/code split); plan/code sub-objects in config are silently ignored
 - **SDLC runner** — Increased `createPR` default `maxTurns` from 15 to 30 in example config
 
-## [2.16.2] - 2026-02-23
+## [1.26.2] - 2026-02-23
 
 ### Fixed
 
 - **`/open-pr`** — Skill no longer fails when spec files are missing; falls back to extracting acceptance criteria from the GitHub issue body, omits the "Specs" section, and includes a warning in the PR body
 
-## [2.16.1] - 2026-02-23
+## [1.26.1] - 2026-02-23
 
 ### Fixed
 
 - **`/migrate-project` auto-mode support** — Skill now applies non-destructive changes automatically and skips destructive operations (consolidation, renames, deletes) with a machine-readable summary when `.claude/auto-mode` is present, instead of hanging on `AskUserQuestion` in headless sessions
 
-## [2.16.0] - 2026-02-23
+## [1.26.0] - 2026-02-23
 
 ### Added
 
@@ -338,7 +348,7 @@ All notable changes to this project will be documented in this file.
 - **Automation-eligible issue filtering** — `/start-issue` in auto-mode now filters `gh issue list` with `--label automatable`; if no automatable issues are found, it exits cleanly instead of picking a non-automatable issue
 - **Spec directory cleanup** — Remaining numbered spec directories (`{issue#}-{slug}/`) renamed to feature-centric format (`feature-{slug}/`, `bug-{slug}/`) and retrospective path references updated accordingly
 
-## [2.15.0] - 2026-02-22
+## [1.25.0] - 2026-02-22
 
 ### Added
 
@@ -352,7 +362,7 @@ All notable changes to this project will be documented in this file.
 - **Legacy frontmatter migration** — `/migrate-project` detects feature specs with singular `**Issue**` frontmatter and proposes updating to plural `**Issues**` with a `## Change History` section
 - **Downstream compatibility** — `/write-code` and `/verify-code` spec resolution searches both new `feature-`/`bug-` naming and legacy `{issue#}-{slug}` patterns; multi-issue frontmatter (`**Issues**`) searched first with fallback to singular `**Issue**`
 
-## [2.14.0] - 2026-02-22
+## [1.24.0] - 2026-02-22
 
 ### Added
 
@@ -374,13 +384,13 @@ All notable changes to this project will be documented in this file.
 - **`/write-code`** — Step 5 now delegates to `spec-implementer` agent via Task tool in interactive mode; auto-mode continues to work inline
 - **README.md** — Added "Model & Effort Configuration" section with recommendations table and configuration layer documentation
 
-## [2.13.0] - 2026-02-22
+## [1.23.0] - 2026-02-22
 
 ### Added
 
 - **`/run-retro`** — SHA-256 content hashing and state tracking (`retrospective-state.json`) so unchanged defect specs are skipped on subsequent runs; carried-forward learnings extracted from existing `retrospective.md` tables; output summary now shows spec partition breakdown (new/modified/skipped/removed) and learning source breakdown (new vs. carried forward)
 
-## [2.12.13] - 2026-02-22
+## [1.22.12] - 2026-02-22
 
 ### Fixed
 
@@ -388,79 +398,79 @@ All notable changes to this project will be documented in this file.
 - **`/write-spec`** — Phase 1 Step 7 Related Spec search now filters out defect specs (checks first heading for `# Defect Report:`) and follows defect chains to find the root feature spec when no feature spec directly matches keywords
 - **`/migrate-project`** — New Step 4a validates `Related Spec` links in defect specs: checks target existence, verifies target is a feature spec, follows chains through defect specs, detects circular references, and presents corrections for user approval
 
-## [2.12.12] - 2026-02-20
+## [1.22.11] - 2026-02-20
 
 ### Fixed
 
 - **`/migrate-project`** — Missing template sections are now filtered by codebase evidence (glob-based relevance heuristics) before being proposed; users can approve or decline individual sections via `multiSelect`; declined sections are persisted in `.claude/migration-exclusions.json` and skipped on future runs
 
-## [2.12.11] - 2026-02-20
+## [1.22.10] - 2026-02-20
 
 ### Fixed
 
 - **`openclaw/scripts/sdlc-runner.mjs`** — Removed fragile `#N` regex fallback in `extractStateFromStep` that could match stale issue numbers from previous cycles in conversation transcripts; issue number is now derived exclusively from the branch name (ground truth); added `git clean -fd && git checkout -- .` working tree cleanup to step 1 prompt to prevent cross-cycle file contamination
 
-## [2.12.10] - 2026-02-20
+## [1.22.9] - 2026-02-20
 
 ### Fixed
 
 - **`openclaw/scripts/sdlc-runner.mjs`** — Version bumping during automated SDLC runs is now deterministic: added `validateVersionBump()` postcondition that detects missing version bumps after PR creation (Step 7), and `performDeterministicVersionBump()` recovery function that reads `VERSION`, issue labels, milestone, and `.claude/steering/tech.md` to compute and commit the correct bump; Step 7 prompt reinforced with explicit version bump mandate as defense-in-depth
 
-## [2.12.9] - 2026-02-19
+## [1.22.8] - 2026-02-19
 
 ### Fixed
 
 - **`/start-issue`** — Milestone selection no longer iterates through random milestones; now fetches milestones with `open_issues` metadata, filters to viable milestones, and applies deterministic 3-way selection (zero → fallback to all issues, one → auto-select, multiple → present to user or pick first alphabetically in auto-mode)
 
-## [2.12.8] - 2026-02-19
+## [1.22.7] - 2026-02-19
 
 ### Fixed
 
 - **`openclaw/scripts/sdlc-runner.mjs`** — Runner now ensures `.claude/auto-mode` and `.claude/sdlc-state.json` are listed in the target project's `.gitignore` before creating runner artifacts, preventing `git add -A` from staging and committing them to the target project
 
-## [2.12.7] - 2026-02-16
+## [1.22.6] - 2026-02-16
 
 ### Fixed
 
 - **`/run-retro`** — Severity grep pattern updated from plain `Severity:` to regex `\*{0,2}Severity\*{0,2}:` to match both bold-formatted (`**Severity**: High`) and plain (`Severity: High`) fields in defect specs; also fixed Related Spec field reference to use bold-formatted variant from defect template
 
-## [2.12.6] - 2026-02-16
+## [1.22.5] - 2026-02-16
 
 ### Fixed
 
 - **`/write-spec`** — Defect variant now actively searches `.claude/specs/*/requirements.md` for related feature specs by keyword matching (file paths, function names, component names) instead of relying on passive agent intuition; populates the **Related Spec** field with any match or N/A if none found
 
-## [2.12.5] - 2026-02-16
+## [1.22.4] - 2026-02-16
 
 ### Fixed
 
 - **`openclaw/scripts/sdlc-runner.mjs`** — Process cleanup rewritten to use PID tree killing instead of `pkill -f`: kills entire process trees (all descendants) for each matched PID, uses filtered PID list directly instead of re-matching with `pkill`, tracks `lastClaudePid` to scope cleanup to runner-spawned processes, falls back to pattern-based matching for orphaned processes (PPID=1), and always emits `[CLEANUP]` log entries
 
-## [2.12.4] - 2026-02-16
+## [1.22.3] - 2026-02-16
 
 ### Fixed
 
 - **`openclaw/scripts/sdlc-runner.mjs`** — SDLC runner infinite retry when repo has no CI checks: `gh pr checks` exits code 1 with "no checks reported" on repos without CI workflows; Steps 8 (monitorCI) and 9 (merge) now detect this and treat it as a passing condition instead of retrying indefinitely
 
-## [2.12.3] - 2026-02-16
+## [1.22.2] - 2026-02-16
 
 ### Fixed
 
 - **`/migrate-project`** — Skill now explicitly ignores `.claude/auto-mode` and always presents proposed changes for interactive review via `AskUserQuestion`, matching the original spec's out-of-scope declaration that migration is always interactive
 
-## [2.12.2] - 2026-02-16
+## [1.22.1] - 2026-02-16
 
 ### Fixed
 
 - **`openclaw/scripts/sdlc-runner.mjs`** — 6 edge case bugs: `currentProcess` never assigned so SIGTERM couldn't kill subprocess (F1); `Atomics.wait()` blocking event loop during Discord retry (F2); incomplete shell escaping in `autoCommitIfDirty` (F3); uncaught exception on merged-PR `git checkout` with dirty worktree (F4); silent retry counter reset when `--resume` used with missing state file (F5); unused `AbortController` dead code in `runClaude()` (F6)
 
-## [2.12.1] - 2026-02-16
+## [1.22.0] - 2026-02-16
 
 ### Added
 
 - **`/verify-code`** — Exercise-based verification for plugin projects: generates targeted exercises that test plugin capabilities through real usage scenarios instead of relying on traditional test suites
 
-## [2.12.0] - 2026-02-16
+## [1.21.0] - 2026-02-16
 
 ### Added
 
@@ -477,7 +487,7 @@ All notable changes to this project will be documented in this file.
 - **`/open-pr`** — Workflow expanded from 4 to 6 steps (version bump classification as Step 2, version artifact updates as Step 3); PR body includes Version section
 - **`/migrate-project`** — Workflow expanded from 8 to 10 steps (CHANGELOG analysis as Step 7, VERSION analysis as Step 8); "What Gets Analyzed" section updated
 
-## [2.11.0] - 2026-02-16
+## [1.20.0] - 2026-02-16
 
 ### Added
 
@@ -489,7 +499,7 @@ All notable changes to this project will be documented in this file.
 - **Runner orchestration log** moved from hardcoded `/tmp/sdlc-runner.log` (via nohup redirect) to `<logDir>/sdlc-runner.log` via dual-write in `log()` function
 - **`running-sdlc` SKILL.md** updated: removed nohup stdout redirect, added Logging section documenting log location, naming convention, disk limits, and config options
 
-## [2.10.0] - 2026-02-16
+## [1.19.0] - 2026-02-16
 
 ### Added
 
@@ -517,20 +527,20 @@ All notable changes to this project will be documented in this file.
 - **`/write-spec`** — Phase 1 now reads `retrospective.md` (when present) to apply defect-derived learnings when drafting acceptance criteria
 - **`/draft-issue`** — Interview questions now branch explicitly by issue type instead of adapting passively; workflow expanded from 6 steps to 8 steps (classification and investigation inserted as Steps 2–3); auto-mode references updated accordingly
 
-## [2.4.0] - 2026-02-14
+## [1.18.0] - 2026-02-14
 
 ### Added
 
 - **Defect requirements template** — Optional `Related Spec` field linking defect specs back to the original feature spec, improving traceability when bugs are found in previously-specified features
 
-## [2.3.0] - 2026-02-14
+## [1.17.0] - 2026-02-14
 
 ### Changed
 
 - Renamed `/installing-openclaw-plugin` skill to `/installing-openclaw-skill`
 - Restructured README automation section with clear 4-step OpenClaw setup guide
 
-## [2.2.0] - 2026-02-14
+## [1.16.0] - 2026-02-14
 
 ### Added
 
@@ -541,13 +551,13 @@ All notable changes to this project will be documented in this file.
 - **`/verify-code`** — Bug Fix Verification guidance: reproduction check, `@regression` scenario validation, blast radius focus, minimal change audit
 - **Templates** — Defect Requirements Variant (reproduction, expected vs actual, severity, lightweight FRs), Defect Design Variant (root cause analysis, fix strategy, blast radius, regression risk), Defect Tasks Variant (flat T001–T003: fix/test/verify), Defect Regression Scenarios (Gherkin with `@regression` tags)
 
-## [2.1.8] - 2026-02-14
+## [1.15.1] - 2026-02-14
 
 ### Fixed
 
 - **`openclaw/scripts/sdlc-runner.mjs`** — Runner now auto-detects in-progress work from git state on every startup; inspects branch name, specs, commits, PR status, and CI to hydrate state from reality, preventing loss of context when restarting on a feature branch
 
-## [2.1.7] - 2026-02-14
+## [1.15.0] - 2026-02-14
 
 ### Fixed
 
@@ -558,26 +568,26 @@ All notable changes to this project will be documented in this file.
 - **`openclaw/scripts/patch-openclaw-message-hang.mjs`** — Idempotent patch script that fixes the `openclaw message send` hang bug by adding `process.exit(0)` to the `runMessageAction` helper in the installed openclaw CLI
 - **`/installing-openclaw-skill`** — New Step 3 automatically runs the patch script to fix the openclaw CLI hang bug if present; added `Bash(node:*)` to allowed tools
 
-## [2.1.6] - 2026-02-14
+## [1.14.3] - 2026-02-14
 
 ### Fixed
 
 - **`/generating-openclaw-config`** — Now also adds `.claude/sdlc-state.json` to `.gitignore` alongside `sdlc-config.json`
 
-## [2.1.5] - 2026-02-14
+## [1.14.2] - 2026-02-14
 
 ### Fixed
 
 - **`openclaw/scripts/sdlc-runner.mjs`** — Discord status posts intermittently failed with ETIMEDOUT due to single-attempt 15s timeout; added 3-attempt retry with exponential backoff (2s, 4s) and bumped timeout to 30s
 
-## [2.1.4] - 2026-02-14
+## [1.14.1] - 2026-02-14
 
 ### Fixed
 
 - **`openclaw/scripts/sdlc-runner.mjs`** — Resume started from the in-progress step instead of the next step, causing completed work to be re-run; added `lastCompletedStep` state tracking so `--resume` correctly skips already-finished steps
 - **`openclaw/scripts/sdlc-runner.mjs`** — Signal handler reset `currentStep` to 0 on graceful shutdown, losing progress; now preserves `lastCompletedStep` so the runner can resume from where it left off
 
-## [2.1.3] - 2026-02-14
+## [1.14.0] - 2026-02-14
 
 ### Fixed
 
@@ -591,7 +601,7 @@ All notable changes to this project will be documented in this file.
 - **`openclaw/README.md`** — Documented `--discord-channel` flag, Discord channel auto-detection, and `discordChannelId` config option
 - **`README.md`** — Updated direct-run example with `--discord-channel` flag and auto-detection note
 
-## [2.1.2] - 2026-02-14
+## [1.13.0] - 2026-02-14
 
 ### Changed
 
@@ -599,13 +609,13 @@ All notable changes to this project will be documented in this file.
 - **`openclaw/skills/running-sdlc/SKILL.md`** — Documented in README Skills Reference with `--config <path>` argument and link to `openclaw/README.md`
 - **`README.md`** — Fixed `/generating-openclaw-config` description (writes to file, not clipboard) and usage (no path argument); added `--config` argument and `openclaw/README.md` link to OpenClaw Skills table
 
-## [2.1.1] - 2026-02-14
+## [1.12.0] - 2026-02-14
 
 ### Moved
 
 - **`/generating-openclaw-config`** — Moved from repo-level skill (`.claude/skills/`) to plugin skill (`plugins/nmg-sdlc/skills/`) so it's available in all projects with nmg-sdlc installed
 
-## [2.1.0] - 2026-02-14
+## [1.11.0] - 2026-02-14
 
 ### Added
 
@@ -630,13 +640,13 @@ All notable changes to this project will be documented in this file.
 - Watchdog cron prompt engineering (replaced by simple PID check or script crash recovery)
 - All prompt-based state management, retry counting, timeout detection, and Discord posting logic
 
-## [2.0.2] - 2026-02-14
+## [1.10.1] - 2026-02-14
 
 ### Fixed
 
 - **Spec alignment hook** — Add `command`-type gate that short-circuits when no spec files exist, avoiding expensive agent spawns on every Write/Edit in projects without specs
 
-## [1.12.0] - 2026-02-13
+## [1.10.0] - 2026-02-13
 
 ### Changed
 
@@ -680,14 +690,14 @@ All notable changes to this project will be documented in this file.
 - Add top-level `description` to hooks.json
 - Fix `generating-prompt` skill's `Bash(cat * | *)` allowed-tools pattern to standard `Bash(cat:*)`
 
-## [1.10.1] - 2026-02-13
+## [1.9.1] - 2026-02-13
 
 ### Fixed
 
 - Prevent `EnterPlanMode` from being called in headless automation sessions
 - Use per-step stall timeouts instead of flat 5-minute threshold in OpenClaw automation prompt
 
-## [1.10.0] - 2026-02-13
+## [1.9.0] - 2026-02-13
 
 ### Added
 
@@ -699,7 +709,7 @@ All notable changes to this project will be documented in this file.
 - Added `{{NMG_PLUGINS_PATH}}` template token to `/generating-prompt`
 - All skills with "Next step" output — suppressed in auto-mode to prevent unintended skill chaining
 
-## [1.8.1] - 2026-02-12
+## [1.8.0] - 2026-02-12
 
 ### Added
 
@@ -775,7 +785,7 @@ All notable changes to this project will be documented in this file.
 - **`/beginning-dev`** — Now delegates issue selection and branch setup to `/start-issue` instead of handling inline
 - **README** — Added Automation Mode section documenting hooks, enable/disable, default behaviors, and OpenClaw example
 
-## [1.3.1] - 2026-02-11
+## [1.4.0] - 2026-02-11
 
 ### Changed
 
@@ -790,7 +800,7 @@ All notable changes to this project will be documented in this file.
 - **`/verify-code`** — Report restructured: "Issues Found" replaced with "Fixes Applied" and "Remaining Issues" sections
 - **`/verify-code`** — New Step 6 (Fix Findings) with prioritization, test-after-fix, re-verification, and deferral workflow
 
-## [1.2.1] - 2026-02-10
+## [1.2.0] - 2026-02-10
 
 ### Changed
 
@@ -800,7 +810,7 @@ All notable changes to this project will be documented in this file.
 
 - Spec alignment hook now returns expected `{ok, reason}` JSON format and references `$ARGUMENTS` for edit context
 
-## [1.2.0] - 2026-02-10
+## [1.1.0] - 2026-02-10
 
 ### Added
 
