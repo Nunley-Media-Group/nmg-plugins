@@ -10,6 +10,8 @@ Major-version bumps are reserved for explicit, manual maintenance milestones and
 
 ## [Unreleased]
 
+## [1.50.0] - 2026-04-19
+
 ### Changed
 
 - **`/open-pr` no longer auto-promotes to a major bump when an issue is the last one open in its milestone** (issue #139) — Step 2.4 (the `gh api .../milestones --jq '.open_issues'` query plus major-override) has been deleted from `plugins/nmg-sdlc/skills/open-pr/SKILL.md`. Bump type is now determined **solely** by the label-based classification matrix in `steering/tech.md` (`bug` → patch, `enhancement` → minor, unlabeled → minor). Developers who want a major bump must opt in explicitly — see the new `--major` flag below.
