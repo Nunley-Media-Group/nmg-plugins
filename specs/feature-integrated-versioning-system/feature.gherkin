@@ -12,60 +12,60 @@ Feature: Integrated Versioning System
 
   Scenario: AC1 - Milestone assignment during issue creation (happy path)
     Given a developer is creating an issue via /draft-issue
-    And the project VERSION file contains "2.3.1"
+    And the project VERSION file contains "1.5.1"
     When the interview reaches the milestone question
-    Then the skill presents milestone "v2" as the default option
+    Then the skill presents milestone "v1" as the default option
     And allows the developer to specify a different milestone number
     And assigns the created issue to the chosen milestone
 
   Scenario: AC2 - Milestone auto-creation when milestone does not exist
     Given a developer specifies milestone "3" during /draft-issue
-    And no "v3" milestone exists on the GitHub repository
+    And no "v2" milestone exists on the GitHub repository
     When the issue is created
-    Then the skill creates the "v3" milestone via gh CLI
+    Then the skill creates the "v2" milestone via gh CLI
     And assigns the issue to the newly created milestone
 
   # --- Version Bump Classification (PR Creation) ---
 
   Scenario: AC3 - Patch bump for bug fixes
     Given a developer runs /open-pr for an issue with the "bug" label
-    And the current VERSION is "2.3.1"
+    And the current VERSION is "1.5.1"
     When the skill determines the version impact
     Then it classifies the change as a patch bump
-    And proposes version "2.3.2"
+    And proposes version "1.5.2"
     And presents the classification to the developer for confirmation or override
 
   Scenario: AC4 - Minor bump for enhancements
     Given a developer runs /open-pr for an issue with the "enhancement" label
-    And the current VERSION is "2.3.1"
+    And the current VERSION is "1.5.1"
     When the skill determines the version impact
     Then it classifies the change as a minor bump
-    And proposes version "2.4.0"
+    And proposes version "1.6.0"
 
   Scenario: AC5 - Major bump via manual override
     Given a developer runs /open-pr for an enhancement issue
-    And the current VERSION is "2.9.1"
-    When /open-pr proposes a minor bump to "2.10.0"
+    And the current VERSION is "1.9.1"
+    When /open-pr proposes a minor bump to "1.10.0"
     And the developer overrides the classification to "Major"
-    Then the version bumps to "3.0.0"
+    Then the version bumps to "2.0.0"
 
   # --- Version Artifact Updates ---
 
   Scenario: AC6 - VERSION file and CHANGELOG update in PR
-    Given /open-pr has determined a minor bump from "2.3.1" to "2.4.0"
+    Given /open-pr has determined a minor bump from "1.5.1" to "1.6.0"
     And CHANGELOG.md has entries under [Unreleased]
     When the PR is being assembled
-    Then the VERSION file is updated to "2.4.0"
-    And CHANGELOG.md [Unreleased] entries are moved under a new "[2.4.0] - 2026-02-16" heading
+    Then the VERSION file is updated to "1.6.0"
+    And CHANGELOG.md [Unreleased] entries are moved under a new "[1.6.0] - 2026-02-16" heading
     And the [Unreleased] section is left empty for future changes
 
   Scenario: AC7 - Steering doc bridge for stack-specific version files
     Given the project's tech.md contains a Versioning section
     And the section lists "package.json" with path "version"
-    And the version bump is to "2.4.0"
+    And the version bump is to "1.6.0"
     When /open-pr updates version files
-    Then the VERSION file is updated to "2.4.0"
-    And package.json "version" field is updated to "2.4.0"
+    Then the VERSION file is updated to "1.6.0"
+    And package.json "version" field is updated to "1.6.0"
 
   # --- Migration ---
 
@@ -96,11 +96,11 @@ Feature: Integrated Versioning System
 
   Scenario: AC10 - Unattended-mode compatibility
     Given .claude/unattended-mode exists in the project
-    And the VERSION file contains "2.3.1"
+    And the VERSION file contains "1.5.1"
     When /draft-issue runs in unattended-mode
-    Then the milestone defaults to "v2" without prompting
+    Then the milestone defaults to "v1" without prompting
     When /open-pr runs in unattended-mode for an enhancement issue
-    Then the version bump to "2.4.0" is applied without confirmation
+    Then the version bump to "1.6.0" is applied without confirmation
 
   # --- Edge Cases ---
 

@@ -25,7 +25,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | Any (macOS, Linux, Windows) |
-| **Version / Commit** | nmg-sdlc plugin v2.17.1 |
+| **Version / Commit** | nmg-sdlc plugin v1.27.1 |
 | **Browser / Runtime** | Claude Code CLI (any version) |
 | **Configuration** | Any project using `/start-issue` |
 

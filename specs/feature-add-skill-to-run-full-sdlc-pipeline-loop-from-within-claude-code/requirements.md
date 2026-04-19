@@ -33,7 +33,7 @@ The nmg-sdlc toolkit provides individual skills for each SDLC phase (`/draft-iss
 **And** upon completing all issues, it outputs a summary listing each issue processed and its final status
 
 **Example**:
-- Given: Milestone `v3` has issues #107 (automatable), #108 (automatable), #109 (not automatable)
+- Given: Milestone `v1` has issues #107 (automatable), #108 (automatable), #109 (not automatable)
 - When: `/nmg-sdlc:run-loop` is invoked
 - Then: Issues #107 and #108 are processed in order; #109 is skipped; summary shows both completed
 
@@ -57,9 +57,9 @@ The nmg-sdlc toolkit provides individual skills for each SDLC phase (`/draft-iss
 **And** it exits cleanly without error
 
 **Example**:
-- Given: Milestone `v3` has 5 open issues, none with `automatable` label
+- Given: Milestone `v1` has 5 open issues, none with `automatable` label
 - When: `/nmg-sdlc:run-loop`
-- Then: Output says "No automatable issues found in milestone v3 (5 open issues exist without the automatable label)"
+- Then: Output says "No automatable issues found in milestone v1 (5 open issues exist without the automatable label)"
 
 ### AC4: Pipeline Failure — Halts and Reports
 

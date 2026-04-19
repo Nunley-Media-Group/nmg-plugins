@@ -24,7 +24,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.3.0) |
-| **Version / Commit** | nmg-plugins v2.12.3 (commit 58e8ecf) |
+| **Version / Commit** | nmg-plugins v1.22.2 (commit 58e8ecf) |
 | **Runner** | `scripts/sdlc-runner.mjs` |
 | **Configuration** | Any repo without `.github/workflows/` or other CI integrations |
 

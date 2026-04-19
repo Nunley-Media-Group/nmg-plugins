@@ -503,7 +503,7 @@ Feature: Per-step model and effort level configuration
 - Changing fallback-chain semantics (`step → global → default`)
 - Creating new skills or slash commands
 - Empirical live SDLC dry-runs as a merge gate (unit tests + docs only for this issue)
-- Backporting defaults to v5 releases
+- Backporting defaults to v1 releases
 - Adding the `max` effort tier to the allowlist — explicit policy exclusion
 - Refactoring any non-runner component
 - Collecting new telemetry before proposing turn values — the AC36 floors are conservative starting points; telemetry-driven tuning is a future issue

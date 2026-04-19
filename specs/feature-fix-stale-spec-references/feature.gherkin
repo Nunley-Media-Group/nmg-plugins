@@ -7,7 +7,7 @@ Feature: Fix Stale Spec References
   As a developer maintaining the nmg-sdlc plugin
   I want all historical specs to describe the current implementation
   So that specs remain trustworthy artifacts without misleading references
-     to removed OpenClaw paths, deleted skills, or the pre-v4.1.0 Discord integration
+     to removed OpenClaw paths, deleted skills, or the pre-v1.35.0 Discord integration
 
   Background:
     Given the cleanup has been applied across specs/ and scripts/sdlc-runner.mjs
@@ -76,8 +76,8 @@ Feature: Fix Stale Spec References
 
   # --- AC6: Automatic major-version bump language ---
 
-  Scenario: Automatic major-version bump language reflects v4.3.0 behavior
-    Given v4.3.0 removed automatic major-version bumps triggered by milestone completion
+  Scenario: Automatic major-version bump language reflects v1.37.0 behavior
+    Given v1.37.0 removed automatic major-version bumps triggered by milestone completion
     When I read any spec describing version-bump behavior
     Then the spec describes major bumps as manual only
     And no text claims milestone completion triggers a major bump

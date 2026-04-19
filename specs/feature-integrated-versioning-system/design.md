@@ -194,13 +194,13 @@ FeatureScreen
 Step 2b: Assign Milestone
 
 1. Check if VERSION file exists in project root:
-   - If yes: read it, extract major version (e.g., "2.3.1" → "2")
+   - If yes: read it, extract major version (e.g., "1.5.1" → "2")
    - If no: default major version is "0"
 
 2. [Manual mode] Ask developer via AskUserQuestion:
    - Question: "Which milestone should this issue be assigned to?"
    - Options: "v{major} (current)" as default, with text input for a different number
-   - Accept a single number (e.g., "3") → normalize to "v3"
+   - Accept a single number (e.g., "3") → normalize to "v2"
 
 3. [Unattended-mode] Default to "v{major}" without prompting
 
@@ -228,7 +228,7 @@ Step 2b: Assign Milestone
 ```
 1. Check if VERSION file exists in project root:
    - If no: skip all version bumping (versioning not initialized for this project)
-   - If yes: read current version string (e.g., "2.3.1")
+   - If yes: read current version string (e.g., "1.5.1")
 
 2. Read issue labels:
    gh issue view #N --json labels --jq '.labels[].name'
@@ -242,9 +242,9 @@ Step 2b: Assign Milestone
    - If neither → MINOR (default for unlabeled changes)
 
 5. Calculate new version:
-   - PATCH: increment Z (2.3.1 → 2.3.2)
-   - MINOR: increment Y, reset Z (2.3.1 → 2.4.0)
-   - MAJOR: increment X, reset Y and Z (2.3.1 → 3.0.0)
+   - PATCH: increment Z (1.5.1 → 1.5.2)
+   - MINOR: increment Y, reset Z (1.5.1 → 1.6.0)
+   - MAJOR: increment X, reset Y and Z (1.5.1 → 2.0.0)
 
 6. [Manual mode] Present classification to developer via AskUserQuestion:
    - "Version bump: {current} → {new} ({bump_type}). Override?"
@@ -368,7 +368,7 @@ If your project has stack-specific files that contain a version string, declare 
 1. After CHANGELOG analysis is complete (depends on Step 6b output)
 
 2. Determine the expected version:
-   a. If CHANGELOG was generated/updated: extract latest versioned heading (e.g., ## [2.4.0])
+   a. If CHANGELOG was generated/updated: extract latest versioned heading (e.g., ## [1.6.0])
    b. Else if git tags exist: use latest tag (stripped of 'v' prefix)
    c. Else: use "0.1.0" as default
 

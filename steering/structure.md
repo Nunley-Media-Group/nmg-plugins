@@ -125,7 +125,7 @@ Claude Code sessions via `claude -p`
 
 | Element | Convention | Example |
 |---------|------------|---------|
-| Plugin version | Semver (major.minor.patch) | `2.4.0` |
+| Plugin version | Semver (major.minor.patch) | `1.18.0` |
 | Marketplace collection version | Semver (independent of plugins) | `1.0.0` |
 
 ### Commit Messages

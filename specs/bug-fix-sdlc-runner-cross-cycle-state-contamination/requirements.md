@@ -26,7 +26,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.3.0) |
-| **Version / Commit** | nmg-plugins v2.12.6 |
+| **Version / Commit** | nmg-plugins v1.22.5 |
 | **Browser / Runtime** | Node.js, Claude Code CLI |
 | **Configuration** | Continuous SDLC runner with multiple sequential issues |
 

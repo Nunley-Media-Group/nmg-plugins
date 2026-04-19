@@ -22,7 +22,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (observed), likely all platforms |
-| **Version / Commit** | nmg-sdlc v2.12.8 (commit 3e6e257) |
+| **Version / Commit** | nmg-sdlc v1.22.7 (commit 3e6e257) |
 | **Affected repo** | chrome-cli (8 milestones, 1 with open issues) |
 | **Configuration** | Default — no special settings |
 

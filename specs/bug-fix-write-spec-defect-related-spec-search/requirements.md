@@ -22,7 +22,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | All (skill is Markdown) |
-| **Version / Commit** | nmg-sdlc v2.12.x |
+| **Version / Commit** | nmg-sdlc v1.22.x |
 | **Component** | `plugins/nmg-sdlc/skills/write-spec/SKILL.md` (Phase 1, step 7) |
 | **Template** | `plugins/nmg-sdlc/skills/write-spec/templates/requirements.md` (Defect variant) |
 

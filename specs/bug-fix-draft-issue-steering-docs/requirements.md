@@ -24,7 +24,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.3.0) |
-| **Version / Commit** | nmg-sdlc 2.6.0 |
+| **Version / Commit** | nmg-sdlc 1.18.2 |
 | **Browser / Runtime** | Claude Code CLI (latest) |
 | **Configuration** | Standard plugin installation with all three steering docs present |
 

@@ -50,11 +50,11 @@ Feature: Consistent version bumping in automated SDLC runs
   @regression
   Scenario: Manual workflow preserves interactive version bump confirmation
     Given a developer runs /open-pr interactively without unattended-mode
-    And a VERSION file exists with "2.3.1"
+    And a VERSION file exists with "1.5.1"
     And the issue has the "enhancement" label
     When the skill reaches Step 2 (version bump determination)
     Then the skill presents AskUserQuestion with bump options
-    And the developer can accept "2.4.0" or override to a different bump type
+    And the developer can accept "1.18.0" or override to a different bump type
 
   @regression
   Scenario: Projects without VERSION file skip version bump postcondition

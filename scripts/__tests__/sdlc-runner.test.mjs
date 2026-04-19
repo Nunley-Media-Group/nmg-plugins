@@ -1446,7 +1446,7 @@ describe('STEP_KEYS and STEPS', () => {
     ]);
   });
 
-  it('STEP_KEYS does not contain draftIssue — /draft-issue is interactive-only (v6.0.0, issue #116)', () => {
+  it('STEP_KEYS does not contain draftIssue — /draft-issue is interactive-only (v1.41.0, issue #116)', () => {
     expect(STEP_KEYS.includes('draftIssue')).toBe(false);
   });
 });

@@ -8,10 +8,6 @@ This project uses semantic versioning with a deliberate convention: **bug fixes 
 
 Major-version bumps are reserved for explicit, manual maintenance milestones and are never produced automatically by `/open-pr` or the SDLC runner.
 
-### Version Reset (2026-04-18)
-
-The version line was reset on 2026-04-18 from a runaway 1.0.0 → 9.0.0 sequence (caused by automatic major bumps on every breaking change) to a clean 1.x.y line that reflects the bug-vs-enhancement convention above. All historical entries below have been renumbered into the new sequence; their dates and content are unchanged. Existing installs that pinned `9.0.0` will not auto-update past `1.x.y` and must reinstall the plugin.
-
 ## [Unreleased]
 
 ### Fixed

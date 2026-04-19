@@ -21,7 +21,7 @@
 
 | Factor | Value |
 |--------|-------|
-| **Plugin Version** | 2.11.0 |
+| **Plugin Version** | 1.20.0 |
 | **Observed In** | chrome-cli project (13 defect specs analyzed, 12 learnings — all project-specific) |
 
 ### Frequency

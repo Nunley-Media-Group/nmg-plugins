@@ -75,7 +75,7 @@ This approach was chosen over making the version bump a separate runner step (e.
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | Double version bump (LLM bumps in skill + runner bumps in postcondition) | Low | `validateVersionBump()` checks `git diff main -- VERSION` — if the LLM already bumped, the diff will show changes and the postcondition passes. No double bump. |
-| Deterministic bump uses wrong bump type | Low | Uses the same classification matrix as `/open-pr` Step 2: `bug` → patch, `enhancement`/other → minor. Major bumps are manual only — the runner never applies them automatically (per v4.3.0). |
+| Deterministic bump uses wrong bump type | Low | Uses the same classification matrix as `/open-pr` Step 2: `bug` → patch, `enhancement`/other → minor. Major bumps are manual only — the runner never applies them automatically (per v1.37.0). |
 | Runner crashes if `VERSION` file has invalid content | Low | Guard: if `VERSION` doesn't contain valid semver, skip version bumping (same guard as `/open-pr` Step 2) |
 | Manual workflow regression (AC4) | Very Low | No changes to `/open-pr` SKILL.md — the skill's interactive flow via `AskUserQuestion` is untouched |
 | Runner step config changes break existing configs | Very Low | No changes to step numbering or config schema — only prompt text and postcondition logic change |

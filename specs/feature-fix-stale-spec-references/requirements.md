@@ -17,9 +17,9 @@
 
 ## Background
 
-A drift audit triggered by v4.1.0 (OpenClaw integration removal) and v5.0.0 (gerund → imperative skill rename) found that spec *bodies* were never rewritten to match the current codebase. The directory renames landed cleanly in v5.0.0, so no v5.0.0 gerund-form skill names remain in spec bodies — all remaining drift is from v4.1.0 OpenClaw leftovers and two OpenClaw-era skill names that were either renamed (`generating-openclaw-config` → `init-config`) or removed entirely (`installing-openclaw-skill`).
+A drift audit triggered by v1.35.0 (OpenClaw integration removal) and v1.38.0 (gerund → imperative skill rename) found that spec *bodies* were never rewritten to match the current codebase. The directory renames landed cleanly in v1.38.0, so no v1.38.0 gerund-form skill names remain in spec bodies — all remaining drift is from v1.35.0 OpenClaw leftovers and two OpenClaw-era skill names that were either renamed (`generating-openclaw-config` → `init-config`) or removed entirely (`installing-openclaw-skill`).
 
-Per project convention (rewrite historical specs during renames; rely on git history for context — see `memory/feedback_refactor_docs.md`), specs should be updated so they accurately describe the current implementation rather than the pre-v4.1.0 / pre-v5.0.0 world.
+Per project convention (rewrite historical specs during renames; rely on git history for context — see `memory/feedback_refactor_docs.md`), specs should be updated so they accurately describe the current implementation rather than the pre-v1.35.0 / pre-v1.38.0 world.
 
 The audit already identified the exact drift patterns and scoped the affected files. This feature is the cleanup work — a documentation-only change with no runtime impact.
 
@@ -50,7 +50,7 @@ The audit already identified the exact drift patterns and scoped the affected fi
 
 ### AC3: No references to removed Discord integration remain
 
-**Given** Discord posting (`postDiscord()`, `discordChannelId`, Discord retry/backoff handling) was removed in v4.1.0
+**Given** Discord posting (`postDiscord()`, `discordChannelId`, Discord retry/backoff handling) was removed in v1.35.0
 **When** the cleanup is complete
 **Then** `grep -r 'postDiscord\|discordChannelId' specs/` returns zero matches
 **And** `grep -r -i 'discord' specs/` returns zero matches in spec bodies (not including the `specs/feature-fix-stale-spec-references/` directory itself, which documents this very cleanup)
@@ -73,14 +73,14 @@ The audit already identified the exact drift patterns and scoped the affected fi
 
 ### AC6: Automatic major-version bump references updated
 
-**Given** v4.3.0 removed automatic major version bumps from `sdlc-runner.mjs` (only manual major bumps remain; milestone completion no longer triggers a major bump)
+**Given** v1.37.0 removed automatic major version bumps from `sdlc-runner.mjs` (only manual major bumps remain; milestone completion no longer triggers a major bump)
 **When** the cleanup is complete
 **Then** any spec describing milestone-triggered automatic major-version bumps is updated to describe the current behavior (manual major bumps only, milestone-based overrides removed)
-**And** `grep -r -i 'major.version.*bump\|automatic.*major' specs/` returns only references consistent with the v4.3.0 behavior
+**And** `grep -r -i 'major.version.*bump\|automatic.*major' specs/` returns only references consistent with the v1.37.0 behavior
 
 ### AC7: `postDiscord()` removed from runner code
 
-**Given** `postDiscord()` in `scripts/sdlc-runner.mjs` is a pass-through wrapper that just calls `log()` (a v4.1.0 leftover)
+**Given** `postDiscord()` in `scripts/sdlc-runner.mjs` is a pass-through wrapper that just calls `log()` (a v1.35.0 leftover)
 **When** the cleanup is complete
 **Then** the `postDiscord()` function definition is removed from `scripts/sdlc-runner.mjs`
 **And** every call site `await postDiscord(msg)` / `postDiscord(msg)` is replaced with `log(\`[STATUS] ${msg}\`)` (or equivalent direct `log()` call preserving the existing `[STATUS]` prefix)
@@ -139,7 +139,7 @@ Feature: Fix Stale Spec References
 | FR4 | Remove all Discord integration references (APIs, config fields, scenarios) and rewrite dependent ACs to describe the current status-logging behavior | Must | High-judgment: some ACs may need deletion rather than rewriting |
 | FR5 | Remove references to `~/.openclaw/` and OpenClaw gateway-restart flows | Must | Concentrated in `feature-installing-locally-skill/` and `feature-migrate-project-skill/` |
 | FR6 | Resolve dangling `feature-openclaw-runner-operations` cross-references | Must | Replace with an existing spec pointer or remove if no apt replacement |
-| FR7 | Update specs describing automatic major-version bumps to reflect v4.3.0's manual-only behavior | Should | Overlap with FR1 files (notably `bug-fix-inconsistent-version-bumping/`) |
+| FR7 | Update specs describing automatic major-version bumps to reflect v1.37.0's manual-only behavior | Should | Overlap with FR1 files (notably `bug-fix-inconsistent-version-bumping/`) |
 | FR8 | Remove the `postDiscord()` function from `scripts/sdlc-runner.mjs` and replace every call site with a direct `log('[STATUS] …')` invocation, preserving message content and timing | Must | Also update any runner test that asserts on `postDiscord` specifically; behavior must remain identical |
 | FR9 | After cleanup, a final verification grep returns zero matches for each drift pattern (per AC8) | Must | Acceptance signal for the whole feature |
 | FR10 | Do NOT modify the project's steering docs (`steering/**`) or plugin skill files (`plugins/nmg-sdlc/skills/**`). Only `specs/**` and `scripts/sdlc-runner.mjs` (for FR8) are in scope | Must | The env var `OPENCLAW_DISCORD_CHANNEL` in `tech.md` is intentionally out of scope for this issue |

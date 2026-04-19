@@ -160,7 +160,7 @@
 **Depends**: T001
 **Acceptance**:
 - [ ] Locate passages describing "milestone completion triggers major version bump" or "last issue in milestone → major"
-- [ ] Rewrite to describe the v4.3.0 behavior: major bumps are manual only; milestone completion no longer affects bump classification
+- [ ] Rewrite to describe the v1.37.0 behavior: major bumps are manual only; milestone completion no longer affects bump classification
 - [ ] Where appropriate, defer to `tech.md`'s Version Bump Classification table instead of restating the rules
 - [ ] After this task: the spec content is consistent with the current `sdlc-runner.mjs` version-bump logic
 

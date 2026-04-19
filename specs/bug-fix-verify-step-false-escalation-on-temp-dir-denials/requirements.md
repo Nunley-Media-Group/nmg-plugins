@@ -26,7 +26,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (`os.tmpdir()` → `/var/folders/.../T/`), Linux (`/tmp`), Windows (`%TEMP%`) |
-| **Version / Commit** | `plugins/nmg-sdlc` v6.1.0 — `scripts/sdlc-runner.mjs` |
+| **Version / Commit** | `plugins/nmg-sdlc` v1.42.0 — `scripts/sdlc-runner.mjs` |
 | **Component** | `detectSoftFailure()` in `scripts/sdlc-runner.mjs` |
 | **Configuration** | Any config that runs `verify-code` as Step 5 (default) |
 

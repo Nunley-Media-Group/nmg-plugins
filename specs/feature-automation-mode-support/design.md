@@ -293,8 +293,8 @@ Per AC21: spec bodies are rewritten to use "unattended-mode" / `.claude/unattend
 
 ### Version Bump Strategy
 
-- **Recommended**: **minor** bump (e.g., `5.0.0` → `5.1.0`). The renamed flag is a user-facing contract documented in the README, but programmatic users typically rely on the runner (which is internally consistent) and the change is non-breaking for anyone who never touched the flag manually.
-- **Alternative**: **major** bump (`5.0.0` → `6.0.0`) is defensible if the flag's path is considered part of the runner's public contract — this is the more conservative interpretation of semver. Defer to the user at release time.
+- **Recommended**: **minor** bump (e.g., `1.38.0` → `1.39.0`). The renamed flag is a user-facing contract documented in the README, but programmatic users typically rely on the runner (which is internally consistent) and the change is non-breaking for anyone who never touched the flag manually.
+- **Alternative**: **major** bump (`1.38.0` → `1.41.0`) is defensible if the flag's path is considered part of the runner's public contract — this is the more conservative interpretation of semver. Defer to the user at release time.
 - Update **both** `plugins/nmg-sdlc/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` (per CLAUDE.md and memory entry).
 
 ### Disambiguation Note (for README)

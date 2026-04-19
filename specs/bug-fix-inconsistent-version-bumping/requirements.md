@@ -23,7 +23,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.3.0) |
-| **Version / Commit** | nmg-sdlc 2.12.5 |
+| **Version / Commit** | nmg-sdlc 1.22.4 |
 | **Browser / Runtime** | Node.js v24+ (sdlc-runner.mjs) |
 | **Configuration** | SDLC runner in unattended-mode; chrome-cli project (Rust/Cargo) |
 
@@ -112,7 +112,7 @@ Under turn/time pressure, the LLM sometimes skips the version bumping steps and 
 ## Out of Scope
 
 - Changing the version classification matrix (patch/minor/major logic) — that's defined in spec #41
-- Changing how major bumps are applied (major bumps remain manual-only per v4.3.0)
+- Changing how major bumps are applied (major bumps remain manual-only per v1.37.0)
 - Adding version bumping to non-PR steps (implementation, verification)
 - Refactoring the `/open-pr` skill's version bump steps beyond adding "mandatory" language
 

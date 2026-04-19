@@ -32,13 +32,13 @@ Feature: Starting-issues milestone selection no longer iterates through random m
 
   @regression
   Scenario: Multiple viable milestones presented to user
-    Given a repo with milestones "v1" (3 open issues) and "v2" (5 open issues)
+    Given a repo with milestones "v1" (3 open issues) and "v1" (5 open issues)
     When /start-issue is invoked without an issue number in interactive mode
-    Then the user is presented with "v1" and "v2" to choose from
+    Then the user is presented with "v1" and "v1" to choose from
 
   @regression
   Scenario: Multiple viable milestones in unattended-mode selects first alphabetically
-    Given a repo with milestones "v1" (3 open issues) and "v2" (5 open issues)
+    Given a repo with milestones "v1" (3 open issues) and "v1" (5 open issues)
     And unattended-mode is enabled
     When /start-issue is invoked without an issue number
     Then "v1" is auto-selected as the first milestone alphabetically

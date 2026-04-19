@@ -52,7 +52,7 @@ Each finding has distinct reproduction steps documented in the individual sectio
 | | Description |
 |---|-------------|
 | **Expected** | Status-notification retry backoff pauses without blocking the event loop, allowing signal handlers to fire |
-| **Actual** | `Atomics.wait()` at line 384 is a synchronous blocking sleep (2–4s per retry) that freezes the entire event loop; signal handlers cannot fire during this window. (Historical: the retry loop itself was removed in v4.1.0; the fix to `sleep()` remains the in-use non-blocking pattern.) |
+| **Actual** | `Atomics.wait()` at line 384 is a synchronous blocking sleep (2–4s per retry) that freezes the entire event loop; signal handlers cannot fire during this window. (Historical: the retry loop itself was removed in v1.35.0; the fix to `sleep()` remains the in-use non-blocking pattern.) |
 
 ### F3 — Medium: Incomplete shell escaping in `autoCommitIfDirty`
 

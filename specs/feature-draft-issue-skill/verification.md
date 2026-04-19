@@ -41,13 +41,13 @@
 | AC9 | Interview probes NFRs, edge cases, related features | Pass | `SKILL.md:238-253` — Feature R3 (NFRs & edge cases), R4 (related & priority); Bug R3 (edge cases & regression risk) |
 | AC10 | Understanding check before drafting | Pass | `SKILL.md:303-350` — Step 5c with human review gate |
 | AC11 | Adaptive interview depth based on complexity | Pass | `SKILL.md:200-216` — depth table + user-visible log line |
-| AC12 | Unattended-mode support removed | Pass | Only one "unattended" reference in `SKILL.md:28` — the v6.0.0 sign-post sentence |
+| AC12 | Unattended-mode support removed | Pass | Only one "unattended" reference in `SKILL.md:28` — the v1.41.0 sign-post sentence |
 | AC13 | SDLC runner cannot invoke draft-issue | Pass | `scripts/sdlc-runner.mjs:156-158` comment + `scripts/__tests__/sdlc-runner.test.mjs:1338-1340` regression test |
 | AC14 | Automatable question explains downstream impact | Pass | `SKILL.md:282-295` — body references `/write-spec`, `/write-code`, `/verify-code`, `/open-pr` |
 | AC15 | User can override depth decision | Pass | `SKILL.md:217-230` — two-option override menu with session note on override |
 | AC16 | Playback length scales with interview depth | Pass | `SKILL.md:313-330` — one-line core vs 5-line extended |
 | AC17 | Revise loop adds soft guard after three iterations | Pass | `SKILL.md:554-578` — counter tracking + expanded menu + no auto-termination |
-| AC18 | Breaking change sign-post + major version bump | Pass | `plugin.json:3` and `marketplace.json` both at `6.0.0`; `CHANGELOG.md` has `### Changed (BREAKING)`; SKILL.md sign-post at line 28; STEP_KEYS comment at `sdlc-runner.mjs:156-158` |
+| AC18 | Breaking change sign-post + major version bump | Pass | `plugin.json:3` and `marketplace.json` both at `1.41.0`; `CHANGELOG.md` has `### Changed (BREAKING)`; SKILL.md sign-post at line 28; STEP_KEYS comment at `sdlc-runner.mjs:156-158` |
 
 **Coverage**: 17/17 active ACs pass (AC4 is intentionally superseded by AC12).
 

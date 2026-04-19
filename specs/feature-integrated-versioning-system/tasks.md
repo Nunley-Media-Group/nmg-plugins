@@ -86,7 +86,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Step reads `VERSION` file to derive current major version as milestone default
 - [ ] Handles missing `VERSION` file gracefully (defaults to "v0" or skips milestone)
 - [ ] Manual mode: uses `AskUserQuestion` to present milestone options (default + custom number)
-- [ ] Accepts a single number input (e.g., "3") and normalizes to "v3"
+- [ ] Accepts a single number input (e.g., "3") and normalizes to "v2"
 - [ ] Checks for existing milestone via `gh api repos/{owner}/{repo}/milestones`
 - [ ] Creates milestone via `gh api --method POST` if it doesn't exist
 - [ ] Passes milestone to `gh issue create` via `--milestone` flag in Step 7

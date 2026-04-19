@@ -79,9 +79,9 @@ Selects an issue (or presents a picker if no number is given), creates a linked 
 /draft-issue "add user authentication"
 ```
 
-**Interactive-only** (v6.0.0+) — `/draft-issue` always runs the full interactive workflow regardless of `.claude/unattended-mode`. Classifies the issue type (Bug or Enhancement/Feature), investigates the codebase for relevant context, then interviews you with adaptive depth (core 3-round or extended 4-round with NFR/edge-case probing). Assigns the issue to a version milestone. Plays back its understanding before drafting (Step 5c), then renders a structured inline summary with `[1] Approve / [2] Revise` review menu before creating the issue.
+**Interactive-only** (v1.41.0+) — `/draft-issue` always runs the full interactive workflow regardless of `.claude/unattended-mode`. Classifies the issue type (Bug or Enhancement/Feature), investigates the codebase for relevant context, then interviews you with adaptive depth (core 3-round or extended 4-round with NFR/edge-case probing). Assigns the issue to a version milestone. Plays back its understanding before drafting (Step 5c), then renders a structured inline summary with `[1] Approve / [2] Revise` review menu before creating the issue.
 
-**Multi-issue mode (v7.3.0)**: Step 1b heuristically detects multi-part asks (conjunction markers, bullet lists, distinct component mentions) and proposes a split with per-ask summaries and a `high`/`medium`/`low` confidence indicator. A split-confirm menu (`[1] Approve / [2] Adjust / [3] Collapse`) lets you recover from false-positive splits. Step 1d infers a dependency DAG with a graph-confirm menu before any drafting begins. Each planned issue runs the full Steps 2–9 independently; created issues are autolinked via `gh issue edit --add-sub-issue` (availability probe + body cross-ref fallback). Batch abandonment at any review gate preserves already-created issues with no rollback.
+**Multi-issue mode (v1.46.0)**: Step 1b heuristically detects multi-part asks (conjunction markers, bullet lists, distinct component mentions) and proposes a split with per-ask summaries and a `high`/`medium`/`low` confidence indicator. A split-confirm menu (`[1] Approve / [2] Adjust / [3] Collapse`) lets you recover from false-positive splits. Step 1d infers a dependency DAG with a graph-confirm menu before any drafting begins. Each planned issue runs the full Steps 2–9 independently; created issues are autolinked via `gh issue edit --add-sub-issue` (availability probe + body cross-ref fallback). Batch abandonment at any review gate preserves already-created issues with no rollback.
 
 **Claude Design URL**: supply an optional `claude.ai` design URL to share parsed archive context read-only across every per-issue investigation, interview, and synthesis in the batch — reuses the `/onboard-project` fetch/gzip-decode/README-parse helper.
 
@@ -137,7 +137,7 @@ Verifies the implementation against the spec:
 /open-pr #42
 ```
 
-Determines the version bump (patch for bugs, minor for enhancements, major on milestone completion), updates the `VERSION` file, rolls `CHANGELOG.md` entries from `[Unreleased]` to a versioned heading, and updates any stack-specific version files declared in `tech.md`. Then creates a pull request with:
+Determines the version bump (patch for bugs, minor for enhancements; major bumps are always manual via the `--major` opt-in), updates the `VERSION` file, rolls `CHANGELOG.md` entries from `[Unreleased]` to a versioned heading, and updates any stack-specific version files declared in `tech.md`. Then creates a pull request with:
 - Summary from the spec
 - Acceptance criteria checklist
 - Test plan
@@ -264,16 +264,15 @@ The plugin provides the **process**. Your project provides **specifics** via ste
 
 The plugin includes an integrated versioning system built on a `VERSION` file (plain text semver at the project root). When `VERSION` exists, skills automatically:
 
-- **`/draft-issue`** — Assigns issues to a milestone derived from the major version (e.g., `v2`), creating the milestone if needed. As of v6.0.0, this skill is **interactive-only** and does not participate in unattended-mode workflows — the SDLC runner assumes issues are drafted by a human before it picks them up
+- **`/draft-issue`** — Assigns issues to a milestone derived from the major version (e.g., `v1`), creating the milestone if needed. As of v1.41.0, this skill is **interactive-only** and does not participate in unattended-mode workflows — the SDLC runner assumes issues are drafted by a human before it picks them up
 - **`/open-pr`** — Classifies the version bump from issue labels, updates `VERSION`, rolls `CHANGELOG.md` entries to a versioned heading, and updates stack-specific files
 
 The **classification matrix**:
 
 | Issue Label | Bump Type | Example |
 |-------------|-----------|---------|
-| `bug` | Patch | 2.3.1 → 2.3.2 |
-| `enhancement` | Minor | 2.3.1 → 2.4.0 |
-| (milestone completion) | Major | 2.9.1 → 3.0.0 |
+| `bug` | Patch | 1.5.1 → 1.5.2 |
+| `enhancement` | Minor | 1.5.1 → 1.6.0 |
 
 **Stack-specific files** (e.g., `package.json`, `Cargo.toml`) are declared in `tech.md`'s `## Versioning` section. The `/open-pr` skill reads this mapping to update all version files in a single commit. Run `/upgrade-project` to bootstrap `CHANGELOG.md` and `VERSION` from git history if they don't exist yet.
 
@@ -322,7 +321,7 @@ Any gate Fail caps the overall verification status at "Partial". Any gate Incomp
 | Skill | Description |
 |-------|-------------|
 | `/start-issue [#N]` | Select a GitHub issue, create a linked feature branch, and set the issue to In Progress |
-| `/draft-issue [description] [design-url]` | Interview user about a feature need, assign to version milestone, create groomed GitHub issue with BDD acceptance criteria. **Interactive-only as of v6.0.0** — renders a structured inline summary and `[1] Approve / [2] Revise` review menu, and plays back its understanding before drafting. **Multi-issue mode (v7.3.0)**: Step 1b heuristically detects multi-part asks, proposes a split with a confirm menu (`[1] Approve / [2] Adjust / [3] Collapse`), infers a dependency DAG with a graph-confirm menu, loops through Steps 2–9 per planned issue, and autolinks created issues via `gh issue edit --add-sub-issue` (with availability probe + body-cross-ref fallback). Optional Claude Design URL ingestion (reuses the `/onboard-project` fetch/decode helper) provides shared read-only session context to every per-issue investigation, interview, and synthesis. Partial-batch abandonment preserves already-created issues. Does not participate in unattended-mode workflows. |
+| `/draft-issue [description] [design-url]` | Interview user about a feature need, assign to version milestone, create groomed GitHub issue with BDD acceptance criteria. **Interactive-only as of v1.41.0** — renders a structured inline summary and `[1] Approve / [2] Revise` review menu, and plays back its understanding before drafting. **Multi-issue mode (v1.46.0)**: Step 1b heuristically detects multi-part asks, proposes a split with a confirm menu (`[1] Approve / [2] Adjust / [3] Collapse`), infers a dependency DAG with a graph-confirm menu, loops through Steps 2–9 per planned issue, and autolinks created issues via `gh issue edit --add-sub-issue` (with availability probe + body-cross-ref fallback). Optional Claude Design URL ingestion (reuses the `/onboard-project` fetch/decode helper) provides shared read-only session context to every per-issue investigation, interview, and synthesis. Partial-batch abandonment preserves already-created issues. Does not participate in unattended-mode workflows. |
 | `/write-spec #N` | Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown |
 | `/write-code #N` | Read specs for current branch, enter plan mode, then execute implementation tasks sequentially |
 | `/verify-code #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
@@ -350,7 +349,7 @@ These are repo-level utilities (not part of the nmg-sdlc plugin itself):
 
 ### Upgrading from 6.0.x or earlier
 
-v6.1.0 relocates canonical SDLC artifacts from `.claude/steering/` and `.claude/specs/` to `steering/` and `specs/` at the project root, because current Claude Code releases protect the project-level `.claude/` directory from Edit/Write. Existing projects must run:
+v1.42.0 relocates canonical SDLC artifacts from `.claude/steering/` and `.claude/specs/` to `steering/` and `specs/` at the project root, because current Claude Code releases protect the project-level `.claude/` directory from Edit/Write. Existing projects must run:
 
 ```bash
 /upgrade-project

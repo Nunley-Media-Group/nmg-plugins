@@ -13,7 +13,7 @@
 
 ### Steps to Reproduce
 
-1. Install `nmg-sdlc` 5.2.0 under a current Claude Code release that enforces `.claude/` directory write protection.
+1. Install `nmg-sdlc` 1.40.0 under a current Claude Code release that enforces `.claude/` directory write protection.
 2. In a project with existing `steering/` and `specs/` directories, run any SDLC skill that writes to those paths — for example `/setup-steering` (enhancement flow), `/write-spec #N`, or `/verify-code #N` (when it needs to update `tasks.md`).
 3. Observe the Write/Edit tool being refused because the target path is under the protected `.claude/` directory — even when Claude was launched with `--dangerously-skip-permissions`.
 4. The skill cannot complete; unattended runs bail out; the pipeline halts.
@@ -23,7 +23,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS, Windows, Linux (all affected) |
-| **Version / Commit** | `nmg-sdlc` 5.2.0; any current Claude Code release enforcing `.claude/` protection |
+| **Version / Commit** | `nmg-sdlc` 1.40.0; any current Claude Code release enforcing `.claude/` protection |
 | **Browser / Runtime** | Claude Code CLI, with or without `--dangerously-skip-permissions` |
 | **Configuration** | Any project with prior nmg-sdlc state under `steering/` or `specs/` |
 

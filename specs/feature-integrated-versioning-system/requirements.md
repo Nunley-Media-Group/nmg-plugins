@@ -31,23 +31,23 @@ The versioning system must be stack-agnostic (a core product principle) — it p
 
 **Given** a developer is creating an issue via `/draft-issue`
 **When** the interview reaches the milestone question
-**Then** the skill presents milestone options defaulting to the current major version (derived from `VERSION` file, e.g., VERSION=2.3.1 → default milestone "v2"), allows the developer to provide a new milestone number (e.g., "3" → "v3"), and assigns the created issue to the chosen milestone
+**Then** the skill presents milestone options defaulting to the current major version (derived from `VERSION` file, e.g., VERSION=1.5.1 → default milestone "v1"), allows the developer to provide a new milestone number (e.g., "3" → "v2"), and assigns the created issue to the chosen milestone
 
 **Example**:
-- Given: A project with `VERSION` file containing `2.3.1`
+- Given: A project with `VERSION` file containing `1.5.1`
 - When: Developer creates an issue and is asked about milestone
-- Then: Default milestone is "v2"; developer can accept or type "3" for "v3"
+- Then: Default milestone is "v1"; developer can accept or type "3" for "v2"
 
 ### AC2: Milestone Auto-Creation
 
 **Given** a developer specifies milestone "3" during `/draft-issue`
-**When** no "v3" milestone exists on the GitHub repository
-**Then** the skill creates the "v3" milestone via `gh` CLI before assigning the issue to it
+**When** no "v2" milestone exists on the GitHub repository
+**Then** the skill creates the "v2" milestone via `gh` CLI before assigning the issue to it
 
 **Example**:
-- Given: No "v3" milestone exists on the repo
+- Given: No "v2" milestone exists on the repo
 - When: Developer types "3" as the milestone
-- Then: `gh api` creates "v3" milestone, then assigns the issue to it
+- Then: `gh api` creates "v2" milestone, then assigns the issue to it
 
 ### AC3: Automatic Version Bump Classification — Bug/Patch
 
@@ -56,9 +56,9 @@ The versioning system must be stack-agnostic (a core product principle) — it p
 **Then** it classifies the change as a **patch** bump (x.y.Z), presents the classification to the developer, and allows override before applying
 
 **Example**:
-- Given: Issue #50 has the `bug` label, current VERSION is `2.3.1`
+- Given: Issue #50 has the `bug` label, current VERSION is `1.5.1`
 - When: `/open-pr` runs
-- Then: Proposes version `2.3.2` (patch); developer can override to minor or major
+- Then: Proposes version `1.5.2` (patch); developer can override to minor or major
 
 ### AC4: Minor Version Bump for User-Facing Changes
 
@@ -67,9 +67,9 @@ The versioning system must be stack-agnostic (a core product principle) — it p
 **Then** it classifies the change as a **minor** bump (x.Y.0)
 
 **Example**:
-- Given: Issue #51 has the `enhancement` label, current VERSION is `2.3.1`
+- Given: Issue #51 has the `enhancement` label, current VERSION is `1.5.1`
 - When: `/open-pr` runs
-- Then: Proposes version `2.4.0` (minor)
+- Then: Proposes version `1.6.0` (minor)
 
 ### AC5: Major Version Bumps Are Manual Only
 
@@ -79,9 +79,9 @@ The versioning system must be stack-agnostic (a core product principle) — it p
 **And** no automatic major bump detection occurs (milestone completion does not trigger major bumps)
 
 **Example**:
-- Given: Current VERSION is `2.9.1`, developer wants to release v3
-- When: `/open-pr` proposes a minor bump to `2.10.0`
-- Then: Developer overrides to "Major", resulting in version `3.0.0`
+- Given: Current VERSION is `1.9.1`, developer wants to release v3
+- When: `/open-pr` proposes a minor bump to `1.10.0`
+- Then: Developer overrides to "Major", resulting in version `2.0.0`
 
 ### AC6: VERSION File and CHANGELOG Update in PR
 
@@ -90,9 +90,9 @@ The versioning system must be stack-agnostic (a core product principle) — it p
 **Then** the PR includes: (1) an updated `VERSION` file with the new semver string, (2) `CHANGELOG.md` with `[Unreleased]` entries moved under a new version heading with today's date, and (3) any stack-specific version files identified in the project's `tech.md` versioning section
 
 **Example**:
-- Given: VERSION is `2.3.1`, bump type is minor, `[Unreleased]` has 3 entries
+- Given: VERSION is `1.5.1`, bump type is minor, `[Unreleased]` has 3 entries
 - When: PR is assembled
-- Then: VERSION becomes `2.4.0`, CHANGELOG gets `## [2.4.0] - 2026-02-16` heading with those entries
+- Then: VERSION becomes `1.6.0`, CHANGELOG gets `## [1.6.0] - 2026-02-16` heading with those entries
 
 ### AC7: Steering Doc Bridge for Stack-Specific Version Files
 
@@ -102,8 +102,8 @@ The versioning system must be stack-agnostic (a core product principle) — it p
 
 **Example**:
 - Given: tech.md Versioning section lists `package.json:version`
-- When: Version bumps to `2.4.0`
-- Then: Both `VERSION` and `package.json` `"version"` field are updated to `2.4.0`
+- When: Version bumps to `1.6.0`
+- Then: Both `VERSION` and `package.json` `"version"` field are updated to `1.6.0`
 
 ### AC8a: Migration Creates CHANGELOG from Scratch
 
@@ -150,9 +150,9 @@ The versioning system must be stack-agnostic (a core product principle) — it p
 **Then** the milestone defaults to the current major version without prompting, and `/open-pr` auto-determines and applies the version bump without confirmation (patch or minor only; major bumps require manual override)
 
 **Example**:
-- Given: unattended-mode enabled, VERSION is `2.3.1`, issue has `enhancement` label
+- Given: unattended-mode enabled, VERSION is `1.5.1`, issue has `enhancement` label
 - When: `/draft-issue` runs → `/open-pr` runs
-- Then: Milestone auto-set to "v2"; version auto-bumped to `2.4.0` with no prompts
+- Then: Milestone auto-set to "v1"; version auto-bumped to `1.6.0` with no prompts
 
 ### AC11: Single Authoritative Location for Classification Logic
 
@@ -204,52 +204,52 @@ Feature: Integrated Versioning System
 
   Scenario: Milestone assignment during issue creation
     Given a developer is creating an issue via /draft-issue
-    And the project VERSION file contains "2.3.1"
+    And the project VERSION file contains "1.5.1"
     When the interview reaches the milestone question
-    Then the skill presents milestone "v2" as the default
+    Then the skill presents milestone "v1" as the default
     And allows the developer to specify a different milestone number
 
   Scenario: Milestone auto-creation
     Given a developer specifies milestone "3" during /draft-issue
-    And no "v3" milestone exists on the GitHub repository
+    And no "v2" milestone exists on the GitHub repository
     When the issue is created
-    Then the skill creates the "v3" milestone via gh CLI
+    Then the skill creates the "v2" milestone via gh CLI
     And assigns the issue to it
 
   Scenario: Patch bump for bug fixes
     Given a developer runs /open-pr for an issue with the "bug" label
-    And the current VERSION is "2.3.1"
+    And the current VERSION is "1.5.1"
     When the skill determines the version impact
     Then it classifies the change as a patch bump
-    And proposes version "2.3.2"
+    And proposes version "1.5.2"
 
   Scenario: Minor bump for enhancements
     Given a developer runs /open-pr for an issue with the "enhancement" label
-    And the current VERSION is "2.3.1"
+    And the current VERSION is "1.5.1"
     When the skill determines the version impact
     Then it classifies the change as a minor bump
-    And proposes version "2.4.0"
+    And proposes version "1.6.0"
 
   Scenario: Major bump via manual override
     Given a developer runs /open-pr for an enhancement issue
-    And the current VERSION is "2.9.1"
-    When /open-pr proposes a minor bump to "2.10.0"
+    And the current VERSION is "1.9.1"
+    When /open-pr proposes a minor bump to "1.10.0"
     And the developer overrides the classification to "Major"
-    Then the version bumps to "3.0.0"
+    Then the version bumps to "2.0.0"
 
   Scenario: VERSION file and CHANGELOG update
     Given /open-pr has determined a minor bump
-    And the current VERSION is "2.3.1"
+    And the current VERSION is "1.5.1"
     And CHANGELOG.md has entries under [Unreleased]
     When the PR is assembled
-    Then VERSION file is updated to "2.4.0"
-    And [Unreleased] entries move under "[2.4.0] - YYYY-MM-DD"
+    Then VERSION file is updated to "1.6.0"
+    And [Unreleased] entries move under "[1.6.0] - YYYY-MM-DD"
 
   Scenario: Stack-specific version file updates
     Given tech.md Versioning section lists "package.json:version"
-    And the version bump is to "2.4.0"
+    And the version bump is to "1.6.0"
     When /open-pr updates version files
-    Then both VERSION and package.json version are "2.4.0"
+    Then both VERSION and package.json version are "1.6.0"
 
   Scenario: Migration creates CHANGELOG from scratch
     Given a project has no CHANGELOG.md

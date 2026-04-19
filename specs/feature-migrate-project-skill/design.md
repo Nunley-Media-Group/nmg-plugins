@@ -201,7 +201,7 @@ question: "The following config values differ from the current template defaults
 multiSelect: true
 options:
   - label: "steps.createPR.maxTurns: 15 → 30"
-    description: "Template default was updated from 15 to 30 in v2.17.0"
+    description: "Template default was updated from 15 to 30 in v1.27.0"
   - label: "steps.implement.maxTurns: 80 → 100"
     description: "Template default for implementation turns"
   - ...one option per drifted value
@@ -540,7 +540,7 @@ Input: issue number N (e.g., 42)
 **Changes (documentation only):**
 
 1. Update Feature Name Convention section to describe the new naming:
-   > The `{feature-name}` is the spec directory name. For specs created with v2.15+, this follows the `feature-{slug}` or `bug-{slug}` convention (e.g., `feature-dark-mode`). Legacy specs use `{issue#}-{slug}` (e.g., `42-add-dark-mode`).
+   > The `{feature-name}` is the spec directory name. For specs created with v1.25.0+, this follows the `feature-{slug}` or `bug-{slug}` convention (e.g., `feature-dark-mode`). Legacy specs use `{issue#}-{slug}` (e.g., `42-add-dark-mode`).
 
 2. Update the fallback resolution to also check the `**Issues**` frontmatter field:
    > **Fallback:** Use `Glob` to find `specs/*/requirements.md`. For each result, read the `**Issues**` (or legacy `**Issue**`) frontmatter field and match against the current issue number. If no frontmatter match, try matching the issue number or branch name keywords against the directory name.

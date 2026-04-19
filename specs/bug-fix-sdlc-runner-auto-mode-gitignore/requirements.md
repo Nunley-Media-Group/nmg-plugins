@@ -23,7 +23,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | Any (cross-platform) |
-| **Version / Commit** | Current `sdlc-runner.mjs` (v2.12.7) |
+| **Version / Commit** | Current `sdlc-runner.mjs` (v1.22.6) |
 | **Runtime** | Node.js v24+ |
 | **Configuration** | Any SDLC runner config pointing to a target project without `.claude/unattended-mode` in `.gitignore` |
 

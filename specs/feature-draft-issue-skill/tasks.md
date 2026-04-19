@@ -218,7 +218,7 @@
 **Acceptance**:
 - [ ] Top-level `## Unattended Mode` section is removed
 - [ ] All per-step `> Unattended-mode: This step is skipped.` (or equivalent) blockquotes are removed
-- [ ] Where the Unattended Mode section used to be, a single sign-post sentence remains: `"As of v6.0.0, /draft-issue no longer honors .claude/unattended-mode. Issue drafting requires interactive input."`
+- [ ] Where the Unattended Mode section used to be, a single sign-post sentence remains: `"As of v1.41.0, /draft-issue no longer honors .claude/unattended-mode. Issue drafting requires interactive input."`
 - [ ] Step 9 Output no longer has an `[If .claude/unattended-mode exists]:` branch
 - [ ] `grep -i "unattended" plugins/nmg-sdlc/skills/draft-issue/SKILL.md` returns only the sign-post sentence
 - [ ] Covers AC12, AC18, FR16, FR17, FR28
@@ -240,7 +240,7 @@
 **Status**: Pending
 **Issue**: #116
 **Acceptance**:
-- [ ] Above the `const STEP_KEYS = [...]` declaration, a comment reads: `// NOTE: draftIssue is intentionally absent. /draft-issue is interactive-only as of plugin v6.0.0 (issue #116). Do not add it here — see plugins/nmg-sdlc/skills/draft-issue/SKILL.md for the rationale.`
+- [ ] Above the `const STEP_KEYS = [...]` declaration, a comment reads: `// NOTE: draftIssue is intentionally absent. /draft-issue is interactive-only as of plugin v1.41.0 (issue #116). Do not add it here — see plugins/nmg-sdlc/skills/draft-issue/SKILL.md for the rationale.`
 - [ ] `STEP_KEYS` array is unchanged (still 9 entries: startCycle, startIssue, writeSpecs, implement, verify, commitPush, createPR, monitorCI, merge)
 - [ ] Covers AC13, FR18, FR28
 
@@ -251,20 +251,20 @@
 **Status**: Pending
 **Issue**: #116
 **Acceptance**:
-- [ ] A comment-style key `_draft_issue_note` is added to the root object with the value: `"draft-issue is interactive-only as of plugin v6.0.0 (issue #116); do not add a draftIssue step"`
+- [ ] A comment-style key `_draft_issue_note` is added to the root object with the value: `"draft-issue is interactive-only as of plugin v1.41.0 (issue #116); do not add a draftIssue step"`
 - [ ] Existing `steps` object is unchanged
 - [ ] JSON remains valid
 - [ ] Covers AC13, FR18
 
-### T018: Bump plugin version to v6.0.0 (BREAKING) and update CHANGELOG
+### T018: Bump plugin version to v1.41.0 (BREAKING) and update CHANGELOG
 **File(s)**: `plugins/nmg-sdlc/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `CHANGELOG.md`
 **Type**: Modify
 **Depends**: T005, T006, T007, T008, T009, T010, T011, T012, T013, T014, T015, T016, T017
 **Status**: Pending
 **Issue**: #116
 **Acceptance**:
-- [ ] `plugins/nmg-sdlc/.claude-plugin/plugin.json` `"version"` is `"6.0.0"`
-- [ ] `.claude-plugin/marketplace.json` plugin entry `"version"` is `"6.0.0"` (matching plugin.json)
+- [ ] `plugins/nmg-sdlc/.claude-plugin/plugin.json` `"version"` is `"1.41.0"`
+- [ ] `.claude-plugin/marketplace.json` plugin entry `"version"` is `"1.41.0"` (matching plugin.json)
 - [ ] `CHANGELOG.md` has `[Unreleased]` entries describing readability treatment, deeper interview, and — under a `### Changed (BREAKING)` subsection — the removal of unattended-mode support from `/draft-issue`
 - [ ] Covers AC18, FR21, FR27
 
@@ -280,7 +280,7 @@
 **Issue**: #116
 **Acceptance**:
 - [ ] README section describing `/draft-issue` notes the inline summary + approve/revise review UX and the Step 5c playback
-- [ ] README notes `/draft-issue` is interactive-only as of v6.0.0 and explicitly does not participate in unattended-mode workflows
+- [ ] README notes `/draft-issue` is interactive-only as of v1.41.0 and explicitly does not participate in unattended-mode workflows
 - [ ] Any stale language implying `/draft-issue` can run under the runner is removed
 - [ ] Covers FR20
 
@@ -292,7 +292,7 @@
 **Issue**: #116
 **Acceptance**:
 - [ ] New Jest test asserts `STEP_KEYS.includes('draftIssue') === false`
-- [ ] Test has a clear name such as `'STEP_KEYS does not contain draftIssue — /draft-issue is interactive-only (v6.0.0, issue #116)'`
+- [ ] Test has a clear name such as `'STEP_KEYS does not contain draftIssue — /draft-issue is interactive-only (v1.41.0, issue #116)'`
 - [ ] Existing tests continue to pass
 - [ ] Covers AC13, FR18
 
@@ -453,15 +453,15 @@
 - [ ] Notes that the skill reuses the Claude Design helper from #124
 - [ ] Covers all #125 user-facing changes
 
-### T031: Bump plugin version to 7.3.0 and update CHANGELOG
+### T031: Bump plugin version to 1.46.0 and update CHANGELOG
 **File(s)**: `plugins/nmg-sdlc/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `CHANGELOG.md`
 **Type**: Modify
 **Depends**: T022, T023, T024, T025, T026, T027, T028, T029, T030
 **Status**: Pending
 **Issue**: #125
 **Acceptance**:
-- [ ] `plugins/nmg-sdlc/.claude-plugin/plugin.json` `"version"` is `"7.3.0"`
-- [ ] `.claude-plugin/marketplace.json` plugin entry `"version"` is `"7.3.0"` (matching plugin.json)
+- [ ] `plugins/nmg-sdlc/.claude-plugin/plugin.json` `"version"` is `"1.46.0"`
+- [ ] `.claude-plugin/marketplace.json` plugin entry `"version"` is `"1.46.0"` (matching plugin.json)
 - [ ] `CHANGELOG.md` has `[Unreleased]` entries describing multi-issue detection, dependency inference, autolinking, and Claude Design ingestion
 - [ ] Bump is minor (additive, enhancement label)
 
@@ -527,8 +527,8 @@ Phase 11 (Summary + Docs + Testing):
 | Issue | Date | Summary |
 |-------|------|---------|
 | #4 | 2026-02-15 | Initial feature spec (T001–T004 complete) |
-| #116 | 2026-04-17 | Added Phase 5 (Readability: T005–T008), Phase 6 (Deeper Interview: T009–T013), Phase 7 (Unattended-Mode Removal + Breaking Change: T014–T018), Phase 8 (Docs + Testing: T019–T021). Major version bump v5.2.0 → v6.0.0. |
-| #125 | 2026-04-18 | Added Phase 9 (Multi-Issue Pipeline: T022–T025), Phase 10 (Claude Design + Autolinking: T026–T028), Phase 11 (Batch Summary + Docs + Testing: T029–T032). Minor version bump v7.2.0 → v7.3.0. |
+| #116 | 2026-04-17 | Added Phase 5 (Readability: T005–T008), Phase 6 (Deeper Interview: T009–T013), Phase 7 (Unattended-Mode Removal + Breaking Change: T014–T018), Phase 8 (Docs + Testing: T019–T021). Major version bump v1.40.0 → v1.41.0. |
+| #125 | 2026-04-18 | Added Phase 9 (Multi-Issue Pipeline: T022–T025), Phase 10 (Claude Design + Autolinking: T026–T028), Phase 11 (Batch Summary + Docs + Testing: T029–T032). Minor version bump v1.45.0 → v1.46.0. |
 
 ---
 

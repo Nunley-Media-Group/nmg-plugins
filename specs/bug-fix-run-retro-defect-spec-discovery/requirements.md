@@ -44,7 +44,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | Any (cross-platform) |
-| **Version / Commit** | nmg-sdlc v2.12.8+ |
+| **Version / Commit** | nmg-sdlc v1.22.7+ |
 | **Browser / Runtime** | Claude Code CLI |
 | **Configuration** | Default |
 

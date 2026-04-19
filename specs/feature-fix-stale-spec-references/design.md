@@ -9,7 +9,7 @@
 
 ## Overview
 
-This is a documentation-only cleanup that rewrites spec bodies under `specs/` to match the current implementation after v4.1.0 (OpenClaw/Discord removal) and v5.0.0 (skill rename). No runtime files, steering docs, or plugin skill files are modified.
+This is a documentation-only cleanup that rewrites spec bodies under `specs/` to match the current implementation after v1.35.0 (OpenClaw/Discord removal) and v1.38.0 (skill rename). No runtime files, steering docs, or plugin skill files are modified.
 
 The cleanup uses a **two-pass strategy**:
 1. **Mechanical pass** — batch find/replace for deterministic, context-free substitutions (`openclaw/scripts/` → `scripts/`, `generating-openclaw-config` → `init-config`).
@@ -17,7 +17,7 @@ The cleanup uses a **two-pass strategy**:
 
 The acceptance signal is a single verification grep sweep (AC7) that must return zero matches for every drift pattern. Because the final state is observable via grep, the cleanup is deterministic and easy to verify even though the implementation mixes mechanical and judgment-based steps.
 
-An important nuance discovered during design: `postDiscord()` still exists as a **name** in `scripts/sdlc-runner.mjs` line 456, but its body is now a one-liner that calls `log()`. The v4.1.0 removal preserved the function name as a pass-through for minimal churn. After user direction, the scope expanded to also **eliminate the legacy function from the code** — `postDiscord()` is removed from the runner and every call site is inlined as a direct `log('[STATUS] ${msg}')` invocation. This prevents future specs from re-introducing the stale name and removes a misleading breadcrumb that hints at a Discord integration that no longer exists.
+An important nuance discovered during design: `postDiscord()` still exists as a **name** in `scripts/sdlc-runner.mjs` line 456, but its body is now a one-liner that calls `log()`. The v1.35.0 removal preserved the function name as a pass-through for minimal churn. After user direction, the scope expanded to also **eliminate the legacy function from the code** — `postDiscord()` is removed from the runner and every call site is inlined as a direct `log('[STATUS] ${msg}')` invocation. This prevents future specs from re-introducing the stale name and removes a misleading breadcrumb that hints at a Discord integration that no longer exists.
 
 ---
 
@@ -205,7 +205,7 @@ These edits cannot be done mechanically because the surrounding prose or AC stru
 
 **Strategy**:
 - Find passages describing "milestone completion triggers major version bump" or "last issue in milestone → major"
-- Rewrite to describe the current v4.3.0 behavior: "Major version bumps are always manual; milestone completion no longer affects bump classification"
+- Rewrite to describe the current v1.37.0 behavior: "Major version bumps are always manual; milestone completion no longer affects bump classification"
 - `tech.md` already documents this correctly (out of scope), so specs can defer to tech.md where appropriate
 
 ---
@@ -284,7 +284,7 @@ The spec-cleanup portion is documentation-only; the runner change is small and d
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
-| Mechanical replacement breaks a valid reference (e.g., a spec legitimately discussed the pre-v4.1.0 path as historical context) | Low | Low | After Step 2 mechanical pass, do a spot-check diff read before committing; if any replacement turned prose nonsensical, revert that specific edit |
+| Mechanical replacement breaks a valid reference (e.g., a spec legitimately discussed the pre-v1.35.0 path as historical context) | Low | Low | After Step 2 mechanical pass, do a spot-check diff read before committing; if any replacement turned prose nonsensical, revert that specific edit |
 | Semantic rewrites over-aggressively delete AC content that is still valid | Medium | Medium | For borderline cases (e.g., F2 in `bug-sdlc-runner-edge-case-fixes/`), preserve the historical context and clarify that the fix was applied, rather than deleting the section outright |
 | `feature-openclaw-runner-operations` redirect target is wrong | Low | Low | Per S4, the target (`feature-add-skill-to-run-full-sdlc-pipeline-loop-from-within-claude-code/`) is the only surviving spec covering runner internals; verify by reading the target spec's scope |
 | Grep sweep misses a drift pattern due to unusual formatting (markdown variants, code fences, etc.) | Low | Low | AC7 includes case-insensitive greps; run them with `-i` and review any remaining hits before declaring done |

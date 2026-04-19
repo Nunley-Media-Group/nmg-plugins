@@ -25,7 +25,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | Any (cross-platform) |
-| **Version / Commit** | nmg-sdlc v2.17.2 |
+| **Version / Commit** | nmg-sdlc v1.27.2 |
 | **Browser / Runtime** | Claude Code CLI (headless via `claude -p`) |
 | **Configuration** | `.claude/unattended-mode` present; no spec files at `specs/` |
 

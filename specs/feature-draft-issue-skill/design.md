@@ -90,15 +90,15 @@ Per AC12, `/draft-issue` **actively ignores** `.claude/unattended-mode`:
 
 This implements the retrospective learning on "features that explicitly exclude integration with a system-wide behavior mode": the exclusion must be active (remove all detection code) rather than passive (only documented in Out of Scope).
 
-**Breaking-change treatment** (FR27 / FR28 / AC18, Risk-4 mitigation): because the removal changes observable behavior for any user who previously relied on `.claude/unattended-mode` in `/draft-issue`, the plugin version is bumped **major** (v5.2.0 → v6.0.0) and the CHANGELOG `[Unreleased]` entry sits under a `### Changed (BREAKING)` subsection. In SKILL.md, where the Unattended Mode section used to live, a **single sign-post sentence** remains so users scrolling for the old behavior are explicitly redirected:
+**Breaking-change treatment** (FR27 / FR28 / AC18, Risk-4 mitigation): because the removal changes observable behavior for any user who previously relied on `.claude/unattended-mode` in `/draft-issue`, the plugin version is bumped **major** (v1.40.0 → v1.41.0) and the CHANGELOG `[Unreleased]` entry sits under a `### Changed (BREAKING)` subsection. In SKILL.md, where the Unattended Mode section used to live, a **single sign-post sentence** remains so users scrolling for the old behavior are explicitly redirected:
 
-> As of v6.0.0, `/draft-issue` no longer honors `.claude/unattended-mode`. Issue drafting requires interactive input.
+> As of v1.41.0, `/draft-issue` no longer honors `.claude/unattended-mode`. Issue drafting requires interactive input.
 
 In `scripts/sdlc-runner.mjs`, a comment above `STEP_KEYS` captures the same contract for future contributors:
 
 ```js
 // NOTE: draftIssue is intentionally absent. /draft-issue is interactive-only
-// as of plugin v6.0.0 (issue #116). Do not add it here — see
+// as of plugin v1.41.0 (issue #116). Do not add it here — see
 // plugins/nmg-sdlc/skills/draft-issue/SKILL.md for the rationale.
 ```
 
@@ -631,7 +631,7 @@ Not applicable — this is a Markdown skill that drives the Claude Code CLI. UI 
 | `specs/feature-draft-issue-skill/feature.gherkin` | Modify | Add #125 scenarios covering AC19–AC28 |
 | `README.md` | Modify | Document multi-issue detection with split/graph confirm gates, autolinking behavior, Claude Design URL ingestion, and partial-batch summary behavior |
 | `CHANGELOG.md` | Modify | Add `[Unreleased]` entry describing the multi-issue, dependency, autolinking, and Claude Design additions under the appropriate subsection |
-| `plugins/nmg-sdlc/.claude-plugin/plugin.json` | Modify | Minor version bump (7.2.0 → 7.3.0) — additive enhancement, no breaking changes |
+| `plugins/nmg-sdlc/.claude-plugin/plugin.json` | Modify | Minor version bump (1.45.0 → 1.46.0) — additive enhancement, no breaking changes |
 | `.claude-plugin/marketplace.json` | Modify | Match version bump in the plugin entry |
 
 ---
@@ -648,7 +648,7 @@ Not applicable — this is a Markdown skill that drives the Claude Code CLI. UI 
 | Preserve previous draft as diff in revise loop | Show the user what changed between iterations | **Rejected for this iteration** — wholesale replacement is simpler to implement and reason about (#116) |
 | Single universal interview path regardless of depth | Always run the extended interview | **Rejected** — adds friction for trivial issues and contradicts retrospective learning on not interrogating users about small changes (#116) |
 | Auto-terminate revise loop after N iterations | Kill the loop when `consecutiveRevises` crosses a threshold | **Rejected** — auto-termination overrides user agency. Soft guard that expands options is preferable (#116 Risk-3 mitigation) |
-| Minor-version bump for unattended-mode removal | Ship as v5.3.0 since runner wasn't using it anyway | **Rejected** — removal of documented behavior is a breaking change regardless of usage. Semver discipline outweighs observed-usage heuristics (#116 Risk-4 mitigation) |
+| Minor-version bump for unattended-mode removal | Ship as v1.40.1 since runner wasn't using it anyway | **Rejected** — removal of documented behavior is a breaking change regardless of usage. Semver discipline outweighs observed-usage heuristics (#116 Risk-4 mitigation) |
 | Uniform full-block playback at all depths | Always show the 5-line structured playback | **Rejected** — playback friction should scale with interview depth, which itself scales with issue complexity (#116 Risk-2 mitigation) |
 | Auto-split without user confirm (#125) | Skip Step 1c and drop straight into drafting N issues | **Rejected** — false positives are inevitable for a heuristic; a collapse-back path (Step 1c `[3]`) is cheap insurance against wrong splits silently creating extra issues |
 | Implicit dependency ordering without Step 1d graph-confirm (#125) | Infer a DAG and use it without user visibility | **Rejected** — dependency structure determines topological order, sub-issue wiring, and body cross-refs; surfacing it catches misinference before multiple issues are created in the wrong order |
@@ -714,7 +714,7 @@ Not applicable — this is a Markdown skill that drives the Claude Code CLI. UI 
 | 1 | Adaptive-depth heuristic misclassifies (runs core when extended needed) | Medium→Low | Med→Low | **(a)** Borderline-signal bias pushes ambiguous cases to extended (FR23). **(b)** Explicit user override via `AskUserQuestion` after the depth log (FR22 / AC15). **(c)** End-of-interview "Anything I missed?" probe catches gaps before playback (FR24). Combined: user has two explicit redirection points plus a conservative default. |
 | 2 | Playback step is perceived as friction for trivial issues | Medium→Low | Low | Core-depth playback collapses to a one-line confirm (FR25 / AC16); extended-depth keeps the full 5-line block. Friction scales with stakes. |
 | 3 | Revise loop never terminates (user keeps picking [2]) | Low | Low | Soft guard on the 4th iteration expands the menu to include `Reset and re-interview` / `Accept as-is` (FR26 / AC17). User remains in control; no auto-termination. |
-| 4 | Removing unattended-mode breaks a headless user | Low | Med→Low | **(a)** Classified as BREAKING — major version bump v5.2.0 → v6.0.0 (FR27). **(b)** In-file sign-post sentence in SKILL.md redirects users scrolling for old behavior (FR28 / AC18). **(c)** `STEP_KEYS` comment in sdlc-runner.mjs prevents re-introduction. |
+| 4 | Removing unattended-mode breaks a headless user | Low | Med→Low | **(a)** Classified as BREAKING — major version bump v1.40.0 → v1.41.0 (FR27). **(b)** In-file sign-post sentence in SKILL.md redirects users scrolling for old behavior (FR28 / AC18). **(c)** `STEP_KEYS` comment in sdlc-runner.mjs prevents re-introduction. |
 | 5 | Users override the depth decision (heuristic wrong) | Medium | Low | Override is now an explicit step (FR22). When the user overrides, a one-line session note captures it (FR29, Risk-5 instrumentation) so dogfooding accumulates evidence for future threshold tuning. Override is a feature, not a failure mode. |
 | 6 | Step 1b heuristic misclassifies single-issue prompts as multi-issue (false positive) | Medium | Low | **(a)** `[3] Collapse` always present in Step 1c returns the flow to Step 2 unchanged (FR31). **(b)** Heuristic trail note exposes the signals so the user can judge. **(c)** Confidence indicator (`high`/`medium`/`low`) sets user expectation. Cost of a false positive is one extra menu selection, not wasted drafting work. |
 | 7 | Step 1b misses multi-issue prompts (false negative) | Medium | Medium | User can always re-invoke `/draft-issue` for subsequent asks — existing single-issue behavior is the baseline, not a regression. Signal counts logged even on the single-issue path (FR37) provide feedback for future threshold tuning. |
@@ -740,7 +740,7 @@ Not applicable — this is a Markdown skill that drives the Claude Code CLI. UI 
 |-------|------|---------|
 | #4 | 2026-02-15 | Initial feature spec |
 | #116 | 2026-04-17 | Readability treatment (Workflow Overview diagram, per-step Input/Process/Output, inline review summary with [1]/[2] menu). Deeper interview (NFR/edge/related probing, adaptive depth heuristic with user-visible log, Step 5c Playback and Confirm gate, Step 5b downstream explanation). Unattended-mode actively removed from the skill; runner non-invocation hardened with a regression test. Risk-mitigation controls added: depth override step with borderline-signal bias (AC15), depth-proportional playback (AC16), soft guard on revise loop with Reset/Accept-as-is options (AC17), major-version bump with in-file sign-post and STEP_KEYS comment (AC18). |
-| #125 | 2026-04-18 | Multi-issue pipeline (Step 1a design fetch, Step 1b detection heuristic, Step 1c split-confirm, Step 1d dependency-graph inference + confirm), per-issue loop over existing Steps 2–9 with shared productContext/designContext/dag, Step 10 autolinking (`gh --add-sub-issue` probe with body-cross-ref fallback), Step 11 batch summary with partial-batch preservation. SessionState wrapper introduced around DraftState. Minor version bump (7.2.0 → 7.3.0). Risks 6–13 added covering false positives/negatives, graph misinference, autolink failures, design fetch stalls, placeholder orphans, and helper drift with #124. |
+| #125 | 2026-04-18 | Multi-issue pipeline (Step 1a design fetch, Step 1b detection heuristic, Step 1c split-confirm, Step 1d dependency-graph inference + confirm), per-issue loop over existing Steps 2–9 with shared productContext/designContext/dag, Step 10 autolinking (`gh --add-sub-issue` probe with body-cross-ref fallback), Step 11 batch summary with partial-batch preservation. SessionState wrapper introduced around DraftState. Minor version bump (1.45.0 → 1.46.0). Risks 6–13 added covering false positives/negatives, graph misinference, autolink failures, design fetch stalls, placeholder orphans, and helper drift with #124. |
 
 ---
 

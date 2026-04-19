@@ -14,7 +14,7 @@
 | T001 | Sweep `specs/` and `steering/` references → root-level paths | [ ] |
 | T002 | Rename skill `migrate-project` → `upgrade-project` + extend for legacy-layout relocation | [ ] |
 | T003 | Add legacy-layout hard gate to `/start-issue` + precondition checks to pipeline skills | [ ] |
-| T004 | Bump plugin version to 6.1.0, update README + CHANGELOG + in-repo steering docs | [ ] |
+| T004 | Bump plugin version to 1.42.0, update README + CHANGELOG + in-repo steering docs | [ ] |
 | T005 | Add regression Gherkin scenarios | [ ] |
 | T006 | Verify no regressions — exercise full pipeline + AC5 grep check | [ ] |
 
@@ -94,7 +94,7 @@ Although this is a defect, the fix touches 20+ files across skills, templates, m
 
 ---
 
-### T004: Bump Version to 6.1.0 + Update README + CHANGELOG + In-Repo Steering
+### T004: Bump Version to 1.42.0 + Update README + CHANGELOG + In-Repo Steering
 
 **File(s)**:
 - `plugins/nmg-sdlc/.claude-plugin/plugin.json`
@@ -107,8 +107,8 @@ Although this is a defect, the fix touches 20+ files across skills, templates, m
 **Type**: Modify
 **Depends**: T001, T002, T003
 **Acceptance**:
-- [ ] `plugins/nmg-sdlc/.claude-plugin/plugin.json` version = `6.1.0`
-- [ ] `.claude-plugin/marketplace.json` plugin entry version = `6.1.0` (marketplace `metadata.version` unchanged)
+- [ ] `plugins/nmg-sdlc/.claude-plugin/plugin.json` version = `1.42.0`
+- [ ] `.claude-plugin/marketplace.json` plugin entry version = `1.42.0` (marketplace `metadata.version` unchanged)
 - [ ] `README.md`: all three `.claude/specs` / `.claude/steering` references updated; every `/migrate-project` mention replaced with `/upgrade-project`; "Installation" and "Workflow" sections describe the new paths
 - [ ] `CHANGELOG.md` has an `## [Unreleased]` entry documenting: (a) breaking directory convention change with migration command, (b) `/migrate-project` → `/upgrade-project` rename, (c) `migration-exclusions.json` → `upgrade-exclusions.json` rename
 - [ ] In-repo steering docs (`steering/{product,tech,structure}.md`) updated to describe the NEW canonical locations (`steering/`, `specs/`) — even though these files themselves still live at `steering/` until T006 runs the upgrade on this repo

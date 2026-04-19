@@ -67,7 +67,7 @@ If a `VERSION` file exists in the project root, determine the appropriate versio
    - Use the Bump Type from the first matching row.
    - **Fallback**: If the subsection is missing from `tech.md`, or if no issue label matches any row, default to **minor** (same as today's behavior for unlabeled issues).
 
-4. **Check milestone completion**: Read the issue's milestone via `gh issue view #N --json milestone --jq '.milestone.title // empty'`. If the issue has a milestone, query its open issue count: `gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title=="{milestone_title}") | .open_issues'`. If `open_issues` is 1 (this issue is the last one open), propose a **major** bump instead (e.g., 2.11.0 → 3.0.0).
+4. **Check milestone completion**: Read the issue's milestone via `gh issue view #N --json milestone --jq '.milestone.title // empty'`. If the issue has a milestone, query its open issue count: `gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title=="{milestone_title}") | .open_issues'`. If `open_issues` is 1 (this issue is the last one open), propose a **major** bump instead (e.g., 1.20.0 → 1.32.0).
 5. **Calculate the new version string** based on the classification.
 6. **Present to user** (via `AskUserQuestion`):
    ```

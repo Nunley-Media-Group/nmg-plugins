@@ -150,5 +150,5 @@ Result: All plugins at latest version; user told to restart Claude Code
 
 ### Example 2: Version mismatch detected
 User says: "Update plugins"
-Actions: Same workflow, but marketplace.json says v2.12.0 while plugin.json says v2.11.0
+Actions: Same workflow, but marketplace.json says v1.21.0 while plugin.json says v1.20.0
 Result: Plugins installed successfully with warning about version mismatch

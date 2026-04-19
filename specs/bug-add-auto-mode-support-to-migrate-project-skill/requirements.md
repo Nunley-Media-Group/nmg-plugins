@@ -24,7 +24,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | Any (macOS, Linux, Windows) |
-| **Version / Commit** | nmg-sdlc v2.16.0 |
+| **Version / Commit** | nmg-sdlc v1.26.0 |
 | **Browser / Runtime** | Claude Code CLI via SDLC runner's `claude -p` subprocess |
 | **Configuration** | `.claude/unattended-mode` present; headless execution |
 

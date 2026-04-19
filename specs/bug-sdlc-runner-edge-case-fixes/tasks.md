@@ -46,7 +46,7 @@
 - [ ] The status-notification retry loop remains functionally identical (same backoff durations, same retry count)
 - [ ] The enclosing function is already `async`, so no signature change needed
 
-**Notes**: The enclosing status-notification function was already `async` — the `await` worked without any caller changes. (The retry loop itself was later removed in v4.1.0.)
+**Notes**: The enclosing status-notification function was already `async` — the `await` worked without any caller changes. (The retry loop itself was later removed in v1.35.0.)
 
 ### T003: Fix F3 — Use `shellEscape()` in `autoCommitIfDirty`
 

@@ -25,7 +25,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | Any (cross-platform) |
-| **Version / Commit** | `sdlc-runner.mjs` v3.1.0 |
+| **Version / Commit** | `sdlc-runner.mjs` v1.33.0 |
 | **Runtime** | Node.js v24+ |
 | **Configuration** | Any SDLC runner config pointing to a target project where `.claude/sdlc-state.json` was previously committed |
 

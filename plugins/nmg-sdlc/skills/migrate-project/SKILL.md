@@ -1,13 +1,13 @@
 ---
 name: migrate-project
-description: "[DEPRECATED — use /upgrade-project instead] This skill was renamed in nmg-sdlc 6.1.0. Invoking /migrate-project prints a deprecation notice pointing to /upgrade-project and exits. Will be removed in the next minor release."
+description: "[DEPRECATED — use /upgrade-project instead] This skill was renamed in nmg-sdlc 1.42.0. Invoking /migrate-project prints a deprecation notice pointing to /upgrade-project and exits. Will be removed in the next minor release."
 disable-model-invocation: true
 allowed-tools: Read
 ---
 
 # Migrate Project (DEPRECATED)
 
-> **This skill has been renamed to `/upgrade-project` as of nmg-sdlc 6.1.0.**
+> **This skill has been renamed to `/upgrade-project` as of nmg-sdlc 1.42.0.**
 >
 > The rename reflects the skill's primary job — bringing a project forward to match the current plugin contract, not just "migrating" isolated artifacts.
 >

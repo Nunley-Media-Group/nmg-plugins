@@ -23,7 +23,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | Any (macOS, Linux, Windows) |
-| **Version / Commit** | nmg-sdlc v2.17.0 |
+| **Version / Commit** | nmg-sdlc v1.27.0 |
 | **Browser / Runtime** | Claude Code CLI |
 | **Configuration** | Any project with legacy-named spec directories |
 

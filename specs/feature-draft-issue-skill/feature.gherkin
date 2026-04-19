@@ -31,11 +31,11 @@ Feature: Creating Issues Skill
     And it includes reproduction steps, expected/actual behavior, and environment table
 
   # --- Unattended Mode Historical Behavior (Issue #4, superseded by #116) ---
-  # Retained for provenance; behavior is removed as of v6.0.0.
+  # Retained for provenance; behavior is removed as of v1.41.0.
 
   Scenario: [SUPERSEDED] Automation mode skips interview
     Given unattended mode is active with ".claude/unattended-mode" file present
-    And plugin version is prior to v6.0.0
+    And plugin version is prior to v1.41.0
     When I invoke "/draft-issue" with a feature description argument
     Then the skill skips the interview
     And it infers 3-5 acceptance criteria from steering docs
@@ -168,19 +168,19 @@ Feature: Creating Issues Skill
     Given the sdlc-runner.mjs STEP_KEYS constant
     When I inspect it
     Then "draftIssue" is not in the list
-    And a comment above STEP_KEYS notes that draft-issue is interactive-only as of plugin v6.0.0
+    And a comment above STEP_KEYS notes that draft-issue is interactive-only as of plugin v1.41.0
     And the regression test asserts STEP_KEYS.includes('draftIssue') === false
 
   Scenario: Breaking-change sign-post is present in SKILL.md  # AC18
-    Given I am reading SKILL.md after the v6.0.0 release
+    Given I am reading SKILL.md after the v1.41.0 release
     When I search for "unattended-mode"
-    Then I find exactly one reference: the sign-post sentence "As of v6.0.0, /draft-issue no longer honors .claude/unattended-mode. Issue drafting requires interactive input."
+    Then I find exactly one reference: the sign-post sentence "As of v1.41.0, /draft-issue no longer honors .claude/unattended-mode. Issue drafting requires interactive input."
 
   Scenario: Plugin version is a major bump reflecting the breaking change  # AC18
-    Given plugin version was v5.2.0
+    Given plugin version was v1.40.0
     When the release for issue #116 ships
-    Then plugin.json version is "6.0.0"
-    And marketplace.json plugin entry version is "6.0.0"
+    Then plugin.json version is "1.41.0"
+    And marketplace.json plugin entry version is "1.41.0"
     And CHANGELOG.md [Unreleased] has a "### Changed (BREAKING)" subsection describing the unattended-mode removal
 
   # --- Automatable explanation (AC14) ---

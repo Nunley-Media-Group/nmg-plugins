@@ -13,7 +13,7 @@ Six independent bugs were identified through a code-level edge case analysis of 
 
 The findings fall into three categories:
 1. **Process lifecycle** (F1, F6): The subprocess spawned by `runClaude()` is not tracked in the module-level `currentProcess` variable, and an unused `AbortController` adds confusion to the timeout path.
-2. **Event loop blocking** (F2): A synchronous `Atomics.wait()` call in a status-notification retry path freezes the event loop, preventing signal handlers from firing during the backoff window. (Historical note: the retry loop itself was removed with the v4.1.0 external-notification rewrite; F2 remains as a record of the blocking-sleep defect that motivated the non-blocking `sleep()` helper still in use today.)
+2. **Event loop blocking** (F2): A synchronous `Atomics.wait()` call in a status-notification retry path freezes the event loop, preventing signal handlers from firing during the backoff window. (Historical note: the retry loop itself was removed with the v1.35.0 external-notification rewrite; F2 remains as a record of the blocking-sleep defect that motivated the non-blocking `sleep()` helper still in use today.)
 3. **Defensive coding gaps** (F3, F4, F5): Shell escaping is incomplete for commit messages, a `git checkout` in the merged-PR path lacks error handling, and a `--resume` with missing state file produces no warning.
 
 ### Affected Code
@@ -31,7 +31,7 @@ The findings fall into three categories:
 
 **F1**: Any SIGTERM/SIGINT signal while a Claude subprocess is running. The signal handler checks `currentProcess` which is always `null`.
 
-**F2**: Any status-notification post failure that triggered the retry loop at the time (network error, timeout). The `Atomics.wait()` call blocked for 2–4 seconds per retry. The retry loop no longer exists after v4.1.0, but the non-blocking `sleep()` helper selected here is the same one the runner still uses today.
+**F2**: Any status-notification post failure that triggered the retry loop at the time (network error, timeout). The `Atomics.wait()` call blocked for 2–4 seconds per retry. The retry loop no longer exists after v1.35.0, but the non-blocking `sleep()` helper selected here is the same one the runner still uses today.
 
 **F3**: A commit message containing backticks or `$()` passed to `autoCommitIfDirty`. Currently all callers pass safe strings, but this is a defense-in-depth gap.
 
@@ -65,7 +65,7 @@ All six fixes are independent, minimal changes within `sdlc-runner.mjs`. No arch
 - **Direct impact**: Only `scripts/sdlc-runner.mjs` is modified
 - **Indirect impact**:
   - F1: Signal handlers (`handleSignal`) will now actually kill subprocesses — this is the *intended* behavior, not a side effect
-  - F2: The status-notification retry loop becomes fully async — callers already `await` it, so no interface change (this loop was removed entirely in v4.1.0)
+  - F2: The status-notification retry loop becomes fully async — callers already `await` it, so no interface change (this loop was removed entirely in v1.35.0)
   - F3: Commit message escaping changes from double-quote to single-quote wrapping — functionally equivalent for git
   - F4: Merged-PR path may now return `null` instead of crashing — the caller already handles `null` as "proceed normally"
   - F5: A new log line appears — purely additive
@@ -79,7 +79,7 @@ All six fixes are independent, minimal changes within `sdlc-runner.mjs`. No arch
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | F1: Subprocess killed prematurely during normal operation | Low | `currentProcess` is only read in the signal handler, which only fires on SIGTERM/SIGINT |
-| F2: Retry timing changes affect status-notification delivery | Low | Same backoff durations, just non-blocking; delivery logic unchanged (retry loop itself removed in v4.1.0) |
+| F2: Retry timing changes affect status-notification delivery | Low | Same backoff durations, just non-blocking; delivery logic unchanged (retry loop itself removed in v1.35.0) |
 | F3: Single-quote in commit messages breaks escaping | Low | `shellEscape()` properly handles embedded single quotes via `'\''` |
 | F4: Merged-PR detection silently skips checkout | Low | Warning is logged; runner falls through to normal detection which will still find the feature branch |
 | F5: Log noise from new warning | Very Low | Only fires on the specific `--resume` + missing state file edge case |

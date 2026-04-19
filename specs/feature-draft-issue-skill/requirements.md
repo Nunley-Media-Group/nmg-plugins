@@ -135,7 +135,7 @@ Issue #125 generalizes `/draft-issue` from a one-issue-per-invocation skill into
 
 **Given** a user upgrades the plugin from a version that honored `.claude/unattended-mode` in `/draft-issue`
 **When** they read SKILL.md or the CHANGELOG
-**Then** the plugin version is bumped **major** (v6.0.0) with a BREAKING entry describing the removal, **and** SKILL.md retains a single sign-post sentence where the Unattended Mode section used to be (e.g., `"As of v6.0.0, /draft-issue no longer honors .claude/unattended-mode. Issue drafting requires interactive input."`), **and** `scripts/sdlc-runner.mjs` includes a comment near `STEP_KEYS` referencing this removal so future contributors do not re-add `draftIssue`
+**Then** the plugin version is bumped **major** (v1.41.0) with a BREAKING entry describing the removal, **and** SKILL.md retains a single sign-post sentence where the Unattended Mode section used to be (e.g., `"As of v1.41.0, /draft-issue no longer honors .claude/unattended-mode. Issue drafting requires interactive input."`), **and** `scripts/sdlc-runner.mjs` includes a comment near `STEP_KEYS` referencing this removal so future contributors do not re-add `draftIssue`
 
 ### AC19: Heuristic Multi-Issue Detection at Step 1b (#125)
 
@@ -229,8 +229,8 @@ Issue #125 generalizes `/draft-issue` from a one-issue-per-invocation skill into
 | FR24 | The final interview round ends with a one-line `"Anything I missed?"` free-text probe before advancing to Step 5c | Must | Issue #116 (Risk 1 mitigation) |
 | FR25 | Step 5c playback length is depth-proportional: core-depth renders a one-line confirm; extended-depth renders the full structured 5-line block | Must | Issue #116 (Risk 2 mitigation) |
 | FR26 | Step 7 revise loop tracks consecutive `[2] Revise` selections; on the 4th iteration the `AskUserQuestion` menu expands to `[1] Keep revising` / `[2] Reset and re-interview` / `[3] Accept as-is` | Must | Issue #116 (Risk 3 mitigation) |
-| FR27 | Version bump is **major** (v5.2.0 → v6.0.0); `CHANGELOG.md` `[Unreleased]` entry is under a BREAKING subsection describing `/draft-issue` unattended-mode removal | Must | Issue #116 (Risk 4 mitigation) |
-| FR28 | SKILL.md retains a one-sentence sign-post where the Unattended Mode section used to be; `scripts/sdlc-runner.mjs` has a comment above `STEP_KEYS` referencing the v6.0.0 removal and prohibiting re-addition of `draftIssue` | Must | Issue #116 (Risk 4 mitigation) |
+| FR27 | Version bump is **major** (v1.40.0 → v1.41.0); `CHANGELOG.md` `[Unreleased]` entry is under a BREAKING subsection describing `/draft-issue` unattended-mode removal | Must | Issue #116 (Risk 4 mitigation) |
+| FR28 | SKILL.md retains a one-sentence sign-post where the Unattended Mode section used to be; `scripts/sdlc-runner.mjs` has a comment above `STEP_KEYS` referencing the v1.41.0 removal and prohibiting re-addition of `draftIssue` | Must | Issue #116 (Risk 4 mitigation) |
 | FR29 | When the user overrides the depth heuristic (FR22), the skill emits a one-line session note (e.g., `"(heuristic chose core, user selected extended)"`) before the interview begins | Must | Issue #116 (Risk 5 mitigation) |
 | FR30 | New Step 1b runs heuristic multi-issue detection using conjunction/topic-shift markers, explicit numbered/bulleted lists, and distinct-component cues; produces either a proposed split with per-ask summaries or a `"single-issue detected"` trail note | Must | Issue #125 |
 | FR31 | Split-confirm menu with three options: `[1] Approve`, `[2] Adjust (merge/re-divide)`, `[3] Collapse to single issue` — approve continues to dependency inference; collapse returns the flow to Step 2 with the original description; adjust loops with free-text input | Must | Issue #125 |

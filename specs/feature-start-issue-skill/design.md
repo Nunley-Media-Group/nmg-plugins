@@ -238,7 +238,7 @@ gh issue list -s open --json number --jq 'length'
 ### Scope Matching
 
 The diagnostic query MUST match the same scope as the original query:
-- If the original query was milestone-scoped (`-m "v2"`), the diagnostic query uses the same milestone filter
+- If the original query was milestone-scoped (`-m "v1"`), the diagnostic query uses the same milestone filter
 - If the original query was repo-wide (no milestone), the diagnostic query is also repo-wide
 - This prevents misleading counts (e.g., 50 open issues repo-wide when the milestone has 0)
 

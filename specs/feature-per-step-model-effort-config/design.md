@@ -414,7 +414,7 @@ README gains a new subsection under "Model & Effort Configuration" that encodes 
 **Curated diff format** — `upgrade-project` compares each `steps.*.{model,effort,maxTurns,timeoutMin}` in the user's config against the shipped example and presents a table:
 
 ```
-Recommended default changes (plugin v7.5 → v7.6):
+Recommended default changes (plugin v1.47.0 → v1.48.0):
 
   steps.startCycle.model:     (unset — inherited "opus") → "haiku"
   steps.startCycle.maxTurns:  5 → 10

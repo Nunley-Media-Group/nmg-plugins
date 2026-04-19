@@ -114,14 +114,14 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [x] Entry describes the new `/migrate-project` skill with key capabilities
 - [x] Follows existing changelog style (bold skill name, em-dash, description)
 
-### T005: Bump plugin version (2.6.0 → 2.7.0)
+### T005: Bump plugin version (1.18.2 → 1.18.3)
 
 **File(s)**: `plugins/nmg-sdlc/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`
 **Type**: Modify
 **Depends**: T002
 **Acceptance**:
-- [x] `plugins/nmg-sdlc/.claude-plugin/plugin.json` → `"version"` updated to `"2.7.0"`
-- [x] `.claude-plugin/marketplace.json` → plugin entry `"version"` updated to `"2.7.0"`
+- [x] `plugins/nmg-sdlc/.claude-plugin/plugin.json` → `"version"` updated to `"1.18.3"`
+- [x] `.claude-plugin/marketplace.json` → plugin entry `"version"` updated to `"1.18.3"`
 - [x] `metadata.version` in `marketplace.json` is NOT changed (it's the collection version)
 
 ---

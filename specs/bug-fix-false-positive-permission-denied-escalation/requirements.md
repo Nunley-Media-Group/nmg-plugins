@@ -27,7 +27,7 @@ Recent real-world incident: issue #181 in the agentchrome repo, verify step. Log
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.3.0) |
-| **Version / Commit** | nmg-sdlc 6.0.0 / nmg-plugins main |
+| **Version / Commit** | nmg-sdlc 1.41.0 / nmg-plugins main |
 | **Runtime** | Node.js v24+ (runner invoked via `/run-loop` or `node scripts/sdlc-runner.mjs`) |
 | **Configuration** | Any runner config; reproduces on any step whose subprocess output mentions the phrase |
 

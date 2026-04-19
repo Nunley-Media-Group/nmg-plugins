@@ -21,7 +21,7 @@
 
 | Factor | Value |
 |--------|-------|
-| **Plugin version** | 2.12.8+ |
+| **Plugin version** | 1.22.7+ |
 | **Skill** | `migrate-project` |
 | **Affected files** | Steering docs (`steering/*.md`) |
 | **Configuration** | Any project where `/setup-steering` intentionally omitted sections |

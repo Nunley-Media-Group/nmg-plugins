@@ -30,8 +30,8 @@ The fix is therefore a directory relocation, not a behavioral change: move the u
 | `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | — | Filters runtime artifacts under `.claude/`; must add legacy-layout gate |
 | `plugins/nmg-sdlc/skills/{write-spec,run-retro,verify-code}/templates/*.md` + `skills/setup-steering/templates/*.md` | ~10 refs | Embedded path references in templates |
 | `plugins/nmg-sdlc/agents/spec-implementer.md` | 2 refs | Reads specs for implementation |
-| `plugins/nmg-sdlc/.claude-plugin/plugin.json` | `version` | Bump to 6.1.0 (minor) |
-| `.claude-plugin/marketplace.json` | plugin `version` | Bump to 6.1.0 (minor) |
+| `plugins/nmg-sdlc/.claude-plugin/plugin.json` | `version` | Bump to 1.42.0 (minor) |
+| `.claude-plugin/marketplace.json` | plugin `version` | Bump to 1.42.0 (minor) |
 | `README.md` | 3 refs | Public docs reference old paths and `/migrate-project` |
 | `CHANGELOG.md` | `[Unreleased]` | Add entry |
 | `scripts/sdlc-runner.mjs`, `scripts/__tests__/sdlc-runner.test.mjs` | — | Audit for any `.claude/specs` or `.claude/steering` path refs and for `migration-exclusions.json` references |
@@ -57,7 +57,7 @@ Perform a mechanical two-part relocation + rename, then add a single hard gate.
 
 **Part C — Hard gate.** Add detection at the top of `/start-issue` (the first interactive SDLC step) that refuses to proceed when `steering/` or `specs/` exists with content, printing an instructive message containing the exact `/upgrade-project` invocation. Other downstream skills rely on this gate rather than each duplicating it; downstream skills add a one-line reference-check in their prerequisites.
 
-**Part D — Version bump.** Bump both `plugin.json` and `marketplace.json` to 6.1.0 (MINOR) — the breaking directory-convention change is mitigated by the automated `/upgrade-project` migration, so per the bug-label classification this ships as a minor bump.
+**Part D — Version bump.** Bump both `plugin.json` and `marketplace.json` to 1.42.0 (MINOR) — the breaking directory-convention change is mitigated by the automated `/upgrade-project` migration, so per the bug-label classification this ships as a minor bump.
 
 **Part E — Self-upgrade of this repo.** This very repo's `steering/` and `specs/` directories are subject to the same protection. The upgrade flow is exercised on this repo as part of verification — after the code changes land, running `/upgrade-project` here relocates our own artifacts.
 
@@ -73,8 +73,8 @@ Perform a mechanical two-part relocation + rename, then add a single hard gate.
 | `plugins/nmg-sdlc/skills/upgrade-project/SKILL.md` | Reads/writes `.claude/upgrade-exclusions.json`; auto-migrates existing `migration-exclusions.json` on first run | AC6 rename with graceful migration |
 | `plugins/nmg-sdlc/skills/start-issue/SKILL.md` | Add legacy-layout detection at Step 0; exit with instructive message when detected | AC3 hard gate |
 | `plugins/nmg-sdlc/skills/{write-spec,write-code,verify-code,open-pr,run-retro,draft-issue}/SKILL.md` | Add short precondition check: "If `steering/` or `specs/` exists, exit with the same `/upgrade-project` pointer" OR document that `/start-issue` is the canonical gate | AC3 + AC5 coverage beyond start-issue |
-| `plugins/nmg-sdlc/.claude-plugin/plugin.json` | `"version": "6.1.0"` | MINOR — automated upgrade handles directory-convention change |
-| `.claude-plugin/marketplace.json` | plugin entry `"version": "6.1.0"` | Marketplace index must match |
+| `plugins/nmg-sdlc/.claude-plugin/plugin.json` | `"version": "1.42.0"` | MINOR — automated upgrade handles directory-convention change |
+| `.claude-plugin/marketplace.json` | plugin entry `"version": "1.42.0"` | Marketplace index must match |
 | `README.md` | Rewrite 3 path refs and every `/migrate-project` reference | Public docs must match behavior |
 | `CHANGELOG.md` | Add `## [Unreleased]` entries | Conventional changelog |
 | `steering/{product,tech,structure}.md` (this repo) | Update any path references | Steering docs in this repo also reference `specs/` / `steering/` conventions |
