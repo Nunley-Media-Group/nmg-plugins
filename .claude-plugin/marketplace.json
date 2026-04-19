@@ -13,8 +13,14 @@
       "name": "nmg-sdlc",
       "source": "./plugins/nmg-sdlc",
       "description": "BDD spec-driven development: issue creation, specifications, verification, and PR workflows.",
-      "version": "1.50.0",
-      "keywords": ["sdlc", "bdd", "gherkin", "specifications", "github-issues"]
+      "version": "1.51.0",
+      "keywords": [
+        "sdlc",
+        "bdd",
+        "gherkin",
+        "specifications",
+        "github-issues"
+      ]
     }
   ]
 }
