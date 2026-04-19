@@ -1,7 +1,7 @@
 # Requirements: Starting Issues Skill
 
-**Issues**: #10, #89
-**Date**: 2026-02-25
+**Issues**: #10, #89, #127
+**Date**: 2026-04-18
 **Status**: Approved
 **Author**: Claude Code (retroactive)
 
@@ -18,6 +18,8 @@
 ## Background
 
 The `/start-issue` skill was extracted from the earlier `/beginning-dev` skill to provide standalone issue selection and branch setup. It lists open GitHub issues, lets the developer select one (or accepts an issue number argument in unattended-mode), creates a feature branch linked to the issue via `gh issue develop`, and updates the issue status to "In Progress" in any associated GitHub Project. In unattended mode, issues are sorted by number ascending (oldest first) and selected automatically without user confirmation.
+
+Issue #127 extends the skill to be dependency-aware: it reads the sub-issue / "Depends on" wiring produced by `/draft-issue` (Issues #124, #125) and filters out blocked issues, ordering the remaining candidates topologically so parents always appear before their children.
 
 ---
 
@@ -72,6 +74,47 @@ The `/start-issue` skill was extracted from the earlier `/beginning-dev` skill t
 **When** the zero-result diagnostic output is returned
 **Then** the output indicates no work is available without suggesting label checks (e.g., "No automatable issues found. 0 open issues in scope.")
 
+### AC9: Blocked Issues Are Filtered From Selection
+
+**Given** an issue whose declared dependencies (via sub-issue parent link or "Depends on" body cross-ref) include any issue in `open` state
+**When** `/start-issue` builds its selection list (interactive or unattended)
+**Then** the blocked issue is omitted from the list entirely
+
+### AC10: Unblocked Issues Are Topologically Ordered
+
+**Given** the set of unblocked issues for the current scope
+**When** the selection list is rendered
+**Then** issues are ordered topologically so that parents appear before their descendants
+**And** ties (siblings at the same DAG level) break by issue number ascending to preserve current predictability
+
+### AC11: Cycles Are Detected and Handled Gracefully
+
+**Given** a cycle exists in the dependency graph among the candidate issues
+**When** topological ordering runs
+**Then** the cycle is logged as a warning with the cycle participants
+**And** the affected issues are placed at the end of the list in issue-number order
+**And** the run does not abort
+
+### AC12: Unattended Mode Honors Blocked-Filter
+
+**Given** unattended mode is active
+**When** `/start-issue` auto-selects the next issue
+**Then** it picks the first unblocked `automatable` issue in topological order
+**And** never selects a blocked issue, even if that issue has the lowest number
+
+### AC13: Session Note Reports Filtered Count
+
+**Given** `/start-issue` has filtered zero or more blocked issues from the candidate set
+**When** the selection list is emitted (or auto-selection completes)
+**Then** a one-line session note reports how many issues were filtered as blocked (e.g., "Filtered 3 blocked issues from selection")
+
+### AC14: Dependencies Are Read From Both Wiring Formats
+
+**Given** an issue whose parents are declared via GitHub native sub-issue / tracked-by relationships
+**Or** via `Depends on: #X` / `Blocks: #Y` body cross-refs
+**When** dependency resolution runs
+**Then** both wiring formats are parsed and merged into the same dependency graph
+
 ---
 
 ## Functional Requirements
@@ -86,6 +129,13 @@ The `/start-issue` skill was extracted from the earlier `/beginning-dev` skill t
 | FR6 | Query total open issue count (same scope, without label filter) when automatable count is zero in unattended-mode | Must | Second `gh issue list` without `--label` |
 | FR7 | Include total open issue count in zero-result diagnostic output | Must | Enhances the "No automatable issues found" message |
 | FR8 | Suggest checking label assignment when open issues > 0 but automatable = 0 | Should | Actionable guidance for operators |
+| FR9 | Parse dependency relationships from GitHub native sub-issue / tracked-by links | Must | Via `gh issue view --json parent,subIssues` or equivalent GraphQL |
+| FR10 | Parse dependency relationships from body cross-refs: `Depends on: #X` and `Blocks: #Y` | Must | Merge with native-link graph |
+| FR11 | Filter out any issue whose dependencies include an open issue | Must | Applies to both interactive and unattended modes |
+| FR12 | Topologically order the remaining issues; break ties by issue number ascending | Must | Parents before descendants |
+| FR13 | Detect cycles; log a warning and place cycle members at the end in issue-number order without aborting | Must | Graceful degradation |
+| FR14 | Emit a one-line session note reporting the count of filtered blocked issues | Should | Observability |
+| FR15 | Apply the same filter + order in unattended-mode (selects the first unblocked `automatable` issue in topological order) | Must | AC12 compliance |
 
 ---
 
@@ -93,9 +143,9 @@ The `/start-issue` skill was extracted from the earlier `/beginning-dev` skill t
 
 | Aspect | Requirement |
 |--------|-------------|
-| **Performance** | Branch creation completes in seconds |
+| **Performance** | Dependency resolution must complete within ~2 seconds for milestones up to 50 issues; prefer a single GraphQL batch query over per-issue `gh issue view` calls where practical |
 | **Security** | Uses authenticated `gh` CLI for all GitHub operations |
-| **Reliability** | Graceful skip if issue is not in any GitHub Project |
+| **Reliability** | Graceful skip if issue is not in any GitHub Project; graceful degradation on cycle detection |
 
 ---
 
@@ -134,10 +184,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 
 ### Internal Dependencies
 - [x] Plugin scaffold (#2)
+- [x] Dependency wiring in `/draft-issue` (#124, #125) — required for any dependency data to exist
 
 ### External Dependencies
 - [x] `gh` CLI for issue listing, branch creation, GraphQL API
 - [x] GitHub Projects v2 API for status updates
+- [x] GitHub sub-issue / tracked-by relationship API (preview feature exposed via `gh api graphql`)
 
 ---
 
@@ -149,6 +201,9 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - Automatically applying the `automatable` label to issues
 - Changing how the `automatable` label is managed by `/draft-issue`
 - Adding resilience for other label types
+- Creating, editing, or inferring dependency relationships — owned by `/draft-issue` (#124, #125); `/start-issue` only reads existing wiring
+- Resolving cycles automatically — graceful degradation only
+- Cross-repository dependency resolution — single-repo scope
 
 ---
 
@@ -174,6 +229,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 |-------|------|---------|
 | #10 | 2026-02-15 | Initial feature spec |
 | #89 | 2026-02-25 | Add diagnostics for zero automatable issues in unattended-mode: open issue count, label suggestion |
+| #127 | 2026-04-18 | Filter blocked issues and topologically order selection; read sub-issue and body-cross-ref dependency wiring; graceful cycle handling; apply to unattended mode |
 
 ## Validation Checklist
 

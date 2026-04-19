@@ -21,7 +21,7 @@ Select a GitHub issue to work on, create a linked feature branch, and set the is
 
 If the file `.claude/unattended-mode` exists in the project directory:
 - If an issue number was provided as an argument, **skip Steps 2–3** (selection and confirmation) — go directly to Step 4.
-- If no issue number was provided, **select the first available issue** (sorted by issue number ascending — oldest first) from the first viable milestone (sorted alphabetically) (or all open issues if no viable milestone exists) **without calling `AskUserQuestion`**. **Skip Step 3 confirmation.**
+- If no issue number was provided, **select the first unblocked `automatable` issue in topological order** (ties broken by issue number ascending) from the first viable milestone (sorted alphabetically) (or all open issues if no viable milestone exists) **without calling `AskUserQuestion`**. **Skip Step 3 confirmation.** Blocked issues (any issue whose declared dependencies include an open issue) are never selected, even if they have the lowest issue number — see Step 1a: Dependency Resolution.
 - **Only issues with the `automatable` label are eligible.** Add `--label automatable` to all `gh issue list` commands in unattended mode. If no automatable issues are found, run a diagnostic query (see "Unattended-Mode: Empty Result Handling") and exit without creating a branch.
 
 ## Workflow Overview
@@ -29,10 +29,11 @@ If the file `.claude/unattended-mode` exists in the project directory:
 ```
 /start-issue [#N]
     │
-    ├─ 1. Fetch milestones & issues
-    ├─ 2. Present issue selection (AskUserQuestion)
-    ├─ 3. Confirm selected issue
-    └─ 4. Create linked feature branch & set issue to In Progress
+    ├─ 1.  Fetch milestones & issues
+    ├─ 1a. Dependency resolution (filter blocked, topological sort)
+    ├─ 2.  Present issue selection (AskUserQuestion)
+    ├─ 3.  Confirm selected issue
+    └─ 4.  Create linked feature branch & set issue to In Progress
          ├─ Precondition: working tree must be clean
          └─ Create branch, update status
 ```
@@ -137,11 +138,93 @@ After fetching issues in unattended mode, if the result is an empty array (`[]`)
 
 3. Exit immediately — do **not** create a branch, do **not** fall back to non-automatable issues.
 
+After the raw candidate set is produced by Step 1 (and the empty-result handler has not fired), **proceed to Step 1a before any presentation or auto-selection**.
+
+## Step 1a: Dependency Resolution
+
+Filter out blocked issues and topologically order the remainder so parents appear before their descendants. This runs in **both interactive and unattended mode**, on the candidate set produced by Step 1. Emit a session note reporting the filtered count before presentation/auto-selection, even when the count is zero.
+
+### Fetch Dependency Metadata (single GraphQL batch)
+
+Issue a single `gh api graphql` call that requests `parent`, `subIssues`, `state`, and `body` for every candidate issue in one round-trip. The query shape per issue:
+
+```graphql
+issue(number: N) {
+  number
+  state
+  parent { number state }                       # tracked-by link
+  subIssues(first: 50) { nodes { number state } }
+  body
+}
+```
+
+Any parent whose `state` is not `CLOSED` (including `OPEN`) is treated as an unresolved dependency.
+
+### Parse Body Cross-Refs
+
+Scan each issue body **line-by-line, case-insensitive, line-anchored**:
+
+| Pattern | Meaning |
+|---------|---------|
+| `^\s*Depends on:\s*(#\d+(?:\s*,\s*#\d+)*)` | Current issue depends on the listed issues (they are parents) |
+| `^\s*Blocks:\s*(#\d+(?:\s*,\s*#\d+)*)` | Current issue blocks the listed issues (they depend on current) |
+
+Extract issue numbers with `#?(\d+)`. **Normalize**: a `Blocks: #Y` on issue `X` is recorded as a `Depends on: #X` on issue `Y`. Cross-repo references (e.g. `owner/repo#N`) are ignored.
+
+### Build Graph
+
+Construct `parentsOf: Map<issue_number, Set<parent_number>>` by merging the native links (parent + inverse sub-issues) with the body-cross-ref data. An issue declared as a parent in both formats counts once (set deduplication).
+
+### Blocked Filter
+
+An issue `I` is **blocked** and dropped from the candidate set if any element of `parentsOf[I]` is not in `CLOSED` state. Parents that are missing, deleted, or cross-repo are treated as closed (fail-open) so typos or deleted refs do not halt the pipeline.
+
+### Topological Sort (Kahn's algorithm)
+
+1. Compute in-degree counting only parents that are **also in the candidate set** (external parents are already closed by precondition).
+2. Seed a priority queue with all zero-in-degree nodes, ordered by **issue number ascending**.
+3. Pop the lowest-numbered zero-in-degree node, append it to the output, decrement in-degrees of its children, and enqueue newly-zero children.
+4. Repeat until the queue drains.
+
+Ties between sibling zero-in-degree nodes always break by issue number ascending to preserve predictable ordering.
+
+### Cycle Handling
+
+If any candidate remains un-emitted after the queue drains, those nodes form a cycle. **Do not abort**:
+
+1. Emit a warning naming the participants:
+   ```
+   WARNING: Dependency cycle detected among issues #A, #B, #C — placing at end of list in issue-number order.
+   ```
+2. Append the cycle members to the output list in **issue-number ascending order**.
+3. Continue.
+
+### Fallback Chain
+
+| Failure | Fallback |
+|---------|----------|
+| GraphQL batch query fails (network/auth/preview unavailable) | Re-fetch bodies only via `gh issue view --json body` per issue; parse body cross-refs only; emit `WARNING: Native dependency links unavailable; using body cross-refs only.` |
+| Body fetch also fails | Skip dependency resolution entirely; emit a warning; preserve legacy issue-number-ascending ordering; do not abort |
+
+### Session Note
+
+Before presentation (interactive) or auto-selection (unattended), emit exactly one line to stdout:
+
+```
+Filtered N blocked issues from selection.
+```
+
+Emit the line **even when `N == 0`** — it confirms dependency resolution ran (observability per FR14).
+
+### Output
+
+The topologically-ordered, blocked-filtered list from Step 1a is what Steps 2 and the unattended auto-pick consume.
+
 ## Step 2: Present Issue Selection
 
 > **Unattended-mode:** If `.claude/unattended-mode` exists, skip this step entirely — do NOT call `AskUserQuestion`.
 
-Use `AskUserQuestion` to present up to 4 issues as options.
+Use `AskUserQuestion` to present up to 4 issues as options, drawn from the **topologically-ordered, blocked-filtered list produced by Step 1a** (not the raw Step 1 fetch).
 
 - Each option label: `#N: Title`
 - Each option description: labels (comma-separated), or "No labels" if none. If the issue has the `automatable` label, append `(automatable)` to the description.
