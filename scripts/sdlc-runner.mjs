@@ -208,7 +208,7 @@ function validateConfig(config) {
       if (step.effort === 'max') {
         errors.push(`steps.${key}.effort "max" is intentionally excluded from nmg-sdlc defaults — max is prone to overthinking on coding workloads; use "xhigh" instead`);
       } else if (step.effort !== undefined && !VALID_EFFORTS.includes(step.effort)) {
-        errors.push(`steps.${key}.effort "${step.effort}" — must be one of: ${VALID_EFFORTS.join(', ')}`);
+        errors.push(`Invalid steps.${key}.effort "${step.effort}" — must be one of: ${VALID_EFFORTS.join(', ')}`);
       }
 
       const resolvedModel = step.model || globalModel;
@@ -232,7 +232,7 @@ function getConfigObject() {
 /**
  * Resolve model and effort for a step using the fallback chain:
  *   step.field → config.field → default
- * Model default: 'opus'; effort default: undefined.
+ * Model default: 'sonnet'; effort default: 'medium' (cleared to undefined when model is haiku).
  */
 function resolveStepConfig(step, config) {
   const model = step.model || config.model || 'sonnet';

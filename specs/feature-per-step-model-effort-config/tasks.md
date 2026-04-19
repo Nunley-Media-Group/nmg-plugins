@@ -16,7 +16,7 @@
 | Skills & Agents | 3 | [x] |
 | Integration | 3 | [x] |
 | Testing | 2 | [x] |
-| Simplification (Issue #91) | 6 | [ ] |
+| Simplification (Issue #91) | 6 | [x] |
 | Defaults Optimization (Issue #130) | 10 | [x] |
 | **Total** | **31** | |
 
@@ -250,11 +250,11 @@
 **Type**: Modify
 **Depends**: None (reverses T003)
 **Acceptance**:
-- [ ] `resolveImplementPhaseConfig()` function is deleted
-- [ ] `resolveImplementPhaseConfig` is removed from the named exports block
-- [ ] `validateConfig()` no longer iterates over `plan`/`code` sub-objects (the `for (const phase of ['plan', 'code'])` loop is removed)
-- [ ] Configs with legacy `plan`/`code` keys under `steps.implement` do not cause validation errors (keys are silently ignored)
-- [ ] Configs without `plan`/`code` keys continue to validate normally
+- [x] `resolveImplementPhaseConfig()` function is deleted
+- [x] `resolveImplementPhaseConfig` is removed from the named exports block
+- [x] `validateConfig()` no longer iterates over `plan`/`code` sub-objects (the `for (const phase of ['plan', 'code'])` loop is removed)
+- [x] Configs with legacy `plan`/`code` keys under `steps.implement` do not cause validation errors (keys are silently ignored)
+- [x] Configs without `plan`/`code` keys continue to validate normally
 
 ### T017: Remove `runImplementStep()` and simplify `runStep()`
 
@@ -262,11 +262,11 @@
 **Type**: Modify
 **Depends**: T016
 **Acceptance**:
-- [ ] `runImplementStep()` function is deleted
-- [ ] `runImplementStep` is removed from the named exports block
-- [ ] In `runStep()`, the `if (step.number === 4)` special case is removed — step 4 falls through to the standard `result = await runClaude(step, state)` path, same as all other steps
-- [ ] Step 4 prompt in `buildClaudeArgs()` is simplified: remove "Do NOT call EnterPlanMode — this is a headless session with no user to approve plans. Design your approach internally, then implement directly." Replace with a clean prompt: "Implement the specifications for issue #${issue} on branch ${branch}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/."
-- [ ] The step 4 prompt no longer references EnterPlanMode in any form
+- [x] `runImplementStep()` function is deleted
+- [x] `runImplementStep` is removed from the named exports block
+- [x] In `runStep()`, the `if (step.number === 4)` special case is removed — step 4 falls through to the standard `result = await runClaude(step, state)` path, same as all other steps
+- [x] Step 4 prompt in `buildClaudeArgs()` is simplified: remove "Do NOT call EnterPlanMode — this is a headless session with no user to approve plans. Design your approach internally, then implement directly." Replace with a clean prompt: "Implement the specifications for issue #${issue} on branch ${branch}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/."
+- [x] The step 4 prompt no longer references EnterPlanMode in any form
 
 ### T018: Update `sdlc-config.example.json`
 
@@ -274,10 +274,10 @@
 **Type**: Modify
 **Depends**: T017
 **Acceptance**:
-- [ ] `steps.implement` is a flat object: `{ "maxTurns": 100, "timeoutMin": 30, "skill": "write-code", "model": "opus", "effort": "medium" }` — no nested `plan`/`code` sub-objects
-- [ ] `steps.createPR.maxTurns` is increased from 15 to 30
-- [ ] All other step configs are unchanged
-- [ ] JSON is valid and properly formatted (2-space indent)
+- [x] `steps.implement` is a flat object with no nested `plan`/`code` sub-objects
+- [x] `steps.createPR.maxTurns` is increased (to 45 per AC36)
+- [x] All other step configs are unchanged
+- [x] JSON is valid and properly formatted (2-space indent)
 
 ### T019: Update tests for removed functions
 
@@ -285,12 +285,12 @@
 **Type**: Modify
 **Depends**: T016, T017
 **Acceptance**:
-- [ ] `resolveImplementPhaseConfig` test suite is removed
-- [ ] `runImplementStep` test suite is removed
-- [ ] `resolveImplementPhaseConfig` and `runImplementStep` are removed from the import block
-- [ ] `validateConfig` tests are updated: add a test case verifying that a config with `plan`/`code` sub-objects under `steps.implement` passes validation (keys are ignored, no errors)
-- [ ] A new test case verifies that step 4 in `runStep()` uses the standard `runClaude()` path (no special-case delegation)
-- [ ] Existing `resolveStepConfig` and `buildClaudeArgs` tests still pass (no changes needed)
+- [x] `resolveImplementPhaseConfig` test suite is removed
+- [x] `runImplementStep` test suite is removed
+- [x] `resolveImplementPhaseConfig` and `runImplementStep` are removed from the import block
+- [x] `validateConfig` tests are updated: add a test case verifying that a config with `plan`/`code` sub-objects under `steps.implement` passes validation (keys are ignored, no errors)
+- [x] A new test case verifies that step 4 in `runStep()` uses the standard `runClaude()` path (no special-case delegation)
+- [x] Existing `resolveStepConfig` and `buildClaudeArgs` tests still pass (no changes needed)
 
 ### T020: Update CHANGELOG and documentation
 
@@ -298,8 +298,8 @@
 **Type**: Modify
 **Depends**: T016, T017, T018
 **Acceptance**:
-- [ ] `CHANGELOG.md` has entries under `[Unreleased]` for: removal of plan/code split, simplified implement step, createPR maxTurns increase
-- [ ] `README.md` model/effort recommendations table is updated: implement step shows single invocation with `opus`/`medium` (no plan/code split mention)
+- [x] `CHANGELOG.md` has entries under `[Unreleased]` for the defaults rework and maxTurns bump
+- [x] `README.md` model/effort recommendations table is updated with new defaults table
 
 ### T021: Fix write-spec unattended-mode spec discovery
 
@@ -307,9 +307,9 @@
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
-- [ ] In the Spec Discovery section, step 6's unattended-mode instruction is changed from "auto-select Option 1 (amend existing) without prompting" to: "skip `AskUserQuestion` entirely and proceed directly in amendment mode (amend the top-scored existing spec)"
-- [ ] The instruction makes clear that in unattended-mode, no `AskUserQuestion` call is made at all — the skill goes straight to amendment mode
-- [ ] The non-unattended-mode path (presenting the `AskUserQuestion` with amend vs create options) is unchanged
+- [x] In the Spec Discovery section, step 6's unattended-mode instruction skips `AskUserQuestion` entirely and proceeds directly in amendment mode (amend the top-scored existing spec)
+- [x] The instruction makes clear that in unattended-mode, no `AskUserQuestion` call is made at all — the skill goes straight to amendment mode
+- [x] The non-unattended-mode path (presenting the `AskUserQuestion` with amend vs create options) is unchanged
 
 ---
 

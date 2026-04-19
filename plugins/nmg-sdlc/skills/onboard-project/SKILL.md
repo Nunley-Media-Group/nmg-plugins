@@ -4,6 +4,8 @@ description: "Initialize a project for the SDLC — bootstrap greenfield project
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Write, Edit, WebFetch, Bash(gh:*), Bash(git:*), Bash(ls:*), Bash(wc:*), Bash(node:*), AskUserQuestion
 argument-hint: "[--dry-run] [--design-url <url>]"
+model: opus
+effort: high
 ---
 
 # Onboard Project

@@ -2,7 +2,6 @@
   "projectPath": "/path/to/your/project",
   "pluginsPath": "/path/to/nmg-plugins",
   "model": "sonnet",
-  "effort": "medium",
   "logDir": "",
   "maxLogDiskUsageMB": 500,
   "_cleanup_note": "processPatterns is a Phase 2 fallback; Phase 1 uses the Claude subprocess PID tree",
