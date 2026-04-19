@@ -891,7 +891,21 @@ function buildClaudeArgs(step, state, overrides = {}) {
 
     2: SINGLE_ISSUE_NUMBER
       ? `Start issue #${SINGLE_ISSUE_NUMBER}. Create a linked feature branch and set the issue to In Progress. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`
-      : `Select and start the next GitHub issue from the current milestone. Create a linked feature branch and set the issue to In Progress.${escalatedIssues.size > 0 ? ` Do NOT select any of these previously-escalated issues: ${[...escalatedIssues].map(i => `#${i}`).join(', ')}.` : ''} Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
+      : [
+          `You are running in UNATTENDED MODE (\`.claude/unattended-mode\` exists).`,
+          `Do NOT call AskUserQuestion — it will be denied and waste turns. Do NOT emit`,
+          `text asking the user to reply. Follow the skill's unattended-mode path:`,
+          ``,
+          `1. Fetch viable milestones via \`gh api repos/{owner}/{repo}/milestones --jq '[.[] | select(.open_issues > 0) | {title: .title, open_issues: .open_issues}] | sort_by(.title)'\`.`,
+          `2. Select the first milestone alphabetically. If none, fall back to repo-wide.`,
+          `3. List issues with \`--label automatable\`: \`gh issue list -s open -m "<milestone>" --label automatable -L 10 --json number,title,labels\`.`,
+          `4. If the list is empty, run the diagnostic query described in the skill and exit.`,
+          `5. Otherwise, pick the issue with the lowest number from the list and use \`gh issue develop <N> --checkout\` to create and check out a branch. Update the project board status if applicable.`,
+          `6. Exit successfully. HEAD must be on the new <number>-<slug> feature branch when you exit.`,
+          ``,
+          escalatedIssues.size > 0 ? `Do NOT select any of these previously-escalated issues: ${[...escalatedIssues].map(i => `#${i}`).join(', ')}.` : '',
+          `Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
+        ].filter(Boolean).join('\n'),
 
     3: `Write BDD specifications for issue #${issue} on branch ${branch}. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`,
 
@@ -1878,6 +1892,21 @@ async function runStep(step, state) {
       patch.lastCompletedStep = step.number;
     }
     state = updateState(patch);
+
+    // Step 2 postcondition: a feature branch must be checked out. When the
+    // skill bails without creating one (e.g., AskUserQuestion was denied in
+    // unattended mode and the model fell back to a text prompt), the exit
+    // code is still 0 but HEAD stays on main. Without this gate, downstream
+    // preconditions bounce repeatedly until the bounce-loop guard escalates.
+    // Treat "no feature branch" as a soft failure so the retry path handles
+    // it deterministically.
+    if (step.number === 2 && !SINGLE_ISSUE_NUMBER) {
+      if (!state.currentIssue || !state.currentBranch || state.currentBranch === 'main') {
+        log('Soft failure detected: step 2 exited 0 but no feature branch was created');
+        log(`[STATUS] Step 2 (startIssue) soft failure: no feature branch created (HEAD on ${state.currentBranch || 'main'})`);
+        return await handleFailure(step, result, state);
+      }
+    }
 
     // Special: spec validation gate after step 3
     if (step.number === 3) {

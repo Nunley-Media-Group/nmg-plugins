@@ -2858,7 +2858,13 @@ describe('--issue flag (single-issue mode) (#107)', () => {
       const args = buildClaudeArgs(step, state);
       const promptIdx = args.indexOf('-p') + 1;
 
-      expect(args[promptIdx]).toContain('Select and start the next');
+      // Unattended-mode prompt (see bug-fix-start-issue-unattended-mode-
+      // interactive-fallback/requirements.md FR1/FR2): the deterministic
+      // selection formula replaced the terse "Select and start the next"
+      // wording so the model can't accidentally fall back to AskUserQuestion.
+      expect(args[promptIdx]).toContain('UNATTENDED MODE');
+      expect(args[promptIdx]).toContain('Do NOT call AskUserQuestion');
+      expect(args[promptIdx]).toContain('--label automatable');
       expect(args[promptIdx]).not.toContain('Start issue #');
     });
 
