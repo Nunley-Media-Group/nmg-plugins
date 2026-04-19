@@ -1,0 +1,132 @@
+# File: specs/feature-refactor-skill-md-progressive-disclosure/feature.gherkin
+#
+# Generated from: specs/feature-refactor-skill-md-progressive-disclosure/requirements.md
+# Issue: #138
+
+Feature: Refactor SKILL.md via Progressive Disclosure
+  As a nmg-sdlc plugin maintainer and Claude Code agent invoking these skills
+  I want every SKILL.md body under 300 lines with shared and variant content in references/
+  So that skills trigger faster with less context bloat and duplicated content lives in one place
+
+  Background:
+    Given the nmg-sdlc plugin at `plugins/nmg-sdlc/`
+    And the refactor described in issue #138 has shipped to main
+
+  # --- AC1: Size targets ---
+
+  Scenario: Every SKILL.md fits within its size target
+    Given the nmg-sdlc plugin after the refactor ships
+    When `wc -l plugins/nmg-sdlc/skills/*/SKILL.md` is run
+    Then every file reports at most 300 lines
+    And draft-issue/SKILL.md is at most 300 lines
+    And upgrade-project/SKILL.md is at most 250 lines
+    And write-spec/SKILL.md is at most 250 lines
+    And onboard-project/SKILL.md is at most 280 lines
+    And start-issue/SKILL.md is at most 220 lines
+    And verify-code/SKILL.md is at most 220 lines
+    And run-retro/SKILL.md is at most 180 lines
+    And open-pr/SKILL.md is at most 180 lines
+    And write-code/SKILL.md is at most 180 lines
+
+  # --- AC2: Zero observable change via exercise testing ---
+
+  Scenario: Refactored skill produces same artifacts as pre-refactor baseline
+    Given a refactored skill and a known-good project fixture under `scripts/__fixtures__/skill-exercise/`
+    When the skill is invoked end-to-end against the fixture via the exercise-test harness
+    Then deterministic artifacts are byte-equivalent to the pre-refactor baseline
+    And model-authored artifacts pass the rubric at `scripts/__fixtures__/skill-exercise/rubrics/{skill}.md`
+
+  # --- AC3: Shared content lives once ---
+
+  Scenario: Shared content appears in exactly one file
+    Given the six cross-skill shared references
+    When `grep -r` is run plugin-wide for the characteristic phrases of each shared block
+    Then `legacy-layout-gate.md` content appears only in `plugins/nmg-sdlc/references/legacy-layout-gate.md`
+    And `unattended-mode.md` content appears only in `plugins/nmg-sdlc/references/unattended-mode.md`
+    And `feature-naming.md` content appears only in `plugins/nmg-sdlc/references/feature-naming.md`
+    And `versioning.md` content appears only in `plugins/nmg-sdlc/references/versioning.md`
+    And `steering-schema.md` content appears only in `plugins/nmg-sdlc/references/steering-schema.md`
+    And `spec-frontmatter.md` content appears only in `plugins/nmg-sdlc/references/spec-frontmatter.md`
+    And every consuming SKILL.md contains a single named pointer to the shared file
+
+  # --- AC4: Slash-command surface unchanged ---
+
+  Scenario: The set of slash commands is identical after the refactor
+    Given the plugin's slash-command surface before the refactor
+    When the slash-command surface is enumerated from every post-refactor SKILL.md
+    Then the set of commands is identical — no additions, removals, or renames
+
+  # --- AC5: Frontmatter byte-identical ---
+
+  Scenario: Frontmatter is byte-identical for every skill
+    Given any skill's frontmatter before the refactor
+    When the pre- and post-refactor frontmatter blocks are diffed
+    Then `description` is byte-identical
+    And `allowed-tools` is byte-identical
+    And `model` is byte-identical
+    And `effort` is byte-identical
+    And `argument-hint` is byte-identical
+    And only body content below the frontmatter has moved
+
+  # --- AC6: Inventory audit passes deterministically ---
+
+  Scenario: Audit script reports zero unmapped inventory items
+    Given the committed `scripts/skill-inventory.baseline.json`
+    When `node scripts/skill-inventory-audit.mjs --check` runs in CI on a refactor PR
+    Then the exit code is 0
+    And every inventory item maps to exactly one destination in the refactored layout
+
+  Scenario: Audit script detects silent content loss
+    Given the `scripts/__fixtures__/audit-canary/bad/` fixture with a deliberately dropped item
+    When `node scripts/skill-inventory-audit.mjs --check` runs against the bad fixture
+    Then the exit code is 1
+    And stderr names the unmapped inventory item
+
+  Scenario: Baseline freshness check detects stale baseline
+    Given a PR that touches `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
+    And the committed baseline has drifted in files unrelated to the PR
+    When the baseline-freshness diff runs in CI
+    Then the workflow fails with a message naming the stale files
+
+  # --- AC7: Uniform pointer grammar ---
+
+  Scenario: Every pointer from a SKILL.md to a reference file matches the uniform grammar
+    Given any pointer from a SKILL.md to a reference file
+    When the pointer line is inspected
+    Then it matches the regex `^Read \`(\.\./\.\./)?references/[^\`]+\.md\` when `
+    And the reference path is in backticks
+    And the triggering condition is stated in the same sentence after `when`
+
+  # --- AC8: Reference-file budget ---
+
+  Scenario: Per-skill references directory stays within budget
+    Given any skill's directory under `plugins/nmg-sdlc/skills/`
+    When the per-skill `references/` directory is listed
+    Then it contains at most 5 files
+    And any reference file longer than 300 lines has a table of contents in its first 30 lines
+
+  # --- AC9: Shared-reference normative fidelity ---
+
+  Scenario: Shared references preserve the normative intent of each consumer
+    Given any shared reference file under `plugins/nmg-sdlc/references/`
+    When its content is compared against the pre-refactor SKILL.md passages it consolidates
+    Then no consuming skill has lost a directive
+    And no consuming skill has gained an unintended directive
+    And no directive has been rewritten to change its operational meaning
+    And wording unifications across consumers preserve semantics
+
+  # --- AC10: Claude Code GitHub App review workflow ---
+
+  Scenario: Claude Code GitHub App review runs on every PR
+    Given the Claude Code GitHub App is installed on the Nunley-Media-Group org with access to this repo
+    And `.github/workflows/claude-review.yml` has shipped in PR 1
+    When a pull request is opened or updated
+    Then the workflow invokes `anthropics/claude-code-action@v1`
+    And Claude posts an automated review comment on the PR
+    And the review reads the repo's `CLAUDE.md` and steering docs for context
+
+  Scenario: Claude Code responds to @claude mentions in PR comments
+    Given `.github/workflows/claude-review.yml` is active
+    When a comment containing `@claude` is posted on a PR or issue
+    Then the workflow fires
+    And Claude responds to the comment thread
