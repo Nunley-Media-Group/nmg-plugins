@@ -4,6 +4,8 @@ description: "Run the full SDLC pipeline loop from within an active Claude Code 
 argument-hint: "[#issue-number]"
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Bash(node:*), Bash(env:*), Bash(CLAUDECODE:*), Bash(test:*), Bash(git:*), Skill
+model: sonnet
+effort: low
 ---
 
 # Run Loop

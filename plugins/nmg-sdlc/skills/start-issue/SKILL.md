@@ -3,6 +3,8 @@ name: start-issue
 description: "Select a GitHub issue, create a linked feature branch, and set the issue to In Progress. Use when user says 'start issue', 'pick up issue', 'begin working on #N', 'start #N', 'what should I work on', 'how do I start an issue', 'how to begin work on an issue', or 'kick off issue #N'. Do NOT use for creating issues, writing specs, or implementing code. Fetches milestones, presents issue selection, creates branch via gh issue develop, and updates project board status. Second step in the SDLC pipeline — follows /draft-issue and precedes /write-spec."
 argument-hint: "[#issue-number]"
 allowed-tools: Read, Glob, Grep, Bash(gh:*), Bash(git:*)
+model: sonnet
+effort: low
 ---
 
 > **CRITICAL (Headless/Unattended-Mode):** If `.claude/unattended-mode` exists, **NEVER** call `AskUserQuestion`. Select issues automatically and skip all confirmation steps. Calling `AskUserQuestion` in pipe mode will be denied and waste all turns.

@@ -3,6 +3,7 @@ name: init-config
 description: "Generate an SDLC runner config for the current project. Use when user says 'generate config', 'set up SDLC runner', 'configure runner', 'init config', 'how do I set up the runner', or asks about sdlc-config.json. Creates a ready-to-use sdlc-config.json from the template with project-specific paths. Prerequisite for /run-loop."
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Bash(basename:*), Bash(realpath:*), Bash(pwd:*), Bash(git:*), Bash(test:*)
+model: haiku
 ---
 
 # Init Config

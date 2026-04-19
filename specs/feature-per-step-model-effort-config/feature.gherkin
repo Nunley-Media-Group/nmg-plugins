@@ -166,3 +166,176 @@ Feature: Per-step model and effort level configuration
     When the user runs /migrate-project after upgrading the plugin
     Then the migration proposes adding the missing model and effort keys
     And existing config values are preserved
+
+  # --- Issue #130: Defaults optimization for latest model lineup ---
+  # Added by issue #130
+
+  Scenario: validateConfig accepts the xhigh effort tier
+    Given a sdlc-config.json with effort value "xhigh" at the global level
+    When the runner starts
+    Then validateConfig produces no errors for the effort value
+    And the runner does not exit due to effort validation
+
+  Scenario: validateConfig accepts xhigh at the per-step level
+    Given a sdlc-config.json with the writeSpecs step effort "xhigh"
+    When the runner starts
+    Then validateConfig produces no errors for steps.writeSpecs.effort
+    And the runner does not exit due to effort validation
+
+  Scenario: validateConfig rejects the max effort tier
+    Given a sdlc-config.json with effort value "max"
+    When the runner starts
+    Then validateConfig returns an error identifying effort as invalid
+    And the error message states that max is intentionally excluded from nmg-sdlc defaults
+    And the runner exits with a non-zero exit code
+
+  Scenario: validateConfig rejects effort on a Haiku step
+    Given a sdlc-config.json with steps.commitPush.model set to "haiku"
+    And steps.commitPush.effort set to "low"
+    When the runner starts
+    Then validateConfig returns an error identifying steps.commitPush
+    And the error message states that Haiku does not support the effort parameter
+    And the runner exits with a non-zero exit code
+
+  Scenario: validateConfig rejects effort on a Haiku step via global fallback
+    Given a sdlc-config.json with global effort "medium"
+    And steps.merge.model set to "haiku"
+    And steps.merge has no explicit effort field
+    When the runner starts
+    Then validateConfig returns an error identifying steps.merge
+    And the error message states that Haiku does not support the effort parameter
+
+  Scenario: Effort tier literal names match Anthropic's spec
+    Given a sdlc-config.json with effort value "x-high"
+    When the runner starts
+    Then validateConfig returns an error identifying the effort value as invalid
+    And the error message lists valid options including exactly "xhigh"
+    And the error message does not list any hyphenated variants
+
+  Scenario: Runner module default is sonnet/medium
+    Given a sdlc-config.json with no global model or effort
+    And no per-step model or effort fields
+    When resolveStepConfig is called for any step
+    Then the returned model is "sonnet"
+    And the returned effort is "medium"
+
+  Scenario: Example config pins an explicit model for every step
+    Given a user reads scripts/sdlc-config.example.json
+    When every step object is inspected
+    Then each step declares an explicit model field
+    And no step relies on inheritance from the global model
+
+  Scenario: Opus is hard-capped to three steps in the example config
+    Given a user reads scripts/sdlc-config.example.json
+    When every step with model "opus" is collected
+    Then only writeSpecs, implement, and verify appear in the result
+    And startCycle, startIssue, commitPush, createPR, monitorCI, and merge use sonnet or haiku
+
+  Scenario Outline: Example config step defaults match the AC30 reference table
+    Given a user reads scripts/sdlc-config.example.json
+    When the <step> step is inspected
+    Then the model is <model>
+    And the effort is <effort>
+    And maxTurns is <turns>
+    And timeoutMin is <time>
+
+    Examples:
+      | step        | model  | effort  | turns | time |
+      | startCycle  | haiku  | —       | 10    | 5    |
+      | startIssue  | sonnet | low     | 25    | 5    |
+      | writeSpecs  | opus   | xhigh   | 60    | 15   |
+      | implement   | opus   | xhigh   | 150   | 30   |
+      | verify      | opus   | high    | 100   | 20   |
+      | commitPush  | haiku  | —       | 15    | 5    |
+      | createPR    | sonnet | low     | 45    | 5    |
+      | monitorCI   | sonnet | medium  | 60    | 20   |
+      | merge       | haiku  | —       | 10    | 5    |
+
+  Scenario: Haiku steps in example config omit the effort field
+    Given a user reads scripts/sdlc-config.example.json
+    When a step with model "haiku" is inspected
+    Then the effort field is not present on that step object
+
+  Scenario Outline: SDLC skill frontmatter declares model matching the runner
+    Given the SKILL.md for <skill>
+    When the YAML frontmatter is parsed
+    Then the model field is <model>
+
+    Examples:
+      | skill           | model  |
+      | write-spec      | opus   |
+      | write-code      | opus   |
+      | verify-code     | opus   |
+      | start-issue     | sonnet |
+      | open-pr         | sonnet |
+      | draft-issue     | sonnet |
+      | run-retro       | opus   |
+      | setup-steering  | opus   |
+      | init-config     | haiku  |
+      | run-loop        | sonnet |
+      | upgrade-project | opus   |
+
+  Scenario Outline: Non-Haiku SDLC skills declare effort matching the runner
+    Given the SKILL.md for <skill>
+    When the YAML frontmatter is parsed
+    Then the effort field is <effort>
+
+    Examples:
+      | skill           | effort |
+      | write-spec      | xhigh  |
+      | write-code      | xhigh  |
+      | verify-code     | high   |
+      | start-issue     | low    |
+      | open-pr         | low    |
+      | draft-issue     | medium |
+      | run-retro       | high   |
+      | setup-steering  | high   |
+      | run-loop        | low    |
+      | upgrade-project | high   |
+
+  Scenario: init-config SKILL.md omits effort frontmatter
+    Given the SKILL.md for init-config
+    When the YAML frontmatter is parsed
+    Then the model field is "haiku"
+    And the effort field is not present
+
+  Scenario: README documents the precedence chain
+    Given a user reads the README Model and Effort Configuration section
+    When the precedence subsection is inspected
+    Then it lists four layers in order: CLAUDE_CODE_EFFORT_LEVEL env var, skill frontmatter, session /model or /effort, built-in default
+    And the env var is stated to win over skill frontmatter
+    And the skill frontmatter is stated to win over the session override
+
+  Scenario: README documents max exclusion and Haiku no-effort rules
+    Given a user reads the README Model and Effort Configuration section
+    When the reader looks for guardrail rules
+    Then a note states that max is intentionally excluded from nmg-sdlc defaults
+    And a note states that Haiku does not accept the effort parameter
+
+  Scenario: CHANGELOG Unreleased section records the defaults rework
+    Given a user reads CHANGELOG.md
+    When the [Unreleased] section is inspected
+    Then an entry summarizes the model and effort defaults rework
+    And a separate entry summarizes the maxTurns floor bump citing incident #181
+
+  Scenario: upgrade-project surfaces a curated defaults diff (interactive)
+    Given an existing sdlc-config.json with prior defaults
+    And unattended mode is NOT active
+    When /upgrade-project runs
+    Then it presents a diff table of each step's model, effort, maxTurns, and timeoutMin changes
+    And it offers a batch-approve option for the recommended defaults
+    And it offers a per-field review option
+
+  Scenario: upgrade-project reports but does not apply diff in unattended mode
+    Given an existing sdlc-config.json with prior defaults
+    And unattended mode is active
+    When /upgrade-project runs
+    Then the recommended defaults diff is recorded in the summary
+    And no automatic overwrite of user values occurs
+    And the behavior is consistent with the existing value-drift contract
+
+  Scenario: init-config produces a fresh config matching the new defaults
+    Given a fresh project with no sdlc-config.json
+    When a user runs /nmg-sdlc:init-config
+    Then the generated sdlc-config.json matches scripts/sdlc-config.example.json verbatim for per-step defaults
+    And no template placeholders remain for model, effort, maxTurns, or timeoutMin

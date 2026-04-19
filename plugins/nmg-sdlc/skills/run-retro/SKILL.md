@@ -3,6 +3,8 @@ name: run-retro
 description: "Analyze defect specs to identify spec-writing gaps and produce actionable learnings. Use when user says 'run retrospective', 'analyze defects', 'review past bugs', 'what can we learn from bugs', 'update retrospective', 'how do I run a retrospective', or 'learn from our bugs'. Produces steering/retrospective.md that /write-spec reads to avoid repeating past failures. Utility skill — run periodically, outside the main SDLC pipeline."
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash(gh:*), Bash(shasum:*), Bash(sha256sum:*)
+model: opus
+effort: high
 ---
 
 # Run Retro

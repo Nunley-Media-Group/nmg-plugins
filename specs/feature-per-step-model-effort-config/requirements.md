@@ -523,6 +523,7 @@ Feature: Per-step model and effort level configuration
 |-------|------|---------|
 | #77 | 2026-02-22 | Initial feature spec |
 | #91 | 2026-02-23 | Replace plan/code phase split with single write-code invocation; supersede AC3/FR4; add AC10–AC15, FR11–FR18; increase createPR maxTurns to 30; fix write-spec unattended-mode spec discovery |
+| #130 | 2026-04-18 | Optimize runner + skill defaults for Opus 4.7 / Sonnet 4.6 / Haiku 4.5 lineup; add `xhigh` effort tier; reject `max` and Haiku+effort; shift global default to `sonnet`/`medium`; hard-cap Opus to `writeSpecs`/`implement`/`verify`; declare `model`/`effort` in skill frontmatter; blanket `maxTurns` bump motivated by #181; document precedence chain |
 
 ---
 
