@@ -1,7 +1,7 @@
 # Requirements: Creating Issues Skill
 
-**Issues**: #4, #116
-**Date**: 2026-04-17
+**Issues**: #4, #116, #125
+**Date**: 2026-04-18
 **Status**: Approved
 **Author**: Claude Code (retroactive)
 
@@ -20,6 +20,8 @@
 The `/draft-issue` skill conducts an adaptive interview to understand a feature need, then creates a GitHub issue with a standardized body: User Story, Background, Given/When/Then acceptance criteria, Functional Requirements table, and Out of Scope section. This format directly feeds the downstream `/write-spec` skill, ensuring specs are grounded in well-defined requirements.
 
 Issue #116 extends this skill along two axes: (1) bringing its review-gate UX to parity with the readability treatment applied to `/write-spec` (structured inline summaries + numbered approve/revise menus), and (2) deepening the interview itself (NFR/edge-case/related-feature probing, an understanding-playback step before drafting, and adaptive depth driven by investigation signals). Issue #116 also removes unattended-mode support from `/draft-issue` — issue drafting is treated as an intrinsically interactive human-judgment activity.
+
+Issue #125 generalizes `/draft-issue` from a one-issue-per-invocation skill into a **batch-capable** one that can detect multi-part asks in the initial prompt, propose a split with per-ask summaries, infer a dependency DAG between the detected asks, loop through the existing Steps 2–9 per issue, and autolink the created issues via GitHub sub-issues and body cross-refs. Issue #125 also adds **Claude Design URL ingestion** as a shared session-scoped context source: when the user supplies a design URL at the start of the run, the archive is fetched, gzip-decoded, and the README is parsed and made available to every per-issue interview, investigation, and synthesis. All new behavior is gated behind explicit user confirmation (split-confirm and graph-confirm menus) so single-issue prompts remain unaffected and false-positive splits remain recoverable.
 
 ---
 
@@ -135,6 +137,66 @@ Issue #116 extends this skill along two axes: (1) bringing its review-gate UX to
 **When** they read SKILL.md or the CHANGELOG
 **Then** the plugin version is bumped **major** (v6.0.0) with a BREAKING entry describing the removal, **and** SKILL.md retains a single sign-post sentence where the Unattended Mode section used to be (e.g., `"As of v6.0.0, /draft-issue no longer honors .claude/unattended-mode. Issue drafting requires interactive input."`), **and** `scripts/sdlc-runner.mjs` includes a comment near `STEP_KEYS` referencing this removal so future contributors do not re-add `draftIssue`
 
+### AC19: Heuristic Multi-Issue Detection at Step 1b (#125)
+
+**Given** an initial prompt has been captured in Step 1
+**When** Step 1b runs the multi-issue detection heuristic
+**Then** the heuristic inspects the prompt for (a) conjunction and topic-shift markers (e.g., `"and also"`, `"second thing"`, `"another thing"`), (b) explicit numbered lists or bullet points, and (c) distinct target components referenced across different parts of the prompt — **and** it either produces a proposed split with per-ask summaries, or exits quickly with a `"single-issue detected"` trail note (see AC26) so the flow proceeds unchanged to Step 2
+
+### AC20: Split-Confirm Menu (#125)
+
+**Given** the Step 1b heuristic proposed a split of N asks
+**When** the split-confirm menu is presented
+**Then** the skill renders an inline summary listing each proposed ask (one-line per ask) **and** presents an `AskUserQuestion` with three options: `[1] Approve the split as proposed`, `[2] Adjust the split (merge asks or re-divide)`, `[3] Collapse back to a single issue (false-positive path)` — on `[1]` the flow continues to Step 1d dependency inference; on `[2]` the user is asked for free-text adjustments and the summary re-renders until approve/collapse; on `[3]` the skill proceeds to Step 2 with the original single-issue description
+
+### AC21: Dependency Inference + Graph-Confirm Menu (#125)
+
+**Given** the user approved a multi-issue split
+**When** dependency inference runs in Step 1d
+**Then** the skill proposes a DAG using AC/FR overlap, shared components mentioned in the prompt, and explicit `"X depends on Y"` or `"X blocks Y"` textual cues — **and** the proposed DAG is rendered for the user (as an indented or arrow-notation list showing edges) followed by an `AskUserQuestion` with options `[1] Approve the graph`, `[2] Adjust edges (add/remove a dependency)`, `[3] Flatten (no dependencies between issues)` — drafting does not begin until the user approves the graph or explicitly flattens it
+
+### AC22: Per-Issue Loop Preserves the Steps 2–9 Contract (#125)
+
+**Given** the split and dependency graph are confirmed
+**When** the per-issue loop runs
+**Then** each iteration runs the full existing Steps 2–9 independently (classification, milestone, investigation, interview, playback, synthesis, review, creation, output) **and** only two things are shared across iterations: (a) the product-context snapshot loaded in Step 1 and (b) the Claude Design URL content from AC24 if one was supplied — each iteration retains its own independent review-gate state, classification, milestone, investigation, and draft
+
+### AC23: Autolinking via GitHub Sub-Issues and Body Cross-Refs (#125)
+
+**Given** multiple issues are created in the same batch
+**When** creation completes for each issue
+**Then** for every parent/child edge in the confirmed DAG the skill runs `gh issue edit <child> --add-sub-issue <parent>` (after probing availability — see AC28) **and** every issue body includes explicit `"Depends on: #X, #Y"` and/or `"Blocks: #Z"` lines listing its DAG neighbors — body cross-refs are always written, independent of whether the sub-issue API call succeeds
+
+### AC24: Claude Design URL as Shared Session Context (#125)
+
+**Given** the user supplied a Claude Design URL at the start of the run (either via argument or via an explicit prompt early in Step 1)
+**When** Step 1b begins
+**Then** the archive is fetched over HTTPS, **gzip-decoded**, the contained README is parsed, and the parsed content is cached as session-scoped context available to every per-issue interview (Step 5), investigation (Step 4), and synthesis (Step 6) in the batch — regardless of whether Step 1b later proposes a split
+
+### AC25: Graceful Degradation on Design Fetch/Decode Failure (#125)
+
+**Given** the user supplied a Claude Design URL
+**When** the fetch times out, the URL is unreachable, or the archive fails to decode
+**Then** the failure is logged as a visible session note, the session continues without design context (not aborted), and the Step 9 / final summary includes a line noting the gap (e.g., `"Design fetch failed — issues drafted without design context"`)
+
+### AC26: Heuristic Trail is Logged as a Visible Session Note (#125)
+
+**Given** Step 1b has run
+**When** detection completes (whether a split was proposed or a single issue was detected)
+**Then** the skill emits a visible session note — in the same spirit as the existing depth-override log — listing the signals observed (conjunction hits, bullet/numbered-list presence, distinct components) and a rough confidence indicator (e.g., `high`, `medium`, `low`) so future threshold tuning has concrete evidence; the note is printed even in the single-issue path (`"Step 1b: single-issue detected — no split proposed"`)
+
+### AC27: Partial-Batch Abandonment Preserves Created Issues (#125)
+
+**Given** a multi-issue batch is in progress
+**When** the user abandons mid-loop after N of M planned issues have been created (either via an explicit abandon action at any review gate, or by ending the session)
+**Then** the already-created issues remain on GitHub, the final summary reports `"Created N of M planned issues"` listing URLs for each created issue, and no rollback or cleanup of the created issues is attempted
+
+### AC28: `gh issue edit --add-sub-issue` Availability Probe with Body-Only Fallback (#125)
+
+**Given** the autolinking step is about to wire parent/child relationships
+**When** the skill runs a one-time probe of `gh issue edit --help` (or equivalent) to detect support for the `--add-sub-issue` flag
+**Then** if the flag is unavailable, the skill falls back to body cross-refs only, records the degradation in the final summary (`"Sub-issue linking unavailable in this gh version — body cross-refs only"`), and does not error — the probe runs once per batch, its result is cached, and the body cross-refs from AC23 are always written regardless of probe outcome
+
 ---
 
 ## Functional Requirements
@@ -170,6 +232,16 @@ Issue #116 extends this skill along two axes: (1) bringing its review-gate UX to
 | FR27 | Version bump is **major** (v5.2.0 → v6.0.0); `CHANGELOG.md` `[Unreleased]` entry is under a BREAKING subsection describing `/draft-issue` unattended-mode removal | Must | Issue #116 (Risk 4 mitigation) |
 | FR28 | SKILL.md retains a one-sentence sign-post where the Unattended Mode section used to be; `scripts/sdlc-runner.mjs` has a comment above `STEP_KEYS` referencing the v6.0.0 removal and prohibiting re-addition of `draftIssue` | Must | Issue #116 (Risk 4 mitigation) |
 | FR29 | When the user overrides the depth heuristic (FR22), the skill emits a one-line session note (e.g., `"(heuristic chose core, user selected extended)"`) before the interview begins | Must | Issue #116 (Risk 5 mitigation) |
+| FR30 | New Step 1b runs heuristic multi-issue detection using conjunction/topic-shift markers, explicit numbered/bulleted lists, and distinct-component cues; produces either a proposed split with per-ask summaries or a `"single-issue detected"` trail note | Must | Issue #125 |
+| FR31 | Split-confirm menu with three options: `[1] Approve`, `[2] Adjust (merge/re-divide)`, `[3] Collapse to single issue` — approve continues to dependency inference; collapse returns the flow to Step 2 with the original description; adjust loops with free-text input | Must | Issue #125 |
+| FR32 | Step 1d dependency-graph inference: build a DAG using AC/FR overlap, shared components, and explicit `"X depends on Y"` / `"X blocks Y"` textual cues; render and require confirm via `[1] Approve`, `[2] Adjust edges`, `[3] Flatten` before drafting | Must | Issue #125 |
+| FR33 | Per-issue iteration loop that runs the existing Steps 2–9 independently for each planned issue, sharing only the Step 1 product-context snapshot and the Claude Design URL content (FR35) across iterations | Must | Issue #125 |
+| FR34 | Autolinking post-create: for each parent/child edge in the confirmed DAG run `gh issue edit <child> --add-sub-issue <parent>` (subject to availability probe FR39), and write explicit `"Depends on: #X, #Y"` / `"Blocks: #Z"` lines into each issue body unconditionally | Must | Issue #125 |
+| FR35 | Claude Design URL handling: detect a supplied URL, fetch over HTTPS, gzip-decode the archive, parse the README, and cache the content as session-scoped context available to every per-issue Step 4 (investigation), Step 5 (interview), and Step 6 (synthesis) — reuse whatever fetch/decode helper lands with Issue #124 to avoid drift | Should | Issue #125 |
+| FR36 | Graceful degradation on Claude Design fetch/decode failure: log the failure as a visible session note, continue the session without design context, and record the gap in the final summary — no abort | Should | Issue #125 |
+| FR37 | Step 1b heuristic trail: after detection, emit a visible session note listing observed signals (conjunction hits, list presence, component count) and a `high`/`medium`/`low` confidence indicator — printed even on the single-issue path | Must | Issue #125 |
+| FR38 | Partial-batch summary: when the loop is abandoned mid-way, the final summary reports `"Created N of M planned issues"` with URLs; already-created issues are preserved (no rollback) | Must | Issue #125 |
+| FR39 | One-time-per-batch probe of `gh issue edit --add-sub-issue` availability with result cached for the loop; on unavailable, body cross-refs (FR34) are still written and the degradation is noted in the final summary | Must | Issue #125 |
 
 ---
 
@@ -182,6 +254,8 @@ Issue #116 extends this skill along two axes: (1) bringing its review-gate UX to
 | **Reliability** | Graceful handling when GitHub API is unavailable |
 | **Readability** | Review-gate summaries legible without opening files; SKILL.md opens with Workflow Overview for rapid onboarding (#116) |
 | **Interactivity** | `/draft-issue` must actively ignore environmental unattended-mode signals and always run the interactive workflow (#116) |
+| **Resilience** | External integrations (Claude Design fetch, `gh --add-sub-issue` flag) must degrade gracefully — a failure in either must not abort the batch or prevent issue creation (#125) |
+| **Idempotence** | The per-issue loop must tolerate mid-loop abandonment: already-created issues remain committed on GitHub, and the summary accurately reports the partial state (#125) |
 
 ---
 
@@ -241,6 +315,11 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - Backfill of existing GitHub issues to the new template or review-gate structure (#116)
 - Changes to the core Feature and Bug issue-body templates — only the interview and review flow change (#116)
 - AI-generated content beyond what the interview gathers (e.g., auto-generating ACs from steering docs alone) (#116)
+- Cross-repository issue creation — single-repo scope only (#125)
+- Auto-closing drafts that the multi-issue split renders superseded (#125)
+- Image or asset upload from the Claude Design archive (#125)
+- `/start-issue` dependency-aware ordering across the batch — tracked separately (#125)
+- Rollback or deletion of created issues on mid-loop abandonment (#125)
 
 ---
 
@@ -267,6 +346,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 |-------|------|---------|
 | #4 | 2026-02-15 | Initial feature spec |
 | #116 | 2026-04-17 | Apply readability treatment (inline review summary + approve/revise menu) and deeper interview (NFR/edge-case/related-feature probing, understanding playback, adaptive depth). Remove unattended-mode support from draft-issue and from sdlc-runner. Include risk-mitigation controls: user override for depth heuristic (AC15), depth-proportional playback (AC16), soft guard on revise loop (AC17), major-version bump with in-file sign-post (AC18). |
+| #125 | 2026-04-18 | Add multi-issue detection (Step 1b heuristic with trail logging + confidence indicator), split-confirm menu, Step 1d dependency inference with graph-confirm, per-issue loop over Steps 2–9, GitHub sub-issue + body cross-ref autolinking with availability probe and body-only fallback, Claude Design URL ingestion as shared session context with graceful degradation, and partial-batch summary preserving created issues on abandonment. ACs AC19–AC28. FRs FR30–FR39. |
 
 ---
 
