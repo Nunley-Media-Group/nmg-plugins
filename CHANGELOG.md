@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [7.2.0] - 2026-04-18
+
+### Added
+
+- **`/onboard-project` greenfield enhancement** (issue #124) — Step 2G now runs a seven-sub-step orchestration: optional Claude Design URL ingestion (HTTPS-validated, gzip-decoded via `node:zlib.gunzipSync`), multi-round intent + tech-selection interview (vision, personas, success criteria, language, framework, test tooling, deployment target), absorbed steering bootstrap/enhancement, idempotent `v1 (MVP)` and `v2` GitHub milestone seeding via `gh api`, 3–7 starter-issue candidate generation, dependency DAG inference with cycle detection and a confirmation gate, and a starter-issue seeding loop that delegates to `/draft-issue` once per candidate with autolinking via the Issue #125 primitive (`gh issue edit --add-sub-issue` plus `Depends on:`/`Blocks:` body lines). Re-running on a project that already has steering enters **Greenfield-Enhancement mode**: steering files are edited in place rather than overwritten, milestones/issues already seeded (detected via `seeded-by-onboard` label) are skipped, and existing dependency links are preserved. New tools added to `allowed-tools`: `WebFetch`, `Bash(node:*)`. New argument: `--design-url <url>`. Step 5 summary extended to include design fetch result, interview defaults with their source, milestone outcomes, the full DAG, and per-issue seed results. All failure modes (design fetch, milestone create, DAG cycle, per-issue seed) degrade gracefully — recorded as gaps without aborting the run.
+
+### Removed
+
+- **Standalone `/setup-steering` skill** (issue #124) — absorbed into `/onboard-project`'s Step 2G.3. The `plugins/nmg-sdlc/skills/setup-steering/` directory has been removed; templates relocated to `plugins/nmg-sdlc/skills/onboard-project/templates/`. All references in `/upgrade-project` and `/write-spec` rewritten to point at `/onboard-project`. This maintains the "one skill = one SDLC step" invariant — `/onboard-project` is now the sole entry point for project initialization (greenfield, greenfield-enhancement, brownfield, or already-initialized).
+
 ## [7.1.0] - 2026-04-18
 
 ### Added

@@ -1,6 +1,6 @@
 # Product Steering Template
 
-Generate this document during `/setup-steering`. Pre-fill what you can discover from the codebase, and leave the rest as templates for the user to customize.
+Generate this document during `/onboard-project` (Step 2G.3 — steering bootstrap). Pre-fill what you can discover from the codebase, and leave the rest as templates for the user to customize.
 
 ---
 

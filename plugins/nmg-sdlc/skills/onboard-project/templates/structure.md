@@ -1,6 +1,6 @@
 # Code Structure Steering Template
 
-Generate this document during `/setup-steering`. Pre-fill the project layout, layer architecture, and naming conventions from codebase analysis.
+Generate this document during `/onboard-project` (Step 2G.3 — steering bootstrap). Pre-fill the project layout, layer architecture, and naming conventions from codebase analysis.
 
 ---
 

@@ -48,11 +48,12 @@ Run `/onboard-project` in your project — it is the single entry point for adop
 /onboard-project
 ```
 
-- **Greenfield projects** (no code yet): delegates to `/setup-steering` to generate steering docs, then offers to run `/init-config` for the unattended runner.
+- **Greenfield projects** (no code yet): optionally ingests a Claude Design URL, runs an intent + tech-selection interview (vision, personas, success criteria, language, framework, test tooling, deployment target), bootstraps `steering/product.md`, `tech.md`, and `structure.md` from the interview answers, seeds `v1 (MVP)` and `v2` GitHub milestones, generates 3–7 starter issues via a `/draft-issue` loop with dependency-aware autolinking, then offers to run `/init-config` for the unattended runner. Pass `--design-url <url>` to skip the interactive prompt for the design URL.
+- **Greenfield-Enhancement (re-run)**: when steering files already exist but `specs/` does not, the same Step 2G pipeline runs in enhancement mode — steering files are edited in place (no overwrites), and milestones or issues already seeded by a prior run (detected via the `seeded-by-onboard` label) are skipped.
 - **Brownfield projects** (existing code with closed GitHub issues but no specs): bootstraps steering docs if missing, then reconciles one `specs/{feature,bug}-{slug}/` directory per closed issue — or per consolidated group — using the issue body, merged PR body, PR diff, commit messages, and current implementation as evidence.
 - **Already-initialized projects**: offers to delegate to `/upgrade-project` rather than duplicating work.
 
-If you want to bootstrap steering docs without the brownfield reconciliation step, you can still run `/setup-steering` directly. Re-running `/setup-steering` when steering files already exist enters an enhancement flow that preserves your customizations:
+The three steering documents written during greenfield bootstrap:
 
 | Document | Purpose |
 |----------|---------|
@@ -313,10 +314,9 @@ Any gate Fail caps the overall verification status at "Partial". Any gate Incomp
 | `/run-retro` | Batch-analyze defect specs to identify spec-writing gaps and produce `steering/retrospective.md` with actionable learnings |
 | `/run-loop [#N]` | Run the full SDLC pipeline from within an active Claude Code session — processes a specific issue or loops over all open issues via `sdlc-runner.mjs` |
 | `/end-loop` | Stop unattended mode and clear runner state — signals the runner PID (if live) and removes `.claude/unattended-mode` and `.claude/sdlc-state.json`. Pairs with `/run-loop` for mid-cycle stop or crash cleanup |
-| `/setup-steering` | Set up or enhance project steering documents (product, tech, structure) — bootstraps on first run, enhances existing docs on subsequent runs |
 | `/upgrade-project` | Upgrade an existing project to current plugin standards — relocates legacy `.claude/steering/` and `.claude/specs/` to the project root, updates specs, steering docs, configs, CHANGELOG, and VERSION |
 | `/init-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path auto-detected and written to the project root |
-| `/onboard-project [--dry-run]` | Initialize a project for the SDLC — greenfield bootstrap or brownfield spec reconciliation from closed GitHub issues and merged PR diffs. Runs **once per project lifetime**, before `/draft-issue` |
+| `/onboard-project [--dry-run] [--design-url <url>]` | Initialize a project for the SDLC — greenfield bootstrap (intent interview, steering docs, `v1`/`v2` milestone seeding, 3–7 starter issues seeded via `/draft-issue` loop with dependency-aware autolinking, optional Claude Design URL ingestion), greenfield-enhancement (re-run; steering edited in place, already-seeded milestones/issues skipped), or brownfield spec reconciliation from closed GitHub issues and merged PR diffs. Runs **once per project lifetime**, before `/draft-issue` |
 
 ### Utility Skills
 
@@ -342,7 +342,7 @@ v6.1.0 relocates canonical SDLC artifacts from `.claude/steering/` and `.claude/
 
 once after updating. This `git mv`s the legacy directories, rewrites intra-file cross-references, and renames `.claude/migration-exclusions.json` → `.claude/upgrade-exclusions.json`. Runtime artifacts (`.claude/unattended-mode`, `.claude/sdlc-state.json`) stay under `.claude/` unchanged. The `/migrate-project` command was renamed to `/upgrade-project` — a deprecation stub remains for one release.
 
-Every pipeline skill (`/start-issue`, `/write-spec`, `/write-code`, `/verify-code`, `/open-pr`, `/run-retro`, `/draft-issue`, `/setup-steering`) hard-gates on the legacy layout and refuses to proceed until the upgrade runs.
+Every pipeline skill (`/start-issue`, `/write-spec`, `/write-code`, `/verify-code`, `/open-pr`, `/run-retro`, `/draft-issue`, `/onboard-project`) hard-gates on the legacy layout and refuses to proceed until the upgrade runs.
 
 ## License
 

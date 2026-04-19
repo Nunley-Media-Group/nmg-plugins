@@ -1,6 +1,6 @@
 # Technical Steering Template
 
-Generate this document during `/setup-steering`. Pre-fill the tech stack, testing, and coding standards from codebase analysis.
+Generate this document during `/onboard-project` (Step 2G.3 — steering bootstrap). Pre-fill the tech stack, testing, and coding standards from codebase analysis.
 
 ---
 
