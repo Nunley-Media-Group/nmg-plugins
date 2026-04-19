@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [7.1.0] - 2026-04-18
+
 ### Added
 
 - **`/end-loop`** — New skill to cleanly disable unattended mode (issue #122). Explicit counterpart to `/run-loop`: sends SIGTERM to the runner PID recorded in `.claude/sdlc-state.json` (if the process is live), then removes both `.claude/unattended-mode` and `.claude/sdlc-state.json`. Idempotent — re-invocation on an already-disabled project reports "already disabled" and exits 0. Handles edge cases robustly: missing `.claude/` directory, malformed state JSON (treated as opaque and still deleted), dead runner PIDs (signalling skipped silently), and SIGTERM failures (surfaced with the PID and OS reason, deletion continues). Permission-denied on a required deletion exits non-zero with a specific-file error. Validates `runnerPid` as a positive integer before passing to `process.kill` to prevent signalling arbitrary processes or process groups.
