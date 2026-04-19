@@ -10,7 +10,7 @@ allowed-tools: Read, Bash(test:*), Bash(node:*), Bash(rm:*), Bash(ls:*)
 
 Tear down unattended mode and clear SDLC runner state. This is the explicit counterpart to `/run-loop`: one command to stop the loop cleanly, whether the runner is live, crashed, or already gone.
 
-The runner artifacts this skill manages mirror `RUNNER_ARTIFACTS` in `scripts/sdlc-runner.mjs:552` and the delete-best-effort semantics of `removeUnattendedMode()` in `scripts/sdlc-runner.mjs:600`. If those locations change, this skill needs a corresponding update.
+The runner artifacts this skill manages mirror `RUNNER_ARTIFACTS` in `scripts/sdlc-runner.mjs:566` and the delete-best-effort semantics of `removeUnattendedMode()` in `scripts/sdlc-runner.mjs:614`. If those locations change, this skill needs a corresponding update.
 
 ## When to Use
 
