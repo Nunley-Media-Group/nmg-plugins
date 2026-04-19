@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [7.3.0] - 2026-04-18
+
 ### Added
 
 - **`/draft-issue` multi-issue pipeline** (issue #125) — the skill can now detect multi-part asks in the initial prompt and loop through its existing Steps 2–9 per planned issue. New Step 1b runs a heuristic over the description (conjunction markers, bullet/numbered lists, distinct component mentions) and proposes a split with per-ask summaries and a `high`/`medium`/`low` confidence indicator, or exits with a `"single-issue detected"` trail note. A split-confirm menu (`[1] Approve`, `[2] Adjust (merge/re-divide)`, `[3] Collapse`) lets the user recover from false-positive splits. New Step 1d infers a dependency DAG from explicit cues, shared-component precursor language, and AC/FR scope overlap, then presents a graph-confirm menu (`[1] Approve`, `[2] Adjust edges`, `[3] Flatten`). Drafting only begins after both gates are confirmed. Each iteration retains an independent `DraftState` (classification, milestone, investigation, interview, review loop); only `session.productContext`, `session.designContext`, and `session.dag` cross iteration boundaries. A new Step 7 review-gate option `[Abandon]` (visible only mid-batch) lets the user stop cleanly; already-created issues are preserved with no rollback.
