@@ -1,7 +1,7 @@
 # File: specs/feature-draft-issue-skill/feature.gherkin
 #
 # Generated from: specs/feature-draft-issue-skill/requirements.md
-# Issues: #4, #116
+# Issues: #4, #116, #125
 
 Feature: Creating Issues Skill
   As a developer or product owner
@@ -190,3 +190,113 @@ Feature: Creating Issues Skill
     When the skill presents the automatable-label AskUserQuestion
     Then the question body includes a 1–2 line explanation that references "/write-spec", "/write-code", "/verify-code", and "/open-pr"
     And clarifies that "automatable" controls downstream automation — not drafting itself
+
+  # ============================================================
+  # Added by issue #125 — multi-issue detection, dependency inference,
+  # autolinking, and Claude Design URL ingestion
+  # ============================================================
+
+  # --- Multi-issue detection (AC19, AC26) ---
+
+  Scenario: Single-issue prompt exits Step 1b quickly  # AC19, AC26
+    Given I invoke "/draft-issue" with a prompt describing a single coherent ask
+    When Step 1b runs the multi-issue detection heuristic
+    Then no split is proposed
+    And a visible session note reads "Step 1b: single-issue detected — no split proposed"
+    And the note includes signal values (conjunctionHits, bulletListCount, distinctComponents)
+    And the flow proceeds unchanged to Step 2
+
+  Scenario: Multi-part prompt produces a high-confidence split  # AC19, AC26
+    Given I invoke "/draft-issue" with a prompt containing two conjunction markers and three bullet points
+    When Step 1b runs the multi-issue detection heuristic
+    Then the heuristic proposes a split of N asks with per-ask summaries
+    And a visible session note lists the signals and confidence indicator "high"
+
+  # --- Split-confirm menu (AC20) ---
+
+  Scenario: User approves the proposed split  # AC20
+    Given the Step 1b heuristic proposed a split of 3 asks
+    When the split-confirm menu is shown
+    And I select "[1] Approve the split as proposed"
+    Then the flow proceeds to Step 1d dependency inference
+
+  Scenario: User collapses a false-positive split  # AC20
+    Given the Step 1b heuristic proposed a split of 2 asks
+    When the split-confirm menu is shown
+    And I select "[3] Collapse back to a single issue"
+    Then "session.proposedSplit" is cleared
+    And the flow proceeds to Step 2 with the original single-issue description
+
+  Scenario: User adjusts the split via free-text  # AC20
+    Given the split-confirm menu is shown
+    When I select "[2] Adjust the split (merge or re-divide)"
+    And I provide free-text adjustments
+    Then the skill applies the edits and re-renders the summary and menu
+    And the loop repeats until I select Approve or Collapse
+
+  # --- Dependency inference + graph confirm (AC21) ---
+
+  Scenario: Dependency graph is inferred and approved  # AC21
+    Given the user approved a multi-issue split of 4 asks
+    When Step 1d infers the dependency DAG
+    Then the skill renders the graph with arrow notation showing edges
+    And presents an AskUserQuestion with options "[1] Approve the graph", "[2] Adjust edges", "[3] Flatten — no dependencies"
+    And when I select "[1] Approve the graph" the per-issue loop begins
+
+  Scenario: User flattens the dependency graph  # AC21
+    Given Step 1d proposed a DAG with 3 edges
+    When I select "[3] Flatten — no dependencies"
+    Then "session.dag" is set to an empty list
+    And the per-issue loop begins with no parent/child relationships to wire
+
+  # --- Per-issue loop (AC22) ---
+
+  Scenario: Per-issue loop preserves Steps 2–9 contract  # AC22
+    Given the split and dependency graph are confirmed with 2 planned issues
+    When the loop iterates
+    Then each iteration runs classification, milestone, investigation, interview, playback, synthesis, review, creation, and output independently
+    And only "session.productContext", "session.designContext", and "session.dag" are shared across iterations
+    And each iteration has its own DraftState (including its own review-gate loop)
+
+  # --- Autolinking (AC23, AC28) ---
+
+  Scenario: Autolinking wires sub-issues and body cross-refs  # AC23
+    Given two issues were created in a batch with parent/child edge A1 → A2
+    And the "gh --add-sub-issue" probe returned support
+    When Step 10 runs
+    Then "gh issue edit <A2.number> --add-sub-issue <A1.number>" is invoked
+    And A2's body contains "Depends on: #<A1.number>"
+    And A1's body contains "Blocks: #<A2.number>"
+
+  Scenario: Autolinking falls back to body cross-refs when gh flag is unavailable  # AC28
+    Given the "gh issue edit --help" probe did not find "--add-sub-issue" support
+    When Step 10 runs
+    Then no "gh issue edit --add-sub-issue" commands are invoked
+    And body cross-refs are still written to every affected issue body
+    And the final summary notes "Sub-issue linking unavailable in this gh version — body cross-refs only"
+
+  # --- Claude Design URL (AC24, AC25) ---
+
+  Scenario: Claude Design URL is fetched and shared across iterations  # AC24
+    Given I supply a Claude Design URL at the start of the run
+    When Step 1a fetches and decodes the archive successfully
+    Then "session.designContext" contains the parsed README
+    And every per-issue Step 4 investigation, Step 5 interview, and Step 6 synthesis has read-only access to "session.designContext"
+
+  Scenario: Design fetch failure degrades gracefully  # AC25
+    Given I supply a Claude Design URL that times out
+    When Step 1a attempts the fetch
+    Then the failure is logged as a visible session note
+    And "session.designContext" is set to null
+    And the session continues to Step 1b without aborting
+    And the final summary includes "Design fetch failed — issues drafted without design context"
+
+  # --- Partial-batch abandonment (AC27) ---
+
+  Scenario: Partial-batch abandonment preserves created issues  # AC27
+    Given a multi-issue batch of 3 planned issues is in progress
+    And 1 issue has been created
+    When I select "[Abandon]" at the Step 7 review gate of the second iteration
+    Then the remaining planned issues are skipped
+    And no rollback or deletion of the first created issue is attempted
+    And the Step 11 summary reports "Created 1 of 3 planned issues" with the URL of the first issue

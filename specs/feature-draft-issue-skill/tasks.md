@@ -1,9 +1,9 @@
 # Tasks: Creating Issues Skill
 
-**Issues**: #4, #116
-**Date**: 2026-04-17
-**Status**: In Progress
-**Author**: Claude Code (retroactive + #116 amendment)
+**Issues**: #4, #116, #125
+**Date**: 2026-04-18
+**Status**: Complete
+**Author**: Claude Code (retroactive + #116 amendment + #125 amendment)
 
 ---
 
@@ -15,11 +15,14 @@
 | Plugin Files (original) | 1 | [x] |
 | Integration (original) | 1 | [x] |
 | Testing (original) | 1 | [x] |
-| **Phase 5: Readability Treatment (#116)** | 4 | [ ] |
-| **Phase 6: Deeper Interview (#116)** | 5 | [ ] |
-| **Phase 7: Unattended-Mode Removal + Breaking Change Plumbing (#116)** | 5 | [ ] |
-| **Phase 8: Docs + Testing (#116)** | 3 | [ ] |
-| **Total** | **21** | |
+| **Phase 5: Readability Treatment (#116)** | 4 | [x] |
+| **Phase 6: Deeper Interview (#116)** | 5 | [x] |
+| **Phase 7: Unattended-Mode Removal + Breaking Change Plumbing (#116)** | 5 | [x] |
+| **Phase 8: Docs + Testing (#116)** | 3 | [x] |
+| **Phase 9: Multi-Issue Pipeline (#125)** | 4 | [x] |
+| **Phase 10: Claude Design + Autolinking (#125)** | 3 | [x] |
+| **Phase 11: Batch Summary + Docs + Testing (#125)** | 4 | [x] |
+| **Total** | **32** | |
 
 ---
 
@@ -307,6 +310,175 @@
 
 ---
 
+## Phase 9: Multi-Issue Pipeline (#125)
+
+### T022: Add Step 1b multi-issue detection heuristic with trail note + confidence
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
+**Type**: Modify
+**Depends**: None
+**Status**: Pending
+**Issue**: #125
+**Acceptance**:
+- [ ] Step 1b section inserted between Step 1 and Step 2 with Input/Process/Output subsections
+- [ ] Heuristic documents extraction of `conjunctionHits`, `bulletListCount`, `distinctComponents`, `sentenceCount` from the initial description
+- [ ] Split-decision rules match the design: `high` / `medium` / `low` split proposals, `single` exit path
+- [ ] Trail note format is documented — emitted on both the split and single-issue paths, including the signal values and confidence indicator
+- [ ] Per-ask summary generation from segmented description is described
+- [ ] Workflow Overview diagram in SKILL.md updated to include Step 1b
+- [ ] Covers AC19, AC26, FR30, FR37
+
+### T023: Add Step 1c split-confirm menu with Approve/Adjust/Collapse
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
+**Type**: Modify
+**Depends**: T022
+**Status**: Pending
+**Issue**: #125
+**Acceptance**:
+- [ ] Step 1c section added with Input/Process/Output/Human Review Gate subsections
+- [ ] `AskUserQuestion` menu documented with exactly three options: `[1] Approve the split as proposed`, `[2] Adjust the split (merge or re-divide)`, `[3] Collapse back to a single issue`
+- [ ] `[2]` path loops with a free-text prompt until the user selects `[1]` or `[3]`
+- [ ] `[3]` collapse path returns flow to Step 2 with the original description and `session.proposedSplit = null`
+- [ ] `[1]` approve path proceeds to Step 1d
+- [ ] Workflow Overview diagram updated
+- [ ] Covers AC20, FR31
+
+### T024: Add Step 1d dependency inference + graph-confirm menu
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
+**Type**: Modify
+**Depends**: T023
+**Status**: Pending
+**Issue**: #125
+**Acceptance**:
+- [ ] Step 1d section added with Input/Process/Output/Human Review Gate subsections
+- [ ] Edge inference rules documented in order: (1) explicit cues, (2) shared-component precursor, (3) AC/FR overlap
+- [ ] DAG normalization (cycle detection + drop-lowest-priority) is documented
+- [ ] Graph rendering format (arrow notation) is specified
+- [ ] `AskUserQuestion` menu documented with three options: `[1] Approve the graph`, `[2] Adjust edges`, `[3] Flatten — no dependencies`
+- [ ] `[2]` path loops with a free-text prompt until approve/flatten
+- [ ] `[3]` flatten path clears all edges (`session.dag = []`) and proceeds
+- [ ] Workflow Overview diagram updated
+- [ ] Covers AC21, FR32
+
+### T025: Wire per-issue loop wrapping Steps 2–9 with SessionState/DraftState contracts
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
+**Type**: Modify
+**Depends**: T024
+**Status**: Pending
+**Issue**: #125
+**Acceptance**:
+- [ ] A new "Per-Issue Loop" section is added between Step 1d and Step 2 describing: shared `session.productContext` + `session.designContext` + `session.dag`; independent per-issue `DraftState`; topological ordering from the DAG
+- [ ] Existing Steps 2–9 content is unchanged; a preamble note explains each step now runs per planned issue
+- [ ] State model documentation (SessionState + DraftState shape) mirrors design.md
+- [ ] Each iteration appends to `session.createdIssues`
+- [ ] Step 7 review-gate menu gains an `[Abandon]` option conditional on `session.createdIssues.length < session.proposedSplit.asks.length`
+- [ ] Workflow Overview diagram shows the loop boundary
+- [ ] Covers AC22, FR33
+
+---
+
+## Phase 10: Claude Design + Autolinking (#125)
+
+### T026: Add Step 1a Claude Design URL fetch + gzip decode with graceful degradation
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`, possibly `plugins/nmg-sdlc/skills/_shared/claude-design.*` (path determined at implementation time, coordinated with issue #124)
+**Type**: Modify (SKILL.md); Reference/Extract (shared helper)
+**Depends**: None
+**Status**: Pending
+**Issue**: #125
+**Acceptance**:
+- [ ] Step 1a section added with Input/Process/Output subsections
+- [ ] URL detection (claude.ai design URL pattern) documented in Step 1 for either CLI argument or early prompt elicitation
+- [ ] Fetch/gzip-decode/README-parse is delegated to the shared helper from issue #124; if #124 landed the helper inline, this task documents the precondition to extract it to a shared location
+- [ ] 15s default timeout documented
+- [ ] Failure modes table documented: HTTP error, timeout, decode failure, missing README — each logs a visible session note and sets `session.designContext = null` + `session.designFailureNote`
+- [ ] Frontmatter `argument-hint` updated to mention the optional design URL
+- [ ] Workflow Overview diagram updated
+- [ ] Covers AC24, AC25, FR35, FR36
+
+### T027: Expose `session.designContext` in per-issue Step 4/5/6
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
+**Type**: Modify
+**Depends**: T025, T026
+**Status**: Pending
+**Issue**: #125
+**Acceptance**:
+- [ ] Step 4 Input subsection lists `session.designContext` as an additional input; Process describes how the design README informs the Current State summary when present
+- [ ] Step 5 Process describes how the interview may reference design components as pre-known context (avoiding re-elicitation)
+- [ ] Step 6 Process describes citing the design URL in the Background / Current State section of the synthesized issue body when applicable
+- [ ] `session.designContext` is documented as read-only — iterations must not mutate it
+- [ ] Covers AC24, FR33, FR35
+
+### T028: Add Step 10 autolink batch with probe + sub-issue wiring + body rewrite
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
+**Type**: Modify
+**Depends**: T025
+**Status**: Pending
+**Issue**: #125
+**Acceptance**:
+- [ ] Step 10 section added with Input/Process/Output subsections
+- [ ] One-time-per-batch `gh issue edit --help` probe documented; result cached as `session.subIssueSupported`
+- [ ] For each `{parent, child}` edge in `session.dag` where both issues were created, documents running `gh issue edit <child> --add-sub-issue <parent>`
+- [ ] Per-edge failures are logged to `session.autolinkDegradationNotes` and do not abort the batch
+- [ ] Body cross-refs (`"Depends on: #X, #Y"` / `"Blocks: #Z"`) are always written via `gh issue edit --body-file`, resolving Step 6 placeholder `<askId>` tokens to real issue numbers
+- [ ] Placeholders for uncreated issues (e.g., abandoned batch) are replaced with `"(planned but not created)"`
+- [ ] Workflow Overview diagram updated
+- [ ] Covers AC23, AC28, FR34, FR39
+
+---
+
+## Phase 11: Batch Summary + Docs + Testing (#125)
+
+### T029: Add Step 11 batch summary with partial-batch preservation
+**File(s)**: `plugins/nmg-sdlc/skills/draft-issue/SKILL.md`
+**Type**: Modify
+**Depends**: T025, T028
+**Status**: Pending
+**Issue**: #125
+**Acceptance**:
+- [ ] Step 11 section added with Input/Process/Output subsections
+- [ ] Summary format matches design.md: `"Created N of M planned issues"` with URLs, autolinking status, design fetch failure note (if any), and next-step hint
+- [ ] Single-issue flows render a trivial summary (M=1, N=1) with no autolinking block
+- [ ] Abandonment path (`session.abandoned = true`) is handled without attempting rollback
+- [ ] Workflow Overview diagram updated
+- [ ] Covers AC27, FR38
+
+### T030: Update README.md with multi-issue detection, autolinking, and Claude Design behavior
+**File(s)**: `README.md`
+**Type**: Modify
+**Depends**: T022, T023, T024, T025, T026, T028, T029
+**Status**: Pending
+**Issue**: #125
+**Acceptance**:
+- [ ] `/draft-issue` section documents the split-confirm, graph-confirm, autolinking, and Claude Design URL capabilities
+- [ ] Mentions the partial-batch preservation semantics
+- [ ] Notes that the skill reuses the Claude Design helper from #124
+- [ ] Covers all #125 user-facing changes
+
+### T031: Bump plugin version to 7.3.0 and update CHANGELOG
+**File(s)**: `plugins/nmg-sdlc/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `CHANGELOG.md`
+**Type**: Modify
+**Depends**: T022, T023, T024, T025, T026, T027, T028, T029, T030
+**Status**: Pending
+**Issue**: #125
+**Acceptance**:
+- [ ] `plugins/nmg-sdlc/.claude-plugin/plugin.json` `"version"` is `"7.3.0"`
+- [ ] `.claude-plugin/marketplace.json` plugin entry `"version"` is `"7.3.0"` (matching plugin.json)
+- [ ] `CHANGELOG.md` has `[Unreleased]` entries describing multi-issue detection, dependency inference, autolinking, and Claude Design ingestion
+- [ ] Bump is minor (additive, enhancement label)
+
+### T032: Update feature.gherkin with #125 scenarios
+**File(s)**: `specs/feature-draft-issue-skill/feature.gherkin`
+**Type**: Modify
+**Depends**: T022, T023, T024, T025, T026, T027, T028, T029
+**Status**: Pending
+**Issue**: #125
+**Acceptance**:
+- [ ] New scenarios cover AC19–AC28 (at least one scenario per AC; original scenarios preserved)
+- [ ] Scenarios tagged `# Added by issue #125` group them visually
+- [ ] Gherkin remains syntactically valid
+- [ ] Covers every AC added by #125
+
+---
+
 ## Dependency Graph
 
 ```
@@ -332,6 +504,20 @@ Phase 8 (Docs + Testing):
   T008, T010, T013, T014 ──▶ T021
 
 Critical path: T005 → T006 → T009 → T012 → T013 → T018 → T019/T020/T021
+
+Phase 9 (Multi-Issue Pipeline):
+  T022 ──▶ T023 ──▶ T024 ──▶ T025
+
+Phase 10 (Claude Design + Autolinking):
+  T026 (parallel with Phase 9) ──▶ T027 (after T025)
+  T025 ──▶ T028
+
+Phase 11 (Summary + Docs + Testing):
+  T025, T028 ──▶ T029
+  {T022..T029} ──▶ T030 ──▶ T031
+  T022..T029 ──▶ T032
+
+#125 critical path: T022 → T023 → T024 → T025 → T028 → T029 → T030 → T031
 ```
 
 ---
@@ -342,6 +528,7 @@ Critical path: T005 → T006 → T009 → T012 → T013 → T018 → T019/T020/T
 |-------|------|---------|
 | #4 | 2026-02-15 | Initial feature spec (T001–T004 complete) |
 | #116 | 2026-04-17 | Added Phase 5 (Readability: T005–T008), Phase 6 (Deeper Interview: T009–T013), Phase 7 (Unattended-Mode Removal + Breaking Change: T014–T018), Phase 8 (Docs + Testing: T019–T021). Major version bump v5.2.0 → v6.0.0. |
+| #125 | 2026-04-18 | Added Phase 9 (Multi-Issue Pipeline: T022–T025), Phase 10 (Claude Design + Autolinking: T026–T028), Phase 11 (Batch Summary + Docs + Testing: T029–T032). Minor version bump v7.2.0 → v7.3.0. |
 
 ---
 
@@ -352,3 +539,4 @@ Critical path: T005 → T006 → T009 → T012 → T013 → T018 → T019/T020/T
 - [x] Acceptance criteria are verifiable
 - [x] File paths reference actual project structure
 - [x] Every AC from #116 is covered by at least one task (AC5 → T008, AC6 → T008, AC7 → T007, AC8 → T005/T006, AC9 → T011/T012, AC10 → T013, AC11 → T009, AC12 → T014, AC13 → T016/T017/T020, AC14 → T015, AC15 → T010, AC16 → T013, AC17 → T008, AC18 → T014/T018)
+- [x] Every AC from #125 is covered by at least one task (AC19 → T022, AC20 → T023, AC21 → T024, AC22 → T025, AC23 → T028, AC24 → T026/T027, AC25 → T026, AC26 → T022, AC27 → T029, AC28 → T028)

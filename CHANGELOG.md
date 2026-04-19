@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [7.3.0] - 2026-04-18
+
+### Added
+
+- **`/draft-issue` multi-issue pipeline** (issue #125) — the skill can now detect multi-part asks in the initial prompt and loop through its existing Steps 2–9 per planned issue. New Step 1b runs a heuristic over the description (conjunction markers, bullet/numbered lists, distinct component mentions) and proposes a split with per-ask summaries and a `high`/`medium`/`low` confidence indicator, or exits with a `"single-issue detected"` trail note. A split-confirm menu (`[1] Approve`, `[2] Adjust (merge/re-divide)`, `[3] Collapse`) lets the user recover from false-positive splits. New Step 1d infers a dependency DAG from explicit cues, shared-component precursor language, and AC/FR scope overlap, then presents a graph-confirm menu (`[1] Approve`, `[2] Adjust edges`, `[3] Flatten`). Drafting only begins after both gates are confirmed. Each iteration retains an independent `DraftState` (classification, milestone, investigation, interview, review loop); only `session.productContext`, `session.designContext`, and `session.dag` cross iteration boundaries. A new Step 7 review-gate option `[Abandon]` (visible only mid-batch) lets the user stop cleanly; already-created issues are preserved with no rollback.
+
+- **`/draft-issue` autolinking** (issue #125) — after the per-issue loop, Step 10 probes `gh issue edit --help` once per batch for `--add-sub-issue` support and wires each parent/child edge in the confirmed DAG via `gh issue edit <child> --add-sub-issue <parent>`. Body cross-refs (`Depends on: #X, #Y` / `Blocks: #Z`) are written **unconditionally** via a body rewrite — independent of the probe result — so dependency information is readable even when the `gh` flag is unavailable or per-edge sub-issue calls fail. Placeholders for uncreated issues (partial-batch abandonment) are replaced with `"(planned but not created)"`. A Step 11 batch summary reports `"Created N of M planned issues"` with URLs, autolinking counts, and any degradation notes.
+
+- **`/draft-issue` Claude Design URL ingestion** (issue #125) — the skill accepts an optional Claude Design URL (auto-detected in the argument or elicited once in Step 1). Step 1a reuses the `/onboard-project` §2G.1 fetch/decode helper (HTTPS-validated, 15s timeout, `node:zlib.gunzipSync`-based gzip decode, README parse) and caches the parsed content as `session.designContext`. The design context is shared read-only across every per-issue Step 4 investigation, Step 5 interview, and Step 6 synthesis in the batch — letting the skill reference design components as pre-known context rather than re-eliciting them, and citing the design URL in Background / Current State sections when applicable. Fetch/decode failures (HTTP error, timeout, non-gzip payload, missing README) are logged as visible session notes and recorded in the Step 11 summary; the session continues without design context rather than aborting.
+
+### Changed
+
+- `/draft-issue` argument hint updated to `"[brief description of the need] [optional Claude Design URL]"`.
+
 ## [7.2.0] - 2026-04-18
 
 ### Added

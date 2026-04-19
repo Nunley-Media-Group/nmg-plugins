@@ -79,7 +79,11 @@ Selects an issue (or presents a picker if no number is given), creates a linked 
 /draft-issue "add user authentication"
 ```
 
-Classifies the issue type (Bug or Enhancement/Feature), investigates the codebase for relevant context, then interviews you with type-specific questions. Assigns the issue to a version milestone (derived from the `VERSION` file). Produces a groomed issue with Given/When/Then acceptance criteria — enhancements include a "Current State" section from the investigation, bugs include a "Root Cause Analysis" section.
+**Interactive-only** (v6.0.0+) — `/draft-issue` always runs the full interactive workflow regardless of `.claude/unattended-mode`. Classifies the issue type (Bug or Enhancement/Feature), investigates the codebase for relevant context, then interviews you with adaptive depth (core 3-round or extended 4-round with NFR/edge-case probing). Assigns the issue to a version milestone. Plays back its understanding before drafting (Step 5c), then renders a structured inline summary with `[1] Approve / [2] Revise` review menu before creating the issue.
+
+**Multi-issue mode (v7.3.0)**: Step 1b heuristically detects multi-part asks (conjunction markers, bullet lists, distinct component mentions) and proposes a split with per-ask summaries and a `high`/`medium`/`low` confidence indicator. A split-confirm menu (`[1] Approve / [2] Adjust / [3] Collapse`) lets you recover from false-positive splits. Step 1d infers a dependency DAG with a graph-confirm menu before any drafting begins. Each planned issue runs the full Steps 2–9 independently; created issues are autolinked via `gh issue edit --add-sub-issue` (availability probe + body cross-ref fallback). Batch abandonment at any review gate preserves already-created issues with no rollback.
+
+**Claude Design URL**: supply an optional `claude.ai` design URL to share parsed archive context read-only across every per-issue investigation, interview, and synthesis in the batch — reuses the `/onboard-project` fetch/gzip-decode/README-parse helper.
 
 ### Step 2: Write Specs
 
@@ -306,7 +310,7 @@ Any gate Fail caps the overall verification status at "Partial". Any gate Incomp
 | Skill | Description |
 |-------|-------------|
 | `/start-issue [#N]` | Select a GitHub issue, create a linked feature branch, and set the issue to In Progress |
-| `/draft-issue [description]` | Interview user about a feature need, assign to version milestone, create groomed GitHub issue with BDD acceptance criteria. **Interactive-only as of v6.0.0** — renders a structured inline summary and `[1] Approve / [2] Revise` review menu, and plays back its understanding before drafting. Does not participate in unattended-mode workflows. |
+| `/draft-issue [description] [design-url]` | Interview user about a feature need, assign to version milestone, create groomed GitHub issue with BDD acceptance criteria. **Interactive-only as of v6.0.0** — renders a structured inline summary and `[1] Approve / [2] Revise` review menu, and plays back its understanding before drafting. **Multi-issue mode (v7.3.0)**: Step 1b heuristically detects multi-part asks, proposes a split with a confirm menu (`[1] Approve / [2] Adjust / [3] Collapse`), infers a dependency DAG with a graph-confirm menu, loops through Steps 2–9 per planned issue, and autolinks created issues via `gh issue edit --add-sub-issue` (with availability probe + body-cross-ref fallback). Optional Claude Design URL ingestion (reuses the `/onboard-project` fetch/decode helper) provides shared read-only session context to every per-issue investigation, interview, and synthesis. Partial-batch abandonment preserves already-created issues. Does not participate in unattended-mode workflows. |
 | `/write-spec #N` | Create BDD specifications from a GitHub issue: requirements, technical design, and task breakdown |
 | `/write-code #N` | Read specs for current branch, enter plan mode, then execute implementation tasks sequentially |
 | `/verify-code #N` | Verify implementation against spec, fix findings, review architecture and test coverage, update GitHub issue |
