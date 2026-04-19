@@ -1,7 +1,7 @@
 # Requirements: Per-Step Model and Effort Level Configuration
 
-**Issues**: #77, #91
-**Date**: 2026-02-23
+**Issues**: #77, #91, #130
+**Date**: 2026-04-18
 **Status**: Draft
 **Author**: Claude (spec-writer)
 
@@ -164,6 +164,198 @@ The runner's `buildClaudeArgs()` function already supports per-step `maxTurns` a
 **When** the runner reaches the createPR step (Step 7)
 **Then** the default `maxTurns` in `sdlc-config.example.json` is 30 (increased from 15)
 
+---
+
+## Issue #130 — Optimize defaults for latest model lineup (Opus 4.7, Sonnet 4.6, Haiku 4.5)
+
+### AC16: Per-step defaults revisit is holistic
+
+**Given** the latest Claude Code model lineup and Anthropic's published effort-level guidance
+**When** a maintainer reviews `scripts/sdlc-config.example.json`
+**Then** every step has an explicit `model`, `maxTurns`, and `timeoutMin`, and an explicit `effort` if and only if the model supports effort (i.e., Opus or Sonnet variants)
+
+### AC17: Hard cap on Opus usage
+
+**Given** the shipped example config
+**When** every step is inspected
+**Then** `opus` appears only on `writeSpecs`, `implement`, and `verify`
+**And** every other step (`startCycle`, `startIssue`, `commitPush`, `createPR`, `monitorCI`, `merge`) uses `sonnet` or `haiku`
+
+### AC18: `startCycle` is explicitly pinned
+
+**Given** the example config
+**When** `startCycle` is loaded
+**Then** it has an explicit `model` field (does not inherit the global default)
+
+### AC19: Runner hardcoded default updated
+
+**Given** `resolveStepConfig()` at `scripts/sdlc-runner.mjs:221–226`
+**When** both the step and global config omit `model`
+**Then** the fallback returns `'sonnet'` (not `'opus'`)
+**And** when both omit `effort`, the fallback returns `'medium'`
+
+### AC20: README recommendations table rewritten
+
+**Given** `README.md` lines 174–186
+**When** a user reads the "Recommended model assignments" table
+**Then** every row reflects the new defaults and includes a one-line rationale citing the published Anthropic effort guidance
+
+### AC21: CHANGELOG entry added
+
+**Given** the `[Unreleased]` section of `CHANGELOG.md`
+**When** this change ships
+**Then** a user-visible entry summarizes which step defaults changed and the rationale
+
+### AC22: `init-config` ships new defaults
+
+**Given** a user runs `/nmg-sdlc:init-config` on a fresh project
+**When** `sdlc-config.json` is written
+**Then** it contains the new defaults verbatim (no template placeholders left for per-step model/effort)
+
+### AC23: `upgrade-project` surfaces curated diff
+
+**Given** an existing `sdlc-config.json` with the previous defaults
+**When** `/nmg-sdlc:upgrade-project` runs interactively
+**Then** it plays back an old-vs-new diff for the changed step defaults with a batch-approve option
+**And** in unattended mode, the diff is reported in the summary but not auto-applied (consistent with existing value-drift rules)
+
+### AC24: Test suite passes with new defaults
+
+**Given** `scripts/__tests__/sdlc-runner.test.mjs`
+**When** the suite runs against the new defaults
+**Then** all tests pass, including coverage for: `xhigh` accepted, `max` rejected, effort-on-haiku rejected, and new global default (`sonnet` / `medium`) resolving correctly
+
+### AC25: Guardrails documented
+
+**Given** the feature's `design.md`
+**When** a reviewer reads the rationale
+**Then** the document explicitly addresses:
+- How the new defaults avoid re-triggering the Opus rate-limit patterns (`specs/bug-opus-rate-limits/`)
+- Why `implement` at `xhigh` remains within the 150-turn / 30-min budget on large issues
+- Why `monitorCI` at `sonnet`/`medium` retains enough headroom to diagnose + fix CI failures
+
+### AC26: `verify` step sizing is evidence-backed
+
+**Given** `verify` performs checklist validation **and** applies auto-fixes
+**When** the spec phase selects model/effort for `verify`
+**Then** the choice is justified against the fix-application workload (not just checklist validation)
+**And** the candidate comparison (`sonnet/high`, `opus/medium`, `opus/high`) is captured in `design.md`
+
+### AC27: `xhigh` is accepted; `max` is rejected
+
+**Given** `scripts/sdlc-runner.mjs:26` `VALID_EFFORTS`
+**When** `validateConfig()` runs
+**Then** `'xhigh'` is an allowed value
+**And** `'max'` is explicitly rejected with an error message stating that `max` is intentionally excluded from nmg-sdlc defaults
+
+### AC28: Effort on Haiku steps is rejected
+
+**Given** a step config with `"model": "haiku"` and any `"effort"` value
+**When** `validateConfig()` runs
+**Then** validation fails with an error explaining that Haiku does not support the effort parameter
+
+### AC29: Effort tier literal names match Anthropic's spec
+
+**Given** the runner's allowed effort tiers
+**When** tier strings are compared to Anthropic's documented names
+**Then** the runner accepts `low`, `medium`, `high`, `xhigh` verbatim (literally `xhigh`, not `x-high`, `extra-high`, or `xtra-high`)
+
+### AC30: Per-step defaults match the reference table
+
+**Given** the shipped example config
+**When** each step is inspected
+**Then** model/effort/maxTurns/timeoutMin match this table:
+
+| Step | Model | Effort | Turns | Time | Rationale |
+|---|---|---|---|---|---|
+| `startCycle` | `haiku` | — | 10 | 5 | Single `gh` query; effort unsupported on Haiku |
+| `startIssue` | `sonnet` | `low` | 25 | 5 | Mechanical: `gh issue develop`, branch setup |
+| `writeSpecs` | `opus` | `xhigh` | 60 | 15 | Anthropic: "start with xhigh for coding and agentic" |
+| `implement` | `opus` | `xhigh` | 150 | 30 | Long-horizon agentic coding; current `medium` under-provisions |
+| `verify` | `opus` | `high` | 100 | 20 | Reasoning + fixes; `high` is the balance sweet spot |
+| `commitPush` | `haiku` | — | 15 | 5 | Deterministic git ops; effort unsupported |
+| `createPR` | `sonnet` | `low` | 45 | 5 | Template-driven PR body + version bump |
+| `monitorCI` | `sonnet` | `medium` | 60 | 20 | Must diagnose CI + apply minimal fixes |
+| `merge` | `haiku` | — | 10 | 5 | Single `gh pr merge`; effort unsupported |
+
+> **Note:** The Turns column reflects the AC36 floors (supersedes the initial values proposed in the issue body; see AC35–AC37 and the Addendum below).
+
+### AC31: Global runner defaults follow the hard cap
+
+**Given** `resolveStepConfig()` fallback to module defaults
+**When** a step and global config both omit `model`/`effort`
+**Then** the default is `sonnet` / `medium` (cost-aware; no Opus by default)
+
+### AC32: Skills declare model and effort in frontmatter
+
+**Given** any nmg-sdlc `SKILL.md` file that participates in the SDLC pipeline (`draft-issue`, `start-issue`, `write-spec`, `write-code`, `verify-code`, `open-pr`, `run-retro`, `setup-steering`, `init-config`, `run-loop`, `upgrade-project`)
+**When** Claude Code loads the skill for manual invocation
+**Then** the frontmatter declares a `model` field matching the runner's per-step model
+**And** declares an `effort` field when the model supports effort (Opus or Sonnet), using the same value as the runner's per-step effort
+**And** omits the `effort` field when the model is Haiku
+
+### AC33: Frontmatter values match runner config
+
+**Given** the reference table in AC30 and the skill-to-step mapping
+**When** skill frontmatter is compared with runner config
+**Then** corresponding values match exactly:
+- `write-spec` → `model: opus, effort: xhigh`
+- `write-code` → `model: opus, effort: xhigh`
+- `verify-code` → `model: opus, effort: high`
+- `start-issue` → `model: sonnet, effort: low`
+- `open-pr` → `model: sonnet, effort: low`
+- `draft-issue` → `model: sonnet, effort: medium` (interview work benefits from balanced effort)
+- `run-retro` → `model: opus, effort: high` (defect-pattern analysis)
+- `setup-steering` → `model: opus, effort: high` (steering doc creation)
+- `init-config` → `model: haiku` (mechanical template substitution; no effort)
+- `run-loop` → `model: sonnet, effort: low` (spawns subprocess; no heavy reasoning)
+- `upgrade-project` → `model: opus, effort: high` (diff + judgment work)
+
+### AC34: Precedence is documented
+
+**Given** README.md's model/effort guidance section
+**When** a user reads about interactive vs unattended behavior
+**Then** the precedence chain is documented:
+`CLAUDE_CODE_EFFORT_LEVEL env var (runner)` > `skill frontmatter` > `session /model / /effort` > `model default`
+
+---
+
+## Issue #130 Addendum — Blanket maxTurns Bump (#181 incident)
+
+A recent runner failure on issue #181 in a downstream repo (agentchrome) surfaced that the current `maxTurns` budgets — particularly for `verify` (60) — are too tight for real work. The architecture-reviewer subagent terminated mid-exploration via `error_max_turns` after 819s, triggered the consecutive-escalation failure-loop guard, and exited the runner. Since this spec already revisits the full per-step config surface, the `maxTurns` column is revised alongside the `model`/`effort` tuning. The related false-positive pattern-matcher defect that compounded #181 is tracked as issue #133 (out of scope here).
+
+### AC35: Every step's `maxTurns` budget is revisited with headroom
+
+**Given** Anthropic's current Opus 4.7 / Sonnet 4.6 / Haiku 4.5 lineup and observed real-world runner behavior (issue #181 evidence)
+**When** each step's `maxTurns` value is proposed
+**Then** the value has at least 50% headroom above the longest-observed successful run of that step in collected telemetry, or (if telemetry is absent for that step) is conservatively sized at no less than the floors in AC36
+**And** `design.md` records the evidence or the conservative-floor rationale per step
+
+### AC36: Proposed `maxTurns` floors per step
+
+**Given** the shipped example config (`scripts/sdlc-config.example.json`)
+**When** each step's `maxTurns` is inspected
+**Then** values meet or exceed these floors:
+
+| Step | Current | Proposed floor | Rationale |
+|---|---|---|---|
+| `startCycle` | 5 | 10 | Issue picker may need to inspect multiple open issues before selecting |
+| `startIssue` | 15 | 25 | `gh issue develop` plus branch hygiene and initial state capture |
+| `writeSpecs` | 40 | 60 | Three-document synthesis (requirements, design, tasks) on non-trivial features |
+| `implement` | 100 | 150 | Long-horizon coding with test runs and self-review loops |
+| `verify` | 60 | 100 | Checklist validation **plus** architecture-reviewer subagent **plus** auto-fix application (verify exhausted 60 turns on #181) |
+| `commitPush` | 10 | 15 | Git operations + optional pre-commit hook retry |
+| `createPR` | 30 | 45 | Version bump, CHANGELOG update, PR body generation |
+| `monitorCI` | 40 | 60 | CI failure diagnosis can require multiple investigation rounds |
+| `merge` | 5 | 10 | `gh pr merge` plus post-merge branch cleanup retries |
+
+### AC37: AC30's Turns column is updated to match AC36
+
+**Given** the reference table in AC30
+**When** implementation lands
+**Then** the `Turns` column of AC30 is updated to match the AC36 floors exactly (the two tables remain internally consistent)
+**And** `timeoutMin` values are reviewed for each bumped step and raised proportionally where the old value would be saturated by the new turn budget
+
 ### Generated Gherkin Preview
 
 ```gherkin
@@ -246,6 +438,23 @@ Feature: Per-step model and effort level configuration
 | FR16 | Update `validateConfig()` to stop validating `plan`/`code` sub-objects (ignore gracefully) | Should | Legacy configs should not break |
 | FR17 | Increase `createPR` step default `maxTurns` to 30 in `sdlc-config.example.json` | Must | PR creation needs more turns for version bumping |
 | FR18 | Fix write-spec unattended-mode spec discovery to skip `AskUserQuestion` and directly amend | Must | Current instruction says "auto-select Option 1" which is fragile; should skip the prompt entirely |
+| FR19 | Update `scripts/sdlc-config.example.json` per the AC30 table (with AC36 turn floors) | Must | Issue #130 |
+| FR20 | Enforce Opus hard cap (writeSpecs, implement, verify only) | Must | Issue #130 — AC17 |
+| FR21 | Change `resolveStepConfig()` defaults to `sonnet` / `medium` (sdlc-runner.mjs:221–226) | Must | Issue #130 — AC19, AC31 |
+| FR22 | Expand `VALID_EFFORTS` to `['low', 'medium', 'high', 'xhigh']`; keep `max` rejected | Must | Issue #130 — AC27, AC29 |
+| FR23 | Reject `effort` on Haiku steps in `validateConfig()` with a clear message | Must | Issue #130 — AC28 |
+| FR24 | Rewrite `README.md` recommendations table with rationale column | Must | Issue #130 — AC20 |
+| FR25 | Add `[Unreleased]` CHANGELOG entry with rationale and migration note | Must | Issue #130 — AC21 |
+| FR26 | Update `scripts/__tests__/sdlc-runner.test.mjs`: cover `xhigh` accept, `max` reject, haiku+effort reject, new global defaults | Must | Issue #130 — AC24 |
+| FR27 | `upgrade-project` surfaces a curated "recommended defaults" diff (interactive only) with batch-approve | Must | Issue #130 — AC23 |
+| FR28 | Validate `init-config` template substitution preserves new defaults verbatim | Must | Issue #130 — AC22 |
+| FR29 | Document `max`-exclusion and haiku-no-effort rules as user-facing guidance in README | Should | Issue #130 |
+| FR30 | `design.md` cites Anthropic's published effort-level guidance with source links | Should | Issue #130 |
+| FR31 | Add `model`/`effort` frontmatter to all SDLC skills per AC33 mapping | Must | Issue #130 — AC32, AC33 |
+| FR32 | Document precedence chain in README (env var > frontmatter > session > default) | Must | Issue #130 — AC34 |
+| FR33 | Update `scripts/sdlc-config.example.json` `maxTurns` values per AC36 floors | Must | Issue #130 addendum — AC35, AC36 |
+| FR34 | Review and adjust `timeoutMin` alongside `maxTurns`; pair rationale in `design.md` | Must | Issue #130 addendum |
+| FR35 | Add a dedicated `[Unreleased]` CHANGELOG bullet for the turn-budget revision citing #181 | Must | Issue #130 addendum |
 
 ---
 
@@ -282,11 +491,23 @@ Feature: Per-step model and effort level configuration
 
 - Automatic model selection based on task complexity or token usage
 - Dynamic effort adjustment during a step
-- Per-skill effort in SKILL.md frontmatter (not supported by Claude Code — effort is session-level via env var)
+- ~~Per-skill effort in SKILL.md frontmatter (not supported by Claude Code — effort is session-level via env var)~~ **Reversed by issue #130** — Claude Code now supports `effort` in skill frontmatter; AC32/AC33 require it.
 - Changes to the architecture-reviewer agent's model declaration (already hardcoded to Opus)
 - Per-step temperature or max-token configuration
-- Changes to `write-code` SKILL.md itself (its unattended-mode logic is already correct)
+- Changes to `write-code` SKILL.md itself (its unattended-mode logic is already correct) — issue #130 only adds frontmatter
 - Changes to the plugin manifest model field
+
+### Out of Scope (Issue #130)
+
+- Adding new runner config fields beyond existing `model`/`effort`/`maxTurns`/`timeoutMin`
+- Changing fallback-chain semantics (`step → global → default`)
+- Creating new skills or slash commands
+- Empirical live SDLC dry-runs as a merge gate (unit tests + docs only for this issue)
+- Backporting defaults to v5 releases
+- Adding the `max` effort tier to the allowlist — explicit policy exclusion
+- Refactoring any non-runner component
+- Collecting new telemetry before proposing turn values — the AC36 floors are conservative starting points; telemetry-driven tuning is a future issue
+- Modifying the runner's failure-loop guard or `IMMEDIATE_ESCALATION_PATTERNS` — the pattern-matcher false-positive is tracked as #133
 
 ---
 
