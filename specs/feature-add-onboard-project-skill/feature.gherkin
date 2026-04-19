@@ -1,0 +1,145 @@
+# File: specs/feature-add-onboard-project-skill/feature.gherkin
+#
+# Generated from: specs/feature-add-onboard-project-skill/requirements.md
+# Issue: #115
+
+Feature: Onboard Project
+  As a developer adopting nmg-sdlc on a project that isn't spec-driven
+  I want a single skill that initializes the project for the SDLC — greenfield or brownfield
+  So that I can get from "plugin installed" to "ready for /draft-issue" without hand-crafting steering docs or back-filling specs one at a time
+
+  # --- Happy Path: Greenfield ---
+
+  Scenario: Greenfield bootstrap delegates to setup-steering and offers init-config
+    Given a project directory with no "steering/" directory
+    And no "specs/" directory
+    And only scaffold files present ("README.md", ".gitignore", and an empty "package.json")
+    When I run "/onboard-project"
+    Then the skill reports "Greenfield detected"
+    And the skill delegates to "/setup-steering"
+    And after delegation returns, "steering/product.md", "steering/tech.md", and "steering/structure.md" all exist
+    And the skill offers to invoke "/init-config"
+    And the final summary states the project is ready for "/draft-issue"
+
+  # --- Happy Path: Brownfield ---
+
+  Scenario: Brownfield reconciliation produces one spec per closed-issue feature area
+    Given a project with 47 source files under "src/"
+    And 3 closed GitHub issues: #10 (feature, merged PR #11), #20 (bug, merged PR #21), #30 (feature, merged PR #31)
+    And no "specs/" directory
+    When I run "/onboard-project"
+    Then the skill reports "Brownfield detected: 3 closed issues, 47 source files, no specs/"
+    And "specs/feature-*/" directory is created for issue #10 with all four artifact files
+    And "specs/bug-*/" directory is created for issue #20 using the defect template
+    And "specs/feature-*/" directory is created for issue #30 with all four artifact files
+    And each produced "design.md" lists which evidence sources (issue body, PR body, PR diff, commit messages, current code) contributed to each major section
+
+  # --- Multi-Issue Consolidation ---
+
+  Scenario: Related issues are grouped and consolidated on user approval
+    Given 3 closed issues with the shared label "dark-mode" and keyword "toggle" in every title
+    When "/onboard-project" runs the reconciliation step
+    Then the skill presents one consolidation group containing the 3 issues
+    And the user approves the group via AskUserQuestion
+    Then one consolidated "specs/feature-*/" directory is produced referencing all 3 issue numbers in its frontmatter "Issues" field
+
+  Scenario: Related issues are kept separate when consolidation is declined
+    Given 3 closed issues with shared label "dark-mode"
+    When "/onboard-project" presents the consolidation group
+    And the user declines consolidation
+    Then 3 separate "specs/feature-*/" directories are produced, one per issue
+
+  # --- Template Variant Selection ---
+
+  Scenario: Issue with bug label uses the defect template
+    Given a closed issue carrying the "bug" label
+    When "/onboard-project" reconciles the issue
+    Then the spec is emitted under "specs/bug-{slug}/"
+    And "requirements.md" begins with the "# Defect Report:" heading
+
+  Scenario: Issue with no label falls back to content heuristic
+    Given a closed issue with no labels and the title "Fix the login crash on timeout"
+    When "/onboard-project" picks a template
+    Then the content heuristic matches the "fix" and "crash" keywords
+    And the spec is emitted under "specs/bug-{slug}/" using the defect template
+
+  Scenario: Issue with enhancement label defaults to feature template
+    Given a closed issue carrying the "enhancement" label
+    When "/onboard-project" reconciles the issue
+    Then the spec is emitted under "specs/feature-{slug}/" using the feature template
+
+  # --- Brownfield With Missing Steering Docs ---
+
+  Scenario: Brownfield with missing steering docs delegates to setup-steering first
+    Given a project with source files and closed issues
+    And no "steering/" directory
+    And no "specs/" directory
+    When I run "/onboard-project"
+    Then the skill detects brownfield mode
+    And the skill delegates to "/setup-steering" before any reconciliation begins
+    And "steering/product.md", "steering/tech.md", and "steering/structure.md" exist before reconciliation starts
+    And no partial specs are produced if "/setup-steering" fails
+
+  # --- Unattended Mode ---
+
+  Scenario: Unattended mode skips all AskUserQuestion prompts
+    Given ".claude/unattended-mode" exists in the project directory
+    And brownfield mode with 2 closed issues sharing a label
+    When I run "/onboard-project"
+    Then no AskUserQuestion prompts fire during execution
+    And the consolidation group is auto-accepted as proposed
+    And the final summary lists every auto-decision that was made
+
+  # --- Idempotency ---
+
+  Scenario: Second run on an already-initialized project offers upgrade-project instead
+    Given "/onboard-project" has previously run and "specs/" contains at least one spec directory
+    When I run "/onboard-project" again
+    Then the skill reports "Already initialized" and lists the existing spec directories
+    And the skill offers to delegate to "/upgrade-project"
+    And no existing spec file is modified or overwritten
+
+  # --- Post-Reconciliation Verification ---
+
+  Scenario: Verification flags specs whose referenced source files have been removed
+    Given brownfield reconciliation has emitted a spec whose "design.md" references "src/oldmodule.ts"
+    And "src/oldmodule.ts" does not exist in the current working tree
+    When the skill reaches the post-reconciliation verification step
+    Then the skill records "src/oldmodule.ts" as a gap for this spec
+    And the final summary calls out the gap
+    And the spec file is still written (not silently suppressed)
+
+  Scenario: Verification flags specs missing one of the four artifact files
+    Given brownfield reconciliation produced a spec directory with only "requirements.md" and "design.md"
+    When the skill reaches the verification step
+    Then the skill records "tasks.md" and "feature.gherkin" as missing for that spec
+    And the gap appears in the summary
+
+  # --- Context Sources Enumerated ---
+
+  Scenario: design.md enumerates which evidence sources fed each major section
+    Given a closed issue with body text, a merged PR with body and diff, and 2 commit messages
+    When "/onboard-project" synthesizes the spec
+    Then the produced "design.md" contains an "Evidence Sources" section
+    And the "Evidence Sources" section lists "issue body", "PR body", "PR diff", "commit messages", and "current code" with the sections each contributed to
+
+  # --- Degradation When Evidence Is Incomplete ---
+
+  Scenario: Closed issue without a merged PR degrades gracefully
+    Given a closed issue #99 that was closed without a merged PR
+    When "/onboard-project" attempts to reconcile issue #99
+    Then the spec is emitted using only "issue body + current code" evidence
+    And the spec contains a "## Known Gaps" section noting the missing PR context
+    And the overall run continues processing remaining issues
+    And the final summary lists issue #99 under "partial reconciliation"
+
+  # --- Summary Report ---
+
+  Scenario: Final summary reports mode, specs produced, delegations, and gaps
+    Given "/onboard-project" has just completed a brownfield reconciliation
+    When it emits the final summary
+    Then the summary names the mode detected ("Brownfield")
+    And the summary lists every produced spec directory with its contributing issue numbers
+    And the summary lists every delegated skill invoked ("/setup-steering" if triggered) and its exit status
+    And the summary lists every gap recorded during verification
+    And the summary ends with the next-step instruction to run "/draft-issue" or "/upgrade-project"

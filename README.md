@@ -8,14 +8,14 @@ Claude Code plugins by Nunley Media Group.
 
 The **nmg-sdlc** plugin is a stack-agnostic, BDD spec-driven development toolkit that brings structured software delivery to Claude Code. It covers the entire development lifecycle — issue grooming with acceptance criteria, three-phase specification writing, plan-mode implementation, automated verification with integrated versioning, and PR creation — but the core flow is five commands: `/start-issue` → `/write-spec` → `/write-code` → `/verify-code` → `/open-pr`. Each command runs in a fresh context window with only the artifacts it needs — specs, steering docs, and issue metadata — keeping token usage small and efficient across the entire lifecycle. A dedicated architecture reviewer agent scores every implementation across five quality checklists (SOLID principles, security, performance, testability, and error handling), while a retrospective system analyzes past defects to continuously improve spec quality. Steering documents (`product.md`, `tech.md`, `structure.md`) let teams encode project-specific conventions that guide every step. A retrospective system (`/run-retro`) analyzes past defect specs to identify recurring gaps and produces actionable learnings in `retrospective.md` — which `/write-spec` and `/write-code` automatically consume, so lessons from previous cycles directly improve future specs and implementations. For Claude Code plugin projects, exercise-based verification goes beyond static checks — it scaffolds a temporary workspace, installs the plugin, and runs the changed skills end-to-end to validate they actually work. The entire workflow runs interactively with human review gates or fully headless through the built-in SDLC runner.
 
-It provides a GitHub issue-driven workflow:
+It provides a GitHub issue-driven workflow. Projects first run `/onboard-project` (once per project lifetime) to bootstrap steering docs and — for existing codebases — reconcile specs from closed issues; afterward the per-feature cycle kicks in:
 
 ```
-Step 1               Step 2                   Step 3                  Step 4                     Step 5                    Step 6
-/draft-issue  →  /start-issue #42  →  /write-spec #42  →  /write-code #42  →  /verify-code #42  →  /open-pr #42
-Interview user,      Select issue, create     Read issue, create      Read specs, enter plan     Verify implementation,    Create PR with
-create groomed       linked branch, set       specs (requirements/    mode, create plan,         review architecture,      summary referencing
-GitHub issue         status to In Progress    design/tasks)           then execute               update issue              specs and issue
+Setup (once)         Step 1               Step 2                   Step 3                  Step 4                     Step 5                    Step 6
+/onboard-project  →  /draft-issue  →  /start-issue #42  →  /write-spec #42  →  /write-code #42  →  /verify-code #42  →  /open-pr #42
+Greenfield bootstrap Interview user,      Select issue, create     Read issue, create      Read specs, enter plan     Verify implementation,    Create PR with
+or brownfield spec   create groomed       linked branch, set       specs (requirements/    mode, create plan,         review architecture,      summary referencing
+reconciliation       GitHub issue         status to In Progress    design/tasks)           then execute               update issue              specs and issue
 ```
 
 ## Installation
@@ -42,13 +42,17 @@ For local development or testing:
 
 ## First-Time Setup
 
-Run `/setup-steering` in your project to generate steering documents:
+Run `/onboard-project` in your project — it is the single entry point for adopting nmg-sdlc:
 
 ```bash
-/setup-steering
+/onboard-project
 ```
 
-On first run, this analyzes your codebase and creates three documents in `steering/` at the project root. Re-running it when steering files already exist enters an enhancement flow that preserves your customizations:
+- **Greenfield projects** (no code yet): delegates to `/setup-steering` to generate steering docs, then offers to run `/init-config` for the unattended runner.
+- **Brownfield projects** (existing code with closed GitHub issues but no specs): bootstraps steering docs if missing, then reconciles one `specs/{feature,bug}-{slug}/` directory per closed issue — or per consolidated group — using the issue body, merged PR body, PR diff, commit messages, and current implementation as evidence.
+- **Already-initialized projects**: offers to delegate to `/upgrade-project` rather than duplicating work.
+
+If you want to bootstrap steering docs without the brownfield reconciliation step, you can still run `/setup-steering` directly. Re-running `/setup-steering` when steering files already exist enters an enhancement flow that preserves your customizations:
 
 | Document | Purpose |
 |----------|---------|
@@ -309,6 +313,7 @@ Any gate Fail caps the overall verification status at "Partial". Any gate Incomp
 | `/setup-steering` | Set up or enhance project steering documents (product, tech, structure) — bootstraps on first run, enhances existing docs on subsequent runs |
 | `/upgrade-project` | Upgrade an existing project to current plugin standards — relocates legacy `.claude/steering/` and `.claude/specs/` to the project root, updates specs, steering docs, configs, CHANGELOG, and VERSION |
 | `/init-config` | Generate an `sdlc-config.json` for the SDLC runner, with project path auto-detected and written to the project root |
+| `/onboard-project [--dry-run]` | Initialize a project for the SDLC — greenfield bootstrap or brownfield spec reconciliation from closed GitHub issues and merged PR diffs. Runs **once per project lifetime**, before `/draft-issue` |
 
 ### Utility Skills
 

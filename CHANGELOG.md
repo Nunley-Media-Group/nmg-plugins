@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`/onboard-project`** — New skill for greenfield bootstrap and brownfield spec reconciliation (issue #115). Detects whether a project is greenfield (no code, no specs), brownfield (existing code and closed issues but no specs), or already-initialized, then routes work: delegates to `/setup-steering` for steering docs, optionally to `/init-config` for runner config, and to `/upgrade-project` for already-initialized projects. For brownfield, synthesizes one `specs/{feature,bug}-{slug}/` directory per closed issue — or per consolidated group — using `/write-spec`'s templates read at runtime, with evidence gathered in order from issue body, merged PR body, PR diff, commit messages, and the current implementation. Degrades gracefully when a closed issue has no merged PR (emits spec with `## Known Gaps` section). Honors `.claude/unattended-mode` by auto-accepting consolidation groups and defaults, and logs every auto-decision in the final summary. Supports `--dry-run` to preview without writing files. Post-reconciliation verification confirms each produced spec directory has all four artifact files and flags any referenced source files that no longer exist in the working tree. Pipeline position: runs once per project lifetime, before `/draft-issue`. Plugin version bumped **major** (6.1.0 → 7.0.0) — issue #115 was the last open issue in milestone v5, triggering the milestone-completion major-bump override from `tech.md`.
+
 ## [6.1.0] - 2026-04-18
 
 ### Changed (BREAKING)
