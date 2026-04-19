@@ -202,6 +202,35 @@ describe('AC2: Runner detects permission denials as failure', () => {
     expect(result.reason).toContain('SeriousTool');
     expect(result.reason).not.toContain('EnterPlanMode');
   });
+
+  it('treats denials targeting paths inside OS temp directory as benign (test scaffold writes)', async () => {
+    const os = await import('node:os');
+    const tmp = os.tmpdir();
+    const stdout = JSON.stringify({
+      subtype: 'success',
+      permission_denials: [
+        { tool_name: 'Write', tool_use_id: 'a', tool_input: { file_path: `${tmp}/nmg-sdlc-test-123/.claude/unattended-mode`, content: '' } },
+        { tool_name: 'Bash', tool_use_id: 'b', tool_input: { command: `touch ${tmp}/nmg-sdlc-test-123/state.json`, description: 'scaffold' } },
+      ],
+    });
+    const result = detectSoftFailure(stdout);
+    expect(result.isSoftFailure).toBe(false);
+  });
+
+  it('still escalates on denials outside OS temp directory even if a scaffold denial is also present', async () => {
+    const os = await import('node:os');
+    const tmp = os.tmpdir();
+    const stdout = JSON.stringify({
+      subtype: 'success',
+      permission_denials: [
+        { tool_name: 'Write', tool_use_id: 'a', tool_input: { file_path: `${tmp}/nmg-sdlc-test-123/.claude/state.json`, content: '{}' } },
+        { tool_name: 'Write', tool_use_id: 'b', tool_input: { file_path: '/etc/passwd', content: 'bad' } },
+      ],
+    });
+    const result = detectSoftFailure(stdout);
+    expect(result.isSoftFailure).toBe(true);
+    expect(result.reason).toContain('Write');
+  });
 });
 
 describe('AC3: Normal exit code 0 still treated as success', () => {

@@ -1057,6 +1057,15 @@ function matchErrorPattern(output) {
 // These should NOT trigger soft failure escalation.
 const BENIGN_DENIED_TOOLS = new Set(['EnterPlanMode', 'ExitPlanMode', 'AskUserQuestion']);
 
+// OS temp directory — resolved once at startup. Permission denials targeting
+// paths inside this directory are treated as benign because SDLC skills
+// routinely create ephemeral test scaffolds there (see steering/structure.md
+// "Test Project Scaffolding"). The subprocess sandbox blocks writes outside
+// the project root, so scaffold writes get denied even under
+// --dangerously-skip-permissions. The model recovers from these denials and
+// the step still completes; escalating on them halts otherwise-successful runs.
+const OS_TMPDIR = os.tmpdir();
+
 // Known text-based failure patterns — detected in raw stdout when JSON checks
 // find no failure indicators.  Each entry has a regex and a human-readable label
 // used in the soft-failure reason string and status log messages.
@@ -1065,6 +1074,18 @@ const TEXT_FAILURE_PATTERNS = [
   { pattern: /AskUserQuestion.*unattended-mode/i, label: 'AskUserQuestion in unattended-mode' },
 ];
 
+function isEphemeralScaffoldDenial(denial) {
+  if (!denial || typeof denial !== 'object') return false;
+  const input = denial.tool_input;
+  if (!input) return false;
+  try {
+    const serialized = typeof input === 'string' ? input : JSON.stringify(input);
+    return serialized.includes(OS_TMPDIR);
+  } catch {
+    return false;
+  }
+}
+
 function detectSoftFailure(stdout) {
   const parsed = extractResultFromStream(stdout);
   if (parsed) {
@@ -1072,10 +1093,14 @@ function detectSoftFailure(stdout) {
       return { isSoftFailure: true, reason: 'error_max_turns' };
     }
     if (Array.isArray(parsed.permission_denials) && parsed.permission_denials.length > 0) {
-      // Filter out benign denials (model tried an interactive tool but recovered)
+      // Filter out benign denials: interactive tools the model tried but
+      // recovered from, and denials targeting the OS temp directory (expected
+      // for skills that create ephemeral test scaffolds).
       const serious = parsed.permission_denials.filter(d => {
         const toolName = typeof d === 'object' ? d.tool_name : String(d);
-        return !BENIGN_DENIED_TOOLS.has(toolName);
+        if (BENIGN_DENIED_TOOLS.has(toolName)) return false;
+        if (isEphemeralScaffoldDenial(d)) return false;
+        return true;
       });
       if (serious.length > 0) {
         return { isSoftFailure: true, reason: `permission_denials: ${serious.map(d => typeof d === 'object' ? d.tool_name : d).join(', ')}` };
