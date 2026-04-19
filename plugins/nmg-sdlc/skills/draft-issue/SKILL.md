@@ -3,6 +3,8 @@ name: draft-issue
 description: "Interview user about a feature need, create groomed GitHub issue with BDD acceptance criteria. Use when user says 'create issue', 'new feature', 'report a bug', 'log a bug', 'request a feature', 'I need a...', 'file an issue', 'draft an issue', 'how do I create an issue', or 'how to file a feature request'. Do NOT use for writing specs, implementing code, or creating PRs. Supports feature and bug templates with codebase investigation and milestone assignment. First step in the SDLC pipeline — followed by /start-issue."
 argument-hint: "[brief description of the need] [optional Claude Design URL]"
 allowed-tools: Read, Glob, Grep, Bash(gh:*), WebSearch, WebFetch
+model: sonnet
+effort: medium
 ---
 
 # Draft Issue

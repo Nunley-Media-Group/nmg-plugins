@@ -2500,9 +2500,9 @@ describe('Step 7 prompt includes version bump mandate (#60)', () => {
 // Issue #77: Per-step model and effort level configuration
 // ===========================================================================
 
-describe('VALID_EFFORTS constant (#77)', () => {
-  it('contains low, medium, high', () => {
-    expect(VALID_EFFORTS).toEqual(['low', 'medium', 'high']);
+describe('VALID_EFFORTS constant (#77, expanded in #130)', () => {
+  it('contains low, medium, high, xhigh', () => {
+    expect(VALID_EFFORTS).toEqual(['low', 'medium', 'high', 'xhigh']);
   });
 });
 
@@ -2521,7 +2521,7 @@ describe('validateConfig (#77)', () => {
     const errors = validateConfig({ effort: 'turbo' });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain('turbo');
-    expect(errors[0]).toContain('low, medium, high');
+    expect(errors[0]).toContain('low, medium, high, xhigh');
   });
 
   it('rejects empty string model', () => {
@@ -2612,8 +2612,8 @@ describe('resolveStepConfig (#77)', () => {
 
   it('falls back to defaults when neither step nor config set', () => {
     const result = resolveStepConfig({}, {});
-    expect(result.model).toBe('opus');
-    expect(result.effort).toBeUndefined();
+    expect(result.model).toBe('sonnet');
+    expect(result.effort).toBe('medium');
   });
 
   it('step model overrides config model', () => {
@@ -2630,6 +2630,70 @@ describe('resolveStepConfig (#77)', () => {
       { effort: 'high' }
     );
     expect(result.effort).toBe('low');
+  });
+
+  it('omits effort when resolved model is haiku (#130)', () => {
+    const result = resolveStepConfig(
+      { model: 'haiku' },
+      { effort: 'medium' }
+    );
+    expect(result.model).toBe('haiku');
+    expect(result.effort).toBeUndefined();
+  });
+});
+
+describe('validateConfig — issue #130 additions', () => {
+  it('accepts xhigh at the global level', () => {
+    const errors = validateConfig({ effort: 'xhigh' });
+    expect(errors).toEqual([]);
+  });
+
+  it('accepts xhigh at the per-step level', () => {
+    const errors = validateConfig({
+      steps: { writeSpecs: { effort: 'xhigh' } },
+    });
+    expect(errors).toEqual([]);
+  });
+
+  it('rejects the max effort tier at the global level with a policy message', () => {
+    const errors = validateConfig({ effort: 'max' });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('intentionally excluded');
+    expect(errors[0]).toContain('max');
+  });
+
+  it('rejects the max effort tier at the per-step level', () => {
+    const errors = validateConfig({
+      steps: { implement: { effort: 'max' } },
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('steps.implement.effort');
+    expect(errors[0]).toContain('intentionally excluded');
+  });
+
+  it('rejects effort on a haiku step (step-level)', () => {
+    const errors = validateConfig({
+      steps: { commitPush: { model: 'haiku', effort: 'low' } },
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('steps.commitPush');
+    expect(errors[0]).toContain('Haiku');
+    expect(errors[0]).toContain('effort');
+  });
+
+  it('rejects effort on a haiku step when effort falls through from global', () => {
+    const errors = validateConfig({
+      effort: 'medium',
+      steps: { merge: { model: 'haiku' } },
+    });
+    expect(errors.some(e => e.includes('steps.merge') && e.includes('Haiku'))).toBe(true);
+  });
+
+  it('rejects hyphenated variants like x-high', () => {
+    const errors = validateConfig({ effort: 'x-high' });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('x-high');
+    expect(errors[0]).toContain('xhigh');
   });
 });
 
@@ -2704,8 +2768,8 @@ describe('runClaude effort env var (#77)', () => {
     expect(spawnOpts.env.CLAUDE_CODE_EFFORT_LEVEL).toBe('high');
   });
 
-  it('does not set env when effort is undefined', async () => {
-    __test__.setConfig({ effort: undefined });
+  it('does not set env when resolved model is haiku (#130)', async () => {
+    __test__.setConfig({ effort: 'medium' });
 
     const mockProc = {
       pid: 77002,
@@ -2720,11 +2784,14 @@ describe('runClaude effort env var (#77)', () => {
     mockSpawn.mockReturnValue(mockProc);
     mockFs.existsSync.mockReturnValue(false);
 
-    const step = { ...STEPS[0], timeoutMin: 1 };
+    const step = { ...STEPS[0], timeoutMin: 1, model: 'haiku' };
     await runClaude(step, defaultState());
 
     const spawnOpts = mockSpawn.mock.calls[0][2];
-    expect(spawnOpts.env).toBeUndefined();
+    // Haiku resolves to effort=undefined, so no env var — spawn uses default inherited env
+    if (spawnOpts.env !== undefined) {
+      expect(spawnOpts.env.CLAUDE_CODE_EFFORT_LEVEL).toBeUndefined();
+    }
   });
 
   it('uses override effort over resolved effort', async () => {

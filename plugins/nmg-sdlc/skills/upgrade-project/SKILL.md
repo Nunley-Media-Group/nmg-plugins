@@ -3,6 +3,8 @@ name: upgrade-project
 description: "Upgrade a project to the latest nmg-sdlc contract — relocate legacy `.claude/steering/` and `.claude/specs/` to the project root, update specs, steering docs, and configs to current template standards. Use when user says 'upgrade project', 'update templates', 'check for outdated docs', 'sync with latest plugin', 'relocate specs', 'how do I update my project', or 'bring my project up to date'. Detects the legacy `.claude/{steering,specs}` directory layout and migrates it in place via `git mv`, then diffs headings against current templates and merges missing sections while preserving all user content. Utility skill — run after plugin updates, outside the main SDLC pipeline."
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Edit, Write, Bash(gh:*), Bash(git:*), AskUserQuestion
+model: opus
+effort: high
 ---
 
 # Upgrade Project
@@ -478,6 +480,33 @@ options:
 4. Unselected values are left unchanged — they are not recorded or persisted as declined (drift is re-evaluated every run)
 
 If no drift was found in Step 5, skip Part C.
+
+#### Part D: Recommended runner defaults diff (batch approve)
+
+This flow is additive — the existing key-merge (Step 9 item 6) and per-value drift prompt (Part C) are unchanged. Part D specifically surfaces changes to the per-step `model` / `effort` / `maxTurns` / `timeoutMin` defaults so users upgrading across plugin versions can adopt the shipped recommendations without clicking through each field individually.
+
+1. **Build the diff.** For each step in `steps.*`, compare the user's `model`, `effort`, `maxTurns`, and `timeoutMin` against the values in `scripts/sdlc-config.example.json`. Include only fields where the user's value differs from (or inherits a value different than) the shipped example. Present unset/inherited values as `(unset — inherited "<global>")` so the source of each value is visible.
+2. **Present the diff table** (interactive mode only) in a single `AskUserQuestion` with three options:
+
+```
+question: "Apply recommended defaults from the shipped example config? (Review the diff below.)"
+
+  Recommended default changes:
+    steps.startCycle.model:     (unset — inherited "opus") → "haiku"
+    steps.startCycle.maxTurns:  5 → 10
+    steps.implement.effort:     "medium" → "xhigh"
+    steps.implement.maxTurns:   100 → 150
+    steps.verify.maxTurns:      60 → 100
+    ...
+
+options:
+  - "Apply all recommended defaults"
+  - "Review each field individually (falls back to Part C behavior)"
+  - "Decline — keep my current values"
+```
+
+3. **Apply on approval.** "Apply all" updates each listed field in `sdlc-config.json` via `Edit`, preserving JSON formatting. "Review individually" falls through to the existing Part C per-value flow. "Decline" leaves values unchanged and records nothing (drift is re-evaluated every run).
+4. **Unattended mode.** In unattended mode, Part D is **not** applied — the diff is instead recorded in the upgrade summary (under a "Recommended defaults (not applied)" heading) for visibility. This preserves the existing value-drift contract: automatic runs never overwrite user-configured values.
 
 ### Step 9: Apply Changes
 

@@ -178,31 +178,43 @@ Available flags: `--resume`, `--dry-run`, `--step N`, `--issue N`.
 
 ### Model & Effort Configuration
 
-The runner supports per-step model and effort level configuration. Each step can use a different model (e.g., Opus for spec writing, Sonnet for mechanical tasks) and effort level (`low`, `medium`, `high`).
+The runner supports per-step model and effort level configuration. Each step can use a different model (Opus, Sonnet, or Haiku) and — for Opus/Sonnet — an effort tier (`low`, `medium`, `high`, `xhigh`). Haiku does not accept an effort parameter.
 
-**Recommended model assignments:**
+Defaults are tuned for the current Claude Code model lineup (Opus 4.7, Sonnet 4.6, Haiku 4.5) and follow Anthropic's published guidance — see the [effort-level docs](https://platform.claude.com/docs/en/build-with-claude/effort) and [model config docs](https://code.claude.com/docs/en/model-config).
 
-| Step | Model | Effort | Rationale |
-|------|-------|--------|-----------|
-| startCycle | (global) | — | Simple git operations |
-| startIssue | sonnet | — | Mechanical: select issue, create branch |
-| writeSpecs | opus | high | Creative: requires deep reasoning for spec quality |
-| implement | opus | medium | Single invocation: skill handles planning internally |
-| verify | sonnet | high | Checklist-driven: validates against spec criteria |
-| commitPush | sonnet | — | Mechanical: git add/commit/push |
-| createPR | sonnet | — | Template-driven: version bump + PR body |
-| monitorCI | sonnet | — | Mechanical: poll + minimal fix |
-| merge | sonnet | — | Mechanical: gh pr merge |
+**Recommended per-step defaults:**
 
-**Configuration layers (highest to lowest priority):**
+| Step | Model | Effort | Turns | Timeout (min) | Rationale |
+|------|-------|--------|-------|---------------|-----------|
+| startCycle | haiku | — | 10 | 5 | Single `gh` query; effort unsupported on Haiku |
+| startIssue | sonnet | low | 25 | 5 | Mechanical: `gh issue develop`, branch setup |
+| writeSpecs | opus | xhigh | 60 | 15 | Anthropic: "start with xhigh for coding and agentic" |
+| implement | opus | xhigh | 150 | 30 | Long-horizon agentic coding |
+| verify | opus | high | 100 | 20 | Reasoning + fix application; `high` is the balance sweet spot |
+| commitPush | haiku | — | 15 | 5 | Deterministic git ops |
+| createPR | sonnet | low | 45 | 5 | Template-driven PR body + version bump |
+| monitorCI | sonnet | medium | 60 | 20 | Must diagnose CI + apply minimal fixes |
+| merge | haiku | — | 10 | 5 | Single `gh pr merge` |
 
-1. **Step-level** — `steps.writeSpecs.model`
-2. **Global** — top-level `model` / `effort`
-3. **Default** — `opus` for model, unset for effort
+Opus is hard-capped to `writeSpecs`, `implement`, and `verify`. All other steps use Sonnet or Haiku to avoid concentrating Opus usage (which triggered rate-limit incidents — see `specs/bug-opus-rate-limits/`).
 
-The implement step uses a single invocation — the `write-code` skill handles planning internally via unattended mode. See `sdlc-config.example.json` for the full schema.
+**Precedence chain (highest to lowest):**
 
-**Skill frontmatter:** Each SKILL.md includes a `model` field declaring its recommended model. This is informational for interactive use — the runner's config takes precedence for automated runs.
+1. `CLAUDE_CODE_EFFORT_LEVEL` env var (set by the runner from step config)
+2. Skill frontmatter `model:` / `effort:` fields
+3. Session `/model` and `/effort` overrides
+4. Claude Code built-in default
+
+Under runner-driven execution, the env var wins — the runner's per-step config is the authoritative automation policy. Under interactive invocation, skill frontmatter wins over the session default so manual users get the same recommended defaults without having to `/model opus` before each skill.
+
+**Guardrails:**
+
+- `max` effort is intentionally excluded from nmg-sdlc defaults (Anthropic notes it is prone to overthinking on coding workloads). The runner rejects it at config load time — use `xhigh` instead.
+- Haiku does not accept an effort parameter. The runner rejects configs that set `effort` on a Haiku step (or that let global effort fall through to a Haiku step).
+
+**Defaults (no config):** when both step and global are empty, the runner falls back to `sonnet` / `medium` (cost-aware; no Opus by default).
+
+See `scripts/sdlc-config.example.json` for the full schema.
 
 ### Unattended-mode flag
 

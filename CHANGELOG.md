@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [8.0.0] - 2026-04-18
+
+### Changed
+
+- **SDLC runner + skill defaults re-tuned for the current Claude Code lineup** (issue #130) — `scripts/sdlc-config.example.json` now pins an explicit `model` / `maxTurns` / `timeoutMin` (and `effort` for non-Haiku steps) on every step, with Opus hard-capped to `writeSpecs`, `implement`, and `verify`. Mechanical steps (`startCycle`, `commitPush`, `merge`) drop to Haiku; `startIssue` / `createPR` / `monitorCI` run on Sonnet at tier-appropriate effort. The runner's `VALID_EFFORTS` gains `xhigh`; `max` is explicitly rejected with a policy message; `effort` on a Haiku step (step-level or inherited from global) is rejected at config load. The fallback for both `resolveStepConfig()` and module-level `MODEL`/`EFFORT` flips from `opus` / `undefined` to `sonnet` / `medium` so configs that omit fields produce a cost-aware baseline. All SDLC pipeline skills (`draft-issue`, `start-issue`, `write-spec`, `write-code`, `verify-code`, `open-pr`, `run-retro`, `init-config`, `run-loop`, `upgrade-project`) declare matching `model:` and (for Opus/Sonnet) `effort:` frontmatter, honored under interactive invocation. Run `/upgrade-project` to review the diff against existing configs. See README → *Model & Effort Configuration* for the precedence chain and the full defaults table.
+
+- **Blanket `maxTurns` floor bump** (issue #130 addendum, motivated by incident #181) — per-step turn budgets raised to conservative floors: `startCycle` 5→10, `startIssue` 15→25, `writeSpecs` 40→60, `implement` 100→150, `verify` 60→100, `commitPush` 10→15, `createPR` 30→45, `monitorCI` 40→60, `merge` 5→10. Incident #181 surfaced that `verify` exhausted 60 turns at 819s (well inside its 20-min timeout) — turns, not wall-clock, was the binding constraint. `timeoutMin` values are unchanged this round; future telemetry may warrant time-axis adjustments.
+
 ## [7.4.0] - 2026-04-18
 
 ### Changed

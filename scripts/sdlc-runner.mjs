@@ -23,7 +23,7 @@ import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 const IS_WINDOWS = process.platform === 'win32';
-const VALID_EFFORTS = ['low', 'medium', 'high'];
+const VALID_EFFORTS = ['low', 'medium', 'high', 'xhigh'];
 
 // ---------------------------------------------------------------------------
 // CLI argument parsing & configuration (guarded for testability)
@@ -37,8 +37,8 @@ let RESUME = false;
 let SINGLE_ISSUE_NUMBER = null;
 let PROJECT_PATH = '';
 let PLUGINS_PATH = '';
-let MODEL = 'opus';
-let EFFORT = undefined;
+let MODEL = 'sonnet';
+let EFFORT = 'medium';
 let MAX_RETRIES = 3;
 let MAX_BOUNCE_RETRIES = 3;
 let CLEANUP_PATTERNS = [];
@@ -101,8 +101,8 @@ Options:
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   PROJECT_PATH = config.projectPath;
   PLUGINS_PATH = config.pluginsPath;
-  MODEL = config.model || 'opus';
-  EFFORT = config.effort || undefined;
+  MODEL = config.model || 'sonnet';
+  EFFORT = config.effort || 'medium';
   MAX_RETRIES = config.maxRetriesPerStep || 3;
   MAX_BOUNCE_RETRIES = parseMaxBounceRetries(config.maxBounceRetries);
 
@@ -189,7 +189,9 @@ const STEP_NUMBER = Object.fromEntries(STEP_KEYS.map((key, i) => [key, i + 1]));
 function validateConfig(config) {
   const errors = [];
 
-  if (config.effort !== undefined && !VALID_EFFORTS.includes(config.effort)) {
+  if (config.effort === 'max') {
+    errors.push('Global effort "max" is intentionally excluded from nmg-sdlc defaults — max is prone to overthinking on coding workloads; use "xhigh" instead');
+  } else if (config.effort !== undefined && !VALID_EFFORTS.includes(config.effort)) {
     errors.push(`Invalid global effort "${config.effort}" — must be one of: ${VALID_EFFORTS.join(', ')}`);
   }
   if (config.model !== undefined && (typeof config.model !== 'string' || config.model.trim() === '')) {
@@ -197,12 +199,22 @@ function validateConfig(config) {
   }
 
   if (config.steps) {
+    const globalEffort = config.effort;
+    const globalModel = config.model;
     for (const [key, step] of Object.entries(config.steps)) {
       if (step.model !== undefined && (typeof step.model !== 'string' || step.model.trim() === '')) {
         errors.push(`steps.${key}.model must be a non-empty string`);
       }
-      if (step.effort !== undefined && !VALID_EFFORTS.includes(step.effort)) {
-        errors.push(`steps.${key}.effort "${step.effort}" — must be one of: ${VALID_EFFORTS.join(', ')}`);
+      if (step.effort === 'max') {
+        errors.push(`steps.${key}.effort "max" is intentionally excluded from nmg-sdlc defaults — max is prone to overthinking on coding workloads; use "xhigh" instead`);
+      } else if (step.effort !== undefined && !VALID_EFFORTS.includes(step.effort)) {
+        errors.push(`Invalid steps.${key}.effort "${step.effort}" — must be one of: ${VALID_EFFORTS.join(', ')}`);
+      }
+
+      const resolvedModel = step.model || globalModel;
+      const resolvedEffort = step.effort !== undefined ? step.effort : globalEffort;
+      if (resolvedModel === 'haiku' && resolvedEffort !== undefined) {
+        errors.push(`steps.${key}: Haiku does not support the effort parameter — remove effort from this step (or the global effort field if the step inherits it)`);
       }
     }
   }
@@ -220,12 +232,14 @@ function getConfigObject() {
 /**
  * Resolve model and effort for a step using the fallback chain:
  *   step.field → config.field → default
- * Model default: 'opus'; effort default: undefined.
+ * Model default: 'sonnet'; effort default: 'medium' (cleared to undefined when model is haiku).
  */
 function resolveStepConfig(step, config) {
+  const model = step.model || config.model || 'sonnet';
+  const effort = step.effort || config.effort || 'medium';
   return {
-    model: step.model || config.model || 'opus',
-    effort: step.effort || config.effort || undefined,
+    model,
+    effort: model === 'haiku' ? undefined : effort,
   };
 }
 

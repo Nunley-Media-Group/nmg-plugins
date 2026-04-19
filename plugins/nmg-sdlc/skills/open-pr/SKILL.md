@@ -4,6 +4,8 @@ description: "Create a pull request with spec-driven summary, linking GitHub iss
 argument-hint: "[#issue-number]"
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash(gh:*), Bash(git:*), AskUserQuestion
+model: sonnet
+effort: low
 ---
 
 # Open PR
