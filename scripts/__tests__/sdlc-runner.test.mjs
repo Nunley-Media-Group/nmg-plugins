@@ -45,6 +45,7 @@ const runner = await import('../sdlc-runner.mjs');
 const {
   detectSoftFailure,
   detectAndHydrateState,
+  isStepOutcomeSatisfied,
   matchErrorPattern,
   incrementBounceCount,
   defaultState,
@@ -1178,7 +1179,10 @@ describe('No CI checks handling (#54)', () => {
     expect(result.reason).toContain('Could not check CI status');
   });
 
-  it('detectAndHydrateState advances to step 8 when no checks reported', () => {
+  it('detectAndHydrateState advances to step 8 when no checks reported (with prior verify evidence)', () => {
+    // Advancement past step 4 via the "all pushed" signal requires saved state
+    // to confirm verify (step 5) previously completed — see
+    // specs/bug-fix-runner-detectandhydratestate-skips-verify/requirements.md.
     mockExecSync.mockImplementation((cmd) => {
       if (cmd.includes('rev-parse --abbrev-ref HEAD')) return '42-my-feature';
       if (cmd.includes('pr view --json state')) throw new Error('no PR');
@@ -1194,12 +1198,14 @@ describe('No CI checks handling (#54)', () => {
     });
 
     mockFs.existsSync.mockImplementation((p) => {
+      if (p === TEST_STATE_PATH) return true;
       if (p.includes('specs')) return true;
       if (p.includes('42-my-feature')) return true;
       return false;
     });
     mockFs.readdirSync.mockReturnValue(['42-my-feature']);
     mockFs.statSync.mockReturnValue({ isDirectory: () => true, size: 200 });
+    mockFs.readFileSync.mockReturnValue(JSON.stringify({ lastCompletedStep: 5 }));
 
     const result = detectAndHydrateState();
     expect(result.lastCompletedStep).toBe(8);
@@ -1242,8 +1248,11 @@ describe('detectAndHydrateState after signal shutdown', () => {
     expect(result.lastCompletedStep).toBe(3);
   });
 
-  it('does not cap lastCompletedStep when signalShutdown is not set', () => {
-    // Normal case: no signal shutdown, artifact probing should be trusted.
+  it('does not advance past step 4 when state file lastCompletedStep < 5 and signalShutdown is not set', () => {
+    // Regression guard for bug-fix-runner-detectandhydratestate-skips-verify:
+    // "all pushed" alone must NOT imply verify (step 5) completed. Without
+    // saved state evidence (lastCompletedStep >= 5) or a signalShutdown cap,
+    // probing must stop at step 4 so the next cycle re-runs verify.
     mockExecSync.mockImplementation((cmd) => {
       if (cmd.includes('rev-parse --abbrev-ref HEAD')) return '42-my-feature';
       if (cmd.includes('pr view --json state')) throw new Error('no PR');
@@ -1263,12 +1272,11 @@ describe('detectAndHydrateState after signal shutdown', () => {
     mockFs.statSync.mockReturnValue({ isDirectory: () => true, size: 200 });
     mockFs.readFileSync.mockReturnValue(JSON.stringify({
       lastCompletedStep: 3,
-      // no signalShutdown
+      // no signalShutdown, no evidence of verify
     }));
 
     const result = detectAndHydrateState();
-    // Artifact probing: specs exist (3), commits ahead (4), all pushed (6)
-    expect(result.lastCompletedStep).toBe(6);
+    expect(result.lastCompletedStep).toBe(4);
   });
 
   it('does not cap when state file lastCompletedStep >= probed value', () => {
@@ -1294,6 +1302,58 @@ describe('detectAndHydrateState after signal shutdown', () => {
     const result = detectAndHydrateState();
     // Probed: only on feature branch → step 2. State says 5, but 5 > 2 so no cap.
     expect(result.lastCompletedStep).toBe(2);
+  });
+});
+
+// ===========================================================================
+// Step-outcome idempotency (Step 9 merge already landed)
+// ===========================================================================
+
+describe('isStepOutcomeSatisfied', () => {
+  const mergeStep = { number: 9, key: 'merge' };
+  const otherStep = { number: 7, key: 'createPR' };
+
+  it('returns false for steps other than merge', () => {
+    expect(isStepOutcomeSatisfied(otherStep, { currentIssue: 42 })).toBe(false);
+  });
+
+  it('returns false for merge step when currentIssue is missing', () => {
+    expect(isStepOutcomeSatisfied(mergeStep, {})).toBe(false);
+  });
+
+  it('returns true for merge step when a merged PR references the issue in its title', () => {
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('gh pr list')) {
+        return JSON.stringify([{ number: 99, state: 'MERGED', title: 'feat: thing (#42)', body: '' }]);
+      }
+      return '';
+    });
+    expect(isStepOutcomeSatisfied(mergeStep, { currentIssue: 42 })).toBe(true);
+  });
+
+  it('returns false for merge step when only an unmerged PR matches', () => {
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('gh pr list')) {
+        return JSON.stringify([{ number: 99, state: 'OPEN', title: 'feat: thing (#42)', body: '' }]);
+      }
+      return '';
+    });
+    expect(isStepOutcomeSatisfied(mergeStep, { currentIssue: 42 })).toBe(false);
+  });
+
+  it('returns false for merge step when gh call throws', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('gh offline'); });
+    expect(isStepOutcomeSatisfied(mergeStep, { currentIssue: 42 })).toBe(false);
+  });
+
+  it('does not false-match on a similar issue number (e.g. #421 vs #42)', () => {
+    mockExecSync.mockImplementation((cmd) => {
+      if (cmd.includes('gh pr list')) {
+        return JSON.stringify([{ number: 99, state: 'MERGED', title: 'feat: other (#421)', body: '' }]);
+      }
+      return '';
+    });
+    expect(isStepOutcomeSatisfied(mergeStep, { currentIssue: 42 })).toBe(false);
   });
 });
 

@@ -174,6 +174,10 @@ const STEPS = STEP_KEYS.map((key, i) => ({
   ...(configSteps[key] || {}),
 }));
 
+// Step numbers keyed by name — avoids hardcoding positional indices at call
+// sites that care about specific steps (e.g., merge idempotency).
+const STEP_NUMBER = Object.fromEntries(STEP_KEYS.map((key, i) => [key, i + 1]));
+
 // ---------------------------------------------------------------------------
 // Configuration validation and resolution
 // ---------------------------------------------------------------------------
@@ -373,6 +377,12 @@ function detectAndHydrateState() {
     // No PR exists yet — that's fine, continue probing
   }
 
+  // Read any persisted state up front: verify (step 5) has no git-observable
+  // artifact, so we need the saved state to confirm it passed before probing
+  // past step 4 on the basis of "branch pushed".
+  const savedState = readState();
+  const savedLastCompleted = typeof savedState.lastCompletedStep === 'number' ? savedState.lastCompletedStep : 0;
+
   // Probe artifacts from highest to lowest to determine lastCompletedStep
   let lastCompletedStep = 2; // At minimum, we're on a feature branch (step 2 done)
 
@@ -395,12 +405,17 @@ function detectAndHydrateState() {
     } catch { /* ignore */ }
   }
 
-  // Check if branch is pushed to remote with no unpushed commits (step 6)
-  if (lastCompletedStep >= 4) {
+  // Check if branch is pushed to remote with no unpushed commits (step 6).
+  // "All commits pushed" only implies step 6 completion when verify (step 5)
+  // actually passed. Since verify has no git-observable artifact, require the
+  // saved state to confirm `lastCompletedStep >= 5` before advancing past
+  // step 4 on this signal alone. Otherwise, a crash mid-verify followed by a
+  // resume would falsely skip verification entirely.
+  if (lastCompletedStep >= 4 && savedLastCompleted >= 5) {
     try {
       const unpushed = git(`log origin/${branch}..HEAD --oneline`);
       if (!unpushed) {
-        // All commits pushed
+        // All commits pushed AND verify previously confirmed
         lastCompletedStep = 6;
       }
     } catch {
@@ -436,7 +451,6 @@ function detectAndHydrateState() {
   // commits. That makes artifact probing think "all pushed → step 6 done" even
   // if the runner was mid-way through an earlier step. Cap the probed value to
   // what the state file recorded before shutdown.
-  const savedState = readState();
   if (savedState.signalShutdown && savedState.lastCompletedStep < lastCompletedStep) {
     log(`detectAndHydrateState: signal shutdown detected — capping lastCompletedStep from ${lastCompletedStep} to ${savedState.lastCompletedStep} (state file value)`);
     lastCompletedStep = savedState.lastCompletedStep;
@@ -1074,16 +1088,20 @@ const TEXT_FAILURE_PATTERNS = [
   { pattern: /AskUserQuestion.*unattended-mode/i, label: 'AskUserQuestion in unattended-mode' },
 ];
 
+function getToolName(denial) {
+  return typeof denial === 'object' && denial !== null ? denial.tool_name : String(denial);
+}
+
+// Fields on `tool_input` that carry filesystem paths or shell commands. We
+// check these directly rather than serializing the whole object — a substring
+// match against a stringified object can false-positive on unrelated fields.
+const DENIAL_PATH_FIELDS = ['file_path', 'notebook_path', 'path', 'command'];
+
 function isEphemeralScaffoldDenial(denial) {
   if (!denial || typeof denial !== 'object') return false;
   const input = denial.tool_input;
-  if (!input) return false;
-  try {
-    const serialized = typeof input === 'string' ? input : JSON.stringify(input);
-    return serialized.includes(OS_TMPDIR);
-  } catch {
-    return false;
-  }
+  if (!input || typeof input !== 'object') return false;
+  return DENIAL_PATH_FIELDS.some(field => typeof input[field] === 'string' && input[field].includes(OS_TMPDIR));
 }
 
 function detectSoftFailure(stdout) {
@@ -1097,13 +1115,12 @@ function detectSoftFailure(stdout) {
       // recovered from, and denials targeting the OS temp directory (expected
       // for skills that create ephemeral test scaffolds).
       const serious = parsed.permission_denials.filter(d => {
-        const toolName = typeof d === 'object' ? d.tool_name : String(d);
-        if (BENIGN_DENIED_TOOLS.has(toolName)) return false;
+        if (BENIGN_DENIED_TOOLS.has(getToolName(d))) return false;
         if (isEphemeralScaffoldDenial(d)) return false;
         return true;
       });
       if (serious.length > 0) {
-        return { isSoftFailure: true, reason: `permission_denials: ${serious.map(d => typeof d === 'object' ? d.tool_name : d).join(', ')}` };
+        return { isSoftFailure: true, reason: `permission_denials: ${serious.map(getToolName).join(', ')}` };
       }
     }
   }
@@ -1138,11 +1155,62 @@ function incrementBounceCount() {
 }
 
 // ---------------------------------------------------------------------------
+// Step outcome idempotency detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Return true when a step's expected outcome is already observable in the
+ * repo / GitHub, making a retry unnecessary (and usually harmful). Currently
+ * only Step 9 (merge) is covered — it's the only step whose inner action
+ * produces irreversible side-effects (squash-merge + branch delete) before
+ * the Claude session might exit non-zero on unrelated follow-up noise.
+ *
+ * Other steps (spec writing, implement, verify, createPR, monitorCI) are
+ * either purely local or idempotent enough that retrying is safe.
+ */
+function isStepOutcomeSatisfied(step, state) {
+  if (step.number !== STEP_NUMBER.merge) return false;
+  const issueNum = state.currentIssue;
+  if (!issueNum) return false;
+  // Look for a merged PR associated with this issue. `gh pr list --search`
+  // matches on title/body, and the issue number typically appears in the
+  // title ("feat: … (#N)") or body ("Closes #N"). Filter strictly by state
+  // to avoid false positives on open PRs.
+  try {
+    const out = gh(`pr list --state merged --search "${issueNum} in:title,body" --json number,state,title,body --limit 10`);
+    const list = JSON.parse(out);
+    if (!Array.isArray(list)) return false;
+    const pattern = new RegExp(`#${issueNum}(?!\\d)`);
+    return list.some(p => p.state === 'MERGED' && (pattern.test(p.title || '') || pattern.test(p.body || '')));
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Failure handling
 // ---------------------------------------------------------------------------
 
 async function handleFailure(step, result, state) {
   const output = result.stdout + '\n' + result.stderr;
+
+  // 0. Idempotency check: did the step already achieve its outcome before
+  // exiting non-zero? The merge step is the canonical example — `gh pr merge`
+  // can squash-merge the PR (mutating shared GitHub state and deleting the
+  // branch) and then the Claude session exits non-zero on an unrelated
+  // follow-up (rate_limit noise, post-merge `gh pr checks` on the
+  // auto-switched `main` branch, etc.). Retrying such a step can't redo a
+  // completed merge, and precondition probing sees a deleted branch and
+  // escalates. When we can confirm the outcome is satisfied, treat the exit
+  // as success.
+  if (isStepOutcomeSatisfied(step, state)) {
+    log(`Step ${step.number} (${step.key}) exited non-zero but outcome is already satisfied — treating as success.`);
+    log(`[STATUS] Step ${step.number} (${step.key}) complete (idempotent — outcome was already achieved).`);
+    const patch = extractStateFromStep(step, result, state);
+    if (patch.lastCompletedStep === undefined) patch.lastCompletedStep = step.number;
+    updateState(patch);
+    return 'ok';
+  }
 
   // 1. Check for known error patterns
   const patternMatch = matchErrorPattern(output);
@@ -2116,6 +2184,7 @@ const __test__ = {
 export {
   detectSoftFailure,
   detectAndHydrateState,
+  isStepOutcomeSatisfied,
   validatePreconditions,
   extractStateFromStep,
   matchErrorPattern,
