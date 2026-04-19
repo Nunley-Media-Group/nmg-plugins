@@ -1,7 +1,7 @@
 ---
 name: open-pr
 description: "Create a pull request with spec-driven summary, linking GitHub issue and spec documents. Use when user says 'create PR', 'open pull request', 'submit for review', 'push for review', 'ready to merge', 'make a PR for issue #N', 'how do I create a PR', 'how do I open a pull request', or 'ship this'. Do NOT use for implementing code, verifying specs, or creating issues. Handles version bumping, changelog updates, and links specs and acceptance criteria. Final step in the SDLC pipeline — follows /verify-code."
-argument-hint: "[#issue-number]"
+argument-hint: "[#issue-number] [--major]"
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash(gh:*), Bash(git:*), Bash(sleep:*), AskUserQuestion
 model: sonnet
@@ -38,6 +38,21 @@ The gate fires in both interactive and unattended mode — do not silently open 
 
 ## Workflow
 
+### Step 0: Parse Arguments
+
+Before anything else, inspect the invocation arguments for a `--major` token (this appears alongside the issue number, e.g., `/open-pr #42 --major`).
+
+- If `--major` is present, set a `major_requested` flag and remember it through Step 2. This is the only supported path to a major version bump — the label-based classification matrix never produces one on its own.
+- If `--major` is **not** present, `major_requested` is false and the rest of the workflow behaves exactly as it does for any other PR.
+
+**Unattended-mode escalation**: If `.claude/unattended-mode` exists AND `major_requested` is true, print this line exactly:
+
+```
+ESCALATION: --major flag requires human confirmation — unattended mode cannot apply a major version bump
+```
+
+Then stop immediately. Do NOT continue to Step 1. Do NOT read/write `VERSION`, `CHANGELOG.md`, or any stack-specific version file. Do NOT commit or push. Do NOT create a PR. The purpose of this gate is to keep major-version bumps a deliberate human decision — an automated runner with no human in the loop cannot confirm that intent, so the correct response is to halt and surface the flag for review.
+
 ### Step 1: Read Context
 
 Gather all information needed for the PR:
@@ -67,9 +82,8 @@ If a `VERSION` file exists in the project root, determine the appropriate versio
    - Use the Bump Type from the first matching row.
    - **Fallback**: If the subsection is missing from `tech.md`, or if no issue label matches any row, default to **minor** (same as today's behavior for unlabeled issues).
 
-4. **Check milestone completion**: Read the issue's milestone via `gh issue view #N --json milestone --jq '.milestone.title // empty'`. If the issue has a milestone, query its open issue count: `gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title=="{milestone_title}") | .open_issues'`. If `open_issues` is 1 (this issue is the last one open), propose a **major** bump instead (e.g., 1.20.0 → 1.32.0).
-5. **Calculate the new version string** based on the classification.
-6. **Present to user** (via `AskUserQuestion`):
+4. **Calculate the new version string**. If `major_requested` (Step 0) is true, bump **major** (`X.Y.Z → (X+1).0.0`) regardless of the classified type — this is the manual opt-in path. Otherwise use the classified bump type: patch increments Z, minor increments Y and resets Z.
+5. **Present to user** (via `AskUserQuestion`):
    ```
    question: "Version bump: {current} → {proposed} ({bump_type}). Accept or override?"
    options:
@@ -79,7 +93,9 @@ If a `VERSION` file exists in the project root, determine the appropriate versio
      - "Major ({current} → {major_version})"
    ```
 
-> **Unattended-mode**: Apply the classified bump without confirmation. Do not call `AskUserQuestion`.
+   When `major_requested` is true, the `{bump_type}` shown in the question is `major`, `{proposed}` is the major-bumped version, and the `"Accept {proposed}"` option is pre-selected as the recommended answer — the developer can still choose Patch or Minor as alternatives. When `major_requested` is false, the classified type (patch or minor) is the recommended answer. Major is always available as an override path for developers who did not pass `--major` but decide a major bump is warranted after seeing the prompt.
+
+> **Unattended-mode**: Apply the classified bump without confirmation. Do not call `AskUserQuestion`. Without `--major`, this path reaches only patch or minor bumps — the `major_requested` + unattended combination is rejected in Step 0, so it cannot reach this step.
 
 ### Step 3: Update Version Artifacts
 

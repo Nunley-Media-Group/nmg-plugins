@@ -1,7 +1,7 @@
 # Requirements: Integrated Versioning System
 
-**Issues**: #41, #87
-**Date**: 2026-02-25
+**Issues**: #41, #87, #139
+**Date**: 2026-04-19
 **Status**: Draft
 **Author**: Claude (nmg-sdlc)
 
@@ -194,6 +194,63 @@ The versioning system must be stack-agnostic (a core product principle) — it p
 - Then: It finds the `security` row and classifies as patch — no SKILL.md change needed
 - And: `sdlc-runner.mjs` finds the same row and classifies as patch — no script change needed
 
+### AC14: Milestone completion no longer overrides bump type in /open-pr
+
+**Given** an issue is the last open issue in its milestone
+**When** `/open-pr #N` runs (interactively or unattended)
+**Then** the bump type is determined solely by the label-based classification matrix (enhancement → minor, bug → patch, fallback → minor) — no milestone open-count query is performed and no major bump is proposed
+
+**Example**:
+- Given: Issue #200 has `enhancement` label and is the only open issue in milestone "v1"
+- When: `/open-pr #200` runs
+- Then: The skill classifies the bump as minor (per the `enhancement` row in tech.md) and does not query `gh api repos/:owner/:repo/milestones/:id --jq '.open_issues'`
+
+### AC15: /open-pr accepts an explicit --major argument for intentional major bumps
+
+**Given** a developer runs `/open-pr #N --major`
+**When** the skill reaches Step 2 (Determine Version Bump)
+**Then** it proposes a major bump in the `AskUserQuestion` bump menu as the pre-selected option (the developer still confirms)
+
+**Example**:
+- Given: Issue #201 has `enhancement` label, current VERSION is `1.49.1`, developer invokes `/open-pr #201 --major`
+- When: Step 2 presents the bump menu
+- Then: The menu shows Major (2.0.0) as the pre-selected/recommended option, with Minor and Patch as alternatives the developer may still choose
+
+### AC16: --major in unattended-mode is an escalation, not a silent apply
+
+**Given** `.claude/unattended-mode` is present and the skill is invoked with `--major`
+**When** the skill reaches Step 2
+**Then** it halts with an escalation message: `"ESCALATION: --major flag requires human confirmation — unattended mode cannot apply a major version bump"` and exits without bumping or creating a PR
+
+**Example**:
+- Given: `.claude/unattended-mode` exists, runner invokes `/open-pr #202 --major`
+- When: Step 2 is reached
+- Then: The skill prints the escalation message and terminates; no VERSION or CHANGELOG changes are written, no PR is created, and the runner receives a non-success signal
+
+### AC17: LLM inference that "breaking = major" is corrected in tech.md and the template
+
+**Given** a `### Changed (BREAKING)` section appears in a version entry
+**When** an LLM reads `steering/tech.md` to decide the bump type
+**Then** the steering text is unambiguous: `### Changed (BREAKING)` sections are minor bumps — the breaking nature must be communicated via a **`BREAKING CHANGE:`** bold prefix on the relevant bullet, and a `### Migration Notes` sub-section is recommended; no bump-type override applies
+
+**Example**:
+- Given: `steering/tech.md` no longer contains the "Milestone completion override" paragraph; it explicitly states that `### Changed (BREAKING)` uses minor bump with `**BREAKING CHANGE:**` bullet prefix
+- When: An LLM running `/open-pr` reads tech.md while assembling the CHANGELOG entry for an `enhancement`-labeled issue with breaking changes
+- Then: It classifies the bump as minor (per the label matrix) and formats the changelog entry with a `**BREAKING CHANGE:**` bullet prefix and optional `### Migration Notes` sub-section, without inferring a major bump
+
+*Note:* The `tech.md` template (in `plugins/nmg-sdlc/skills/onboard-project/templates/tech.md`) and the project's own `steering/tech.md` both need this update so the guidance propagates to new projects via `/onboard-project` and is authoritative for this project.
+
+### AC18: README no longer documents "major on milestone completion"
+
+**Given** a developer reads the README to understand versioning
+**When** they look at the version bump table and the `/open-pr` skill description
+**Then** no text claims milestone completion triggers a major bump; the table shows only the label-based rules (bug → patch, enhancement → minor); and the `argument-hint` for `/open-pr` reflects `[#issue-number] [--major]`
+
+**Example**:
+- Given: A developer opens README.md at the version bump and skills sections
+- When: They read the bump-type table and the `/open-pr` entry
+- Then: The table has no row referencing "milestone completion"; the `/open-pr` description mentions only label-based classification and the opt-in `--major` flag
+
 ### Generated Gherkin Preview
 
 ```gherkin
@@ -296,6 +353,43 @@ Feature: Integrated Versioning System
     When /open-pr runs for a "security"-labeled issue
     Then it classifies the change as a patch bump
     And no SKILL.md or sdlc-runner.mjs code changes are required
+
+  # Added by issue #139
+  Scenario: Milestone completion does not trigger a major bump
+    Given an issue has the "enhancement" label
+    And it is the last open issue in its milestone
+    When /open-pr runs
+    Then the skill classifies the bump as minor via the label matrix
+    And does not query the milestone open-issue count
+
+  # Added by issue #139
+  Scenario: --major flag pre-selects major bump in the confirmation menu
+    Given a developer runs "/open-pr #N --major"
+    When the skill reaches the version bump confirmation step
+    Then the AskUserQuestion bump menu presents Major as the recommended option
+
+  # Added by issue #139
+  Scenario: --major in unattended-mode escalates without bumping
+    Given ".claude/unattended-mode" exists
+    And the skill is invoked with the "--major" flag
+    When the skill reaches the version bump step
+    Then it prints "ESCALATION: --major flag requires human confirmation — unattended mode cannot apply a major version bump"
+    And exits without writing VERSION, CHANGELOG, or creating a PR
+
+  # Added by issue #139
+  Scenario: Breaking-change guidance in steering does not imply major bump
+    Given steering/tech.md no longer contains a "Milestone completion override" paragraph
+    And it documents that "### Changed (BREAKING)" uses a minor bump with a "**BREAKING CHANGE:**" bullet prefix
+    When an LLM reads tech.md to classify an enhancement with breaking changes
+    Then it proposes a minor bump
+    And it formats the CHANGELOG entry with the "**BREAKING CHANGE:**" prefix
+
+  # Added by issue #139
+  Scenario: README documents only label-based bump rules
+    Given the README version-bump table
+    When a reader inspects it
+    Then no row references milestone completion
+    And the /open-pr argument-hint is "[#issue-number] [--major]"
 ```
 
 ---
@@ -321,6 +415,13 @@ Feature: Integrated Versioning System
 | FR14 | `/open-pr` reads classification matrix from `tech.md` Version Bump Classification table instead of using an inline matrix | Must | Replaces hardcoded table in SKILL.md Step 2 |
 | FR15 | `sdlc-runner.mjs` `performDeterministicVersionBump()` parses `tech.md` Version Bump Classification table instead of using hardcoded if-else logic | Must | Replaces hardcoded logic in script |
 | FR16 | Default classification (minor bump) applies when an issue label does not match any row in the tech.md classification table | Must | Preserves existing behavior for unlabeled issues |
+| FR17 | Remove Step 2.4 (milestone-completion check) from `open-pr/SKILL.md` entirely | Must | Milestone open-count no longer overrides the label matrix |
+| FR18 | Add `--major` argument to `/open-pr`; when passed, pre-select major in the Step 2 bump menu | Must | Opt-in only; developer still confirms via `AskUserQuestion` |
+| FR19 | When `--major` is combined with unattended-mode, emit escalation message and exit without bumping | Must | Exit message: `ESCALATION: --major flag requires human confirmation — unattended mode cannot apply a major version bump` |
+| FR20 | Update `steering/tech.md` — remove "Milestone completion override" paragraph; add `**BREAKING CHANGE:**` prefix guidance and recommended `### Migration Notes` sub-section note | Must | Removes double-signal that primes LLMs to infer breaking = major |
+| FR21 | Update `plugins/nmg-sdlc/skills/onboard-project/templates/tech.md` with identical changes so new projects inherit the correct policy | Must | Template must match authoritative steering |
+| FR22 | Update `README.md` — remove `(milestone completion)` row from the version bump table and update `/open-pr` description to remove "major on milestone completion" language | Must | Lines 140, 267, 276 per issue |
+| FR23 | Update `open-pr/SKILL.md` `argument-hint` to `[#issue-number] [--major]` | Must | Surfaces the new opt-in flag in the skill manifest |
 
 ---
 
@@ -394,6 +495,9 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - **Changing the actual classification rules** — The label→bump mappings (bug→patch, enhancement→minor) remain the same; only their location changes
 - **Adding new version bump categories** — Only patch, minor, and major are supported
 - **Modifying how version bumps are applied** — Only where classification is defined changes, not the bump execution logic
+- **`scripts/sdlc-runner.mjs` changes** — The runner already enforces patch-and-minor-only; no major-bump path exists and none is being added (issue #139)
+- **`/draft-issue` milestone naming** — The skill reads the current major version to suggest a milestone label; that is a display convention, not a bump trigger (issue #139)
+- **`/start-issue` milestone filtering** — Not in scope for issue #139
 
 ---
 
@@ -421,6 +525,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 |-------|------|---------|
 | #41 | 2026-02-16 | Initial feature spec |
 | #87 | 2026-02-25 | Deduplicate version bump classification logic — AC11-AC13, FR13-FR16 |
+| #139 | 2026-04-19 | Enforce manual-only major version policy: remove /open-pr milestone override, add `--major` flag, fix breaking-change steering guidance — AC14-AC18, FR17-FR23 |
 
 ---
 

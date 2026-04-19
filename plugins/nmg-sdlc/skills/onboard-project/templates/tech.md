@@ -76,7 +76,21 @@ The `/open-pr` skill and the `sdlc-runner.mjs` deterministic bump postcondition 
 
 **Default**: If an issue's labels do not match any row, the bump type is **minor**.
 
-**Milestone completion override**: If the issue is the last open issue in its milestone, the bump type is overridden to **major** regardless of labels.
+**Major bumps are manual-only.** They are never triggered by labels, milestones, or breaking changes. A developer must opt in explicitly via `/open-pr #N --major`; the SDLC runner will not apply a major bump. In unattended mode, `--major` escalates and exits without bumping — major-version bumps are a deliberate release decision that a headless runner cannot make on a human's behalf.
+
+**Breaking changes use minor bumps.** A `### Changed (BREAKING)` sub-section in a CHANGELOG version entry does NOT override the bump type. Communicate the breaking nature via a `**BREAKING CHANGE:**` bold prefix on the affected bullet, and (recommended) add a `### Migration Notes` sub-section to the entry. Example:
+
+```markdown
+## [1.50.0] - 2026-04-19
+
+### Changed (BREAKING)
+
+- **BREAKING CHANGE:** Renamed `foo()` to `bar()`; update callers accordingly.
+
+### Migration Notes
+
+Replace any calls to `foo(x)` with `bar(x)` — the signature is otherwise unchanged.
+```
 
 ---
 
