@@ -3,7 +3,7 @@ name: end-loop
 description: "Stop unattended mode and clear runner state. Use when user says 'end loop', 'stop loop', 'kill the runner', 'exit unattended mode', 'disable unattended mode', 'cleanup runner artifacts', or 'stop SDLC automation'. Pairs with /run-loop — signals the runner PID (if live) and removes .claude/unattended-mode and .claude/sdlc-state.json."
 argument-hint: ""
 disable-model-invocation: true
-allowed-tools: Read, Bash(test:*), Bash(node:*), Bash(rm:*), Bash(ls:*)
+allowed-tools: Read, Bash(test:*), Bash(node:*), Bash(rm:*)
 ---
 
 # End Loop
@@ -75,16 +75,18 @@ With a validated positive integer PID, check whether the process is live:
 node -e "try { process.kill(<PID>, 0); } catch { process.exit(1); }"
 ```
 
-- Exit code 0 → process is alive → proceed to Step 5.
-- Exit code 1 → process is dead (or unreachable) → skip signalling silently and proceed to Step 6. Do not emit any error.
+Substitute `<PID>` with the exact integer captured in Step 3. Do not interpolate any other value from the state file into this command.
 
-Substitute `<PID>` with the validated integer from Step 3.
+- Exit code 0 → process is alive → proceed to Step 5.
+- Exit code 1 → process is dead (or unreachable) → skip signalling silently and proceed to Step 6. Do not emit anything to stdout or stderr.
 
 ## Step 5: Send SIGTERM (If Live)
 
 ```bash
 node -e "try { process.kill(<PID>, 'SIGTERM'); } catch (e) { console.error(e.code || e.message); process.exit(1); }"
 ```
+
+Substitute `<PID>` with the exact integer captured in Step 3. Do not interpolate any other value from the state file into this command.
 
 - Success (exit code 0) → record "Signalled runner PID `<PID>` (SIGTERM)" for the summary.
 - Failure (non-zero exit) → the command writes a clean error token (e.g., `EPERM`) to stderr. Capture stderr as `<reason>` and record "Failed to signal PID `<PID>`: `<reason>`" for the summary. **Continue to Step 6** — partial cleanup is preferable to no cleanup.
