@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [7.4.0] - 2026-04-18
+
+### Changed
+
+- **`/start-issue` dependency-aware selection** (issue #127) — added Step 1a "Dependency Resolution" between issue fetch and selection presentation. Issues with any open declared dependency (via GitHub native sub-issue/tracked-by links or `Depends on: #X` / `Blocks: #Y` body cross-refs) are filtered out; the remainder is topologically sorted using Kahn's algorithm with issue-number ascending tie-breaking. Cycles are handled gracefully (warning + tail placement, no abort). The filter and sort apply in both interactive and unattended mode; unattended auto-select now picks the first unblocked `automatable` issue in topological order. A `Filtered N blocked issues from selection.` session note is emitted before every selection (including when N=0). Fallback chain: GraphQL batch failure → body-only fetch; body failure → skip resolution entirely.
+
 ## [7.3.0] - 2026-04-18
 
 ### Added
