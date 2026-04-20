@@ -1,6 +1,6 @@
 # Requirements: Refactor SKILL.md via Progressive Disclosure
 
-**Issues**: #138, #145
+**Issues**: #138, #145, #146
 **Date**: 2026-04-19
 **Status**: Draft
 **Author**: Rich Nunley
@@ -279,6 +279,7 @@ Feature: Refactor SKILL.md via Progressive Disclosure
 | #138 | 2026-04-19 | Initial feature spec |
 | #145 | 2026-04-19 | Phase 1 child — additive infrastructure (shared `references/`, audit script + CI, Claude review workflow); no SKILL.md edits. Maps to tasks T001–T008 and covers AC3/AC6/AC10 + FR1/FR5/FR11/FR14. |
 | #145 | 2026-04-19 | Promoted the Claude-review workflow from advisory to required-pass gate. Added AC11 and tightened FR14 and AC10 accordingly — the workflow must exit non-zero on REQUEST_CHANGES and be declared a required status check on `main`. |
+| #146 | 2026-04-19 | Phase 2 child — scope is the `draft-issue` pilot (AC1 line target for one skill, AC2 exercise-test parity, AC5 frontmatter byte-identity, AC6 audit-clean-after-baseline-regen, AC7 pointer grammar, FR2/FR7/FR8). Maps to tasks T009–T012. No new ACs or FRs — child ACs narrow umbrella ACs to the draft-issue file only. |
 
 ---
 

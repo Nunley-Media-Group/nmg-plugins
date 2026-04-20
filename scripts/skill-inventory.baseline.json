@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-20T01:10:19.114Z",
+  "generated_at": "2026-04-20T02:47:17.795Z",
   "generator": "skill-inventory-audit@1",
   "items": [
     {
@@ -33,189 +33,391 @@
       "destination": "plugins/nmg-sdlc/references/versioning.md:30"
     },
     {
-      "id": "ca417933091e",
+      "id": "3c62392233ec",
       "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:30",
-      "normalized": "> as of v6.0.0, /draft-issue no longer honors .claude/unattended-mode. issue dra",
+      "normalized": "/draft-issue does not honor .claude/unattended-mode. issue drafting requires int",
       "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:30"
     },
     {
-      "id": "439638e83be6",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:79",
-      "normalized": "before step 1, run glob for .claude/steering/.md and .claude/specs//requirements",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:79",
+      "id": "e8941ead2c2e",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:66",
+      "normalized": "read ../../references/legacy-layout-gate.md when the workflow starts — the gate ",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:66"
+    },
+    {
+      "id": "089152d070f5",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:70",
+      "normalized": "input: optional cli argument; optional claude design url; steering/product.md if",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:70"
+    },
+    {
+      "id": "87ad5fbf4cdd",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:72",
+      "normalized": "process:",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:72",
       "additional_destinations": [
-        "plugins/nmg-sdlc/skills/run-retro/SKILL.md:31"
+        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:122"
       ]
-    },
-    {
-      "id": "03dd422be2a3",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:85",
-      "normalized": "the gate fires in both interactive and unattended mode — do not silently draft a",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:85"
-    },
-    {
-      "id": "32d9938ab841",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:91",
-      "normalized": "optional cli argument (e.g., /draft-issue \"add dark mode\")",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:91"
-    },
-    {
-      "id": "876c80a94e9d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:92",
-      "normalized": "optional claude design url (recognized by the claude.ai design url shape anywher",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:92"
-    },
-    {
-      "id": "a6eea051338a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:93",
-      "normalized": "steering/product.md (if it exists)",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:93"
     },
     {
       "id": "19c320bff519",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:97",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:74",
       "normalized": "if an argument was provided, use it as the starting description. otherwise, ask ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:97"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:74"
     },
     {
-      "id": "09378af1656d",
+      "id": "e48ba931e01b",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:75",
+      "normalized": "detect a claude design url in the argument. if none is present, ask once: \"suppl",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:75"
+    },
+    {
+      "id": "39f8df0159d7",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:76",
+      "normalized": "read steering/product.md for product vision, personas, moscow priorities, and ex",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:76"
+    },
+    {
+      "id": "7898a7512b71",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:78",
+      "normalized": "read ../../references/steering-schema.md when you need the roster of steering do",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:78"
+    },
+    {
+      "id": "33142c19404e",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:80",
+      "normalized": "output: session.initialdescription, session.designurl, session.productcontext.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:80"
+    },
+    {
+      "id": "a21d6df54d7c",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:84",
+      "normalized": "read references/design-url.md when session.designurl is non-null. if it is null,",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:84"
+    },
+    {
+      "id": "970a91182936",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:88",
+      "normalized": "read references/multi-issue.md when the workflow reaches step 1b — the detector ",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:88"
+    },
+    {
+      "id": "0756b635c52b",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:96",
+      "normalized": "input: initial description from step 1; multi-phase signals from step 1b.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:96"
+    },
+    {
+      "id": "9d33587f5433",
       "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:98",
-      "normalized": "detect a claude design url in the argument. if none is present, ask the user onc",
+      "normalized": "process: compute epicrecommended = true when any fire:",
       "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:98"
     },
     {
-      "id": "1280675fdd6b",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:99",
-      "normalized": "read steering/product.md to understand:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:99"
-    },
-    {
-      "id": "9cdf052daa95",
+      "id": "b631ba56d608",
       "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:100",
-      "normalized": "product vision and mission",
+      "normalized": "the description contains \"in phases\", \"multiple prs\", or \"multi-pr\" (case-insens",
       "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:100"
     },
     {
-      "id": "e1e70a5f9969",
+      "id": "5de9266014d7",
       "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:101",
-      "normalized": "target users and personas",
+      "normalized": "step 1b's distinctcomponents >= 4 and sentencecount >= 3.",
       "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:101"
     },
     {
-      "id": "b17ad2620a04",
+      "id": "a5f05384091c",
       "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:102",
-      "normalized": "feature prioritization (moscow)",
+      "normalized": "the description contains references to multiple sequential delivery phases (e.g.",
       "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:102"
     },
     {
-      "id": "b026cff6d721",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:103",
-      "normalized": "existing user journeys",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:103"
-    },
-    {
-      "id": "866fb60b35b1",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:107",
-      "normalized": "session.initialdescription — the starting description string",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:107"
-    },
-    {
-      "id": "5e4b3c7647a2",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:108",
-      "normalized": "session.designurl — url or null",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:108"
-    },
-    {
-      "id": "e37ad97938cc",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:109",
-      "normalized": "session.productcontext — product vision, personas, priorities (shared across bat",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:109"
-    },
-    {
-      "id": "58b63e273b96",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:111",
-      "normalized": "---",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:111",
+      "id": "e4afee72db33",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:104",
+      "normalized": "call askuserquestion:",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:104",
       "additional_destinations": [
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:149",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:198",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:244",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:297",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:418",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:447",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:509",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:594",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:625",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:676",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:876",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:972",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1010",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1033",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1097",
-        "plugins/nmg-sdlc/skills/onboard-project/SKILL.md:430",
-        "plugins/nmg-sdlc/skills/open-pr/SKILL.md:340",
-        "plugins/nmg-sdlc/skills/run-retro/SKILL.md:279",
-        "plugins/nmg-sdlc/skills/start-issue/SKILL.md:399",
-        "plugins/nmg-sdlc/skills/upgrade-project/SKILL.md:543",
-        "plugins/nmg-sdlc/skills/verify-code/SKILL.md:415",
-        "plugins/nmg-sdlc/skills/write-code/SKILL.md:244",
-        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:233",
-        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:253",
-        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:265",
-        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:308",
-        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:329",
-        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:341",
-        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:409",
-        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:434"
+        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:156",
+        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:229"
       ]
     },
     {
-      "id": "473b44bab83d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:117",
-      "normalized": "session.designurl from step 1",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:117"
+      "id": "a394c8d2c68e",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:114",
+      "normalized": "when epicrecommended is true, append (recommended) to the epic option label.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:114"
     },
     {
-      "id": "2a267444d89f",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:121",
-      "normalized": "if session.designurl is null, skip this step entirely. otherwise, fetch and deco",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:121"
+      "id": "4356492d6b5a",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:116",
+      "normalized": "output: classification ∈ {feature, bug, epic}.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:116"
     },
     {
-      "id": "8c7709a5a59c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:123",
-      "normalized": "validate url is https. if not, log \"design url rejected (non-https)\", set sessio",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:123"
+      "id": "c8e51ee88d44",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:120",
+      "normalized": "input: project root version file (if present); github milestones via gh api.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:120"
     },
     {
-      "id": "54060351dc7d",
+      "id": "d49c351fcd03",
       "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:124",
-      "normalized": "fetch via webfetch with a 15s default timeout.",
+      "normalized": "read the version file at the project root. if it exists and parses as semver (x.",
       "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:124"
     },
     {
-      "id": "96c0057ba4f2",
+      "id": "8064a95be728",
       "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:125",
-      "normalized": "decode: if the response indicates gzip (content-type application/gzip / applicat",
+      "normalized": "call askuserquestion with options \"v{major} (current major version)\" and \"v{majo",
       "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:125"
     },
     {
-      "id": "bbc0aff80688",
+      "id": "7f68950aaf21",
       "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:126",
+      "normalized": "ensure the milestone exists: gh api repos/{owner}/{repo}/milestones --jq '.[].ti",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:126"
+    },
+    {
+      "id": "22608715532d",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:128",
+      "normalized": "read ../../references/versioning.md when you need the project's version-file con",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:128"
+    },
+    {
+      "id": "ce2ff300f0bc",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:130",
+      "normalized": "output: milestone — e.g., \"v2\", or null if skipped.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:130"
+    },
+    {
+      "id": "2029310d7893",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:134",
+      "normalized": "input: classification from step 2; relevant source, specs, and steering docs; se",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:134"
+    },
+    {
+      "id": "d96b558cedce",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:136",
+      "normalized": "process: perform a targeted codebase investigation before the interview. when se",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:136"
+    },
+    {
+      "id": "f5d949a1a88c",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:138",
+      "normalized": "if enhancement / feature: glob for specs/*/requirements.md and read related spec",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:138"
+    },
+    {
+      "id": "e29f8b3f8df4",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:140",
+      "normalized": "if bug: grep for code related to the bug (error messages, function names, file p",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:140"
+    },
+    {
+      "id": "084bc23546fe",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:142",
+      "normalized": "read ../../references/steering-schema.md when you need each steering doc's purpo",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:142"
+    },
+    {
+      "id": "0d1e3e0a3562",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:144",
+      "normalized": "before exiting, capture three signals that step 5 uses for adaptive depth: files",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:144"
+    },
+    {
+      "id": "050b98836c20",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:146",
+      "normalized": "output: investigation.summary plus the three signals.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:146"
+    },
+    {
+      "id": "fd1f6cc6740f",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:150",
+      "normalized": "read references/interview-depth.md when entering the interview phase — the refer",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:150"
+    },
+    {
+      "id": "42e9296bf44b",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:152",
+      "normalized": "output: depth, depthoverridden, interviewanswers, anythingmissed.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:152"
+    },
+    {
+      "id": "a4cbe52a4cba",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:171",
+      "normalized": "output: automatable ∈ {true, false}.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:171"
+    },
+    {
+      "id": "9996c4d6ceb6",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:175",
+      "normalized": "play back a structured understanding block whose length is proportional to depth",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:175"
+    },
+    {
+      "id": "ff21d536c8e1",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:186",
+      "normalized": "call askuserquestion: \"does this match your intent?\" → \"[1] looks right — draft ",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:186"
+    },
+    {
+      "id": "b72262530f10",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:188",
+      "normalized": "output: understanding (persona, outcome, ac outline, scope in/out); understandin",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:188"
+    },
+    {
+      "id": "ceb8d7f084d7",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:190",
+      "normalized": "human review gate: blocks step 6 until the user confirms the playback.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:190"
+    },
+    {
+      "id": "b8e23d048358",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:194",
+      "normalized": "input: confirmed understanding; classification; investigation.summary; session.d",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:194"
+    },
+    {
+      "id": "43221402d101",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:196",
+      "normalized": "choose the template based on classification:",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:196"
+    },
+    {
+      "id": "ebda578acb16",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:198",
+      "normalized": "read references/feature-template.md when classification === 'feature'.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:198"
+    },
+    {
+      "id": "e6e4b99dbb2a",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:199",
+      "normalized": "read references/bug-template.md when classification === 'bug'.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:199"
+    },
+    {
+      "id": "0d3ef5721729",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:200",
+      "normalized": "read references/multi-issue.md when classification === 'epic' — the epic coordin",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:200"
+    },
+    {
+      "id": "1765582b004c",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:202",
+      "normalized": "when session.designcontext is present, cite the design url in the background / c",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:202"
+    },
+    {
+      "id": "cc6efd32250d",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:204",
+      "normalized": "body cross-ref placeholders (batch mode): when session.dag has edges touching th",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:204"
+    },
+    {
+      "id": "29e5a78224c9",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:206",
+      "normalized": "output: draft (issue body markdown), title (concise, action-oriented, starts wit",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:206"
+    },
+    {
+      "id": "70b4c08235ca",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:210",
+      "normalized": "render an inline review summary:",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:210"
+    },
+    {
+      "id": "3817a8e6cc52",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:238",
+      "normalized": "on [2], ask one free-text follow-up (\"what would you like to change?\"), apply th",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:238"
+    },
+    {
+      "id": "8cedfe0a0dec",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:240",
+      "normalized": "consecutive-revise soft guard: maintain consecutiverevises starting at 0. increm",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:240"
+    },
+    {
+      "id": "dc0065d87a0e",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:242",
+      "normalized": "batch-mode abandonment: when session.proposedsplit !== null and session.createdi",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:242"
+    },
+    {
+      "id": "843cc13a6611",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:244",
+      "normalized": "output: approved (true after approve or accept as-is); session.abandoned (true i",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:244"
+    },
+    {
+      "id": "c12654799888",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:246",
+      "normalized": "human review gate: blocks step 8 until approved = true or the user abandons the ",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:246"
+    },
+    {
+      "id": "6cef80f77b97",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:250",
+      "normalized": "gh label list — enumerate existing labels.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:250"
+    },
+    {
+      "id": "74687a5ac0b9",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:251",
+      "normalized": "create missing labels via gh label create \"label-name\" --description \"...\" --col",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:251"
+    },
+    {
+      "id": "f10c7abbab8d",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:252",
+      "normalized": "if step 5b answered \"yes\", ensure the automatable label exists (gh label list --",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:252"
+    },
+    {
+      "id": "f3fc1c001acf",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:253",
+      "normalized": "determine labels by classification:",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:253"
+    },
+    {
+      "id": "1d00f2b4b684",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:254",
+      "normalized": "feature → enhancement",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:254"
+    },
+    {
+      "id": "0b5218e84f0e",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:255",
+      "normalized": "bug → bug",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:255"
+    },
+    {
+      "id": "6d6e679062d8",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:256",
+      "normalized": "epic → epic + enhancement (both; lazily create the epic label with color 5319e7 ",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:256"
+    },
+    {
+      "id": "3042b0be0a37",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:257",
+      "normalized": "automatable applies to feature/bug when step 5b answered \"yes\" — epics do not re",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:257"
+    },
+    {
+      "id": "1ca1e765ab55",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:258",
+      "normalized": "create the issue (include --milestone only when step 3 assigned one):",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:258"
+    },
+    {
+      "id": "bbc0aff80688",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:259",
       "normalized": "```",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:126",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:259",
       "additional_destinations": [
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:128",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:431",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:436",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:438",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:440",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:984",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:986",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:997",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:999",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1001",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1003",
+        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:261",
         "plugins/nmg-sdlc/skills/onboard-project/SKILL.md:403",
         "plugins/nmg-sdlc/skills/onboard-project/SKILL.md:408",
         "plugins/nmg-sdlc/skills/onboard-project/SKILL.md:412",
@@ -247,1508 +449,298 @@
       ]
     },
     {
-      "id": "18cdf9f0f0f0",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:127",
-      "normalized": "bash(node -e \"process.stdout.write(require('node:zlib').gunzipsync(buffer.from(p",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:127"
-    },
-    {
-      "id": "de930ff8c301",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:129",
-      "normalized": "pass the payload as a base64 argument — never interpolate raw payload bytes into",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:129"
-    },
-    {
-      "id": "5b6577ce1b88",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:130",
-      "normalized": "parse: locate readme.md or readme at the archive root. archive entry filenames a",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:130"
-    },
-    {
-      "id": "aa5572b73c65",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:131",
-      "normalized": "cache: session.designcontext = { url, fetchedat, readme, rawsize }.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:131"
-    },
-    {
-      "id": "7215d116b7a4",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:135",
-      "normalized": "| failure | handling |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:135"
-    },
-    {
-      "id": "abe369baecc6",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:137",
-      "normalized": "| http 4xx/5xx | log \"design fetch failed ({status}) — continuing without design",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:137"
-    },
-    {
-      "id": "554c5ba29c23",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:138",
-      "normalized": "| timeout | same log line with (timeout); same null assignment |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:138"
-    },
-    {
-      "id": "a4037ec968d8",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:139",
-      "normalized": "| decode failure (non-gzip, corrupted) | same log line with (decode failed); sam",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:139"
-    },
-    {
-      "id": "816755c754d0",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:140",
-      "normalized": "| archive missing readme | same log line with (no readme found); same null assig",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:140"
-    },
-    {
-      "id": "44a5e72d14ae",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:142",
-      "normalized": "any failure sets session.designfailurenote (captured for step 11). the session c",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:142"
-    },
-    {
-      "id": "0a921af03c04",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:146",
-      "normalized": "session.designcontext — { url, fetchedat, readme, rawsize } or null",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:146"
-    },
-    {
-      "id": "6bc79b22af8c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:147",
-      "normalized": "session.designfailurenote — single-line failure description or null",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:147"
-    },
-    {
-      "id": "73f78f383268",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:155",
-      "normalized": "session.initialdescription from step 1",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:155"
-    },
-    {
-      "id": "a5b5b06a400f",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:159",
-      "normalized": "run a heuristic over the initial description to decide whether the user asked fo",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:159"
-    },
-    {
-      "id": "0e750e58f29a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:161",
-      "normalized": "| signal | extraction |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:161"
-    },
-    {
-      "id": "c9af90ad4d0c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:163",
-      "normalized": "| conjunctionhits | count of occurrences of {\"and also\", \"second thing\", \"anothe",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:163"
-    },
-    {
-      "id": "2df4f19561de",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:164",
-      "normalized": "| bulletlistcount | count of top-level - / * / numbered 1. list items |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:164"
-    },
-    {
-      "id": "02a154915c26",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:165",
-      "normalized": "| distinctcomponents | count of distinct top-level component mentions (file path",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:165"
-    },
-    {
-      "id": "1ec213144ddf",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:166",
-      "normalized": "| sentencecount | total sentence count |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:166"
-    },
-    {
-      "id": "c27c19b01941",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:170",
-      "normalized": "| confidence | rule |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:170"
-    },
-    {
-      "id": "5da40856e2bf",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:172",
-      "normalized": "| high | bulletlistcount ≥ 2 or conjunctionhits ≥ 2 |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:172"
-    },
-    {
-      "id": "28fb8eb9916a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:173",
-      "normalized": "| medium | conjunctionhits ≥ 1 and distinctcomponents ≥ 2 |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:173"
-    },
-    {
-      "id": "ddd9aaea48a1",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:174",
-      "normalized": "| low | distinctcomponents ≥ 3 and sentencecount ≥ 4 (borderline — prefer to pro",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:174"
-    },
-    {
-      "id": "933996594ec9",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:175",
-      "normalized": "| single | otherwise — exit with \"single-issue detected\" trail note |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:175"
-    },
-    {
-      "id": "266d23b80e43",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:177",
-      "normalized": "when a split is proposed, segment the description at conjunction markers / list ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:177"
-    },
-    {
-      "id": "97992300ad34",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:181",
-      "normalized": "emit a visible session note regardless of the decision. examples:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:181"
-    },
-    {
-      "id": "1a17839b9545",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:194",
-      "normalized": "session.proposedsplit — {asks: [{id, summary, sourcetext}], signals, confidence}",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:194"
-    },
-    {
-      "id": "cf7d806264b5",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:196",
-      "normalized": "on the single-issue path, skip directly to the per-issue loop (one iteration).",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:196"
-    },
-    {
-      "id": "eeef0bf33fe5",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:202",
-      "normalized": "runs only when session.proposedsplit is non-null.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:202"
-    },
-    {
-      "id": "4d922599ee53",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:206",
-      "normalized": "session.proposedsplit from step 1b",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:206"
-    },
-    {
-      "id": "623c2714023d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:210",
-      "normalized": "render an inline summary of the proposed split:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:210"
-    },
-    {
-      "id": "e4afee72db33",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:222",
-      "normalized": "call askuserquestion:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:222",
-      "additional_destinations": [
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:275"
-      ]
-    },
-    {
-      "id": "84fca61b8a44",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:232",
-      "normalized": "[1] approve — proceed to step 1d.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:232"
-    },
-    {
-      "id": "8a3d8a86ba8f",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:233",
-      "normalized": "[2] adjust — ask one free-text prompt (\"how should the split be adjusted? (e.g.,",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:233"
-    },
-    {
-      "id": "8ca262ee4c11",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:234",
-      "normalized": "[3] collapse — set session.proposedsplit = null and proceed to step 2 with the o",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:234"
-    },
-    {
-      "id": "bd26318409bf",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:238",
-      "normalized": "session.proposedsplit — confirmed (possibly edited) or null on collapse",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:238"
-    },
-    {
-      "id": "624c67101e72",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:242",
-      "normalized": "this gate blocks step 1d until the user approves, adjusts-then-approves, or coll",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:242"
-    },
-    {
-      "id": "4fc6c9433ca7",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:248",
-      "normalized": "runs only when session.proposedsplit is non-null after step 1c.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:248"
-    },
-    {
-      "id": "9e0d831dd804",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:252",
-      "normalized": "session.proposedsplit.asks",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:252"
-    },
-    {
-      "id": "ce33839755c2",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:258",
-      "normalized": "explicit cues — if an ask's text contains \"depends on <reference>\", \"requires <r",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:258"
-    },
-    {
-      "id": "85a6fa0c3504",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:259",
-      "normalized": "shared component — precursor — if two asks mention the same top-level component ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:259"
-    },
-    {
-      "id": "f4618333e56f",
+      "id": "841970b097d2",
       "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:260",
-      "normalized": "ac/fr overlap — if segments describe the same acceptance criterion with differin",
+      "normalized": "gh issue create --title \"...\" --body \"...\" --label \"label1,label2\" --milestone \"",
       "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:260"
     },
     {
-      "id": "d1daeceff531",
+      "id": "e828d657bba7",
       "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:262",
-      "normalized": "normalize the result to a dag. on cycle detection, drop the lowest-priority edge",
+      "normalized": "if automatable was intended, verify with gh issue view #n --json labels --jq '.l",
       "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:262"
     },
     {
-      "id": "7c722c894544",
+      "id": "97dc58c99c31",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:264",
+      "normalized": "output: issuenumber, issueurl, appliedlabels.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:264"
+    },
+    {
+      "id": "18123f472d45",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:268",
+      "normalized": "render the final status block:",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:268"
+    },
+    {
+      "id": "79b077e27b17",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:277",
+      "normalized": "in batch mode, per-iteration step 9 blocks are compact (one line per iteration) ",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:277"
+    },
+    {
+      "id": "d7de89cee5ae",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:281",
+      "normalized": "read references/multi-issue.md when the per-issue loop has finished — the refere",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:281"
+    },
+    {
+      "id": "7d3e538f0709",
       "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:285",
-      "normalized": "[1] approve — proceed to the per-issue loop.",
+      "normalized": "read references/multi-issue.md when rendering the final batch summary. on the si",
       "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:285"
     },
     {
-      "id": "dd6d3cd0e9d3",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:286",
-      "normalized": "[2] adjust edges — free-text prompt (\"describe the edge to add or remove, e.g., ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:286"
+      "id": "0a921af03c04",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/design-url.md:35",
+      "normalized": "session.designcontext — { url, fetchedat, readme, rawsize } or null",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/design-url.md:35"
     },
     {
-      "id": "4251904def29",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:287",
-      "normalized": "[3] flatten — clear all edges (session.dag = []); proceed.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:287"
-    },
-    {
-      "id": "a8ad90871218",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:291",
-      "normalized": "session.dag — ordered list of {parent: askid, child: askid} pairs; empty on flat",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:291"
-    },
-    {
-      "id": "73cbe98194bd",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:295",
-      "normalized": "this gate blocks the per-issue loop until the user approves or flattens.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:295"
-    },
-    {
-      "id": "395fbe3f5daf",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:387",
-      "normalized": "initial description from step 1",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:387",
-      "additional_destinations": [
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:517"
-      ]
-    },
-    {
-      "id": "d91cc5530ce5",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:388",
-      "normalized": "multi-phase signals from step 1b (distinctcomponents, sentencecount, phase-langu",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:388"
-    },
-    {
-      "id": "c27336328ba0",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:392",
-      "normalized": "epic auto-detection. compute epicrecommended = true when any of these fire:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:392"
-    },
-    {
-      "id": "b631ba56d608",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:394",
-      "normalized": "the description contains \"in phases\", \"multiple prs\", or \"multi-pr\" (case-insens",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:394"
-    },
-    {
-      "id": "2e6a01430b05",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:395",
-      "normalized": "step 1b's distinctcomponents >= 4 and sentencecount >= 3",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:395"
-    },
-    {
-      "id": "a5f05384091c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:396",
-      "normalized": "the description contains references to multiple sequential delivery phases (e.g.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:396"
-    },
-    {
-      "id": "f6b95af264a5",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:398",
-      "normalized": "use askuserquestion to ask the user what type of issue this is. this is always t",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:398"
-    },
-    {
-      "id": "ebeb6209a717",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:400",
-      "normalized": "options:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:400",
-      "additional_destinations": [
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:433",
-        "plugins/nmg-sdlc/skills/open-pr/SKILL.md:105",
-        "plugins/nmg-sdlc/skills/open-pr/SKILL.md:279"
-      ]
-    },
-    {
-      "id": "99abf8d88d79",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:402",
-      "normalized": "bug — \"something is broken or behaving incorrectly\"",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:402"
-    },
-    {
-      "id": "412d7404851d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:403",
-      "normalized": "enhancement / feature — \"new capability or improvement to existing behavior\"",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:403"
-    },
-    {
-      "id": "39d9509ece0a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:404",
-      "normalized": "epic — \"a coordinated set of child issues delivering one logical feature across ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:404"
-    },
-    {
-      "id": "a394c8d2c68e",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:406",
-      "normalized": "when epicrecommended is true, append (recommended) to the epic option label.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:406"
-    },
-    {
-      "id": "42260a4c6fdc",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:408",
-      "normalized": "unattended-mode branch. if .claude/unattended-mode exists:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:408"
-    },
-    {
-      "id": "66dd1dc8f03b",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:410",
-      "normalized": "epic is never auto-selected regardless of heuristic signals.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:410"
-    },
-    {
-      "id": "154f582b849a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:411",
-      "normalized": "the classifier defaults to feature unless the description contains an exact type",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:411"
-    },
-    {
-      "id": "e87fdf796bd9",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:412",
-      "normalized": "askuserquestion must not be invoked in this branch — the rule is deterministic.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:412"
-    },
-    {
-      "id": "c3d2256e287c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:416",
-      "normalized": "classification ∈ {feature, bug, epic}",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:416"
-    },
-    {
-      "id": "29e6c45af908",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:424",
-      "normalized": "project root version file (if present)",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:424"
-    },
-    {
-      "id": "8e0223ed0176",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:425",
-      "normalized": "github milestones via gh api",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:425"
-    },
-    {
-      "id": "cd715b4bf987",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:429",
-      "normalized": "read the current version: if a version file exists in the project root, read it ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:429"
-    },
-    {
-      "id": "56d5d67ea4f8",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:430",
-      "normalized": "ask the user via askuserquestion:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:430"
-    },
-    {
-      "id": "4ebcfc187c26",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:432",
-      "normalized": "question: \"which milestone should this issue be assigned to?\"",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:432"
-    },
-    {
-      "id": "7b8ffe011086",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:434",
-      "normalized": "\"v{major} (current major version)\" — e.g., \"v2 (current major version)\"",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:434"
-    },
-    {
-      "id": "f9df8652465c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:435",
-      "normalized": "\"v{major+1} (next major version)\" — e.g., \"v3 (next major version)\"",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:435"
-    },
-    {
-      "id": "48713e1eb216",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:437",
-      "normalized": "ensure the milestone exists: run gh api repos/{owner}/{repo}/milestones --jq '.[",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:437"
-    },
-    {
-      "id": "9c98a6796c6a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:439",
-      "normalized": "gh api repos/{owner}/{repo}/milestones --method post --field title=\"v{n}\"",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:439"
-    },
-    {
-      "id": "d34d89ccb428",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:441",
-      "normalized": "if creation fails (permission denied, api error), proceed without milestone assi",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:441"
-    },
-    {
-      "id": "0fcb6a37a1ba",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:445",
-      "normalized": "milestone — e.g., \"v2\", or null if skipped",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:445"
+      "id": "6bc79b22af8c",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/design-url.md:36",
+      "normalized": "session.designfailurenote — single-line failure description or null",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/design-url.md:36"
     },
     {
       "id": "73f12e6f2770",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:453",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:10",
       "normalized": "classification from step 2",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:453",
-      "additional_destinations": [
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:515",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:683"
-      ]
-    },
-    {
-      "id": "b2abb9fea8ec",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:454",
-      "normalized": "relevant source, specs, and steering docs",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:454"
-    },
-    {
-      "id": "c442793ac643",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:455",
-      "normalized": "session.designcontext (read-only; may be null)",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:455",
-      "additional_destinations": [
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:518",
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:685"
-      ]
-    },
-    {
-      "id": "148ea573a563",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:459",
-      "normalized": "perform a targeted codebase investigation before the interview. the investigatio",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:459"
-    },
-    {
-      "id": "781fa1c98ee5",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:461",
-      "normalized": "when session.designcontext is present, read its readme alongside the steering do",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:461"
-    },
-    {
-      "id": "5697ca3b8be2",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:465",
-      "normalized": "explore existing specs: use glob for specs/*/requirements.md and read any that r",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:465"
-    },
-    {
-      "id": "0628e63e07f7",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:466",
-      "normalized": "explore source code: use glob and grep to find files related to the enhancement ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:466"
-    },
-    {
-      "id": "34a043d8d037",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:467",
-      "normalized": "read steering docs: read steering/tech.md and steering/structure.md (if they exi",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:467",
-      "additional_destinations": [
-        "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:480"
-      ]
-    },
-    {
-      "id": "d7173b6622ac",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:468",
-      "normalized": "summarize findings: produce a \"current state\" summary capturing:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:468"
-    },
-    {
-      "id": "901defc1a4f0",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:469",
-      "normalized": "what exists today (relevant code, patterns, specs)",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:469"
-    },
-    {
-      "id": "fee9cbbe0d91",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:470",
-      "normalized": "how the current implementation works",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:470"
-    },
-    {
-      "id": "3b4fa5b37ba6",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:471",
-      "normalized": "what patterns should be preserved or built upon",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:471"
-    },
-    {
-      "id": "ad70f1f11332",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:472",
-      "normalized": "relevant constraints from steering docs",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:472"
-    },
-    {
-      "id": "20303327ae55",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:474",
-      "normalized": "if no relevant code or specs are found, note that this appears to be a greenfiel",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:474"
-    },
-    {
-      "id": "593c7082d8bd",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:478",
-      "normalized": "search for related code: use grep to find code related to the bug description (e",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:478"
-    },
-    {
-      "id": "e2f3fbcb3604",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:479",
-      "normalized": "trace code paths: read the relevant files and follow the logic through the affec",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:479"
-    },
-    {
-      "id": "b25bc6c3960b",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:481",
-      "normalized": "form hypothesis: formulate a root cause hypothesis describing:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:481"
-    },
-    {
-      "id": "7a1ec4289123",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:482",
-      "normalized": "what code is involved",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:482"
-    },
-    {
-      "id": "66c37bed99a6",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:483",
-      "normalized": "what the incorrect behavior or assumption is",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:483"
-    },
-    {
-      "id": "36807eec1937",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:484",
-      "normalized": "why it manifests as the reported bug",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:484"
-    },
-    {
-      "id": "aa20c194bf2d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:485",
-      "normalized": "any steering doc constraints that inform the fix approach",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:485"
-    },
-    {
-      "id": "a725762b89d5",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:486",
-      "normalized": "confirm with user via askuserquestion:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:486"
-    },
-    {
-      "id": "d812cea2bc0e",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:487",
-      "normalized": "\"yes, that matches\"",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:487"
-    },
-    {
-      "id": "a91ce33a3058",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:488",
-      "normalized": "\"not quite — let me clarify\"",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:488"
-    },
-    {
-      "id": "1beb1563ed05",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:490",
-      "normalized": "if \"not quite\", ask a follow-up clarifying question and revise the hypothesis.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:490"
-    },
-    {
-      "id": "ef00e8d59c8e",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:492",
-      "normalized": "if investigation is inconclusive, note what is known and proceed with the user's",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:492"
-    },
-    {
-      "id": "1ef29f6a3165",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:496",
-      "normalized": "before exiting step 4, capture three numeric signals used by step 5's adaptive-d",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:496"
-    },
-    {
-      "id": "4c98a64e437f",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:498",
-      "normalized": "| signal | source | type |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:498"
-    },
-    {
-      "id": "d328666c6809",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:500",
-      "normalized": "| filesfound | count of grep/glob hits examined | integer |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:500"
-    },
-    {
-      "id": "45a78f18d7b5",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:501",
-      "normalized": "| componentsinvolved | count of distinct top-level dirs or skills/modules matche",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:501"
-    },
-    {
-      "id": "324afab3c825",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:502",
-      "normalized": "| descriptionvagueness | ratio of vague tokens (pronouns, \"stuff\", \"things\", \"so",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:502"
-    },
-    {
-      "id": "9de7f6b6aaa8",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:506",
-      "normalized": "investigation.summary — current state (feature) or root cause hypothesis (bug)",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:506"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:10"
     },
     {
       "id": "5d22c0295155",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:507",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:11",
       "normalized": "investigation.filesfound, investigation.componentsinvolved, investigation.descri",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:507"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:11"
     },
     {
-      "id": "8da413e6b325",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:516",
-      "normalized": "investigation.* signals from step 4",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:516"
+      "id": "395fbe3f5daf",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:12",
+      "normalized": "initial description from step 1",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:12"
+    },
+    {
+      "id": "c442793ac643",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:13",
+      "normalized": "session.designcontext (read-only; may be null)",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:13"
     },
     {
       "id": "cf903bbd567c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:524",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:19",
       "normalized": "compute depth from the step 4 signals:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:524"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:19"
     },
     {
       "id": "e6920e1b1503",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:526",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:21",
       "normalized": "| depth | condition | rounds |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:526"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:21"
     },
     {
       "id": "a5465459bb03",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:528",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:23",
       "normalized": "| core | filesfound ≤ 3 and componentsinvolved ≤ 1 and descriptionvagueness < 0.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:528"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:23"
     },
     {
       "id": "0213e14dd042",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:529",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:24",
       "normalized": "| extended (borderline bias) | descriptionvagueness ∈ [0.10, 0.15) or (component",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:529"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:24"
     },
     {
       "id": "78e7ede6b123",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:530",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:25",
       "normalized": "| extended | otherwise (multi-component, many files, or vague description) | 4 r",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:530"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:25"
     },
     {
       "id": "cddcf68c18bc",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:532",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:27",
       "normalized": "the borderline row intentionally biases ambiguous cases to the deeper interview ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:532"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:27"
     },
     {
       "id": "5e3f7df803be",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:536",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:31",
       "normalized": "emit a one-sentence user-visible log line explaining the selection, for example:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:536"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:31"
     },
     {
       "id": "bcc940047bf7",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:538",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:33",
       "normalized": "extended: \"this touches 4 components across 2 skills — i'll ask deeper scope que",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:538"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:33"
     },
     {
       "id": "6b5f5facfd4f",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:539",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:34",
       "normalized": "core: \"small scoped change — running a core interview.\"",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:539"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:34"
     },
     {
       "id": "daae987bea2a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:543",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:38",
       "normalized": "immediately after the log line, call askuserquestion with two options:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:543"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:38"
     },
     {
       "id": "c4464c9e0cb6",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:554",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:49",
       "normalized": "if the user selects [2], switch depth to the other value and emit a one-line ses",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:554"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:49"
     },
     {
       "id": "c8d211e9b83f",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:558",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:53",
       "normalized": "skip any topics already answered by the initial description, the step 4 investig",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:558"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:53"
     },
     {
       "id": "6f1e66c824c4",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:562",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:57",
       "normalized": "| round | core (3 rounds) | extended (4 rounds) |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:562"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:57"
     },
     {
       "id": "6bee675e2597",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:564",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:59",
       "normalized": "| r1 persona & outcome | who benefits? what pain point? what desired outcome? | ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:564"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:59"
     },
     {
       "id": "ebcf89124c30",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:565",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:60",
       "normalized": "| r2 acs, scope, priority | key acs in g/w/t format; in-scope / out-of-scope; mo",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:565"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:60"
     },
     {
       "id": "734ccd533497",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:566",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:61",
       "normalized": "| r3 nfrs & edge cases | (omitted) | performance / accessibility / security / i1",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:566"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:61"
     },
     {
       "id": "38b3a6dedc82",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:567",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:62",
       "normalized": "| r4 related features & priority | (folded into r2) | existing related features ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:567"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:62"
     },
     {
       "id": "7f869a064fb2",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:571",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:66",
       "normalized": "| round | probes |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:571"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:66"
     },
     {
       "id": "f0c3e0fa2a0a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:573",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:68",
       "normalized": "| r1 repro | exact reproduction steps; expected vs actual |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:573"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:68"
     },
     {
       "id": "980974e07410",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:574",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:69",
       "normalized": "| r2 env & recency | environment (os, browser, version); frequency; error output",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:574"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:69"
     },
     {
       "id": "b56c86eb2942",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:575",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:70",
       "normalized": "| r3 edge cases & regression risk | edge/error states beyond the primary repro; ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:575"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:70"
     },
     {
       "id": "56097d41a98b",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:577",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:72",
       "normalized": "reproduction remains the bug-path primary focus. r3 is always asked, regardless ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:577"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:72"
     },
     {
       "id": "c2dd939e0db1",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:581",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:76",
       "normalized": "regardless of classification or depth, the final round ends with a single free-t",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:581"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:76"
     },
     {
       "id": "d251862e27a7",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:583",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:78",
       "normalized": "> \"before i play back my understanding, is there anything i haven't asked that m",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:583"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:78"
     },
     {
       "id": "fc21b468e806",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:585",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:80",
       "normalized": "a non-empty answer is folded into the understanding block that feeds step 5c.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:585"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:80"
     },
     {
       "id": "cd1c35995e83",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:589",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:84",
       "normalized": "depth ∈ {core, extended}",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:589"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:84"
     },
     {
       "id": "5a2fdfadc97d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:590",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:85",
       "normalized": "depthoverridden — true if the user chose the non-recommended option",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:590"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:85"
     },
     {
       "id": "590da189c951",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:591",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:86",
       "normalized": "interviewanswers — map of round → answers",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:591"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:86"
     },
     {
       "id": "bc9172aef160",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:592",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:87",
       "normalized": "anythingmissed — free-text answer or null",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:592"
-    },
-    {
-      "id": "c14269edf89d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:600",
-      "normalized": "classification and interview answers from step 5",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:600"
-    },
-    {
-      "id": "da35bbba186d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:604",
-      "normalized": "ask whether this issue is suitable for fully automated processing downstream. us",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:604"
-    },
-    {
-      "id": "f44bd527846d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:623",
-      "normalized": "automatable ∈ {true, false}",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:623"
-    },
-    {
-      "id": "b0222d39b3be",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:631",
-      "normalized": "interview answers from step 5 + automatable answer from step 5b + anythingmissed",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:631"
-    },
-    {
-      "id": "0180b22d4ac8",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:635",
-      "normalized": "play back a structured understanding block whose length is proportional to the i",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:635"
-    },
-    {
-      "id": "9c3aba5c6588",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:656",
-      "normalized": "after rendering the playback, call askuserquestion:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:656"
-    },
-    {
-      "id": "8b23f2e2031c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:665",
-      "normalized": "if the user selects [2], ask one free-text clarification, revise the understandi",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:665"
-    },
-    {
-      "id": "e914aea0411a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:669",
-      "normalized": "understanding — confirmed persona, outcome, ac outline, scope in/out",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:669"
-    },
-    {
-      "id": "2521f6fbb18e",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:670",
-      "normalized": "understandingconfirmed — must be true before step 6",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:670"
-    },
-    {
-      "id": "febd6a6185ad",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:674",
-      "normalized": "this gate blocks step 6 (synthesis) until the user confirms the playback. the sk",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:674"
-    },
-    {
-      "id": "3e74c7899a93",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:682",
-      "normalized": "confirmed understanding from step 5c",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:682"
-    },
-    {
-      "id": "46640b0a7981",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:684",
-      "normalized": "investigation.summary from step 4",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:684"
-    },
-    {
-      "id": "377d4b30e674",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:686",
-      "normalized": "current iteration's planid and neighbor askids from session.dag (if any)",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:686"
-    },
-    {
-      "id": "fcb138922a32",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:690",
-      "normalized": "choose the appropriate template based on classification. when session.designcont",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:690"
-    },
-    {
-      "id": "16d376047768",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:692",
-      "normalized": "body cross-ref placeholders (batch mode). when session.dag has edges touching th",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:692"
-    },
-    {
-      "id": "3ca001554443",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:699",
-      "normalized": "the <askid> tokens are resolved to real #n references in step 10 once all issues",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:699"
-    },
-    {
-      "id": "b979443821d8",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:701",
-      "normalized": "the two templates differ significantly in structure — the reference table below ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:701"
-    },
-    {
-      "id": "cc46f9751bb9",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:705",
-      "normalized": "| section | feature template | bug report template |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:705"
-    },
-    {
-      "id": "3868a1220711",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:707",
-      "normalized": "| opening | user story (as a / i want / so that) | bug report (1–2 sentence summ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:707"
-    },
-    {
-      "id": "f03ae487dc28",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:708",
-      "normalized": "| context | background + current state | root cause analysis + user confirmed fl",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:708"
-    },
-    {
-      "id": "426f5bdaaeb0",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:709",
-      "normalized": "| reproduction | n/a | reproduction steps (numbered) + environment table |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:709"
-    },
-    {
-      "id": "5c4a37706166",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:710",
-      "normalized": "| expected vs actual | n/a | expected behavior / actual behavior |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:710"
-    },
-    {
-      "id": "e59bdf778551",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:711",
-      "normalized": "| ac count guidance | 3+ (happy path, alternative, error) | 2 (bug is fixed + no",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:711"
-    },
-    {
-      "id": "41dd051ac48d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:712",
-      "normalized": "| fr priority | moscow (must/should/could) | typically must only |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:712"
-    },
-    {
-      "id": "f5ccff41ff5a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:713",
-      "normalized": "| out of scope | scope boundaries for the feature | related improvements not par",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:713"
-    },
-    {
-      "id": "e456acaffc0f",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:838",
-      "normalized": "when classification === 'epic', synthesize the body using this template only. an",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:838"
-    },
-    {
-      "id": "68c26b082fb0",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:862",
-      "normalized": "template invariants (flagged as skill-quality findings if violated):",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:862"
-    },
-    {
-      "id": "f70239a0723e",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:864",
-      "normalized": "delivery phases table columns must be exactly phase | child issue | depends on |",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:864"
-    },
-    {
-      "id": "a8b0e4312fe3",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:865",
-      "normalized": "#{askid-n} placeholders are resolved to real issue numbers in step 10 after chil",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:865"
-    },
-    {
-      "id": "98a38304d17c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:866",
-      "normalized": "every child referenced in delivery phases must also appear in child issues; step",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:866"
-    },
-    {
-      "id": "10bbe0f8b3cd",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:867",
-      "normalized": "the success criteria section is a fixed delegation note — do not replace it with",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:867"
-    },
-    {
-      "id": "e152a4f802ba",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:869",
-      "normalized": "the child issues themselves (created in step 10 via the existing steps 1b–1d bat",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:869"
-    },
-    {
-      "id": "e2243a1e713c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:873",
-      "normalized": "draft — fully composed issue body (markdown string)",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:873"
-    },
-    {
-      "id": "5b757531cdbb",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:874",
-      "normalized": "title — concise, action-oriented issue title starting with a verb",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:874"
-    },
-    {
-      "id": "b98942161d61",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:882",
-      "normalized": "draft and title from step 6",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:882"
-    },
-    {
-      "id": "f955417a1b5a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:883",
-      "normalized": "planned labels from step 8 (pre-computed so the summary can show them)",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:883"
-    },
-    {
-      "id": "bca75d5d4f3f",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:889",
-      "normalized": "after step 6 synthesis, render an inline markdown block structured exactly as:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:889"
-    },
-    {
-      "id": "6f796399721d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:909",
-      "normalized": "for bug reports, substitute the user story line with bug summary: [one-liner].",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:909"
-    },
-    {
-      "id": "8d69a10ddeb9",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:913",
-      "normalized": "call askuserquestion with two options (or three, when the batch is mid-flight — ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:913"
-    },
-    {
-      "id": "bfa50494fa1c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:924",
-      "normalized": "on [2], ask one free-text follow-up: \"what would you like to change?\". apply the",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:924"
-    },
-    {
-      "id": "2dc49816f100",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:928",
-      "normalized": "maintain a counter consecutiverevises that:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:928"
-    },
-    {
-      "id": "c7a3fd91bdf7",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:930",
-      "normalized": "starts at 0",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:930"
-    },
-    {
-      "id": "38a2e755a4cb",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:931",
-      "normalized": "increments on each [2] revise (two-option menu) or [1] keep revising (expanded m",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:931"
-    },
-    {
-      "id": "0c3cc656a6c2",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:932",
-      "normalized": "resets to 0 on any selection that exits or restarts the loop: two-option [1] app",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:932"
-    },
-    {
-      "id": "121f0fe9e97b",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:936",
-      "normalized": "when consecutiverevises == 3, the next review round (i.e., the fourth review rou",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:936"
-    },
-    {
-      "id": "5f21bc49cd0e",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:946",
-      "normalized": "[1] returns to the two-option menu on the next round; consecutiverevises continu",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:946"
-    },
-    {
-      "id": "763d0b644625",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:947",
-      "normalized": "[2] returns the skill to step 5 (re-entering the interview with classification a",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:947"
-    },
-    {
-      "id": "c11c2801d014",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:948",
-      "normalized": "[3] proceeds to step 8 as if approve was selected",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:948"
-    },
-    {
-      "id": "8ea669844131",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:950",
-      "normalized": "the skill does not auto-terminate the loop. the user remains in control.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:950"
-    },
-    {
-      "id": "1fc5a840ebe3",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:954",
-      "normalized": "in batch mode (session.proposedsplit !== null), when session.createdissues.lengt",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:954"
-    },
-    {
-      "id": "f15b67c233d8",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:960",
-      "normalized": "selecting [abandon] sets session.abandoned = true, skips the remaining iteration",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:960"
-    },
-    {
-      "id": "b3f18197876b",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:964",
-      "normalized": "approved — true after [1] approve or [3] accept as-is",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:964"
-    },
-    {
-      "id": "f65a9bae9f08",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:965",
-      "normalized": "session.abandoned — true if the user selected [abandon]",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:965"
-    },
-    {
-      "id": "9b975903acc2",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:966",
-      "normalized": "final draft and title",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:966"
-    },
-    {
-      "id": "abfca86cf794",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:970",
-      "normalized": "this gate blocks step 8 (issue creation) until approved = true or the user aband",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:970"
-    },
-    {
-      "id": "1b17f500f8e8",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:978",
-      "normalized": "approved draft, title, labels, milestone, automatable",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:978"
-    },
-    {
-      "id": "690feceb8d29",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:982",
-      "normalized": "check labels: run gh label list to see existing labels",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:982"
-    },
-    {
-      "id": "4aa353c1c6d7",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:983",
-      "normalized": "create missing labels if needed:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:983"
-    },
-    {
-      "id": "f3264a815d03",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:985",
-      "normalized": "gh label create \"label-name\" --description \"description\" --color \"hex-color\"",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:985"
-    },
-    {
-      "id": "ea179dafebcd",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:987",
-      "normalized": "ensure the automatable label exists if step 5b answered \"yes\":",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:987"
-    },
-    {
-      "id": "4d7250405574",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:988",
-      "normalized": "check: gh label list --search automatable --json name --jq '.[].name'",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:988"
-    },
-    {
-      "id": "6fe905c11328",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:989",
-      "normalized": "if not found, create it: gh label create \"automatable\" --description \"suitable f",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:989"
-    },
-    {
-      "id": "14c81679c41e",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:990",
-      "normalized": "determine labels based on issue type and automation eligibility:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:990"
-    },
-    {
-      "id": "1d00f2b4b684",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:991",
-      "normalized": "feature → enhancement",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:991"
-    },
-    {
-      "id": "0b5218e84f0e",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:992",
-      "normalized": "bug → bug",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:992"
-    },
-    {
-      "id": "683df5eff461",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:993",
-      "normalized": "epic → epic + enhancement (both labels; lazily create the epic label via gh labe",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:993"
-    },
-    {
-      "id": "72245a14aada",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:994",
-      "normalized": "if step 5b answered \"yes\" → also include automatable (applies to feature/bug; ep",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:994"
-    },
-    {
-      "id": "35bbd49fc8d0",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:995",
-      "normalized": "other project-specific labels as appropriate",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:995"
-    },
-    {
-      "id": "dfd867492251",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:996",
-      "normalized": "create the issue (include --milestone if step 3 assigned one):",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:996"
-    },
-    {
-      "id": "38f2224ce062",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:998",
-      "normalized": "gh issue create --title \"[concise, action-oriented title]\" --body \"[issue body]\"",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:998"
-    },
-    {
-      "id": "cddf3896fe19",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1000",
-      "normalized": "verify automatable label (if intended):",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1000"
-    },
-    {
-      "id": "cef2f3d15c5d",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1002",
-      "normalized": "gh issue view #n --json labels --jq '.labels[].name'",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1002"
-    },
-    {
-      "id": "0ed0ba59e8a2",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1004",
-      "normalized": "if automatable is missing from the output, warn in step 9 output: \"warning: auto",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1004"
-    },
-    {
-      "id": "cc3022ec974c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1008",
-      "normalized": "issuenumber, issueurl, appliedlabels",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1008"
-    },
-    {
-      "id": "75b8ecde58d1",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1016",
-      "normalized": "issuenumber, issueurl, appliedlabels, and any warnings from step 8",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1016"
-    },
-    {
-      "id": "8b269c32720c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1020",
-      "normalized": "render the final status block.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1020"
-    },
-    {
-      "id": "3c728bb3b94c",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1031",
-      "normalized": "in batch mode, the per-iteration step 9 block is compact (one line per iteration",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1031"
-    },
-    {
-      "id": "4b16efa9902a",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1037",
-      "normalized": "runs after the per-issue loop (or immediately after step 9 on the single-issue p",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1037"
-    },
-    {
-      "id": "54ce6cbed3df",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1041",
-      "normalized": "session.createdissues (from the loop)",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1041"
-    },
-    {
-      "id": "0f67ae458b1f",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1042",
-      "normalized": "session.dag (from step 1d)",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1042"
-    },
-    {
-      "id": "271a8e3280f2",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1048",
-      "normalized": "run gh issue edit --help 2>&1 and look for --add-sub-issue in the output. cache ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1048"
-    },
-    {
-      "id": "d5b48ac197cf",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1052",
-      "normalized": "for each {parent, child} in session.dag where both ask ids have entries in sessi",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1052"
-    },
-    {
-      "id": "4573d4e9672f",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1058",
-      "normalized": "per-edge failures are appended to session.autolinkdegradationnotes but do not ab",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1058"
-    },
-    {
-      "id": "c6bcd4cfe473",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1062",
-      "normalized": "every issue body written in step 6 contains depends on: <a1>, <a2> / blocks: <a3",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1062"
-    },
-    {
-      "id": "a3e2426f6d93",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1064",
-      "normalized": "the real #n number when a session.createdissues entry exists for that ask id",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1064"
-    },
-    {
-      "id": "cc03e9240f35",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1065",
-      "normalized": "the plain-text marker (planned but not created) when the batch was abandoned bef",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1065"
-    },
-    {
-      "id": "76ca4e5b27cd",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1067",
-      "normalized": "apply the rewrite via:",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1067"
-    },
-    {
-      "id": "40e4e6beab68",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1073",
-      "normalized": "body cross-refs are written unconditionally — independent of session.subissuesup",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1073"
-    },
-    {
-      "id": "2a71832ddec7",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1077",
-      "normalized": "when the current iteration's classification === 'epic', after the epic issue its",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1077"
-    },
-    {
-      "id": "15ae5fdf9580",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1079",
-      "normalized": "parse delivery phases from the epic body (already synthesized in step 6). each r",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1079"
-    },
-    {
-      "id": "5a2c4d1997a0",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1080",
-      "normalized": "enter batch mode for the children. re-seed session.proposedsplit from the delive",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1080"
-    },
-    {
-      "id": "48de65a6b8ec",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1081",
-      "normalized": "child body requirements (enforced during step 6 for each child):",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1081"
-    },
-    {
-      "id": "f4f34f2b6dfc",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1082",
-      "normalized": "the body must contain a depends on: #{epic-number} line (the epic is the parent ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1082"
-    },
-    {
-      "id": "061fa1860b24",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1083",
-      "normalized": "any intra-epic prerequisite from the delivery phases depends on column must prod",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1083"
-    },
-    {
-      "id": "3a755b783287",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1084",
-      "normalized": "child labels: apply enhancement (not epic) to every child. if step 5b flagged th",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1084"
-    },
-    {
-      "id": "596a31987782",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1085",
-      "normalized": "github sub-issue link: after each child is created, also run gh issue edit <chil",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1085"
-    },
-    {
-      "id": "d46301d739b7",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1086",
-      "normalized": "update the epic's child issues checklist in place. after all children are create",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1086"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/interview-depth.md:87"
+    },
+    {
+      "id": "624c67101e72",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/multi-issue.md:111",
+      "normalized": "this gate blocks step 1d until the user approves, adjusts-then-approves, or coll",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/multi-issue.md:111"
+    },
+    {
+      "id": "58b63e273b96",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/multi-issue.md:113",
+      "normalized": "---",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/multi-issue.md:113",
+      "additional_destinations": [
+        "plugins/nmg-sdlc/skills/draft-issue/references/multi-issue.md:166",
+        "plugins/nmg-sdlc/skills/onboard-project/SKILL.md:430",
+        "plugins/nmg-sdlc/skills/open-pr/SKILL.md:340",
+        "plugins/nmg-sdlc/skills/run-retro/SKILL.md:279",
+        "plugins/nmg-sdlc/skills/start-issue/SKILL.md:399",
+        "plugins/nmg-sdlc/skills/upgrade-project/SKILL.md:543",
+        "plugins/nmg-sdlc/skills/verify-code/SKILL.md:415",
+        "plugins/nmg-sdlc/skills/write-code/SKILL.md:244",
+        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:233",
+        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:253",
+        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:265",
+        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:308",
+        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:329",
+        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:341",
+        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:409",
+        "plugins/nmg-sdlc/skills/write-spec/SKILL.md:434"
+      ]
+    },
+    {
+      "id": "73cbe98194bd",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/multi-issue.md:164",
+      "normalized": "this gate blocks the per-issue loop until the user approves or flattens.",
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/multi-issue.md:164"
     },
     {
       "id": "8e676cd5e4e8",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1088",
+      "source_before": "plugins/nmg-sdlc/skills/draft-issue/references/multi-issue.md:342",
       "normalized": "unattended-mode rule. /draft-issue as a whole does not honor unattended-mode (th",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1088"
-    },
-    {
-      "id": "31480099f043",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1092",
-      "normalized": "session.subissuesupported — boolean",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1092"
-    },
-    {
-      "id": "80aa117321fe",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1093",
-      "normalized": "session.autolinkdegradationnotes — list of failure descriptions",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1093"
-    },
-    {
-      "id": "b576d8721f04",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1094",
-      "normalized": "updated issue bodies with resolved cross-refs",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1094"
-    },
-    {
-      "id": "84f74da7dee0",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1095",
-      "normalized": "for epics: session.epicchildissues — list of {number, title} created as children",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1095"
-    },
-    {
-      "id": "160c952203f3",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1103",
-      "normalized": "session.createdissues, session.proposedsplit, session.dag",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1103"
-    },
-    {
-      "id": "057fcb6859cb",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1104",
-      "normalized": "session.abandoned, session.designfailurenote, session.autolinkdegradationnotes, ",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1104"
-    },
-    {
-      "id": "fa08bef13cf5",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1108",
-      "normalized": "render the final summary.",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1108"
-    },
-    {
-      "id": "64969812c9db",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1132",
-      "normalized": "steps 10 and 11 collapse to the existing \"issue #n created ... next step: /start",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1132"
-    },
-    {
-      "id": "6189d912a047",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1136",
-      "normalized": "when session.abandoned === true, the summary reports the partial counts (\"create",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1136"
-    },
-    {
-      "id": "3e35dc2e69a6",
-      "source_before": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1140",
-      "normalized": "final rendered summary (user-visible)",
-      "destination": "plugins/nmg-sdlc/skills/draft-issue/SKILL.md:1140"
+      "destination": "plugins/nmg-sdlc/skills/draft-issue/references/multi-issue.md:342"
     },
     {
       "id": "9ca7b9b30521",
@@ -2304,6 +1296,15 @@
       "source_before": "plugins/nmg-sdlc/skills/open-pr/SKILL.md:104",
       "normalized": "question: \"version bump: {current} → {proposed} ({bump_type}). accept or overrid",
       "destination": "plugins/nmg-sdlc/skills/open-pr/SKILL.md:104"
+    },
+    {
+      "id": "ebeb6209a717",
+      "source_before": "plugins/nmg-sdlc/skills/open-pr/SKILL.md:105",
+      "normalized": "options:",
+      "destination": "plugins/nmg-sdlc/skills/open-pr/SKILL.md:105",
+      "additional_destinations": [
+        "plugins/nmg-sdlc/skills/open-pr/SKILL.md:279"
+      ]
     },
     {
       "id": "1e858ffbd823",
@@ -2900,6 +1901,12 @@
         "plugins/nmg-sdlc/skills/verify-code/SKILL.md:22",
         "plugins/nmg-sdlc/skills/write-code/SKILL.md:22"
       ]
+    },
+    {
+      "id": "439638e83be6",
+      "source_before": "plugins/nmg-sdlc/skills/run-retro/SKILL.md:31",
+      "normalized": "before step 1, run glob for .claude/steering/.md and .claude/specs//requirements",
+      "destination": "plugins/nmg-sdlc/skills/run-retro/SKILL.md:31"
     },
     {
       "id": "5806776a553e",
