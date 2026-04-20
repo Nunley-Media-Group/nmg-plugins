@@ -1,6 +1,6 @@
 # Tasks: Refactor SKILL.md via Progressive Disclosure
 
-**Issues**: #138
+**Issues**: #138, #145
 **Date**: 2026-04-19
 **Status**: Planning
 **Author**: Rich Nunley
@@ -96,7 +96,7 @@ The 5 phases below map 1:1 to the 4-PR rollout from the design, with Phase 5 (Te
 - [ ] No other `tech.md` content changes beyond this row
 - [ ] `verify-code`'s Verification Gates section is re-read unchanged — the gate comes from `tech.md` so verify-code inherits it automatically
 
-### T007: Add Claude Code GitHub App Review Workflow
+### T007: Add Claude Code GitHub App Review Workflow (Required Gate)
 
 **File(s)**: `.github/workflows/claude-review.yml`
 **Type**: Create
@@ -108,7 +108,9 @@ The 5 phases below map 1:1 to the 4-PR rollout from the design, with Phase 5 (Te
 - [ ] Uses org-level `ANTHROPIC_API_KEY` secret (already provisioned — no repo secret to add)
 - [ ] Concurrency group keyed by PR/issue number with `cancel-in-progress: true`
 - [ ] Checkout step uses `fetch-depth: 0` so Claude can read full git history
-- [ ] On PR 1 itself, the workflow posts an automated review (self-dogfood) — verify before requesting human review
+- [ ] Post-action step enforces the review verdict per design's "Verdict-To-Exit-Code Mapping": reads the latest bot review via `gh api`, exits non-zero on `CHANGES_REQUESTED`, scoped to `pull_request` events only
+- [ ] Workflow is declared a **required status check** on `main` branch-protection rules (documented in PR description for repo admin to enable; gate name matches the job name so branch protection can bind to it deterministically)
+- [ ] On PR 1 itself, the workflow posts an automated review (self-dogfood) — verify a `success` status before requesting human review
 
 ### T008: PR 1 Smoke Test
 
@@ -386,6 +388,8 @@ Phase 5 (threaded)
 | Issue | Date | Summary |
 |-------|------|---------|
 | #138 | 2026-04-19 | Initial feature spec |
+| #145 | 2026-04-19 | Phase 1 child — scope covers T001–T008 (Setup + additive infra): shared `references/` files, `skill-inventory-audit.mjs` + baseline + fixtures + Jest tests, audit CI workflow, and `claude-review.yml`. No SKILL.md edits, no version bump. |
+| #145 | 2026-04-19 | T007 expanded: workflow now enforces Claude's review verdict (exit non-zero on `CHANGES_REQUESTED`) and must be declared a required status check on `main`. Acceptance list gained two bullets covering the enforce-verdict step and the required-check declaration. |
 
 ---
 

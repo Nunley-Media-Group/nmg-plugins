@@ -1,0 +1,16 @@
+# Canary Notes
+
+Per-skill reference that the audit must also ingest.
+
+## Input
+
+- The canary SKILL.md's Step 1 pointer fires
+
+## Process
+
+1. The audit reads this reference file.
+2. Each tracked clause is hashed alongside SKILL.md clauses.
+
+## Output
+
+- Inventory items bearing this file's path as their destination

@@ -398,6 +398,7 @@ This project is prompt-based: skills are Markdown instructions that Claude Code 
 |------|-----------|--------|---------------|
 | SDLC runner tests | `scripts/__tests__/` directory exists | `cd scripts && npm test` | Exit code 0 |
 | Skill exercise test | Any `plugins/nmg-sdlc/skills/**/SKILL.md` file changed | Load plugin and invoke changed skill against a test project (see Testing Standards → Test Project Pattern) | Skill produces expected output OR verification report explicitly notes manual exercise follow-up |
+| Skill inventory audit | Any `plugins/nmg-sdlc/skills/**/SKILL.md` or `plugins/nmg-sdlc/**/references/**` changed | `node scripts/skill-inventory-audit.mjs --check` | Exit code 0 |
 | Prompt quality review | Any `plugins/nmg-sdlc/skills/**/SKILL.md` file changed | Review against Prompt Quality Criteria below | All criteria satisfied |
 | Behavioral contract review | Any skill or script changed | Review against Contract Framework below | Preconditions, postconditions, invariants, and boundaries all addressed |
 

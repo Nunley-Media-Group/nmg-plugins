@@ -1,6 +1,6 @@
 # Design: Refactor SKILL.md via Progressive Disclosure
 
-**Issues**: #138
+**Issues**: #138, #145
 **Date**: 2026-04-19
 **Status**: Draft
 **Author**: Rich Nunley
@@ -307,24 +307,51 @@ The Claude Code GitHub App is already installed org-wide on Nunley-Media-Group w
 
 The action picks up `CLAUDE.md` at the project root automatically. No additional configuration is needed to steer reviews toward the plugin's conventions — `CLAUDE.md` already documents the version-bump matrix, commit style, README-sync rule, and spec-commitment rule.
 
-### Scope Boundary
+### Required-Pass Gate
 
-The workflow runs independently of the skill-inventory audit. The audit is a hard gate (required check); the Claude review is advisory — it posts comments but does not block merge. Keeping the two decoupled means a broken review workflow doesn't stall the refactor PRs.
+Both the audit workflow and the Claude review workflow are declared **required status checks** on `main`. A failing Claude review blocks merge — it is not advisory. The workflows are still functionally decoupled (a broken audit does not suppress Claude's review, and vice versa) but both must report `success` before merge.
+
+The job is wired to fail on `REQUEST_CHANGES`:
+
+- `anthropics/claude-code-action@v1` emits a review verdict; the workflow maps `APPROVE` / `COMMENT` (without blocking findings) to exit code 0 and `REQUEST_CHANGES` to a non-zero exit.
+- A subsequent push that triggers a passing review flips the check back to `success` via the `pull_request: synchronize` event. No manual override is introduced — the gate clears only when Claude posts a passing review against the current HEAD.
+
+### Verdict-To-Exit-Code Mapping
+
+The action by default does not fail the job on `REQUEST_CHANGES`. The workflow adds an explicit post-step that reads the action's output (or the latest PR review by the Claude bot user) and fails when the verdict is `REQUEST_CHANGES`:
+
+```yaml
+- name: Enforce Claude review verdict
+  if: github.event_name == 'pull_request'
+  env:
+    GH_TOKEN: ${{ github.token }}
+    PR_NUMBER: ${{ github.event.pull_request.number }}
+  run: |
+    verdict=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/reviews" \
+      --jq '[.[] | select(.user.type == "Bot")] | last | .state')
+    echo "Claude review verdict: ${verdict:-none}"
+    if [ "$verdict" = "CHANGES_REQUESTED" ]; then
+      echo "::error::Claude requested changes — blocking merge until a passing review is posted."
+      exit 1
+    fi
+```
+
+Issue-comment (`@claude`) runs are not gated — those are ad-hoc interactions rather than PR-level reviews. The enforce-verdict step's `if:` condition scopes it to `pull_request` events only.
 
 ---
 
-## Rollout Plan (satisfies FR10)
+## Multi-PR Rollout
 
-Four PRs in strict order, each independently mergeable and reverting cleanly:
+Four PRs in strict order, each independently mergeable and reverting cleanly. This is also the Delivery Phases table consumed by the epic-support tooling (child-issue batch creation and parent-link resolution).
 
-| PR | Scope | Gates |
-|----|-------|-------|
-| **1** | Additive: create `plugins/nmg-sdlc/references/` with the 6 shared files. Add `scripts/skill-inventory-audit.mjs` + baseline + canary fixtures + CI workflow (required-check) + `/verify-code` integration + `.github/workflows/claude-review.yml` (AC10/FR14). **No SKILL.md edits yet** — audit baseline captures the pre-refactor state. | Runner tests pass; audit `--check` reports zero drift; canary fixture test passes; `/verify-code` invokes audit on a sample skill edit; Claude Code review posts on PR 1 itself (self-dogfood). |
-| **2** | `draft-issue` pilot — migrate the biggest skill first and validate the pattern before touching others. Adds per-skill `references/` and updates pointers. | AC1 met for draft-issue; exercise test against fixture; audit `--check` passes with updated baseline. |
-| **3** | `write-spec` + `onboard-project` + `upgrade-project`. Apply lessons from PR 2. | AC1 met for all three; exercise tests pass; audit clean. |
-| **4** | Remainder: `start-issue`, `verify-code`, `run-retro`, `open-pr`, `write-code`. | Every skill at target; full audit clean; `steering/structure.md` updated (FR12); version bump to 1.53.0 (FR9); CHANGELOG entry. |
+| Phase | Child Issue | Depends On | Summary |
+|-------|-------------|------------|---------|
+| **1** | #145 | — | Additive infrastructure: create `plugins/nmg-sdlc/references/` with the 6 shared files; add `scripts/skill-inventory-audit.mjs` + baseline + canary fixtures + CI workflow (required-check) + `/verify-code` integration + `.github/workflows/claude-review.yml` (AC10/FR14). **No SKILL.md edits yet** — audit baseline captures the pre-refactor state. *Gates*: runner tests pass; audit `--check` reports zero drift; canary fixture test passes; `/verify-code` invokes audit on a sample skill edit; Claude Code review posts on PR 1 itself (self-dogfood). |
+| **2** | #146 | #145 | `draft-issue` pilot — migrate the biggest skill first and validate the pattern before touching others. Adds per-skill `references/` and updates pointers. *Gates*: AC1 met for `draft-issue`; exercise test against fixture; audit `--check` passes with updated baseline. |
+| **3** | #147 | #146 | Bulk refactor: `write-spec` + `onboard-project` + `upgrade-project`. Apply lessons from PR 2. *Gates*: AC1 met for all three; exercise tests pass; audit clean. |
+| **4** | #148 | #147 | Remainder: `start-issue`, `verify-code`, `run-retro`, `open-pr`, `write-code`. *Gates*: every skill at target; full audit clean; `steering/structure.md` updated (FR12); version bump to 1.53.0 (FR9); CHANGELOG entry. |
 
-A 5th PR is not planned — FR9 rides on PR 4.
+A 5th PR is not planned — FR9 rides on PR 4. This section satisfies FR10.
 
 ---
 
@@ -397,6 +424,8 @@ None — both Phase-1 open questions were resolved and codified in requirements.
 | Issue | Date | Summary |
 |-------|------|---------|
 | #138 | 2026-04-19 | Initial design |
+| #145 | 2026-04-19 | Phase 1 child — additive infrastructure. No design changes; scope is the PR 1 slice of the Multi-PR Rollout (shared `references/` scaffold, audit script + CI, Claude review workflow). Also renamed `## Rollout Plan` → `## Multi-PR Rollout` and restructured its table to the epic-template Delivery Phases schema (`Phase \| Child Issue \| Depends On \| Summary`) populated with #145–#148 and their dependency chain, to conform to the epic-support contract introduced in #149. |
+| #145 | 2026-04-19 | Replaced "Scope Boundary" section with "Required-Pass Gate" + "Verdict-To-Exit-Code Mapping" — the Claude review is now a required status check that blocks merge on REQUEST_CHANGES rather than an advisory comment. Added the enforce-verdict workflow step spec. |
 
 ---
 
