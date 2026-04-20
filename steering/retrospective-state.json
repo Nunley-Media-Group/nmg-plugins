@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "specs": {
+    "specs/bug-add-auto-mode-support-to-migrate-project-skill/requirements.md": {
+      "hash": "ee5121ab64c297ffb252392c9ea5d71aaf9af37a30ede6001f9243b48a6a4f4e",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-detect-soft-failures-runner-tests/requirements.md": {
+      "hash": "ee175dbd80b97ba3b322292614a68250ea073d9c554b516bef968041176c0696",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-exercise-template-dry-run-prefix/requirements.md": {
+      "hash": "9b6670d55513c67c3dd0b3351fe6ee845f629e857856d9aa4f3335cf2f66e772",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-auto-mode-cleanup-on-exit/requirements.md": {
+      "hash": "8cc3a08172ab2e18a720bfc825a9e96a3f79af728054f77d6c6e3ecb4530a4f6",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-draft-issue-steering-docs/requirements.md": {
+      "hash": "00845c3ef012a43afbc197eb17d6570ba1f615b95990eee014e3d0c48517aeee",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-false-positive-permission-denied-escalation/requirements.md": {
+      "hash": "8a8702f1210e144ca3ef56d4b3ffa6af4696aa52c4947d6ed5d78a34bfcd4665",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-inconsistent-version-bumping/requirements.md": {
+      "hash": "ae55e8cb02d8c5686279790c640b86d9c2d2245c9ca9a6b517c270b7e0d78a65",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-merge-step-false-escalation-post-merge/requirements.md": {
+      "hash": "6ae5ee6b99a7c3ec95a8db54cef2436d6ebdd2133e45e2e2a5b00ac00c84b95e",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-migrate-project-auto-mode/requirements.md": {
+      "hash": "02898b50a9b05e3d7851a5033240625b06a405971d3735efafc84b3dfac51ed7",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-migrate-project-irrelevant-sections/requirements.md": {
+      "hash": "76f92586137c93c3c5773060592dc291218bd1a1b6ae11a70bc0821f3145bfb9",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-monitorci-step8/requirements.md": {
+      "hash": "23a492fbf564b6dde39714ea4858b65778a9411753c7a2f9bcf0129d03bb1905",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-run-retro-defect-spec-discovery/requirements.md": {
+      "hash": "f737be18607a21bd3003d7ec50376941893c836c38d0712bc632b296214b05f3",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-run-retro-learnings-transferability/requirements.md": {
+      "hash": "19313157ee6544c89355ae119b3b35544efe694e5efafe98a3cef5650a4c478e",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-run-retro-severity-grep-pattern/requirements.md": {
+      "hash": "43029e96dcd4e2d1c45b991916bc281de41a071ddb4f96e24d7c0a2e29f08c4a",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-runner-detectandhydratestate-skips-verify/requirements.md": {
+      "hash": "afd0abc256f2a17c988c36db2391592efd364b520913a0660ba2cd266fb4e2de",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-sdlc-runner-auto-mode-gitignore/requirements.md": {
+      "hash": "a1e03a81c2a725ddcb2109c87c712d0b8925b68b2d54f89acf377e401df7d814",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-sdlc-runner-cross-cycle-state-contamination/requirements.md": {
+      "hash": "05210f7dfb94e764d524af928ac4aee9be08491c05244983b309ae9c711ec566",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-sdlc-runner-infinite-retry-no-ci/requirements.md": {
+      "hash": "30ce141319bf56218e2960f42fe9bbcaa21e0a027fde68f979c64bbf9110a211",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-sdlc-runner-process-tree-cleanup/requirements.md": {
+      "hash": "8aab66c7f5c0534b0950e524f2208b8d7945e953ba40c86f84e030b2611858f3",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-silent-commitpush-failure/requirements.md": {
+      "hash": "bce7d1d00f4f343db94bc6ba42d339fe34b94694c7a9e1a7b5fb34abaa4f6518",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-start-issue-dirty-tree-runner-artifacts/requirements.md": {
+      "hash": "103e1a3980c34b9f87e8dec7e804a98aa320a2b931fb353f16b2970e108ced73",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-start-issue-milestone-selection/requirements.md": {
+      "hash": "ea8694966d08c0432fa694389ce1b0bdf609d9e82e88092469bde73914ac1c0a",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-start-issue-unattended-mode-interactive-fallback/requirements.md": {
+      "hash": "94bb832e52c6110e367f4b75a6c9f2a49962bab6bcc5519b0098ece445228a79",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-verify-step-false-escalation-on-temp-dir-denials/requirements.md": {
+      "hash": "50f4647ab696ed488e8ca059da48c028f798a189843cf1a682e21766e9f8dc95",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-fix-write-spec-defect-related-spec-search/requirements.md": {
+      "hash": "ded9f7de08f721cd95e3301153d94e8e4ffa5193c2238ddc162cc6cb2d515ec5",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-handle-missing-spec-files-in-open-pr/requirements.md": {
+      "hash": "7cb73991966d2e7a9fbf84a37e395b2015d7fd62561355ab78e78666b56ecef1",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-opus-rate-limits/requirements.md": {
+      "hash": "5091480d4e561391a56926791bdcd1af51579e03d3db6f5154cd5ea3a3b83943",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-relocate-specs-and-steering/requirements.md": {
+      "hash": "294ef32178b1a4ca8521d683891ea9afde966a0daa900b6e80b57e25211d8e3c",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-replace-askuserquestion-with-escalation-when-specs-missing/requirements.md": {
+      "hash": "3666b589d27ed29583664e1e6e0fd3811ae7a9d9d8d9efd2e325c91c40ce19cf",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-sdlc-runner-edge-case-fixes/requirements.md": {
+      "hash": "d1a8a3c915a8c6d02886b8073c8fb39f1b0dcd844de2c3fa2c786f56dbb16d7a",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-spec-directory-rename-migrate-project/requirements.md": {
+      "hash": "46e2be0d43ef5fc304623b58ad7ed8f151cc53aa99ce102637f0b8fed5565351",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-text-pattern-soft-failure-detection-sdlc-runner/requirements.md": {
+      "hash": "776047664352a2af39099d78eed4505b8bf0a10e69e4616ff1d2dfc2e1aaf42c",
+      "lastAnalyzed": "2026-04-19"
+    },
+    "specs/bug-validate-git-cleanliness-before-branching-in-start-issue/requirements.md": {
+      "hash": "4f0d50e9499cc6d29b7b80825696ddf93fe1df9d0e2cba7ada25da88eff58bec",
+      "lastAnalyzed": "2026-04-19"
+    }
+  }
+}
