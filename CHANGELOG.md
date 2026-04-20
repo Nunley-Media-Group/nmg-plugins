@@ -10,6 +10,12 @@ Major-version bumps are reserved for explicit, manual maintenance milestones and
 
 ## [Unreleased]
 
+## [1.53.1] - 2026-04-19
+
+### Added
+
+- **Progressive disclosure infrastructure: shared references, audit script, Claude review** (issue #145) — creates `plugins/nmg-sdlc/references/` with 6 shared reference files (`legacy-layout-gate.md`, `unattended-mode.md`, `feature-naming.md`, `versioning.md`, `steering-schema.md`, `spec-frontmatter.md`) consolidating cross-skill duplicate content; adds `scripts/skill-inventory-audit.mjs` with `--check` mode, canary fixtures, and a committed baseline `scripts/skill-inventory.baseline.json` so content-inventory drift is detectable on every PR touching a SKILL.md; adds `.github/workflows/skill-inventory-audit.yml` as a required status check and `.github/workflows/claude-review.yml` firing `anthropics/claude-code-action@v1` on PR open/sync and `@claude` comments. No SKILL.md files were modified — this is purely additive infrastructure. (partial delivery — see epic #138)
+
 ## [1.53.0] - 2026-04-19
 
 ### Added
