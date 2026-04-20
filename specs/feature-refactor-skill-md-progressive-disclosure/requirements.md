@@ -1,6 +1,6 @@
 # Requirements: Refactor SKILL.md via Progressive Disclosure
 
-**Issues**: #138
+**Issues**: #138, #145
 **Date**: 2026-04-19
 **Status**: Draft
 **Author**: Rich Nunley
@@ -114,11 +114,19 @@ Baseline line counts captured at issue authoring time:
 **When** its content is compared against the pre-refactor SKILL.md passages it consolidates
 **Then** the normative intent of every consuming skill is preserved — no consumer loses a directive, gains an unintended directive, or sees a directive rewritten to change its operational meaning. Wording may be unified across consumers; semantics may not drift.
 
-### AC10: Claude Code GitHub App Review Workflow Is Enabled
+### AC10: Claude Code GitHub App Review Workflow Is Enabled And Required
 
 **Given** the Claude Code GitHub App is already installed on the Nunley-Media-Group org with access to this repo
 **When** PR 1 ships
-**Then** a `.github/workflows/claude-review.yml` workflow runs `anthropics/claude-code-action@v1` on every PR (on `opened` and `synchronize`) and on issue-comment events that contain `@claude`, so every PR — including the subsequent refactor PRs in this effort — receives an automated review that reads the repo's `CLAUDE.md` and steering docs.
+**Then** a `.github/workflows/claude-review.yml` workflow runs `anthropics/claude-code-action@v1` on every PR (on `opened` and `synchronize`) and on issue-comment events that contain `@claude`, so every PR — including the subsequent refactor PRs in this effort — receives an automated review that reads the repo's `CLAUDE.md` and steering docs
+**And** the workflow is declared a **required status check** on `main` branch-protection rules, so a failing or missing Claude review blocks merge.
+
+### AC11: Claude Review Must Pass Before Merge
+
+**Given** the Claude review workflow has posted a review on a PR
+**When** Claude's review verdict is `REQUEST_CHANGES` (or the workflow exits non-zero for any reason)
+**Then** the workflow's check status is `failure` and the PR cannot be merged until a follow-up push triggers a passing Claude review
+**And** a passing review (`APPROVE` or `COMMENT` without blocking findings) sets the workflow's check status to `success`.
 
 ### Generated Gherkin Preview
 
@@ -170,10 +178,17 @@ Feature: Refactor SKILL.md via Progressive Disclosure
     When its content is compared against the passages it consolidates
     Then the normative intent of every consuming skill is preserved
 
-  Scenario: Claude Code GitHub App review workflow is enabled
+  Scenario: Claude Code GitHub App review workflow is enabled and required
     Given the Claude Code GitHub App is already installed on the org
     When PR 1 ships
     Then `.github/workflows/claude-review.yml` runs on every PR and on @claude comments
+    And the workflow is a required status check that blocks merge when Claude requests changes
+
+  Scenario: Claude review must pass before merge
+    Given the Claude review workflow posted a REQUEST_CHANGES verdict on a PR
+    When the PR is evaluated for mergeability
+    Then the workflow check status is `failure` and merge is blocked
+    And a subsequent push that yields an APPROVE verdict flips the check to `success`
 ```
 
 ---
@@ -195,7 +210,7 @@ Feature: Refactor SKILL.md via Progressive Disclosure
 | FR11 | Ship a permanent content-inventory audit script under `scripts/` (supporting AC6) that runs locally and in CI on every PR touching SKILL.md. Commit a baseline inventory file with this refactor; re-baseline only on intentional content removals documented in the PR body. | Must |
 | FR12 | Update `steering/structure.md` to document the new `references/` layer (plugin-shared + per-skill) in the layer-architecture diagram. | Should |
 | FR13 | Update `README.md` only if the refactor changes how users interact with the plugin; if interaction surface is unchanged (per AC4/AC5), no README update is required. | Must |
-| FR14 | Add `.github/workflows/claude-review.yml` invoking `anthropics/claude-code-action@v1` on `pull_request` (`opened`, `synchronize`) and on `issue_comment` events containing `@claude`. Ship in PR 1 so every subsequent refactor PR receives an automated review. | Must |
+| FR14 | Add `.github/workflows/claude-review.yml` invoking `anthropics/claude-code-action@v1` on `pull_request` (`opened`, `synchronize`) and on `issue_comment` events containing `@claude`. The job must exit non-zero when Claude requests changes, and must be configured as a required status check on `main`. Ship in PR 1 so every subsequent refactor PR is gated on a passing Claude review. | Must |
 
 ---
 
@@ -262,6 +277,8 @@ Feature: Refactor SKILL.md via Progressive Disclosure
 | Issue | Date | Summary |
 |-------|------|---------|
 | #138 | 2026-04-19 | Initial feature spec |
+| #145 | 2026-04-19 | Phase 1 child — additive infrastructure (shared `references/`, audit script + CI, Claude review workflow); no SKILL.md edits. Maps to tasks T001–T008 and covers AC3/AC6/AC10 + FR1/FR5/FR11/FR14. |
+| #145 | 2026-04-19 | Promoted the Claude-review workflow from advisory to required-pass gate. Added AC11 and tightened FR14 and AC10 accordingly — the workflow must exit non-zero on REQUEST_CHANGES and be declared a required status check on `main`. |
 
 ---
 

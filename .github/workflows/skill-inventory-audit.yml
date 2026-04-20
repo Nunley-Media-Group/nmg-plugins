@@ -1,0 +1,106 @@
+name: Skill Inventory Audit
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/nmg-sdlc/skills/**/SKILL.md'
+      - 'plugins/nmg-sdlc/**/references/**'
+      - 'scripts/skill-inventory.baseline.json'
+      - 'scripts/skill-inventory-audit.mjs'
+      - 'scripts/__fixtures__/audit-canary/**'
+      - 'scripts/__tests__/skill-inventory-audit.test.mjs'
+      - '.github/workflows/skill-inventory-audit.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: skill-inventory-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: skill-inventory-audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Check out PR head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: scripts/package-lock.json
+
+      - name: Install audit test deps
+        working-directory: scripts
+        run: npm ci --no-audit --no-fund
+
+      - name: Run canary-fixture tests (fails loudly if extraction logic rots)
+        working-directory: scripts
+        run: npm test -- --testPathPattern=skill-inventory-audit
+
+      - name: Check inventory against committed baseline
+        run: node scripts/skill-inventory-audit.mjs --check
+
+      - name: Baseline freshness — regenerate and diff against committed
+        run: |
+          set -euo pipefail
+          fresh="$(mktemp)"
+          fresh_norm="$(mktemp)"
+          committed_norm="$(mktemp)"
+
+          node scripts/skill-inventory-audit.mjs --baseline --output "$fresh"
+
+          # Normalize the generated_at timestamp on both baselines so only
+          # content drift surfaces in the diff.
+          node -e '
+            const fs = require("node:fs");
+            const pairs = process.argv.slice(1);
+            for (let i = 0; i + 1 < pairs.length; i += 2) {
+              const obj = JSON.parse(fs.readFileSync(pairs[i], "utf8"));
+              obj.generated_at = "<normalized>";
+              fs.writeFileSync(pairs[i + 1], JSON.stringify(obj, null, 2) + "\n");
+            }
+          ' "$fresh" "$fresh_norm" scripts/skill-inventory.baseline.json "$committed_norm"
+
+          if ! diff -q "$committed_norm" "$fresh_norm" > /dev/null; then
+            echo "::error::Committed baseline differs from a fresh scan of this tree."
+            echo "Either this PR changed SKILL.md / references/ content and intentionally needs a baseline refresh"
+            echo "(commit the regenerated baseline and document removals under '### Inventory Removals' in the PR body),"
+            echo "or a prior merge rotted the baseline and it needs rebaselining."
+            echo ""
+            echo "Diff (truncated):"
+            diff "$committed_norm" "$fresh_norm" | head -80 || true
+            exit 1
+          fi
+          echo "Baseline matches fresh scan — no drift."
+
+      - name: Lint PR body for '### Inventory Removals' when baseline changed
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # Only lint when the PR actually modifies the baseline file.
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          if ! git diff --name-only "$base_sha"...HEAD | grep -qx 'scripts/skill-inventory.baseline.json'; then
+            echo "Baseline file not modified in this PR — skipping removal-heading lint."
+            exit 0
+          fi
+
+          body=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}" --jq '.body // ""')
+          if ! printf '%s' "$body" | grep -qE '^###[[:space:]]+Inventory Removals[[:space:]]*$'; then
+            echo "::error::This PR modifies scripts/skill-inventory.baseline.json but the PR body has no '### Inventory Removals' heading."
+            echo "Regenerating the baseline is a deliberate act — document every removed inventory item under"
+            echo "an '### Inventory Removals' heading in the PR body with: the item ID, reason, and explicit"
+            echo "confirmation that the removal is intentional."
+            exit 1
+          fi
+          echo "PR body contains '### Inventory Removals' — lint passes."

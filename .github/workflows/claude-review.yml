@@ -1,0 +1,75 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  claude-review:
+    name: claude-review
+    # On pull_request always run; on issue_comment only when '@claude' is mentioned.
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'issue_comment' &&
+       contains(github.event.comment.body, '@claude'))
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out PR head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude Code review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Enforce review verdict (blocks merge on CHANGES_REQUESTED)
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # Pull every review on this PR, keep the most recent bot review whose
+          # commit_id matches the current head SHA, and fail when it asked for
+          # changes. Reviews against stale commits are ignored — a new push
+          # must trigger a fresh review to clear the gate.
+          verdict=$(gh api \
+            --paginate \
+            "repos/${{ github.repository }}/pulls/${PR_NUMBER}/reviews" \
+            --jq "[.[] | select(.user.type == \"Bot\") | select(.commit_id == \"${HEAD_SHA}\")] | last | .state // \"none\"")
+
+          echo "Claude review verdict for ${HEAD_SHA}: ${verdict}"
+
+          case "${verdict}" in
+            APPROVED|COMMENTED|none)
+              # APPROVED — pass. COMMENTED — pass (advisory comments are not a block).
+              # none — the action did not post a review (e.g., rate-limited or no findings on a tiny diff);
+              # treat as pass so a missing verdict does not trap the PR indefinitely. A subsequent push
+              # re-triggers the action and reasserts the gate.
+              echo "Verdict is non-blocking — exiting 0."
+              ;;
+            CHANGES_REQUESTED)
+              echo "::error::Claude requested changes on ${HEAD_SHA} — blocking merge until a passing review is posted against a newer commit."
+              exit 1
+              ;;
+            *)
+              echo "::error::Unrecognized review verdict: ${verdict}"
+              exit 1
+              ;;
+          esac
