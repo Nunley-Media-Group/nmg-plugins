@@ -83,6 +83,22 @@ If a `VERSION` file exists in the project root, determine the appropriate versio
    - **Fallback**: If the subsection is missing from `tech.md`, or if no issue label matches any row, default to **minor** (same as today's behavior for unlabeled issues).
 
 4. **Calculate the new version string**. If `major_requested` (Step 0) is true, bump **major** (`X.Y.Z → (X+1).0.0`) regardless of the classified type — this is the manual opt-in path. Otherwise use the classified bump type: patch increments Z, minor increments Y and resets Z.
+
+4a. **Sibling-aware downgrade for epic children.** Before presenting to the user, determine whether the current issue is an epic child and whether the bump should be downgraded to a patch:
+
+   1. Parse the current issue body for `Depends on: #E` lines (regex `/Depends on:\s*#(\d+)\b/gi`). If none found, also run `gh issue view #N --json parent` and use the parent field's `number` if non-null.
+   2. If no parent candidate is found, OR the parent is not labeled `epic` (`gh issue view #E --json labels --jq '.labels[].name'`), this is not an epic child — skip to Step 5 with the classification from step 4 and `siblingClass = 'non-epic'`.
+   3. Otherwise enumerate siblings: read the parent's Child Issues checklist (regex `^\s*-\s*\[[x ]\]\s*#(\d+)`) and collect all referenced issue numbers. Exclude the current issue number from the sibling list.
+   4. For each sibling, query `gh issue view #C --json state,closedByPullRequestsReferences`. Classify each sibling as **complete** when `state === 'CLOSED'` AND at least one entry in `closedByPullRequestsReferences` has `state === 'MERGED'` (or `mergedAt != null`); otherwise **incomplete**.
+   5. **Downgrade rule:**
+      - Every sibling complete → this is the final child. Keep the classified bump (`siblingClass = 'final'`).
+      - At least one sibling incomplete → this is an intermediate child. Force `bump_type = 'patch'`, recompute `{proposed}` accordingly, and set `siblingClass = 'intermediate'`.
+   6. **Epic-closure warning (AC7a).** Also query `gh issue view #E --json state`. If the epic itself is `CLOSED` while the current child is `OPEN`, warn:
+      - **Interactive mode:** use `AskUserQuestion` to confirm before proceeding (`[1] Proceed anyway / [2] Abort — investigate epic closure`). Abort exits the skill without creating the PR.
+      - **Unattended mode** (`.claude/unattended-mode` exists): do NOT call `AskUserQuestion` — escalate via the runner sentinel and exit non-zero with message `Epic #E is closed but child #N is still open — confirm the epic was not closed prematurely`.
+
+   Record `siblingClass` (one of `non-epic`, `intermediate`, `final`) and `epicParentNumber` (the resolved epic issue number, or null) for use in Step 3 and Step 4.
+
 5. **Present to user** (via `AskUserQuestion`):
    ```
    question: "Version bump: {current} → {proposed} ({bump_type}). Accept or override?"
@@ -107,6 +123,7 @@ If Step 2 determined a version bump, update all version-related files before gen
    - Insert a new version heading `## [{new_version}] - {YYYY-MM-DD}` immediately after it.
    - Move all entries that were under `[Unreleased]` to under the new version heading.
    - Leave the `[Unreleased]` section empty (just the heading with a blank line after it).
+   - **Partial-delivery note.** If `siblingClass === 'intermediate'` (from Step 2 step 4a), append ` (partial delivery — see epic #{epicParentNumber})` to the primary bullet under the new version heading. The primary bullet is the first entry line; if there are multiple bullets, only the first receives the suffix. The note must NOT be added for `siblingClass === 'final'` or `non-epic`.
 3. **Update stack-specific files**: Read `steering/tech.md` and look for the `## Versioning` section. If it exists, parse the table of stack-specific files and update each one:
    - For **JSON files** (e.g., `package.json`): Use the dot-notation path to locate and update the version field.
    - For **TOML files** (e.g., `Cargo.toml`): Use the dot-notation path to locate and update the version field.
@@ -153,6 +170,9 @@ From `specs/{feature}/tasks.md` testing phase:
 <!-- Include this section only if Step 2/3 performed a version bump -->
 **{bump_type}** bump: {old_version} → {new_version}
 
+<!-- Include this line only when siblingClass is 'intermediate' or 'final' (epic children) -->
+**Bump:** {bump_type} (epic child: {intermediate|final})
+
 ## Specs
 
 - Requirements: `specs/{feature}/requirements.md`
@@ -187,14 +207,41 @@ From issue body:
 <!-- Include this section only if Step 2/3 performed a version bump -->
 **{bump_type}** bump: {old_version} → {new_version}
 
+<!-- Include this line only when siblingClass is 'intermediate' or 'final' (epic children) -->
+**Bump:** {bump_type} (epic child: {intermediate|final})
+
 Closes #N
 ```
 
 ### Step 5: Push and Create PR
 
+0. **Pre-push race detection (AC7d).** If Step 2/3 committed a version bump, detect whether `origin/{base-branch}` advanced during local bump-and-commit (a concurrent epic-child PR merged first). Base branch is `main` unless a different target was specified.
+
+   1. Run `git fetch origin`.
+   2. Run `git merge-base --is-ancestor HEAD origin/{base-branch}`. If exit code is 0, the bases are in sync — skip to step 1 below.
+   3. If non-zero (local is behind), rebase:
+      ```bash
+      git pull --rebase origin {base-branch}
+      ```
+   4. **Re-compute the bump** against the now-current `plugin.json` / `package.json` / `VERSION`:
+      - Re-read the current version from `VERSION` (authoritative per `steering/tech.md`).
+      - Apply the same `siblingClass`-aware bump logic from Step 2 to the new baseline.
+      - If the re-computed version differs from what was committed in Step 3, amend the version-bump commit via:
+        ```bash
+        git checkout VERSION CHANGELOG.md [stack-specific files]
+        # redo Step 3 updates against the new baseline
+        git add VERSION CHANGELOG.md [stack-specific files]
+        git commit --amend -m "chore: bump version to {re-computed-new-version}" --no-edit
+        ```
+   5. **Conflict handling.** If the rebase produces conflicts in `VERSION`, `plugin.json`, `marketplace.json`, `package.json`, or `CHANGELOG.md`, abort with:
+      ```
+      ERROR: rebase conflict in version file(s): {file-list}. Resolve manually and re-run /open-pr. Force-push is NEVER used by this skill.
+      ```
+      Exit non-zero. Do NOT pass `--force` or `--force-with-lease` to any `git push` invocation.
+
 1. **Ensure branch is pushed**: Check if remote tracking branch exists
    - If not: `git push -u origin HEAD`
-   - If yes but behind: `git push`
+   - If yes but behind: `git push` (never `--force`)
 2. **Create the PR**:
    ```
    gh pr create --title "[title]" --body "[body]"

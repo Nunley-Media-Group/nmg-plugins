@@ -907,8 +907,8 @@ function buildClaudeArgs(step, state, overrides = {}) {
   const prompts = {
     [STEP_NUMBER.startCycle]: 'Check out main, clean the working tree, and pull latest. Run: git checkout main && git clean -fd && git checkout -- . && git pull. Report the current branch and latest commit.',
 
-    [STEP_NUMBER.startIssue]: SINGLE_ISSUE_NUMBER
-      ? `Start issue #${SINGLE_ISSUE_NUMBER}. Create a linked feature branch and set the issue to In Progress. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`
+    [STEP_NUMBER.startIssue]: (SINGLE_ISSUE_NUMBER || preSelectedIssue)
+      ? `Start issue #${SINGLE_ISSUE_NUMBER || preSelectedIssue}. Create a linked feature branch and set the issue to In Progress. Skill instructions are appended to your system prompt. Resolve relative file references from ${skillRoot}/.`
       : [
           `You are running in UNATTENDED MODE (\`.claude/unattended-mode\` exists).`,
           `Do NOT call AskUserQuestion — it will be denied and waste turns. Do NOT emit`,
@@ -1473,6 +1473,140 @@ function hasNonEscalatedIssues() {
 }
 
 // ---------------------------------------------------------------------------
+// Milestone + topological issue selection
+// ---------------------------------------------------------------------------
+
+const DEPENDENCY_BODY_RE = /(?:Depends on|Blocks):\s*#(\d+)\b/gi;
+
+/**
+ * Pick the alphabetically-first open milestone with open issues.
+ * Returns null if none found or on error.
+ */
+function selectMilestone(opts = {}) {
+  const ghRunner = opts.ghRunner || gh;
+  try {
+    const raw = ghRunner(
+      "api repos/{owner}/{repo}/milestones --jq '[.[] | select(.open_issues > 0) | {title: .title, open_issues: .open_issues}] | sort_by(.title)'"
+    );
+    const milestones = JSON.parse(raw);
+    if (!Array.isArray(milestones) || milestones.length === 0) return null;
+    return milestones[0].title;
+  } catch (err) {
+    log(`Warning: could not fetch milestones: ${err.message}`);
+    return null;
+  }
+}
+
+/**
+ * Select the next ready issue from a milestone, respecting topological order
+ * derived from `Depends on: #N` / `Blocks: #N` body cross-refs and the GitHub
+ * sub-issue parent field.
+ *
+ * @param {string|null} milestone  Milestone title, or null for repo-wide.
+ * @param {object} opts
+ * @param {(args: string) => string} [opts.ghRunner]  Injectable `gh` runner for tests.
+ * @param {Set<number>} [opts.excluded]  Issue numbers to skip (e.g., escalated).
+ * @returns {{ issue: number|null, blockedIssues: Array<{issue: number, blockers: number[]}> }}
+ *
+ * An issue is "ready" when every `Depends on` / `Blocks` / parent link either
+ * points outside the milestone pool (treated as satisfied) or points to an
+ * issue that is CLOSED with at least one merged PR in
+ * `closedByPullRequestsReferences`. Lowest-numbered ready issue wins.
+ */
+function selectNextIssueFromMilestone(milestone, opts = {}) {
+  const ghRunner = opts.ghRunner || gh;
+  const excluded = opts.excluded instanceof Set ? opts.excluded : new Set();
+
+  const listCmd = [
+    'issue list -s open',
+    milestone ? `-m ${shellEscape(milestone)}` : '',
+    '--label automatable -L 50 --json number',
+  ].filter(Boolean).join(' ');
+
+  let candidates;
+  try {
+    const raw = ghRunner(listCmd);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) throw new Error('gh issue list returned non-array');
+    candidates = parsed
+      .map((i) => Number(i.number))
+      .filter((n) => Number.isInteger(n) && n > 0 && !excluded.has(n))
+      .sort((a, b) => a - b);
+  } catch (err) {
+    throw new Error(`Failed to list milestone issues: ${err.message}`);
+  }
+
+  if (candidates.length === 0) {
+    return { issue: null, blockedIssues: [] };
+  }
+
+  const details = new Map();
+  const fetchFailed = new Set();
+  for (const n of candidates) {
+    try {
+      const raw = ghRunner(
+        `issue view ${n} --json number,state,body,parent,closedByPullRequestsReferences`
+      );
+      details.set(n, JSON.parse(raw));
+    } catch (err) {
+      log(`Warning: could not fetch issue #${n} details: ${err.message}`);
+      details.set(n, { number: n, state: 'OPEN', body: '', parent: null, closedByPullRequestsReferences: [] });
+      fetchFailed.add(n);
+    }
+  }
+
+  const depMap = new Map();
+  for (const [n, d] of details) {
+    const deps = new Set();
+    const body = typeof d.body === 'string' ? d.body : '';
+    for (const match of body.matchAll(DEPENDENCY_BODY_RE)) {
+      const dep = Number(match[1]);
+      if (Number.isInteger(dep) && dep > 0 && dep !== n) deps.add(dep);
+    }
+    if (d.parent && typeof d.parent.number === 'number' && d.parent.number !== n) {
+      deps.add(d.parent.number);
+    }
+    depMap.set(n, deps);
+  }
+
+  const milestoneSet = new Set(candidates);
+  const blockedIssues = [];
+  const ready = [];
+
+  for (const n of candidates) {
+    if (fetchFailed.has(n)) {
+      blockedIssues.push({ issue: n, blockers: [], reason: 'fetch-failed' });
+      continue;
+    }
+    const deps = depMap.get(n) || new Set();
+    const blockers = [];
+    for (const dep of deps) {
+      if (!milestoneSet.has(dep)) continue; // external — assumed satisfied
+      const depDetails = details.get(dep);
+      if (!depDetails) { blockers.push(dep); continue; }
+      const prs = Array.isArray(depDetails.closedByPullRequestsReferences)
+        ? depDetails.closedByPullRequestsReferences
+        : [];
+      const isMerged = depDetails.state === 'CLOSED' &&
+        prs.some((pr) => pr && (pr.state === 'MERGED' || pr.mergedAt != null));
+      if (!isMerged) blockers.push(dep);
+    }
+    if (blockers.length === 0) ready.push(n);
+    else blockedIssues.push({ issue: n, blockers: blockers.sort((a, b) => a - b) });
+  }
+
+  return {
+    issue: ready.length > 0 ? ready[0] : null,
+    blockedIssues,
+  };
+}
+
+// Set by runStep() when pre-selecting the next issue in JS; cleared after
+// the startIssue step completes. Used by buildClaudeArgs to emit the simple
+// "Start issue #N" prompt instead of the prompt-driven selection path.
+let preSelectedIssue = null;
+
+// ---------------------------------------------------------------------------
 // Spec validation gate (post-step-3)
 // ---------------------------------------------------------------------------
 
@@ -1918,6 +2052,42 @@ async function runStep(step, state) {
   state = updateState({ currentStep: step.number });
   log(`[STATUS] Starting Step ${step.number}: ${step.key}${state.currentIssue ? ` (issue #${state.currentIssue})` : ''}...`);
 
+  // Pre-select the next issue in JS for startIssue when not in single-issue or dry-run mode.
+  // Builds a dependency graph fresh from live `gh` state each cycle per the
+  // retrospective learning about stale cache contamination — never cached in sdlc-state.json.
+  preSelectedIssue = null;
+  if (step.number === STEP_NUMBER.startIssue && !SINGLE_ISSUE_NUMBER && !DRY_RUN) {
+    try {
+      const milestone = selectMilestone();
+      const { issue, blockedIssues } = selectNextIssueFromMilestone(milestone, { excluded: escalatedIssues });
+
+      const describeBlockers = (entry) => entry.reason === 'fetch-failed'
+        ? 'gh fetch failed'
+        : entry.blockers.map((b) => `#${b}`).join(', ');
+
+      for (const entry of blockedIssues) {
+        log(`[runner] skipping #${entry.issue} — blocked by unmerged dependencies: ${describeBlockers(entry)}`);
+      }
+
+      if (issue === null && blockedIssues.length > 0) {
+        const diagnostic = [
+          'Every open issue in the milestone is blocked by unmerged dependencies:',
+          ...blockedIssues.map((e) => `  #${e.issue} ← blocked by ${describeBlockers(e)}`),
+        ];
+        for (const line of diagnostic) console.error(line);
+        await haltFailureLoop('all issues blocked', diagnostic);
+        return 'escalated';
+      }
+
+      if (issue !== null) {
+        preSelectedIssue = issue;
+        log(`[runner] pre-selected issue #${issue} from milestone "${milestone || '(repo-wide)'}"`);
+      }
+    } catch (err) {
+      log(`Warning: pre-selection failed (${err.message}); falling back to prompt-driven selection`);
+    }
+  }
+
   // Run claude
   let result;
   result = await runClaude(step, state);
@@ -2307,6 +2477,8 @@ export {
   handleSignal,
   hasOpenIssues,
   hasNonEscalatedIssues,
+  selectMilestone,
+  selectNextIssueFromMilestone,
   writeStepLog,
   extractResultFromStream,
   extractSessionId,

@@ -37,7 +37,7 @@ SDLC Runner (automation layer)
 
 | Service | Purpose | Notes |
 |---------|---------|-------|
-| GitHub API | Issue/PR management, branch creation | Via `gh` CLI; requires `GITHUB_TOKEN` |
+| GitHub API | Issue/PR management, branch creation | Via `gh` CLI; requires `GITHUB_TOKEN`. Sub-issue parent queries (`gh issue view --json parent`) require `gh` >= 2.62.0. If an older `gh` is installed, parent-link resolution in `/write-spec` and `/open-pr` degrades gracefully — the `parent` field is absent from the JSON response, so resolution falls back to body-cross-ref parsing (`Depends on: #N`, `Blocks: #N`) with a logged warning. |
 | Console/Log | Status updates from SDLC runner | Via log files in `<tmpdir>/sdlc-logs/` |
 | Claude API | Powers Claude Code sessions | Underlying LLM for all skills |
 
