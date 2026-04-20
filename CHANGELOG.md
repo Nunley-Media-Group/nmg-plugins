@@ -10,6 +10,12 @@ Major-version bumps are reserved for explicit, manual maintenance milestones and
 
 ## [Unreleased]
 
+## [1.53.0] - 2026-04-19
+
+### Added
+
+- **First-class epic support and multi-PR delivery flow** (issue #149) — `/draft-issue` gains an "Epic" classification (auto-detected from multi-phase signals or `distinctComponents ≥ 4`) with an Epic issue body template (Goal, Delivery Phases table, delegated Success Criteria, Child Issues checklist); unattended mode requires an explicit `Type: epic` declaration to avoid misclassification. `/write-spec` gains a seal-spec flow triggered when `design.md` contains a `## Multi-PR Rollout` section or a multi-PR FR, committing all spec files with `docs: seal umbrella spec for #N`, pushing without a version bump, and offering child-issue creation; re-running on an already-sealed spec is a no-op. `/write-spec` child spec discovery now resolves parent specs via `Depends on:` / `Blocks:` body lines and the GitHub sub-issue parent field before falling back to keyword search, failing loudly if a candidate parent's spec is not yet committed. `/open-pr` checks sibling issue states when the current issue is a child of an epic: if all siblings are closed a minor bump is applied; if any sibling is still open a patch bump is applied with a `(partial delivery — see epic #N)` CHANGELOG note. `sdlc-runner.mjs` builds a topological dependency queue from child-issue body cross-refs and native GitHub sub-issue links, blocking on unmerged parents and logging blocked issues. All four AC7 edge cases (epic closed before all children merged, out-of-order child PR merge, missing parent spec, concurrent version-bump conflict) surface specific actionable error messages.
+
 ## [1.52.0] - 2026-04-19
 
 ### Added

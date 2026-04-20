@@ -385,8 +385,15 @@ DraftState {
 #### Input
 
 - Initial description from Step 1
+- Multi-phase signals from Step 1b (`distinctComponents`, `sentenceCount`, phase-language match)
 
 #### Process
+
+**Epic auto-detection.** Compute `epicRecommended = true` when ANY of these fire:
+
+- The description contains "in phases", "multiple PRs", or "multi-PR" (case-insensitive, word-boundary match)
+- Step 1b's `distinctComponents >= 4` AND `sentenceCount >= 3`
+- The description contains references to multiple sequential delivery phases (e.g., "first … then … finally …")
 
 Use `AskUserQuestion` to ask the user what type of issue this is. This is always the first question after gathering context.
 
@@ -394,10 +401,19 @@ Options:
 
 - **Bug** — "Something is broken or behaving incorrectly"
 - **Enhancement / Feature** — "New capability or improvement to existing behavior"
+- **Epic** — "A coordinated set of child issues delivering one logical feature across multiple PRs"
+
+When `epicRecommended` is true, append `(Recommended)` to the Epic option label.
+
+**Unattended-mode branch.** If `.claude/unattended-mode` exists:
+
+- Epic is NEVER auto-selected regardless of heuristic signals.
+- The classifier defaults to `feature` unless the description contains an exact `Type: epic` line (case-insensitive, matched against `/^\s*Type:\s*epic\s*$/im`).
+- `AskUserQuestion` must NOT be invoked in this branch — the rule is deterministic.
 
 #### Output
 
-- `classification` ∈ {`feature`, `bug`}
+- `classification` ∈ {`feature`, `bug`, `epic`}
 
 ---
 
@@ -817,6 +833,41 @@ inconclusive, state what is known and what needs further investigation.]
 - [Related improvements not part of this fix]
 ```
 
+##### Epic Coordination Template
+
+When `classification === 'epic'`, synthesize the body using this template **only**. An epic is a coordination document — it MUST NOT contain a User Story, Acceptance Criteria, or Functional Requirements. ACs belong to each child issue.
+
+```markdown
+## Goal
+
+[1–3 sentences describing what this epic delivers when all children are done.]
+
+## Delivery Phases
+
+| Phase | Child Issue | Depends On | Summary |
+|-------|-------------|------------|---------|
+| 1 | #{askId-1} | — | [short description] |
+| 2 | #{askId-2} | #{askId-1} | [short description] |
+
+## Success Criteria
+
+Each child issue owns its own acceptance criteria — this epic is a coordination document only.
+
+## Child Issues
+
+- [ ] #{askId-1} — [short description]
+- [ ] #{askId-2} — [short description]
+```
+
+**Template invariants** (flagged as skill-quality findings if violated):
+
+- Delivery Phases table columns MUST be exactly `Phase | Child Issue | Depends On | Summary` in that order.
+- `#{askId-N}` placeholders are resolved to real issue numbers in Step 10 after children are created. On fresh synthesis, keep the placeholders.
+- Every child referenced in Delivery Phases MUST also appear in Child Issues; Step 10 keeps them synchronized.
+- The Success Criteria section is a fixed delegation note — do not replace it with per-child criteria.
+
+The child issues themselves (created in Step 10 via the existing Steps 1b–1d batch mechanism) use the Feature or Bug template as usual.
+
 #### Output
 
 - `draft` — fully composed issue body (markdown string)
@@ -939,7 +990,8 @@ This gate blocks Step 8 (issue creation) until `approved = true` or the user aba
 4. **Determine labels** based on issue type and automation eligibility:
    - Feature → `enhancement`
    - Bug → `bug`
-   - If Step 5b answered "Yes" → also include `automatable`
+   - Epic → `epic` + `enhancement` (BOTH labels; lazily create the `epic` label via `gh label create "epic" --description "Coordination issue spanning multiple child PRs" --color "5319E7"` if absent, same pattern as the `automatable` check in step 3 above)
+   - If Step 5b answered "Yes" → also include `automatable` (applies to Feature/Bug; epics do NOT receive `automatable` — children inherit it per iteration)
    - Other project-specific labels as appropriate
 5. **Create the issue** (include `--milestone` if Step 3 assigned one):
    ```
@@ -1020,11 +1072,27 @@ gh issue edit <issue.number> --body-file <updated-body>
 
 Body cross-refs are written **unconditionally** — independent of `session.subIssueSupported` and independent of whether any `--add-sub-issue` call succeeded.
 
+##### 10.4 Epic Child-Creation Flow (epic classification only)
+
+When the current iteration's `classification === 'epic'`, after the epic issue itself is created in Step 8, the skill fans out to create children from the Epic's Delivery Phases table.
+
+1. **Parse Delivery Phases** from the epic body (already synthesized in Step 6). Each row yields a planned child with a short summary and optional sibling prerequisites (the `Depends On` column).
+2. **Enter batch mode for the children.** Re-seed `session.proposedSplit` from the Delivery Phases, set each child's draft classification (Feature unless the row summary starts with `bug:`), and re-enter the Per-Issue Loop starting at Step 2 for each planned child.
+3. **Child body requirements** (enforced during Step 6 for each child):
+   - The body MUST contain a `Depends on: #{epic-number}` line (the epic is the parent of every child).
+   - Any intra-epic prerequisite from the Delivery Phases `Depends On` column MUST produce an additional `Depends on: #{sibling-number}` line (resolved via Step 10.3 placeholder rewriting once siblings exist).
+4. **Child labels:** apply `enhancement` (NOT `epic`) to every child. If Step 5b flagged the epic as automatable, propagate the `automatable` label to children.
+5. **GitHub sub-issue link:** after each child is created, also run `gh issue edit <child> --add-parent <epic>` (gated on `session.subIssueSupported` — the `--add-parent` flag uses the same gh capability as `--add-sub-issue`). Per-edge failures append to `session.autolinkDegradationNotes`.
+6. **Update the epic's Child Issues checklist in place.** After all children are created, rewrite the epic's body (`gh issue edit <epic> --body-file <updated>`) to replace `#{askId-N}` placeholders in the Child Issues checklist and Delivery Phases table with the real child issue numbers.
+
+**Unattended-mode rule.** `/draft-issue` as a whole does not honor unattended-mode (the skill header states this). The Epic child-creation flow is therefore always interactive — each child pass through Steps 2–9 may prompt as needed. Nothing about this sub-step introduces a new `AskUserQuestion` call site beyond those already present in the Per-Issue Loop.
+
 #### Output
 
 - `session.subIssueSupported` — boolean
 - `session.autolinkDegradationNotes` — list of failure descriptions
 - Updated issue bodies with resolved cross-refs
+- For epics: `session.epicChildIssues` — list of `{number, title}` created as children
 
 ---
 

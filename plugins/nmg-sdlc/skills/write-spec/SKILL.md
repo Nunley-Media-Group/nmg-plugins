@@ -103,6 +103,38 @@ If any label is `bug`, this is a **defect issue**. All three phases use the **De
 
 ### Process
 
+#### Step 0: Parent-Link Resolution (runs first — before keyword discovery)
+
+Child issues of an epic MUST resolve their parent spec by **issue link**, not by keyword match. Step 0 runs before anything else in Spec Discovery; only if it yields no candidates does control fall through to keyword-based matching.
+
+1. **Extract body cross-refs.** Run `gh issue view #N --json body` and parse the body for all `Depends on: #NNN` and `Blocks: #NNN` lines using the case-insensitive regex `/(?:Depends on|Blocks):\s*#(\d+)\b/gi`. Collect each match as a candidate parent issue number.
+2. **Query the GitHub sub-issue parent field.** Run `gh issue view #N --json parent`. If the `parent` object is non-null and has a numeric `number`, add that number to the candidate set. If `gh` does not support `--json parent` (older CLI), treat the field as null and log a single-line warning: `parent-link resolution: gh version does not expose sub-issue parent field — falling back to body cross-refs only`.
+3. **Deduplicate** the candidate set and preserve insertion order for determinism.
+4. **Cycle detection.** Maintain a visited-set of issue numbers. Start the visited set with the current issue number. When resolving transitively (e.g., a candidate parent itself has a parent that also has a parent), abort with a cycle-detected error if the same issue number reappears. Concretely: if issue `#A` lists `Depends on: #B` and `#B` lists `Depends on: #A`, writing the spec for either issue aborts with:
+
+   ```
+   ERROR: cycle detected in parent-link graph — #A and #B depend on each other. Break the cycle by removing one of the Depends on: lines and re-run /write-spec.
+   ```
+
+5. **Match candidates to spec directories.** For each candidate `#P`:
+   - `Glob` `specs/*/requirements.md` to enumerate spec directories.
+   - For each match, read the file's `**Issues**` frontmatter field (format: `**Issues**: #A, #B, #C`).
+   - If `#P` appears in the Issues list, record that spec directory as the resolved parent spec.
+6. **Handle the three outcomes:**
+   - **Match found** → enter **amendment mode** against the matched spec directory. Append the current issue number to the spec's `**Issues**` frontmatter (comma-separated), add a Change History row with today's date and a one-line summary, and skip directly to Phase 1 using the existing spec as the working document.
+   - **Candidate found but no matching spec directory** → abort with the loud failure (AC7c):
+
+     ```
+     ERROR: Parent spec for #P not found — run '/write-spec #P' and seal the spec before starting child work.
+     ```
+
+     Do not create any spec files for the child. Exit non-zero in unattended mode (escalate via runner sentinel).
+   - **No candidates at all** → fall through to the keyword-based discovery below.
+
+Step 0 is stateless — it derives everything fresh from `gh` state on each invocation. It runs identically in interactive and unattended modes; the only difference is that unattended aborts emit the error to stderr and exit non-zero rather than prompting.
+
+#### Step 1: Keyword-Based Discovery (fallback)
+
 1. **Extract keywords** from the issue title: tokenize by spaces, then filter out stop words: `a`, `an`, `the`, `to`, `for`, `in`, `on`, `of`, `and`, `or`, `is`, `it`, `as`, `at`, `by`, `with`, `from`, `this`, `that`, `add`, `fix`, `update`, `implement`, `create`
 2. **Search for existing feature specs**: Run `Glob` for `specs/feature-*/requirements.md` to list all feature spec candidates
 3. **If no feature specs exist**, skip to the "create new spec" flow below
@@ -410,6 +442,59 @@ Select an option:
 ```
 
 If the user selects 2 (or provides feedback), apply their changes to the file and re-present the summary and menu. Repeat until they select 1.
+
+### Seal-Spec Flow (multi-PR triggered)
+
+After the Phase 3 approval gate, detect whether the design calls for multi-PR delivery. A multi-PR trigger fires if EITHER:
+
+- `design.md` contains a `## Multi-PR Rollout` heading, OR
+- Any FR row's Requirement cell contains `multiple PRs` or `multi-PR` (case-insensitive)
+
+When the trigger fires, offer the seal-spec option. Sealing commits the umbrella spec without a version bump, pushes the branch, and (optionally) creates child issues — none of which should happen through `/open-pr`'s normal version-bump path because the umbrella spec is not a shipping change on its own.
+
+#### Step 3b.1: Offer Seal (interactive) or Auto-Execute (unattended)
+
+- **Interactive mode.** Use `AskUserQuestion`:
+  - `[1] Seal and transition — commit specs/{feature-name}/, push, offer child issue creation`
+  - `[2] Don't seal — I'll handle child-issue creation manually`
+- **Unattended mode** (`.claude/unattended-mode` exists): do NOT invoke `AskUserQuestion`. Auto-execute the seal per Step 3b.2. This is the documented deterministic default for this gate (AC8).
+
+#### Step 3b.2: Idempotency Check and Seal Commit
+
+1. Check for an existing seal commit on HEAD: `git log --format=%H --grep="^docs: seal umbrella spec for #{N}$" HEAD`. If the command returns a non-empty SHA, print `Spec already sealed at commit {sha}` and skip directly to Step 3b.3 (child-issue creation).
+2. Otherwise, perform the seal:
+   ```bash
+   git add specs/{feature-name}/
+   git commit -m "docs: seal umbrella spec for #{N}"
+   git push origin HEAD
+   ```
+3. **Scope invariants** (violation is a skill-quality finding):
+   - `git add` MUST use the explicit `specs/{feature-name}/` path — never `git add -A` or `git add .`.
+   - The seal commit MUST NOT touch `plugins/**/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `CHANGELOG.md`, or `VERSION`. If `git status --porcelain specs/{feature-name}/` shows no changes and other files are staged, abort with a clear error.
+   - The commit message MUST exactly match the regex `^docs: seal umbrella spec for #\d+$` — this is the idempotency marker other skills grep for.
+4. Record the commit SHA as `session.sealCommitSha` for use by the child-issue creation sub-step.
+
+#### Step 3b.3: Offer Child-Issue Creation
+
+- **Interactive mode.** After a successful seal, use `AskUserQuestion` to ask whether to create child issues now via the `/draft-issue` batch mechanism using the Delivery Phases table from the just-sealed design as the batch input.
+  - `[1] Create children now — re-invoke /draft-issue in batch mode using the Delivery Phases`
+  - `[2] Not now — I'll create children later`
+- **Unattended mode.** Auto-execute child creation (no prompt). The runner already guarantees no interactive gates in unattended mode per AC8.
+
+When children are created, the resulting `session.epicChildIssues` list is used to pick the first-unblocked child for the "Next step" hint in the After Completion block.
+
+#### Step 3b.4: After-Seal Next-Step Hint
+
+Override the default After Completion message to point at the first unblocked child:
+
+```
+Umbrella spec sealed at commit {sealCommitSha}.
+Children created: #{child1}, #{child2}, ...  (or: "none — create manually later")
+
+Next step: /start-issue #{first-unblocked-child}
+```
+
+If no children were created, fall back to the manual hint: `"Create child issues with /draft-issue and then run /start-issue #{child-number}."`
 
 ---
 

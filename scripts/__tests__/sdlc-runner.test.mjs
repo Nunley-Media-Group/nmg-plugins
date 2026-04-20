@@ -33,6 +33,9 @@ const mockFs = {
   statSync: jest.fn(() => ({ isDirectory: () => true, size: 100, mtimeMs: Date.now() })),
   appendFileSync: jest.fn(),
   unlinkSync: jest.fn(),
+  openSync: jest.fn(() => 3), // fake fd — runClaude live log path
+  writeSync: jest.fn(),
+  closeSync: jest.fn(),
 };
 jest.unstable_mockModule('node:fs', () => ({
   default: mockFs,
