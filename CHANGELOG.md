@@ -10,6 +10,12 @@ Major-version bumps are reserved for explicit, manual maintenance milestones and
 
 ## [Unreleased]
 
+## [1.53.2] - 2026-04-19
+
+### Added
+
+- **Refactor draft-issue/SKILL.md to ≤ 300 lines via progressive disclosure** (issue #146) — reduces `draft-issue/SKILL.md` from 1087 lines to 109 lines by extracting 5 reference files (`bug-template.md`, `design-url.md`, `feature-template.md`, `interview-depth.md`, `multi-issue.md`) loaded on demand; adds exercise fixture at `scripts/__fixtures__/skill-exercise/draft-issue/` with rubric; regenerates `scripts/skill-inventory.baseline.json`. (partial delivery — see epic #138)
+
 ## [1.53.1] - 2026-04-19
 
 ### Added
