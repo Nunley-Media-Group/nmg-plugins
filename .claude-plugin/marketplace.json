@@ -23,6 +23,24 @@
         "specifications",
         "github-issues"
       ]
+    },
+    {
+      "name": "obsidian-memory",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Nunley-Media-Group/obsidian-memory.git",
+        "path": "plugins/obsidian-memory"
+      },
+      "description": "Automatic, Obsidian-backed cross-session memory for Claude Code: keyword RAG on every prompt and session distillation at shutdown.",
+      "version": "0.1.0",
+      "keywords": [
+        "memory",
+        "obsidian",
+        "rag",
+        "session",
+        "hooks",
+        "context"
+      ]
     }
   ]
 }

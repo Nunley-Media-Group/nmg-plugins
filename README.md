@@ -7,6 +7,7 @@ Claude Code plugin marketplace by Nunley Media Group.
 | Plugin | Description | Repository |
 |--------|-------------|------------|
 | `nmg-sdlc` | Stack-agnostic BDD spec-driven development toolkit (issue grooming, three-phase specs, plan-mode implementation, verification, PR creation) | [Nunley-Media-Group/nmg-sdlc](https://github.com/Nunley-Media-Group/nmg-sdlc) |
+| `obsidian-memory` | Automatic, Obsidian-backed cross-session memory for Claude Code: keyword RAG on every prompt and session distillation at shutdown | [Nunley-Media-Group/obsidian-memory](https://github.com/Nunley-Media-Group/obsidian-memory) |
 
 ## Installation
 
@@ -18,6 +19,7 @@ Add the marketplace to Claude Code, then install the plugins you want:
 
 # Install a plugin
 /plugin install nmg-sdlc@nmg-plugins
+/plugin install obsidian-memory@nmg-plugins
 ```
 
 For private repos, ensure `GITHUB_TOKEN` is set with read access to both the marketplace and the plugin repository.
