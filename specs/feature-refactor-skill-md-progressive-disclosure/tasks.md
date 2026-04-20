@@ -1,6 +1,6 @@
 # Tasks: Refactor SKILL.md via Progressive Disclosure
 
-**Issues**: #138, #145
+**Issues**: #138, #145, #146
 **Date**: 2026-04-19
 **Status**: Planning
 **Author**: Rich Nunley
@@ -390,6 +390,7 @@ Phase 5 (threaded)
 | #138 | 2026-04-19 | Initial feature spec |
 | #145 | 2026-04-19 | Phase 1 child — scope covers T001–T008 (Setup + additive infra): shared `references/` files, `skill-inventory-audit.mjs` + baseline + fixtures + Jest tests, audit CI workflow, and `claude-review.yml`. No SKILL.md edits, no version bump. |
 | #145 | 2026-04-19 | T007 expanded: workflow now enforces Claude's review verdict (exit non-zero on `CHANGES_REQUESTED`) and must be declared a required status check on `main`. Acceptance list gained two bullets covering the enforce-verdict step and the required-check declaration. |
+| #146 | 2026-04-19 | Phase 2 child — draft-issue pilot. Scope maps to existing tasks T009–T012 (extract variant content, refactor SKILL.md to ≤ 300 lines, regenerate audit baseline with inventory-removal justification, exercise test against fixture). No new tasks added — Phase 2 was pre-planned under #138. |
 
 ---
 

@@ -1,6 +1,6 @@
 # Design: Refactor SKILL.md via Progressive Disclosure
 
-**Issues**: #138, #145
+**Issues**: #138, #145, #146
 **Date**: 2026-04-19
 **Status**: Draft
 **Author**: Rich Nunley
@@ -426,6 +426,7 @@ None — both Phase-1 open questions were resolved and codified in requirements.
 | #138 | 2026-04-19 | Initial design |
 | #145 | 2026-04-19 | Phase 1 child — additive infrastructure. No design changes; scope is the PR 1 slice of the Multi-PR Rollout (shared `references/` scaffold, audit script + CI, Claude review workflow). Also renamed `## Rollout Plan` → `## Multi-PR Rollout` and restructured its table to the epic-template Delivery Phases schema (`Phase \| Child Issue \| Depends On \| Summary`) populated with #145–#148 and their dependency chain, to conform to the epic-support contract introduced in #149. |
 | #145 | 2026-04-19 | Replaced "Scope Boundary" section with "Required-Pass Gate" + "Verdict-To-Exit-Code Mapping" — the Claude review is now a required status check that blocks merge on REQUEST_CHANGES rather than an advisory comment. Added the enforce-verdict workflow step spec. |
+| #146 | 2026-04-19 | Phase 2 child — draft-issue pilot. No design changes; the pilot scope was already captured in the Per-Skill Reference Extractions table (draft-issue row: `multi-issue.md`, `design-url.md`, `interview-depth.md`, `feature-template.md`, `bug-template.md`; ceiling ≤ 300) and in the Multi-PR Rollout (PR 2 row). This child issue validates the extraction pattern on the largest skill before Phases 3–4 fire. |
 
 ---
 
