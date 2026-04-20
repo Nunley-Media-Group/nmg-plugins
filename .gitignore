@@ -4,11 +4,3 @@
 *.pem
 *.key
 .claude/settings.local.json
-
-# SDLC runner config
-sdlc-config.json
-.claude/sdlc-state.json
-.claude/unattended-mode
-
-# Node dependencies
-node_modules/

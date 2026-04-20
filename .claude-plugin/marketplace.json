@@ -5,13 +5,15 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Nunley Media Group",
-    "version": "1.0.0",
-    "pluginRoot": "./plugins"
+    "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "nmg-sdlc",
-      "source": "./plugins/nmg-sdlc",
+      "source": {
+        "source": "github",
+        "repo": "Nunley-Media-Group/nmg-sdlc"
+      },
       "description": "BDD spec-driven development: issue creation, specifications, verification, and PR workflows.",
       "version": "1.53.2",
       "keywords": [
