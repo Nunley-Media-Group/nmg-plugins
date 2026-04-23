@@ -15,7 +15,6 @@
         "repo": "Nunley-Media-Group/nmg-sdlc"
       },
       "description": "BDD spec-driven development: issue creation, specifications, verification, and PR workflows.",
-      "version": "1.54.1",
       "keywords": [
         "sdlc",
         "bdd",
@@ -27,12 +26,10 @@
     {
       "name": "obsidian-memory",
       "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/Nunley-Media-Group/obsidian-memory.git",
-        "path": "plugins/obsidian-memory"
+        "source": "github",
+        "repo": "Nunley-Media-Group/obsidian-memory"
       },
-      "description": "Automatic, Obsidian-backed cross-session memory for Claude Code: keyword RAG on every prompt and session distillation at shutdown.",
-      "version": "0.1.0",
+      "description": "Cross-session memory backed by an Obsidian vault. Retrieves relevant notes on every prompt and distills each session into a dated vault entry.",
       "keywords": [
         "memory",
         "obsidian",
