@@ -1,0 +1,21 @@
+{
+  "name": "nmg-plugins",
+  "interface": {
+    "displayName": "Nunley Media Group Plugins"
+  },
+  "plugins": [
+    {
+      "name": "nmg-sdlc",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/Nunley-Media-Group/nmg-sdlc.git",
+        "ref": "main"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
