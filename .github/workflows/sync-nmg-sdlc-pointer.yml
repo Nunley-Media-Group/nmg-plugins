@@ -1,0 +1,114 @@
+name: Sync nmg-sdlc Pointer
+
+on:
+  repository_dispatch:
+    types:
+      - nmg-sdlc-main-updated
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full nmg-sdlc commit SHA to pin. Defaults to the current main HEAD.
+        required: false
+        type: string
+      version:
+        description: Expected nmg-sdlc plugin version. If omitted, the workflow reads plugin.json from the pinned commit.
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-nmg-sdlc-pointer
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Update marketplace pointer
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out nmg-plugins
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Resolve nmg-sdlc metadata
+        id: metadata
+        env:
+          REQUESTED_SHA: ${{ github.event.client_payload.sha || inputs.sha }}
+          REQUESTED_VERSION: ${{ github.event.client_payload.version || inputs.version }}
+          NMG_SDLC_URL: https://github.com/Nunley-Media-Group/nmg-sdlc.git
+        run: |
+          set -euo pipefail
+
+          sha="${REQUESTED_SHA:-}"
+          if [ -z "$sha" ]; then
+            sha="$(git ls-remote "$NMG_SDLC_URL" refs/heads/main | awk '{print $1}')"
+          fi
+
+          if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::nmg-sdlc SHA must be a full 40-character commit SHA; got '$sha'."
+            exit 1
+          fi
+
+          workdir="$(mktemp -d)"
+          trap 'rm -rf "$workdir"' EXIT
+          git clone --filter=blob:none "$NMG_SDLC_URL" "$workdir/nmg-sdlc"
+          git -C "$workdir/nmg-sdlc" checkout --detach "$sha"
+
+          discovered_version="$(node -p "require('$workdir/nmg-sdlc/.codex-plugin/plugin.json').version")"
+          version="${REQUESTED_VERSION:-$discovered_version}"
+          if [ "$version" != "$discovered_version" ]; then
+            echo "::error::Requested version '$version' does not match nmg-sdlc plugin.json version '$discovered_version' at $sha."
+            exit 1
+          fi
+
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Update marketplace manifest
+        env:
+          SHA: ${{ steps.metadata.outputs.sha }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = '.agents/plugins/marketplace.json';
+          const sha = process.env.SHA;
+          const version = process.env.VERSION;
+          const manifest = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const plugin = manifest.plugins?.find((entry) => entry.name === 'nmg-sdlc');
+
+          if (!plugin) {
+            throw new Error('marketplace is missing the nmg-sdlc plugin entry');
+          }
+
+          plugin.source = {
+            source: 'url',
+            url: 'https://github.com/Nunley-Media-Group/nmg-sdlc.git',
+            ref: 'main',
+            sha,
+          };
+          plugin['x-version'] = version;
+
+          fs.writeFileSync(path, JSON.stringify(manifest, null, 2) + '\n');
+          NODE
+
+      - name: Commit marketplace update
+        env:
+          SHA: ${{ steps.metadata.outputs.sha }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- .agents/plugins/marketplace.json; then
+            echo "nmg-sdlc marketplace pointer already matches ${VERSION} (${SHA})."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .agents/plugins/marketplace.json
+          git commit -m "chore: sync nmg-sdlc marketplace pointer to ${VERSION}"
+          git push origin HEAD:main

@@ -24,6 +24,8 @@ This marketplace uses Git-backed Codex entries, so each plugin can stay in its o
 
 ## Updating
 
+The `nmg-sdlc` entry is pinned to the latest `main` commit by a GitHub Actions workflow. When `nmg-sdlc` changes on `main`, this repository receives a dispatch event and commits the new plugin SHA/version directly to `main`.
+
 ```bash
 codex plugin marketplace upgrade nmg-plugins
 ```
