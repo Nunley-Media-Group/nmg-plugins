@@ -10,7 +10,7 @@
         "source": "url",
         "url": "https://github.com/Nunley-Media-Group/nmg-sdlc.git",
         "ref": "main",
-        "sha": "1b1770e6ba8aae945becb591d762da48bcc1aea4"
+        "sha": "6e629198989c59ced6af35f37cca67c26258e301"
       },
       "policy": {
         "installation": "AVAILABLE",
