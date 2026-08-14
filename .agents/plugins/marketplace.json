@@ -10,14 +10,14 @@
         "source": "url",
         "url": "https://github.com/Nunley-Media-Group/nmg-sdlc.git",
         "ref": "main",
-        "sha": "aa98ce66fd77d389eaac90b5f90d8fe62e2feb4b"
+        "sha": "a48c8573a0c544f064a392e5c97ef7e78b11d01f"
       },
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
       },
       "category": "Productivity",
-      "x-version": "2.0.1"
+      "x-version": "2.0.6"
     }
   ]
 }
