@@ -1,6 +1,6 @@
 # nmg-plugins
 
-Codex plugin marketplace by Nunley Media Group.
+Codex- and Pi-compatible plugin marketplace by Nunley Media Group.
 
 ## Plugins
 
@@ -21,6 +21,18 @@ codex plugin install nmg-sdlc@nmg-plugins
 ```
 
 This marketplace uses Git-backed Codex entries, so each plugin can stay in its own repository. For private repos, ensure your Git credentials have read access to both the marketplace repo and the plugin repositories.
+
+### Pi
+
+Install a compatible Pi plugin manager, add this marketplace, then install nmg-sdlc:
+
+```text
+pi install npm:@nklisch/pi-plugins
+/plugins marketplace add Nunley-Media-Group/nmg-plugins
+/plugins add nmg-sdlc@nmg-plugins --scope user
+```
+
+The Claude-compatible marketplace index supplies Pi's root-repository source representation while the Codex index remains authoritative for Codex consumers.
 
 ## Updating
 

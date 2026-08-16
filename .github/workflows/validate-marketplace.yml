@@ -1,0 +1,28 @@
+name: Validate Marketplace
+
+on:
+  pull_request:
+    paths:
+      - ".agents/plugins/marketplace.json"
+      - ".claude-plugin/marketplace.json"
+      - "scripts/validate-marketplace.mjs"
+      - ".github/workflows/validate-marketplace.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - ".agents/plugins/marketplace.json"
+      - ".claude-plugin/marketplace.json"
+      - "scripts/validate-marketplace.mjs"
+      - ".github/workflows/validate-marketplace.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: node scripts/validate-marketplace.mjs
