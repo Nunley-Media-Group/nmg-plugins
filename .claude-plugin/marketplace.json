@@ -1,0 +1,27 @@
+{
+  "name": "nmg-plugins",
+  "description": "Nunley Media Group plugins for structured software delivery",
+  "owner": {
+    "name": "Nunley Media Group"
+  },
+  "plugins": [
+    {
+      "name": "nmg-sdlc",
+      "description": "Stack-agnostic BDD spec-driven development toolkit",
+      "version": "2.1.0",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/Nunley-Media-Group/nmg-sdlc.git",
+        "ref": "main",
+        "sha": "7675f0e0c01d4b3d9fbcca379c8b9ec9a69bc892"
+      },
+      "strict": false,
+      "skills": "./skills",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

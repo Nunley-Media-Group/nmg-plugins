@@ -10,6 +10,7 @@ Codex plugin marketplace repository for Nunley Media Group. Each listed plugin l
 
 ```
 .agents/plugins/marketplace.json  — Codex marketplace index (Git-backed plugin entries)
+.claude-plugin/marketplace.json   — Claude-compatible index consumed by Pi plugin managers
 README.md                         — Public docs: how to add the marketplace, plugin pointers
 ```
 
@@ -23,8 +24,10 @@ When adding or removing a plugin:
      `{"source": {"source": "url", "url": "https://github.com/owner/name.git", "ref": "main"}}`
    - If the plugin lives in a subdirectory, use `source: "git-subdir"` with a `path`
    - Include `policy.installation`, `policy.authentication`, and `category` on every entry
-2. Update `README.md` to list the plugin and its source repo
-3. Open a PR — there is no marketplace-level CI yet
+2. Keep the matching entry in `.claude-plugin/marketplace.json` synchronized for Pi compatibility.
+3. Run `node scripts/validate-marketplace.mjs`.
+4. Update `README.md` to list the plugin and its source repo.
+5. Open a PR.
 
 Version bumps happen entirely in each plugin's own repo; this marketplace file only changes when a plugin is added, removed, renamed, or repointed to a different ref or URL.
 
