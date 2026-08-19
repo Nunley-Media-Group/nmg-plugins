@@ -4,8 +4,23 @@ import { readFileSync } from "node:fs";
 
 const CODEX_PATH = ".agents/plugins/marketplace.json";
 const CLAUDE_PATH = ".claude-plugin/marketplace.json";
+const OMP_PATH = ".omp-plugin/marketplace.json";
 const SHA_PATTERN = /^[0-9a-f]{40}$/;
-const CLAUDE_SOURCE_TYPES = new Set(["github", "url", "git-subdir", "npm"]);
+const NAME_SEGMENT = /^[a-z0-9](?:[a-z0-9.-]{0,62}[a-z0-9])?$/;
+const COMPATIBLE_SOURCE_TYPES = new Set(["github", "url", "git-subdir", "npm"]);
+
+const COMPATIBLE_CATALOGS = [
+  {
+    path: CLAUDE_PATH,
+    label: "Claude",
+    requireSkillsMetadata: true,
+  },
+  {
+    path: OMP_PATH,
+    label: "OMP",
+    requireSkillsMetadata: false,
+  },
+];
 
 function readManifest(path) {
   let value;
@@ -21,6 +36,14 @@ function readManifest(path) {
     throw new Error(`${path} requires a string name and plugins array`);
   }
   return value;
+}
+
+function assertNameSegment(value, path, field) {
+  if (typeof value !== "string" || !NAME_SEGMENT.test(value)) {
+    throw new Error(
+      `${path} ${field} must be a lowercase name segment (max 64 chars)`,
+    );
+  }
 }
 
 function entriesByName(manifest, path) {
@@ -49,40 +72,53 @@ function validatePinnedSource(source, path, pluginName) {
   }
 }
 
-const codex = readManifest(CODEX_PATH);
-const claude = readManifest(CLAUDE_PATH);
-if (codex.name !== claude.name) {
-  throw new Error(`marketplace names differ: ${codex.name} != ${claude.name}`);
-}
+function validateCompatibleCatalog(catalog, spec, codex, codexEntries) {
+  if (codex.name !== catalog.name) {
+    throw new Error(`marketplace names differ: ${codex.name} != ${catalog.name} (${spec.path})`);
+  }
+  assertNameSegment(catalog.name, spec.path, "name");
+  if (!catalog.owner || typeof catalog.owner !== "object" || typeof catalog.owner.name !== "string") {
+    throw new Error(`${spec.path} requires owner.name`);
+  }
 
-const codexEntries = entriesByName(codex, CODEX_PATH);
-const claudeEntries = entriesByName(claude, CLAUDE_PATH);
-for (const [name, codexEntry] of codexEntries) {
-  const claudeEntry = claudeEntries.get(name);
-  if (!claudeEntry) {
-    throw new Error(`${CLAUDE_PATH} is missing plugin ${name}`);
-  }
-  validatePinnedSource(codexEntry.source, CODEX_PATH, name);
-  validatePinnedSource(claudeEntry.source, CLAUDE_PATH, name);
-  if (!CLAUDE_SOURCE_TYPES.has(claudeEntry.source.source)) {
-    throw new Error(`${CLAUDE_PATH} plugin ${name} has unsupported source type ${claudeEntry.source.source}`);
-  }
-  for (const field of ["url", "ref", "sha"]) {
-    if (codexEntry.source[field] !== claudeEntry.source[field]) {
-      throw new Error(`plugin ${name} source.${field} differs between marketplace manifests`);
+  const entries = entriesByName(catalog, spec.path);
+  for (const [name, codexEntry] of codexEntries) {
+    const entry = entries.get(name);
+    if (!entry) {
+      throw new Error(`${spec.path} is missing plugin ${name}`);
+    }
+    assertNameSegment(entry.name, spec.path, `plugin ${name}`);
+    validatePinnedSource(codexEntry.source, CODEX_PATH, name);
+    validatePinnedSource(entry.source, spec.path, name);
+    if (!COMPATIBLE_SOURCE_TYPES.has(entry.source.source)) {
+      throw new Error(`${spec.path} plugin ${name} has unsupported source type ${entry.source.source}`);
+    }
+    for (const field of ["url", "ref", "sha"]) {
+      if (codexEntry.source[field] !== entry.source[field]) {
+        throw new Error(`plugin ${name} source.${field} differs between ${CODEX_PATH} and ${spec.path}`);
+      }
+    }
+    if (codexEntry["x-version"] !== entry.version) {
+      throw new Error(`plugin ${name} version differs between ${CODEX_PATH} and ${spec.path}`);
+    }
+    if (spec.requireSkillsMetadata && (entry.strict !== false || entry.skills !== "./skills")) {
+      throw new Error(`${spec.path} plugin ${name} must declare non-strict ./skills runtime metadata`);
     }
   }
-  if (codexEntry["x-version"] !== claudeEntry.version) {
-    throw new Error(`plugin ${name} version differs between marketplace manifests`);
+  for (const name of entries.keys()) {
+    if (!codexEntries.has(name)) {
+      throw new Error(`${CODEX_PATH} is missing plugin ${name} required by ${spec.path}`);
+    }
   }
-  if (claudeEntry.strict !== false || claudeEntry.skills !== "./skills") {
-    throw new Error(`${CLAUDE_PATH} plugin ${name} must declare non-strict ./skills runtime metadata`);
-  }
-}
-for (const name of claudeEntries.keys()) {
-  if (!codexEntries.has(name)) {
-    throw new Error(`${CODEX_PATH} is missing plugin ${name}`);
-  }
+  return entries;
 }
 
-console.log(`Validated ${codexEntries.size} synchronized Codex/Claude marketplace plugin(s).`);
+const codex = readManifest(CODEX_PATH);
+const codexEntries = entriesByName(codex, CODEX_PATH);
+for (const spec of COMPATIBLE_CATALOGS) {
+  validateCompatibleCatalog(readManifest(spec.path), spec, codex, codexEntries);
+}
+
+console.log(
+  `Validated ${codexEntries.size} synchronized Codex/Claude/OMP marketplace plugin(s).`,
+);
