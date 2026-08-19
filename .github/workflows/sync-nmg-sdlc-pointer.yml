@@ -80,6 +80,7 @@ jobs:
           for (const path of [
             ".agents/plugins/marketplace.json",
             ".claude-plugin/marketplace.json",
+            ".omp-plugin/marketplace.json",
           ]) {
             const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
             const plugin = manifest.plugins?.find((entry) => entry.name === "nmg-sdlc");
@@ -109,13 +110,14 @@ jobs:
           set -euo pipefail
           if git diff --quiet -- \
             .agents/plugins/marketplace.json \
-            .claude-plugin/marketplace.json; then
+            .claude-plugin/marketplace.json \
+            .omp-plugin/marketplace.json; then
             echo "nmg-sdlc marketplace pointer already matches ${VERSION} (${SHA})."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .agents/plugins/marketplace.json .claude-plugin/marketplace.json
+          git add .agents/plugins/marketplace.json .claude-plugin/marketplace.json .omp-plugin/marketplace.json
           git commit -m "chore: sync nmg-sdlc marketplace pointer to ${VERSION}"
           git push origin HEAD:main

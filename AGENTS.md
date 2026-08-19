@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Codex plugin marketplace repository for Nunley Media Group. Each listed plugin lives in its own GitHub repository and is referenced from `.agents/plugins/marketplace.json` using Git-backed marketplace entries. Currently listed:
+Plugin marketplace repository for Nunley Media Group. Each listed plugin lives in its own GitHub repository and is referenced from host-specific catalogs. Currently listed:
 
 - [`nmg-sdlc`](https://github.com/Nunley-Media-Group/nmg-sdlc) — BDD spec-driven development workflow (issues, specs, verification, PRs).
 
@@ -10,7 +10,8 @@ Codex plugin marketplace repository for Nunley Media Group. Each listed plugin l
 
 ```
 .agents/plugins/marketplace.json  — Codex marketplace index (Git-backed plugin entries)
-.claude-plugin/marketplace.json   — Claude-compatible index consumed by Pi plugin managers
+.omp-plugin/marketplace.json      — Preferred Oh My Pi marketplace catalog
+.claude-plugin/marketplace.json   — Claude-compatible index consumed by Pi and as OMP fallback
 README.md                         — Public docs: how to add the marketplace, plugin pointers
 ```
 
@@ -24,7 +25,7 @@ When adding or removing a plugin:
      `{"source": {"source": "url", "url": "https://github.com/owner/name.git", "ref": "main"}}`
    - If the plugin lives in a subdirectory, use `source: "git-subdir"` with a `path`
    - Include `policy.installation`, `policy.authentication`, and `category` on every entry
-2. Keep the matching entry in `.claude-plugin/marketplace.json` synchronized for Pi compatibility.
+2. Keep the matching entries in `.omp-plugin/marketplace.json` and `.claude-plugin/marketplace.json` synchronized for Oh My Pi and Pi compatibility.
 3. Run `node scripts/validate-marketplace.mjs`.
 4. Update `README.md` to list the plugin and its source repo.
 5. Open a PR.
