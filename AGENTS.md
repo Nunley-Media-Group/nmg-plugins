@@ -2,9 +2,7 @@
 
 ## Project Overview
 
-Plugin marketplace repository for Nunley Media Group. Each listed plugin lives in its own GitHub repository and is referenced from host-specific catalogs. Currently listed:
-
-- [`nmg-sdlc`](https://github.com/Nunley-Media-Group/nmg-sdlc) — BDD spec-driven development workflow (issues, specs, verification, PRs).
+Plugin marketplace repository for Nunley Media Group. Each listed plugin lives in its own GitHub repository and is referenced from host-specific catalogs. No plugins are currently listed.
 
 ## Repository Structure
 

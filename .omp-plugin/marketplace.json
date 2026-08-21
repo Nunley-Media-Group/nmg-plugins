@@ -7,21 +7,5 @@
   "metadata": {
     "description": "Nunley Media Group plugins for structured software delivery"
   },
-  "plugins": [
-    {
-      "name": "nmg-sdlc",
-      "description": "Stack-agnostic BDD spec-driven development toolkit",
-      "version": "2.1.0",
-      "homepage": "https://github.com/Nunley-Media-Group/nmg-sdlc",
-      "repository": "https://github.com/Nunley-Media-Group/nmg-sdlc",
-      "license": "MIT",
-      "category": "productivity",
-      "source": {
-        "source": "url",
-        "url": "https://github.com/Nunley-Media-Group/nmg-sdlc.git",
-        "ref": "main",
-        "sha": "dc7c662659e1a8d327e8b37895abf831acd33748"
-      }
-    }
-  ]
+  "plugins": []
 }
