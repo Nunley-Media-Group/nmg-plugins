@@ -4,20 +4,15 @@ Codex-, Oh My Pi-, and Pi-compatible plugin marketplace by Nunley Media Group.
 
 ## Plugins
 
-| Plugin | Description | Repository |
-|--------|-------------|------------|
-| `nmg-sdlc` | Stack-agnostic BDD spec-driven development toolkit (issue grooming, three-phase specs, plan-mode implementation, verification, PR creation) | [Nunley-Media-Group/nmg-sdlc](https://github.com/Nunley-Media-Group/nmg-sdlc) |
+No plugins are currently listed.
 
 ## Installation
 
-Add the marketplace to Codex, then install the plugins you want:
+Add the marketplace, then install the plugins you want:
 
 ```bash
 # Add the marketplace
 codex plugin marketplace add Nunley-Media-Group/nmg-plugins
-
-# Install a plugin
-codex plugin install nmg-sdlc@nmg-plugins
 ```
 
 This marketplace uses Git-backed Codex entries, so each plugin can stay in its own repository. For private repos, ensure your Git credentials have read access to both the marketplace repo and the plugin repositories.
@@ -28,36 +23,30 @@ OMP prefers `.omp-plugin/marketplace.json` and falls back to `.claude-plugin/mar
 
 ```bash
 omp plugin marketplace add Nunley-Media-Group/nmg-plugins
-omp plugin install --scope user nmg-sdlc@nmg-plugins
 ```
 
 In the TUI:
 
 ```text
 /marketplace add Nunley-Media-Group/nmg-plugins
-/marketplace install nmg-sdlc@nmg-plugins
 ```
 
 ### Pi
 
-Install a compatible Pi plugin manager, add this marketplace, then install nmg-sdlc:
+Install a compatible Pi plugin manager, then add this marketplace:
 
 ```text
 pi install npm:@nklisch/pi-plugins
 /plugins marketplace add Nunley-Media-Group/nmg-plugins
-/plugins add nmg-sdlc@nmg-plugins --scope user
 ```
 
 The OMP catalog is the preferred Oh My Pi index. The Claude-compatible catalog remains the Pi fallback. The Codex index remains authoritative for Codex consumers.
 
 ## Updating
 
-The `nmg-sdlc` entry is pinned to the latest `main` commit by a GitHub Actions workflow. When `nmg-sdlc` changes on `main`, this repository receives a dispatch event and commits the new plugin SHA/version directly to `main`.
-
 ```bash
 codex plugin marketplace upgrade nmg-plugins
 omp plugin marketplace update nmg-plugins
-omp plugin upgrade --scope user nmg-sdlc@nmg-plugins
 ```
 
 ## Documentation
