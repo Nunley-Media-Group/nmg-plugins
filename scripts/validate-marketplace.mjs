@@ -2,25 +2,11 @@
 
 import { readFileSync } from "node:fs";
 
-const CODEX_PATH = ".agents/plugins/marketplace.json";
 const CLAUDE_PATH = ".claude-plugin/marketplace.json";
-const OMP_PATH = ".omp-plugin/marketplace.json";
 const SHA_PATTERN = /^[0-9a-f]{40}$/;
 const NAME_SEGMENT = /^[a-z0-9](?:[a-z0-9.-]{0,62}[a-z0-9])?$/;
-const COMPATIBLE_SOURCE_TYPES = new Set(["github", "url", "git-subdir", "npm"]);
-
-const COMPATIBLE_CATALOGS = [
-  {
-    path: CLAUDE_PATH,
-    label: "Claude",
-    requireSkillsMetadata: true,
-  },
-  {
-    path: OMP_PATH,
-    label: "OMP",
-    requireSkillsMetadata: false,
-  },
-];
+const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+const SOURCE_TYPES = new Set(["github", "url", "git-subdir", "npm"]);
 
 function readManifest(path) {
   let value;
@@ -38,87 +24,54 @@ function readManifest(path) {
   return value;
 }
 
-function assertNameSegment(value, path, field) {
+function assertNameSegment(value, field) {
   if (typeof value !== "string" || !NAME_SEGMENT.test(value)) {
-    throw new Error(
-      `${path} ${field} must be a lowercase name segment (max 64 chars)`,
-    );
+    throw new Error(`${CLAUDE_PATH} ${field} must be a lowercase name segment (max 64 chars)`);
   }
 }
 
-function entriesByName(manifest, path) {
-  const entries = new Map();
-  for (const entry of manifest.plugins) {
-    if (!entry || typeof entry !== "object" || typeof entry.name !== "string") {
-      throw new Error(`${path} contains a plugin without a valid name`);
-    }
-    if (entries.has(entry.name)) {
-      throw new Error(`${path} contains duplicate plugin ${entry.name}`);
-    }
-    entries.set(entry.name, entry);
-  }
-  return entries;
-}
-
-function validatePinnedSource(source, path, pluginName) {
+function validateSource(source, name) {
   if (!source || typeof source !== "object" || Array.isArray(source)) {
-    throw new Error(`${path} plugin ${pluginName} requires an object source`);
+    throw new Error(`${CLAUDE_PATH} plugin ${name} requires an object source`);
   }
-  if (source.ref !== "main") {
-    throw new Error(`${path} plugin ${pluginName} must pin ref main`);
+  if (!SOURCE_TYPES.has(source.source)) {
+    throw new Error(`${CLAUDE_PATH} plugin ${name} has unsupported source type ${source.source}`);
   }
-  if (typeof source.sha !== "string" || !SHA_PATTERN.test(source.sha)) {
-    throw new Error(`${path} plugin ${pluginName} must pin a full lowercase commit SHA`);
+  if (source.source === "url" || source.source === "git-subdir") {
+    if (typeof source.url !== "string" || !/^https:\/\/github\.com\/[^/]+\/[^/]+\.git$/.test(source.url)) {
+      throw new Error(`${CLAUDE_PATH} plugin ${name} requires an https GitHub .git url`);
+    }
+    if (source.ref !== "main") {
+      throw new Error(`${CLAUDE_PATH} plugin ${name} must pin ref main`);
+    }
+    if (typeof source.sha !== "string" || !SHA_PATTERN.test(source.sha)) {
+      throw new Error(`${CLAUDE_PATH} plugin ${name} must pin a full lowercase commit SHA`);
+    }
   }
 }
 
-function validateCompatibleCatalog(catalog, spec, codex, codexEntries) {
-  if (codex.name !== catalog.name) {
-    throw new Error(`marketplace names differ: ${codex.name} != ${catalog.name} (${spec.path})`);
+const manifest = readManifest(CLAUDE_PATH);
+assertNameSegment(manifest.name, "name");
+if (!manifest.owner || typeof manifest.owner !== "object" || typeof manifest.owner.name !== "string") {
+  throw new Error(`${CLAUDE_PATH} requires owner.name`);
+}
+const seen = new Set();
+for (const entry of manifest.plugins) {
+  if (!entry || typeof entry !== "object") {
+    throw new Error(`${CLAUDE_PATH} contains a plugin that is not an object`);
   }
-  assertNameSegment(catalog.name, spec.path, "name");
-  if (!catalog.owner || typeof catalog.owner !== "object" || typeof catalog.owner.name !== "string") {
-    throw new Error(`${spec.path} requires owner.name`);
+  assertNameSegment(entry.name, "plugin name");
+  if (seen.has(entry.name)) {
+    throw new Error(`${CLAUDE_PATH} contains duplicate plugin ${entry.name}`);
   }
-
-  const entries = entriesByName(catalog, spec.path);
-  for (const [name, codexEntry] of codexEntries) {
-    const entry = entries.get(name);
-    if (!entry) {
-      throw new Error(`${spec.path} is missing plugin ${name}`);
-    }
-    assertNameSegment(entry.name, spec.path, `plugin ${name}`);
-    validatePinnedSource(codexEntry.source, CODEX_PATH, name);
-    validatePinnedSource(entry.source, spec.path, name);
-    if (!COMPATIBLE_SOURCE_TYPES.has(entry.source.source)) {
-      throw new Error(`${spec.path} plugin ${name} has unsupported source type ${entry.source.source}`);
-    }
-    for (const field of ["url", "ref", "sha"]) {
-      if (codexEntry.source[field] !== entry.source[field]) {
-        throw new Error(`plugin ${name} source.${field} differs between ${CODEX_PATH} and ${spec.path}`);
-      }
-    }
-    if (codexEntry["x-version"] !== entry.version) {
-      throw new Error(`plugin ${name} version differs between ${CODEX_PATH} and ${spec.path}`);
-    }
-    if (spec.requireSkillsMetadata && (entry.strict !== false || entry.skills !== "./skills")) {
-      throw new Error(`${spec.path} plugin ${name} must declare non-strict ./skills runtime metadata`);
-    }
+  seen.add(entry.name);
+  if (typeof entry.description !== "string" || entry.description.trim() === "") {
+    throw new Error(`${CLAUDE_PATH} plugin ${entry.name} requires a description`);
   }
-  for (const name of entries.keys()) {
-    if (!codexEntries.has(name)) {
-      throw new Error(`${CODEX_PATH} is missing plugin ${name} required by ${spec.path}`);
-    }
+  if (typeof entry.version !== "string" || !SEMVER.test(entry.version)) {
+    throw new Error(`${CLAUDE_PATH} plugin ${entry.name} requires a semver version`);
   }
-  return entries;
+  validateSource(entry.source, entry.name);
 }
 
-const codex = readManifest(CODEX_PATH);
-const codexEntries = entriesByName(codex, CODEX_PATH);
-for (const spec of COMPATIBLE_CATALOGS) {
-  validateCompatibleCatalog(readManifest(spec.path), spec, codex, codexEntries);
-}
-
-console.log(
-  `Validated ${codexEntries.size} synchronized Codex/Claude/OMP marketplace plugin(s).`,
-);
+console.log(`Validated ${seen.size} Claude Code marketplace plugin(s).`);
