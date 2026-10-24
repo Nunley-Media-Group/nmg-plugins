@@ -16,7 +16,13 @@
         "sha": "22f80e23822a59879a97708f8a4d725d1c865d2e"
       },
       "category": "productivity",
-      "keywords": ["sdlc", "bdd", "specs", "herdr", "github"]
+      "keywords": [
+        "sdlc",
+        "bdd",
+        "specs",
+        "herdr",
+        "github"
+      ]
     }
   ]
 }
