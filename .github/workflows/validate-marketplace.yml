@@ -3,18 +3,14 @@ name: Validate Marketplace
 on:
   pull_request:
     paths:
-      - ".agents/plugins/marketplace.json"
       - ".claude-plugin/marketplace.json"
-      - ".omp-plugin/marketplace.json"
       - "scripts/validate-marketplace.mjs"
       - ".github/workflows/validate-marketplace.yml"
   push:
     branches:
       - main
     paths:
-      - ".agents/plugins/marketplace.json"
       - ".claude-plugin/marketplace.json"
-      - ".omp-plugin/marketplace.json"
       - "scripts/validate-marketplace.mjs"
       - ".github/workflows/validate-marketplace.yml"
   workflow_dispatch:

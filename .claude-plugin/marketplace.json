@@ -4,5 +4,19 @@
   "owner": {
     "name": "Nunley Media Group"
   },
-  "plugins": []
+  "plugins": [
+    {
+      "name": "nmg-sdlc",
+      "description": "Spec-driven delivery for Claude Code and Herdr: groomed issues, approved BDD specs in native plan mode, and automated implement/verify/deliver workers.",
+      "version": "4.0.0",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/Nunley-Media-Group/nmg-sdlc.git",
+        "ref": "main",
+        "sha": "22f80e23822a59879a97708f8a4d725d1c865d2e"
+      },
+      "category": "productivity",
+      "keywords": ["sdlc", "bdd", "specs", "herdr", "github"]
+    }
+  ]
 }
