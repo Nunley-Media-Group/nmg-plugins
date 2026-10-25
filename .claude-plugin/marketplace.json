@@ -8,12 +8,12 @@
     {
       "name": "nmg-sdlc",
       "description": "Spec-driven delivery for Claude Code and Herdr: groomed issues, approved BDD specs in native plan mode, and automated implement/verify/deliver workers.",
-      "version": "4.4.0",
+      "version": "4.4.1",
       "source": {
         "source": "url",
         "url": "https://github.com/Nunley-Media-Group/nmg-sdlc.git",
         "ref": "main",
-        "sha": "a8bb4a37b0a9faac35e3f9b5466ee7551c07cbef"
+        "sha": "b59a51c0c69c3519332b7ffdede91345dab9ccf5"
       },
       "category": "productivity",
       "keywords": [
