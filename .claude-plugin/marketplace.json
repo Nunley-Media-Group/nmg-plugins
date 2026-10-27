@@ -23,6 +23,24 @@
         "herdr",
         "github"
       ]
+    },
+    {
+      "name": "nmg-router",
+      "description": "Puts non-Claude models into Claude Code's /model picker through the user's own provider logins, with an Anthropic guard on every routed request.",
+      "version": "0.10.0",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/Nunley-Media-Group/nmg-router.git",
+        "ref": "main",
+        "sha": "2d725202aec75a311bc62d9b731a8d2900d6c359"
+      },
+      "category": "productivity",
+      "keywords": [
+        "router",
+        "models",
+        "providers",
+        "model-picker"
+      ]
     }
   ]
 }
