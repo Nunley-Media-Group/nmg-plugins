@@ -3,9 +3,7 @@
 import { readFileSync } from "node:fs";
 
 const CLAUDE_PATH = ".claude-plugin/marketplace.json";
-const SHA_PATTERN = /^[0-9a-f]{40}$/;
 const NAME_SEGMENT = /^[a-z0-9](?:[a-z0-9.-]{0,62}[a-z0-9])?$/;
-const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const SOURCE_TYPES = new Set(["github", "url", "git-subdir", "npm"]);
 
 function readManifest(path) {
@@ -42,10 +40,11 @@ function validateSource(source, name) {
       throw new Error(`${CLAUDE_PATH} plugin ${name} requires an https GitHub .git url`);
     }
     if (source.ref !== "main") {
-      throw new Error(`${CLAUDE_PATH} plugin ${name} must pin ref main`);
+      throw new Error(`${CLAUDE_PATH} plugin ${name} must track ref main`);
     }
-    if (typeof source.sha !== "string" || !SHA_PATTERN.test(source.sha)) {
-      throw new Error(`${CLAUDE_PATH} plugin ${name} must pin a full lowercase commit SHA`);
+    // The plugin repo's main is the source of truth, so no commit is pinned.
+    if ("sha" in source) {
+      throw new Error(`${CLAUDE_PATH} plugin ${name} must not pin a sha; it tracks main`);
     }
   }
 }
@@ -68,8 +67,9 @@ for (const entry of manifest.plugins) {
   if (typeof entry.description !== "string" || entry.description.trim() === "") {
     throw new Error(`${CLAUDE_PATH} plugin ${entry.name} requires a description`);
   }
-  if (typeof entry.version !== "string" || !SEMVER.test(entry.version)) {
-    throw new Error(`${CLAUDE_PATH} plugin ${entry.name} requires a semver version`);
+  // The version comes from the plugin repo's .claude-plugin/plugin.json, never from here.
+  if ("version" in entry) {
+    throw new Error(`${CLAUDE_PATH} plugin ${entry.name} must not set a version; it comes from the plugin repo`);
   }
   validateSource(entry.source, entry.name);
 }

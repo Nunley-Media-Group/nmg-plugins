@@ -8,12 +8,10 @@
     {
       "name": "nmg-sdlc",
       "description": "Spec-driven delivery for Claude Code and Herdr: groomed issues, approved BDD specs in native plan mode, and automated implement/verify/deliver workers.",
-      "version": "4.7.0",
       "source": {
         "source": "url",
         "url": "https://github.com/Nunley-Media-Group/nmg-sdlc.git",
-        "ref": "main",
-        "sha": "ebc9ebe25d6d8929885f549e7f276288130a62a6"
+        "ref": "main"
       },
       "category": "productivity",
       "keywords": [
@@ -27,12 +25,10 @@
     {
       "name": "nmg-router",
       "description": "Puts non-Claude models into Claude Code's /model picker through the user's own provider logins, with an Anthropic guard on every routed request.",
-      "version": "0.10.2",
       "source": {
         "source": "url",
         "url": "https://github.com/Nunley-Media-Group/nmg-router.git",
-        "ref": "main",
-        "sha": "fdb914dd554bee6af0079bc9a6e112e8030e5d3b"
+        "ref": "main"
       },
       "category": "productivity",
       "keywords": [
