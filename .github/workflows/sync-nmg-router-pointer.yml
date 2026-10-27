@@ -1,0 +1,115 @@
+name: Sync nmg-router Pointer
+
+on:
+  repository_dispatch:
+    types:
+      - nmg-router-main-updated
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full nmg-router commit SHA to pin. Defaults to the current main HEAD.
+        required: false
+        type: string
+      version:
+        description: Expected nmg-router plugin version. If omitted, the workflow reads plugin.json from the pinned commit.
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-nmg-router-pointer
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Update marketplace pointer
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out nmg-plugins
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Resolve nmg-router metadata
+        id: metadata
+        env:
+          REQUESTED_SHA: ${{ github.event.client_payload.sha || inputs.sha }}
+          REQUESTED_VERSION: ${{ github.event.client_payload.version || inputs.version }}
+          NMG_ROUTER_URL: https://github.com/Nunley-Media-Group/nmg-router.git
+        run: |
+          set -euo pipefail
+
+          sha="${REQUESTED_SHA:-}"
+          if [ -z "$sha" ]; then
+            sha="$(git ls-remote "$NMG_ROUTER_URL" refs/heads/main | awk '{print $1}')"
+          fi
+
+          if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::nmg-router SHA must be a full 40-character commit SHA; got '$sha'."
+            exit 1
+          fi
+
+          workdir="$(mktemp -d)"
+          trap 'rm -rf "$workdir"' EXIT
+          git clone --filter=blob:none "$NMG_ROUTER_URL" "$workdir/nmg-router"
+          git -C "$workdir/nmg-router" checkout --detach "$sha"
+
+          discovered_version="$(node -p "require('$workdir/nmg-router/.claude-plugin/plugin.json').version")"
+          version="${REQUESTED_VERSION:-$discovered_version}"
+          if [ "$version" != "$discovered_version" ]; then
+            echo "::error::Requested version '$version' does not match nmg-router plugin.json version '$discovered_version' at $sha."
+            exit 1
+          fi
+
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Update marketplace manifests
+        env:
+          SHA: ${{ steps.metadata.outputs.sha }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require("node:fs");
+          const sha = process.env.SHA;
+          const version = process.env.VERSION;
+          for (const path of [".claude-plugin/marketplace.json"]) {
+            const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
+            const plugin = manifest.plugins?.find((entry) => entry.name === "nmg-router");
+            if (!plugin) {
+              throw new Error(`${path} is missing the nmg-router plugin entry`);
+            }
+            plugin.source = {
+              source: "url",
+              url: "https://github.com/Nunley-Media-Group/nmg-router.git",
+              ref: "main",
+              sha,
+            };
+            plugin.version = version;
+            fs.writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
+          }
+          NODE
+
+      - name: Validate marketplace manifests
+        run: node scripts/validate-marketplace.mjs
+
+      - name: Commit marketplace update
+        env:
+          SHA: ${{ steps.metadata.outputs.sha }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- .claude-plugin/marketplace.json; then
+            echo "nmg-router marketplace pointer already matches ${VERSION} (${SHA})."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/marketplace.json
+          git commit -m "chore: sync nmg-router marketplace pointer to ${VERSION}"
+          git push origin HEAD:main

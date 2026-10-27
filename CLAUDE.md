@@ -11,6 +11,7 @@ Claude Code plugin marketplace repository for Nunley Media Group. Each listed pl
 scripts/validate-marketplace.mjs          — Catalog validator (run in CI)
 .github/workflows/validate-marketplace.yml — Validates the catalog on PRs and pushes
 .github/workflows/sync-nmg-sdlc-pointer.yml — Repins nmg-sdlc on its main pushes
+.github/workflows/sync-nmg-router-pointer.yml — Repins nmg-router on its main pushes
 README.md                                 — Public docs: how to add the marketplace, plugin pointers
 ```
 
@@ -28,6 +29,6 @@ When adding or removing a plugin:
 3. Update `README.md` to list the plugin and its source repo.
 4. Open a PR.
 
-`nmg-sdlc` is repinned automatically by `sync-nmg-sdlc-pointer.yml` when nmg-sdlc `main` changes; it can also be run by hand with an explicit `sha`.
+`nmg-sdlc` and `nmg-router` are repinned automatically by `sync-nmg-sdlc-pointer.yml` and `sync-nmg-router-pointer.yml` when their `main` changes; each can also be run by hand with an explicit `sha`.
 
 Plugin development happens entirely in each plugin's own repo. This repo is intentionally thin: it only points users at the plugins that make up the marketplace.

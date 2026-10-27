@@ -39,7 +39,7 @@ claude plugin update nmg-router@nmg-plugins
 
 The `nmg-sdlc` pointer is updated automatically: each push to nmg-sdlc `main` dispatches `nmg-sdlc-main-updated`, and the Sync nmg-sdlc Pointer workflow repins the entry to that commit and its `.claude-plugin/plugin.json` version.
 
-The `nmg-router` pointer is repinned by hand: update its `sha` and `version` in `.claude-plugin/marketplace.json` to the new nmg-router `main` commit and its `.claude-plugin/plugin.json` version.
+The `nmg-router` pointer is updated the same way: each push to nmg-router `main` dispatches `nmg-router-main-updated`, and the Sync nmg-router Pointer workflow repins the entry to that commit and its `.claude-plugin/plugin.json` version.
 
 ## Documentation
 
