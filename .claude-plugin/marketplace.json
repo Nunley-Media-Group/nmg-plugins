@@ -37,6 +37,23 @@
         "providers",
         "model-picker"
       ]
+    },
+    {
+      "name": "nmg-game-dev",
+      "description": "Blender-first, Unreal-shipped content pipeline for NMG games: freeform asset authoring in Blender via MCP, checked by an asset contract and finalized into Desktop and Mobile variants in Unreal Engine.",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/Nunley-Media-Group/nmg-game-dev.git",
+        "ref": "main"
+      },
+      "category": "development",
+      "keywords": [
+        "game-dev",
+        "blender",
+        "unreal-engine",
+        "mcp",
+        "assets"
+      ]
     }
   ]
 }
